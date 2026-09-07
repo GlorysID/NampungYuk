@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\Project;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -174,5 +175,24 @@ class ProjectShowcaseTest extends TestCase
         $feedResponse = $this->get('/');
         $feedResponse->assertStatus(200);
         $feedResponse->assertSee('Interactive Prototype');
+    }
+
+    public function test_navbar_displays_guest_links_when_unauthenticated_and_auth_actions_when_logged_in(): void
+    {
+        // 1. Unauthenticated (Guest)
+        $guestResponse = $this->get('/');
+        $guestResponse->assertStatus(200);
+        $guestResponse->assertSee('Masuk');
+        $guestResponse->assertSee('Daftar');
+        $guestResponse->assertDontSee('title="Shortcut Keyboard (?)"', false);
+        $guestResponse->assertDontSee('title="Koleksi Project Tersimpan"', false);
+
+        // 2. Authenticated
+        $user = User::factory()->create();
+        $authResponse = $this->actingAs($user)->get('/');
+        $authResponse->assertStatus(200);
+        $authResponse->assertSee('Pamer Kodingan');
+        $authResponse->assertSee('title="Koleksi Project Tersimpan"', false);
+        $authResponse->assertSee('title="Shortcut Keyboard (?)"', false);
     }
 }

@@ -155,6 +155,10 @@
                                              },
                                              body: JSON.stringify({ type })
                                          });
+                                         if (res.status === 401) {
+                                             window.location.href = '{{ route('login') }}';
+                                             return;
+                                         }
                                          const data = await res.json();
                                          if (data.success) {
                                              this.score = data.score;
@@ -179,6 +183,10 @@
                                                  'Accept': 'application/json'
                                              }
                                          });
+                                         if (res.status === 401) {
+                                             window.location.href = '{{ route('login') }}';
+                                             return;
+                                         }
                                          const data = await res.json();
                                          if (data.success) {
                                              this.isBookmarked = data.bookmarked;
