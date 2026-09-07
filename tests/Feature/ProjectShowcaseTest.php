@@ -195,4 +195,50 @@ class ProjectShowcaseTest extends TestCase
         $authResponse->assertSee('title="Koleksi Project Tersimpan"', false);
         $authResponse->assertSee('title="Shortcut Keyboard (?)"', false);
     }
+
+    public function test_sidebar_renders_navigation_categories_and_mobile_drawer_toggle(): void
+    {
+        $category = Category::create(['name' => 'AI Machine Learning', 'slug' => 'ai-ml']);
+
+        $response = $this->get('/');
+        $response->assertStatus(200);
+
+        // Sidebar Navigation
+        $response->assertSee('Menu Utama');
+        $response->assertSee('Semua Karya');
+        $response->assertSee('Trending');
+        $response->assertSee('Prototipe Interaktif');
+        $response->assertSee('Kategori Kodingan');
+        $response->assertSee('Tech Stacks');
+        $response->assertSee('AI Machine Learning');
+
+        // Mobile Drawer Toggle
+        $response->assertSee('aria-label="Buka Menu Sidebar"', false);
+    }
+
+    public function test_user_can_filter_feed_by_prototype_tab(): void
+    {
+        $category = Category::create(['name' => 'Web App', 'slug' => 'web-app']);
+
+        $protoProject = Project::create([
+            'category_id' => $category->id,
+            'title' => 'Figma Prototype Project',
+            'slug' => 'figma-prototype-project',
+            'tagline' => 'Prototype ready',
+            'prototype_url' => 'https://figma.com/proto/12345',
+        ]);
+
+        $nonProtoProject = Project::create([
+            'category_id' => $category->id,
+            'title' => 'Code Only Project',
+            'slug' => 'code-only-project',
+            'tagline' => 'No prototype',
+            'prototype_url' => null,
+        ]);
+
+        $response = $this->get('/?tab=prototype');
+        $response->assertStatus(200);
+        $this->assertTrue($response->viewData('projects')->pluck('id')->contains($protoProject->id));
+        $this->assertFalse($response->viewData('projects')->pluck('id')->contains($nonProtoProject->id));
+    }
 }

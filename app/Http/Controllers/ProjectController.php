@@ -42,6 +42,9 @@ class ProjectController extends Controller
 
         // Apply Tab Sorting
         switch ($tab) {
+            case 'prototype':
+                $query->whereNotNull('prototype_url')->trending();
+                break;
             case 'terbaru':
                 $query->recent();
                 break;

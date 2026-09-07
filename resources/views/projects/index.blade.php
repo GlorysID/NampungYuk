@@ -35,13 +35,13 @@
          }
      }">
 
-    <!-- 2-COLUMN PRODUCTIVE LAYOUT: MAIN FEED (8 COLS) + ACTIVE COMMUNITY SIDEBAR (4 COLS) -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <!-- 2-COLUMN WORKSPACE: MAIN FEED (XL: 8 COLS) + ACTIVE COMMUNITY ASIDE (XL: 4 COLS) -->
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
 
-        <!-- LEFT COLUMN: MAIN SHOWCASE FEED (lg:col-span-8) -->
-        <div class="lg:col-span-8 space-y-4">
+        <!-- MAIN SHOWCASE FEED (xl:col-span-8) -->
+        <div class="xl:col-span-8 space-y-4">
 
-            <!-- SEGMENTED FILTER & STACK NAVIGATION (SUPABASE STYLE) -->
+            <!-- SEGMENTED FILTER & STACK NAVIGATION -->
             <div class="spotlight-card p-3 sm:p-4 space-y-3 bg-white dark:bg-[#0a0a0c] border border-neutral-200/80 dark:border-white/[0.08]">
                 <!-- Top Row: Sort Segmented Tabs & Filter Reset -->
                 <div class="flex items-center justify-between gap-3 flex-wrap">
@@ -52,21 +52,28 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z"/>
                             </svg>
-                            <span>Trending Builds</span>
+                            <span>Trending</span>
                         </a>
                         <a href="{{ route('projects.index', array_merge(request()->query(), ['tab' => 'terbaru'])) }}" 
                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition {{ $tab === 'terbaru' ? 'bg-white dark:bg-[#202024] text-neutral-900 dark:text-white shadow-2xs font-bold' : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white' }}">
                             <svg class="w-3.5 h-3.5 {{ $tab === 'terbaru' ? 'text-amber-500' : 'text-neutral-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                             </svg>
-                            <span>Fresh Deploy</span>
+                            <span>Terbaru</span>
+                        </a>
+                        <a href="{{ route('projects.index', array_merge(request()->query(), ['tab' => 'prototype'])) }}" 
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition {{ $tab === 'prototype' ? 'bg-purple-500/20 text-purple-600 dark:text-purple-300 shadow-2xs font-bold border border-purple-500/30' : 'text-neutral-500 dark:text-neutral-400 hover:text-purple-500 dark:hover:text-purple-300' }}">
+                            <svg class="w-3.5 h-3.5 {{ $tab === 'prototype' ? 'text-purple-500' : 'text-neutral-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
+                            </svg>
+                            <span>Prototipe</span>
                         </a>
                         <a href="{{ route('projects.index', array_merge(request()->query(), ['tab' => 'populer'])) }}" 
                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition {{ $tab === 'populer' ? 'bg-white dark:bg-[#202024] text-neutral-900 dark:text-white shadow-2xs font-bold' : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white' }}">
                             <svg class="w-3.5 h-3.5 {{ $tab === 'populer' ? 'text-yellow-500' : 'text-neutral-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
                             </svg>
-                            <span>Hall of Fame</span>
+                            <span>Top Upvoted</span>
                         </a>
                     </div>
 
@@ -506,8 +513,8 @@
 
         </div>
 
-        <!-- RIGHT COLUMN: ACTIVE COMMUNITY SIDEBAR (lg:col-span-4) -->
-        <aside class="lg:col-span-4 space-y-5 lg:sticky lg:top-20">
+        <!-- RIGHT COLUMN: ACTIVE COMMUNITY SIDEBAR (xl:col-span-4) -->
+        <aside class="xl:col-span-4 space-y-5 xl:sticky xl:top-20">
 
             <!-- WIDGET 1: CALL TO ACTION MINI PAMER -->
             <div class="spotlight-card p-5 bg-gradient-to-br from-orange-500/10 via-amber-500/5 to-transparent border border-orange-500/20 dark:border-orange-500/20 space-y-3">
