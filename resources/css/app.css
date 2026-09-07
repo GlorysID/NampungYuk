@@ -1,9 +1,289 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
+
+/* Base resets & typography */
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Clean minimal focus rings */
+input:focus, select:focus, textarea:focus {
+    outline: none;
+}
+
+/* Custom transitions with fluid cubic-bezier */
+.transition-fluid {
+    transition: all 400ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Double-Bezel Hardware Architecture */
+.double-bezel {
+    position: relative;
+    padding: 0.375rem;
+    border-radius: 1.5rem;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(245, 245, 245, 0.9) 100%);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+:is(.dark .double-bezel) {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.01) 100%);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6), 0 12px 30px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.bezel-core {
+    border-radius: calc(1.5rem - 0.375rem);
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+:is(.dark .bezel-core) {
+    background: #0d0d0d;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* Linear-Style Minimalist Card */
+.linear-card {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 6px 16px -4px rgba(0, 0, 0, 0.04);
+    transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+}
+
+.linear-card:hover {
+    border-color: rgba(0, 0, 0, 0.16);
+    box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.08);
+}
+
+:is(.dark .linear-card) {
+    background: #0f0f0f;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6), 0 8px 24px -6px rgba(0, 0, 0, 0.5);
+}
+
+:is(.dark .linear-card:hover) {
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.7);
+}
+
+/* Linear-Style Subtle Tag Pill */
+.linear-pill {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 0.5rem;
+    background: #f4f4f5;
+    color: #52525b;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 150ms ease;
+}
+
+:is(.dark .linear-pill) {
+    background: #181818;
+    color: #a1a1aa;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+:is(.dark .linear-pill:hover) {
+    background: #222222;
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Floating Glass Island */
+.glass-island {
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.07);
+}
+
+:is(.dark .glass-island) {
+    background: rgba(13, 13, 13, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: 0 14px 40px -10px rgba(0, 0, 0, 0.75);
+}
+
+/* Terminal Console Window */
+.terminal-window {
+    background: #080808;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1rem;
+    font-family: var(--font-mono);
+}
+
+/* Keyboard active navigation outline */
+.keyboard-active-card {
+    outline: 2px solid #f97316 !important;
+    outline-offset: 3px !important;
+    transform: translateY(-2px);
+}
+
+/* Radar pulse animation for Live Demo */
+@keyframes radar-ping {
+    0% {
+        transform: scale(0.95);
+        opacity: 0.8;
+    }
+    50% {
+        transform: scale(1.6);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+}
+
+.animate-radar {
+    animation: radar-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Thin developer scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(150, 150, 150, 0.25);
+    border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(150, 150, 150, 0.4);
+}
+
+/* Vercel / Supabase Sleek Dark Engineering Tokens */
+.bg-dot-grid {
+    background-image: radial-gradient(rgba(0, 0, 0, 0.07) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+
+:is(.dark .bg-dot-grid) {
+    background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+
+/* Ambient Top Lighting Beam */
+.ambient-beam {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 960px;
+    height: 420px;
+    background: radial-gradient(ellipse 65% 45% at 50% 0%, rgba(249, 115, 22, 0.13), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Spotlight Engineering Card (Vercel / Supabase) */
+.spotlight-card {
+    position: relative;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 1rem;
+    overflow: hidden;
+    transition: border-color 220ms ease, box-shadow 220ms ease, transform 200ms ease;
+}
+
+:is(.dark .spotlight-card) {
+    background: #09090b;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+}
+
+:is(.dark .spotlight-card:hover) {
+    border-color: rgba(255, 255, 255, 0.24);
+    box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.8), 0 0 24px 2px rgba(249, 115, 22, 0.07);
+}
+
+/* Dynamic Spotlight Glow Pseudo-element driven by CSS vars --mouse-x, --mouse-y */
+.spotlight-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border-radius: inherit;
+    background: radial-gradient(
+        500px circle at var(--mouse-x, -500px) var(--mouse-y, -500px),
+        rgba(249, 115, 22, 0.1),
+        transparent 45%
+    );
+    opacity: 0;
+    transition: opacity 300ms ease;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.spotlight-card:hover::before {
+    opacity: 1;
+}
+
+/* High Contrast Vercel Buttons */
+.btn-vercel-primary {
+    background: #000000;
+    color: #ffffff;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    transition: all 180ms ease;
+}
+
+.btn-vercel-primary:hover {
+    background: #18181b;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+:is(.dark .btn-vercel-primary) {
+    background: #ffffff;
+    color: #000000;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+:is(.dark .btn-vercel-primary:hover) {
+    background: #f4f4f5;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.35);
+}
+
+/* Code Block macOS Window Controls */
+.code-window-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.875rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.window-dot-red { background-color: #ef4444; }
+.window-dot-yellow { background-color: #f59e0b; }
+.window-dot-green { background-color: #10b981; }
+
