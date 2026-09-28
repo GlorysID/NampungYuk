@@ -15,15 +15,20 @@ class Project extends Model
     protected $fillable = [
         'user_id',
         'category_id',
+        'project_type',
+        'status',
         'title',
         'slug',
         'tagline',
         'description',
+        'challenges',
+        'learnings',
         'thumbnail',
         'demo_url',
         'github_url',
         'prototype_url',
         'tech_stacks',
+        'setup_instructions',
         'upvotes_count',
         'downvotes_count',
         'score',
@@ -96,8 +101,34 @@ class Project extends Model
             $q->where('title', 'like', "%{$term}%")
                 ->orWhere('tagline', 'like', "%{$term}%")
                 ->orWhere('description', 'like', "%{$term}%")
-                ->orWhere('tech_stacks', 'like', "%{$term}%");
+                ->orWhere('tech_stacks', 'like', "%{$term}%")
+                ->orWhereHas('user', function (Builder $userQuery) use ($term) {
+                    $userQuery->where('name', 'like', "%{$term}%")
+                        ->orWhere('username', 'like', "%{$term}%");
+                });
         });
+    }
+
+    public function getStatusLabel(): ?string
+    {
+        return match ($this->status) {
+            'idea' => 'Ide / Konsep',
+            'prototype' => 'Prototipe',
+            'beta' => 'Versi Beta',
+            'production' => 'Rilis Publik',
+            'archived' => 'Arsip',
+            default => $this->status ? ucfirst($this->status) : null,
+        };
+    }
+
+    public function hasKnowledge(): bool
+    {
+        return ! empty(trim((string) $this->challenges)) || ! empty(trim((string) $this->learnings));
+    }
+
+    public function hasSetupInstructions(): bool
+    {
+        return ! empty(trim((string) $this->setup_instructions));
     }
 
     public function getUserVoteType(?int $userId = null, ?string $ip = null): ?string

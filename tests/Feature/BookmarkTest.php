@@ -44,7 +44,7 @@ class BookmarkTest extends TestCase
         ]);
     }
 
-    public function test_guest_can_bookmark_project_via_ip(): void
+    public function test_guest_cannot_bookmark_project_unauthorized(): void
     {
         $category = Category::create(['name' => 'Mobile', 'slug' => 'mobile']);
         $project = Project::create([
@@ -56,13 +56,7 @@ class BookmarkTest extends TestCase
         ]);
 
         $response = $this->postJson('/project/'.$project->id.'/bookmark');
-        $response->assertStatus(200);
-        $response->assertJson(['success' => true, 'bookmarked' => true]);
-
-        $this->assertDatabaseHas('project_bookmarks', [
-            'project_id' => $project->id,
-            'user_id' => null,
-        ]);
+        $response->assertStatus(401);
     }
 
     public function test_user_can_view_bookmarked_projects_page(): void

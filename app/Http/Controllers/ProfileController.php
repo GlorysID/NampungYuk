@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ProjectBookmark;
+use App\Models\ProjectVote;
 use App\Models\User;
 use Illuminate\View\View;
 
@@ -28,6 +30,14 @@ class ProfileController extends Controller
         $totalUpvotesReceived = $user->projects()->sum('upvotes_count');
         $totalProjects = $user->projects()->count();
 
-        return view('users.show', compact('user', 'projects', 'comments', 'totalUpvotesReceived', 'totalProjects'));
+        $currentUserId = auth()->id();
+        $userBookmarkedIds = $currentUserId
+            ? ProjectBookmark::where('user_id', $currentUserId)->pluck('project_id')->toArray()
+            : [];
+        $userVotes = $currentUserId
+            ? ProjectVote::where('user_id', $currentUserId)->pluck('type', 'project_id')->toArray()
+            : [];
+
+        return view('users.show', compact('user', 'projects', 'comments', 'totalUpvotesReceived', 'totalProjects', 'userBookmarkedIds', 'userVotes'));
     }
 }

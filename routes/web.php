@@ -8,16 +8,17 @@ use App\Http\Controllers\ProjectController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [ProjectController::class, 'index'])->name('projects.index');
-Route::get('/unggah', [ProjectController::class, 'create'])->name('projects.create');
-Route::post('/unggah', [ProjectController::class, 'store'])->name('projects.store');
 Route::get('/project/{slug}', [ProjectController::class, 'show'])->name('projects.show');
-Route::post('/project/{project}/vote', [ProjectController::class, 'vote'])->name('projects.vote');
-Route::post('/project/{project}/comment', [ProjectController::class, 'comment'])->name('projects.comment');
-Route::post('/project/{project}/bookmark', [ProjectController::class, 'bookmark'])->name('projects.bookmark');
-Route::get('/koleksi', [ProjectController::class, 'bookmarks'])->name('projects.bookmarks');
-
-// User profile public route
 Route::get('/u/{username}', [ProfileController::class, 'show'])->name('profile.show');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/unggah', [ProjectController::class, 'create'])->name('projects.create');
+    Route::post('/unggah', [ProjectController::class, 'store'])->name('projects.store');
+    Route::post('/project/{project}/vote', [ProjectController::class, 'vote'])->name('projects.vote');
+    Route::post('/project/{project}/comment', [ProjectController::class, 'comment'])->name('projects.comment');
+    Route::post('/project/{project}/bookmark', [ProjectController::class, 'bookmark'])->name('projects.bookmark');
+    Route::get('/koleksi', [ProjectController::class, 'bookmarks'])->name('projects.bookmarks');
+});
 
 Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisterController::class, 'create'])->name('register');

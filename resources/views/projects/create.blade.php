@@ -1,236 +1,576 @@
 @extends('layouts.app')
 
-@section('title', 'Pamerkan Karya Codingan Baru — NampungYuk')
+@section('title', 'Pamerkan Karya Codingan — NampungYuk')
+@section('meta_description', 'Bagikan karya project codingan kamu kepada komunitas developer. Jelaskan arsitektur, tantangan, dan apa yang kamu pelajari.')
 
 @section('content')
-<div class="space-y-6">
+<div class="space-y-6 max-w-4xl mx-auto"
+     x-data="{
+         currentStep: 1,
+         totalSteps: 5,
+         title: '{{ old('title', '') }}',
+         tagline: '{{ old('tagline', '') }}',
+         categoryId: '{{ old('category_id', '') }}',
+         categoryName: '',
+         projectType: '{{ old('project_type', 'web') }}',
+         status: '{{ old('status', 'beta') }}',
+         thumbnailUrl: '{{ old('thumbnail_url', '') }}',
+         demoUrl: '{{ old('demo_url', '') }}',
+         githubUrl: '{{ old('github_url', '') }}',
+         prototypeUrl: '{{ old('prototype_url', '') }}',
+         techInput: '',
+         techList: {{ json_encode(old('tech_stacks') ? array_filter(array_map('trim', explode(',', old('tech_stacks')))) : ['Laravel', 'TailwindCSS']) }},
+         description: `{{ old('description', '') }}`,
+         challenges: `{{ old('challenges', '') }}`,
+         learnings: `{{ old('learnings', '') }}`,
+         setupInstructions: `{{ old('setup_instructions', '') }}`,
 
-    <!-- Header & Back link -->
-    <div>
-        <a href="{{ route('projects.index') }}" 
-           class="inline-flex items-center gap-1.5 text-xs font-mono text-neutral-500 dark:text-neutral-400 hover:text-orange-500 transition mb-3">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-            </svg>
-            <span>Kembali ke Feed</span>
-        </a>
-        <div class="flex items-center gap-2 mb-1">
-            <span class="px-2 py-0.5 rounded-md bg-orange-500/10 text-orange-500 text-[10px] font-mono font-bold border border-orange-500/20">
-                [ DEV SHOWCASE // NEW BUILD ]
-            </span>
-            <span class="text-xs text-neutral-400 font-mono">Buka untuk umum</span>
-        </div>
-        <h1 class="text-xl sm:text-2xl font-extrabold text-neutral-900 dark:text-white">
-            Pamerkan Karya Codinganmu
+         addTech(tech) {
+             const t = (tech || this.techInput).trim();
+             if (t && !this.techList.includes(t)) {
+                 this.techList.push(t);
+             }
+             this.techInput = '';
+         },
+         removeTech(index) {
+             this.techList.splice(index, 1);
+         },
+         get techStacksJoined() {
+             return this.techList.join(', ');
+         },
+         canProceed(step) {
+             if (step === 1) {
+                 return this.title.trim().length > 3 && this.tagline.trim().length > 5 && this.categoryId !== '';
+             }
+             if (step === 3) {
+                 return this.techList.length > 0;
+             }
+             return true;
+         },
+         goToStep(step) {
+             if (step > this.currentStep && !this.canProceed(this.currentStep)) {
+                 if (window.notify) notify('Lengkapi kolom wajib terlebih dahulu.');
+                 return;
+             }
+             this.currentStep = Math.min(Math.max(step, 1), this.totalSteps);
+             window.scrollTo({ top: 120, behavior: 'smooth' });
+         }
+     }">
+
+    <!-- Back to Feed Link -->
+    <a href="{{ route('projects.index') }}" 
+       class="inline-flex items-center gap-1.5 text-xs text-[#66736F] dark:text-[#8E9F9B] hover:text-[#0F766E] transition font-medium">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        <span>Kembali ke Feed</span>
+    </a>
+
+    <!-- Header Section -->
+    <div class="space-y-1">
+        <h1 class="text-xl sm:text-2xl font-extrabold text-[#17211F] dark:text-[#F2F5F4] tracking-tight">
+            Pamerkan Karya Codingan
         </h1>
-        <p class="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-            Tunjukkan project yang kamu bangun, bagikan link GitHub atau live demo, dan dapatkan feedback teknis dari sesama developer.
+        <p class="text-xs sm:text-sm text-[#66736F] dark:text-[#8E9F9B] leading-relaxed">
+            Dokumentasikan karya digitalmu, bagikan teknologi yang digunakan, tantangan yang dihadapi, serta pelajaran berharga untuk developer lain.
         </p>
     </div>
 
-    <!-- Upload Form Card (Vercel / Supabase Style) -->
-    <div class="spotlight-card p-6 sm:p-8 border border-neutral-200/80 dark:border-white/[0.08] bg-white dark:bg-[#09090b]">
+    <!-- Progressive Stepper Header -->
+    <nav class="ny-card p-3 bg-white dark:bg-[#151D1B] border border-[#DDE5E2] dark:border-[#24322F]" aria-label="Tahapan Formulir">
+        <div class="grid grid-cols-5 gap-1 sm:gap-2 text-center text-xs">
             
-            @if ($errors->any())
-                <div class="mb-6 p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs space-y-1">
-                    <p class="font-bold flex items-center gap-1.5">
-                        <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                        </svg>
-                        <span>Terjadi kesalahan input:</span>
-                    </p>
-                    <ul class="list-disc list-inside ml-5 font-mono">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
+            <button @click="goToStep(1)" type="button" 
+                    :class="{ 'text-[#0F766E] dark:text-teal-400 font-bold border-b-2 border-[#0F766E] dark:border-teal-400': currentStep === 1, 'text-[#66736F] dark:text-[#8E9F9B]': currentStep !== 1 }"
+                    class="py-2 flex flex-col sm:flex-row items-center justify-center gap-1 transition">
+                <span class="font-mono text-[10px] sm:text-xs">01</span>
+                <span class="hidden sm:inline">Project</span>
+            </button>
 
-            <form action="{{ route('projects.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
-                @csrf
+            <button @click="goToStep(2)" type="button" 
+                    :class="{ 'text-[#0F766E] dark:text-teal-400 font-bold border-b-2 border-[#0F766E] dark:border-teal-400': currentStep === 2, 'text-[#66736F] dark:text-[#8E9F9B]': currentStep !== 2 }"
+                    class="py-2 flex flex-col sm:flex-row items-center justify-center gap-1 transition">
+                <span class="font-mono text-[10px] sm:text-xs">02</span>
+                <span class="hidden sm:inline">Showcase</span>
+            </button>
 
-                @guest
-                    <!-- Author Name -->
-                    <div>
-                        <label for="guest_name" class="flex items-center gap-1.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 font-mono">
-                            <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                            </svg>
-                            <span>Nama / Alias Developer</span>
-                            <span class="text-orange-500">*</span>
-                        </label>
-                        <input type="text" name="guest_name" id="guest_name" required
-                               value="{{ old('guest_name') }}"
-                               placeholder="Contoh: Rian (Fullstack Dev)" 
-                               class="w-full px-4 py-2.5 text-xs sm:text-sm bg-neutral-50 dark:bg-[#111114] border border-neutral-300 dark:border-white/[0.08] rounded-xl focus:border-orange-500 text-neutral-900 dark:text-white">
-                    </div>
-                @endguest
+            <button @click="goToStep(3)" type="button" 
+                    :class="{ 'text-[#0F766E] dark:text-teal-400 font-bold border-b-2 border-[#0F766E] dark:border-teal-400': currentStep === 3, 'text-[#66736F] dark:text-[#8E9F9B]': currentStep !== 3 }"
+                    class="py-2 flex flex-col sm:flex-row items-center justify-center gap-1 transition">
+                <span class="font-mono text-[10px] sm:text-xs">03</span>
+                <span class="hidden sm:inline">Tech</span>
+            </button>
 
-                <!-- Project Title -->
-                <div>
-                    <label for="title" class="flex items-center gap-1.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 font-mono">
-                        <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
-                        </svg>
-                        <span>Nama / Judul Project Codingan</span>
-                        <span class="text-orange-500">*</span>
-                    </label>
-                    <input type="text" name="title" id="title" required
-                           value="{{ old('title') }}"
-                           placeholder="Contoh: KetikCepat.id — Platform Tes Mengetik Korpus Indonesia" 
-                           class="w-full px-4 py-2.5 text-xs sm:text-sm bg-neutral-50 dark:bg-[#111114] border border-neutral-300 dark:border-white/[0.08] rounded-xl focus:border-orange-500 text-neutral-900 dark:text-white font-medium">
-                </div>
+            <button @click="goToStep(4)" type="button" 
+                    :class="{ 'text-[#0F766E] dark:text-teal-400 font-bold border-b-2 border-[#0F766E] dark:border-teal-400': currentStep === 4, 'text-[#66736F] dark:text-[#8E9F9B]': currentStep !== 4 }"
+                    class="py-2 flex flex-col sm:flex-row items-center justify-center gap-1 transition">
+                <span class="font-mono text-[10px] sm:text-xs">04</span>
+                <span class="hidden sm:inline">Knowledge</span>
+            </button>
 
-                <!-- Tagline -->
-                <div>
-                    <label for="tagline" class="flex items-center gap-1.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 font-mono">
-                        <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
-                        </svg>
-                        <span>Tagline: 1 Kalimat Kenapa Codingan Ini Keren / Solutif</span>
-                        <span class="text-orange-500">*</span>
-                    </label>
-                    <input type="text" name="tagline" id="tagline" required
-                           value="{{ old('tagline') }}"
-                           placeholder="Jelaskan fungsi utama codingan ini dalam 1 kalimat padat dan menarik" 
-                           class="w-full px-4 py-2.5 text-xs sm:text-sm bg-neutral-50 dark:bg-[#111114] border border-neutral-300 dark:border-white/[0.08] rounded-xl focus:border-orange-500 text-neutral-900 dark:text-white">
-                </div>
+            <button @click="goToStep(5)" type="button" 
+                    :class="{ 'text-[#0F766E] dark:text-teal-400 font-bold border-b-2 border-[#0F766E] dark:border-teal-400': currentStep === 5, 'text-[#66736F] dark:text-[#8E9F9B]': currentStep !== 5 }"
+                    class="py-2 flex flex-col sm:flex-row items-center justify-center gap-1 transition">
+                <span class="font-mono text-[10px] sm:text-xs">05</span>
+                <span class="hidden sm:inline">Preview</span>
+            </button>
 
-                <!-- Category & Tech Stacks Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <!-- Category Select -->
-                    <div>
-                        <label for="category_id" class="flex items-center gap-1.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 font-mono">
-                            <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
-                            </svg>
-                            <span>Kategori Codingan</span>
-                            <span class="text-orange-500">*</span>
-                        </label>
-                        <select name="category_id" id="category_id" required
-                                class="w-full px-4 py-2.5 text-xs sm:text-sm bg-neutral-50 dark:bg-[#111114] border border-neutral-300 dark:border-white/[0.08] rounded-xl focus:border-orange-500 text-neutral-900 dark:text-white">
-                            <option value="">-- Pilih Kategori --</option>
-                            @foreach($categories as $cat)
-                                <option value="{{ $cat->id }}" {{ old('category_id') == $cat->id ? 'selected' : '' }}>
-                                    {{ $cat->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <!-- Tech Stacks -->
-                    <div>
-                        <label for="tech_stacks" class="flex items-center gap-1.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 font-mono">
-                            <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
-                            </svg>
-                            <span>Tech Stacks (Pisahkan koma)</span>
-                            <span class="text-orange-500">*</span>
-                        </label>
-                        <input type="text" name="tech_stacks" id="tech_stacks" required
-                               value="{{ old('tech_stacks') }}"
-                               placeholder="Laravel 12, Vue 3, TailwindCSS, Go, Docker" 
-                               class="w-full px-4 py-2.5 text-xs sm:text-sm bg-neutral-50 dark:bg-[#111114] border border-neutral-300 dark:border-white/[0.08] rounded-xl focus:border-orange-500 text-neutral-900 dark:text-white font-mono">
-                    </div>
-                </div>
-
-                <!-- URLs: Demo, GitHub, & Prototype -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                        <label for="demo_url" class="flex items-center gap-1.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 font-mono">
-                            <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                            </svg>
-                            <span>Live Demo (Opsional)</span>
-                        </label>
-                        <input type="url" name="demo_url" id="demo_url"
-                               value="{{ old('demo_url') }}"
-                               placeholder="https://projectkamu.com" 
-                               class="w-full px-4 py-2.5 text-xs sm:text-sm bg-neutral-50 dark:bg-[#111114] border border-neutral-300 dark:border-white/[0.08] rounded-xl focus:border-orange-500 text-neutral-900 dark:text-white">
-                    </div>
-
-                    <div>
-                        <label for="github_url" class="flex items-center gap-1.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 font-mono">
-                            <svg class="w-3.5 h-3.5 text-neutral-400" fill="currentColor" viewBox="0 0 24 24">
-                                <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
-                            </svg>
-                            <span>Repo GitHub (Opsional)</span>
-                        </label>
-                        <input type="url" name="github_url" id="github_url"
-                               value="{{ old('github_url') }}"
-                               placeholder="https://github.com/..." 
-                               class="w-full px-4 py-2.5 text-xs sm:text-sm bg-neutral-50 dark:bg-[#111114] border border-neutral-300 dark:border-white/[0.08] rounded-xl focus:border-orange-500 text-neutral-900 dark:text-white">
-                    </div>
-
-                    <div>
-                        <label for="prototype_url" class="flex items-center gap-1.5 text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1.5 font-mono">
-                            <svg class="w-3.5 h-3.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
-                            </svg>
-                            <span>Link Prototype (Opsional)</span>
-                        </label>
-                        <input type="url" name="prototype_url" id="prototype_url"
-                               value="{{ old('prototype_url') }}"
-                               placeholder="https://figma.com/proto/... atau framer" 
-                               class="w-full px-4 py-2.5 text-xs sm:text-sm bg-neutral-50 dark:bg-[#111114] border border-neutral-300 dark:border-white/[0.08] rounded-xl focus:border-purple-500 text-neutral-900 dark:text-white">
-                    </div>
-                </div>
-
-                <!-- Thumbnail Upload or URL -->
-                <div class="p-4 rounded-xl bg-neutral-50 dark:bg-[#111114] border border-neutral-200 dark:border-white/[0.08] space-y-3">
-                    <span class="flex items-center gap-1.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 font-mono">
-                        <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
-                        <span>Screenshot Aplikasi / Output Terminal (Opsional)</span>
-                    </span>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <span class="block text-[11px] text-neutral-400 mb-1 font-mono">Upload file screenshot:</span>
-                            <input type="file" name="thumbnail" accept="image/*"
-                                   class="text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-neutral-200 dark:file:bg-white/10 file:text-neutral-900 dark:file:text-white hover:file:bg-neutral-300 font-mono">
-                        </div>
-                        <div>
-                            <span class="block text-[11px] text-neutral-400 mb-1 font-mono">Atau masukkan URL gambar:</span>
-                            <input type="url" name="thumbnail_url" 
-                                   value="{{ old('thumbnail_url') }}"
-                                   placeholder="https://images.unsplash.com/..." 
-                                   class="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#09090b] border border-neutral-300 dark:border-white/[0.08] rounded-lg focus:border-orange-500 text-neutral-900 dark:text-white">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Long Description / Markdown -->
-                <div>
-                    <label for="description" class="flex items-center gap-1.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 font-mono">
-                        <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        <span>Bedah Arsitektur & Catatan Teknis (Fitur Utama & Cara Install)</span>
-                    </label>
-                    <textarea name="description" id="description" rows="6"
-                              placeholder="Ceritakan fitur unggulan, arsitektur kode yang kamu terapkan, tantangan saat ngoding, atau command cara menjalankannya..."
-                              class="w-full px-4 py-3 text-xs sm:text-sm bg-neutral-50 dark:bg-[#111114] border border-neutral-300 dark:border-white/[0.08] rounded-xl focus:border-orange-500 text-neutral-900 dark:text-white placeholder-neutral-400 leading-relaxed font-mono">{{ old('description') }}</textarea>
-                </div>
-
-                <!-- Submit Button -->
-                <div class="flex items-center justify-end gap-3 pt-2 border-t border-neutral-100 dark:border-white/[0.08]">
-                    <a href="{{ route('projects.index') }}" 
-                       class="px-4 py-2 text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 font-mono transition">
-                        Batal
-                    </a>
-                    <button type="submit" 
-                            class="btn-vercel-primary inline-flex items-center gap-2 px-6 py-2.5 text-xs sm:text-sm font-semibold rounded-xl shadow-xs active:scale-95 transition">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-                        </svg>
-                        <span>Publikasikan Karya Codingan</span>
-                    </button>
-                </div>
-
-            </form>
         </div>
+    </nav>
+
+    <!-- Error Summary if any -->
+    @if ($errors->any())
+        <div class="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs space-y-1.5" role="alert">
+            <p class="font-bold flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <span>Mohon periksa input berikut:</span>
+            </p>
+            <ul class="list-disc list-inside ml-5">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <!-- Upload Form -->
+    <form action="{{ route('projects.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+        @csrf
+
+        <!-- Hidden input for tech_stacks bound to Alpine -->
+        <input type="hidden" name="tech_stacks" :value="techStacksJoined">
+
+        <!-- ============================================================
+             SECTION 01: PROJECT IDENTITY
+             ============================================================ -->
+        <div x-show="currentStep === 1" class="ny-card p-6 sm:p-8 space-y-5 bg-white dark:bg-[#151D1B] border border-[#DDE5E2] dark:border-[#24322F]">
+            <div class="border-b border-[#DDE5E2] dark:border-[#24322F] pb-3">
+                <span class="text-[11px] font-mono font-bold text-[#0F766E] dark:text-teal-400">LANGKAH 01 DARI 05</span>
+                <h2 class="text-base sm:text-lg font-bold text-[#17211F] dark:text-[#F2F5F4]">Identitas Project</h2>
+                <p class="text-xs text-[#66736F] dark:text-[#8E9F9B]">Tentukan nama, pesan utama, dan kategori karya codinganmu.</p>
+            </div>
+
+            <!-- Title -->
+            <div class="space-y-1.5">
+                <label for="title" class="flex items-center gap-1 text-xs font-semibold text-[#17211F] dark:text-[#F2F5F4]">
+                    <span>Judul Project</span>
+                    <span class="text-rose-500 font-bold">*</span>
+                </label>
+                <input type="text" 
+                       name="title" 
+                       id="title" 
+                       required 
+                       maxlength="150"
+                       x-model="title"
+                       placeholder="Contoh: KetikCepat.id — Platform Belajar Mengetik Cepat" 
+                       class="ny-input font-medium text-sm">
+                <p class="text-[11px] text-[#66736F] dark:text-[#8E9F9B]">Nama karya yang jelas dan mudah diingat.</p>
+            </div>
+
+            <!-- Tagline -->
+            <div class="space-y-1.5">
+                <label for="tagline" class="flex items-center gap-1 text-xs font-semibold text-[#17211F] dark:text-[#F2F5F4]">
+                    <span>Tagline</span>
+                    <span class="text-rose-500 font-bold">*</span>
+                </label>
+                <input type="text" 
+                       name="tagline" 
+                       id="tagline" 
+                       required 
+                       maxlength="255"
+                       x-model="tagline"
+                       placeholder="Contoh: Platform web open-source untuk melatih kecepatan mengetik dengan korpus Bahasa Indonesia" 
+                       class="ny-input text-xs sm:text-sm">
+                <p class="text-[11px] text-[#66736F] dark:text-[#8E9F9B]">Jelaskan fungsi atau nilai utama project dalam 1 kalimat ringkas.</p>
+            </div>
+
+            <!-- Category, Type, & Status Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                
+                <!-- Category -->
+                <div class="space-y-1.5">
+                    <label for="category_id" class="flex items-center gap-1 text-xs font-semibold text-[#17211F] dark:text-[#F2F5F4]">
+                        <span>Kategori</span>
+                        <span class="text-rose-500 font-bold">*</span>
+                    </label>
+                    <select name="category_id" 
+                            id="category_id" 
+                            required 
+                            x-model="categoryId"
+                            class="ny-input text-xs">
+                        <option value="">-- Pilih Kategori --</option>
+                        @foreach($categories as $cat)
+                            <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Project Type -->
+                <div class="space-y-1.5">
+                    <label for="project_type" class="text-xs font-semibold text-[#17211F] dark:text-[#F2F5F4]">
+                        Tipe Platform
+                    </label>
+                    <select name="project_type" 
+                            id="project_type" 
+                            x-model="projectType"
+                            class="ny-input text-xs">
+                        <option value="web">Web Application</option>
+                        <option value="mobile">Mobile Application</option>
+                        <option value="cli">CLI / Developer Tool</option>
+                        <option value="library">Library / Package</option>
+                        <option value="desktop">Desktop Application</option>
+                        <option value="game">Game</option>
+                        <option value="other">Lainnya</option>
+                    </select>
+                </div>
+
+                <!-- Status -->
+                <div class="space-y-1.5">
+                    <label for="status" class="text-xs font-semibold text-[#17211F] dark:text-[#F2F5F4]">
+                        Status Pengembangan
+                    </label>
+                    <select name="status" 
+                            id="status" 
+                            x-model="status"
+                            class="ny-input text-xs">
+                        <option value="idea">Konsep / Ide</option>
+                        <option value="prototype">Prototipe</option>
+                        <option value="beta">Versi Beta</option>
+                        <option value="production">Rilis Publik (Live)</option>
+                        <option value="archived">Arsip</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <!-- Stepper Actions -->
+            <div class="flex justify-end pt-4 border-t border-[#DDE5E2] dark:border-[#24322F]">
+                <x-button @click="goToStep(2)" type="button" variant="primary" size="md">
+                    <span>Lanjut: Showcase</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </x-button>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             SECTION 02: SHOWCASE & LINKS
+             ============================================================ -->
+        <div x-show="currentStep === 2" class="ny-card p-6 sm:p-8 space-y-5 bg-white dark:bg-[#151D1B] border border-[#DDE5E2] dark:border-[#24322F]">
+            <div class="border-b border-[#DDE5E2] dark:border-[#24322F] pb-3">
+                <span class="text-[11px] font-mono font-bold text-[#0F766E] dark:text-teal-400">LANGKAH 02 DARI 05</span>
+                <h2 class="text-base sm:text-lg font-bold text-[#17211F] dark:text-[#F2F5F4]">Visual Showcase & Tautan</h2>
+                <p class="text-xs text-[#66736F] dark:text-[#8E9F9B]">Tautkan demo aplikasi, repositori kode, atau tangkapan layar antarmuka.</p>
+            </div>
+
+            <!-- Thumbnail Upload or URL -->
+            <div class="space-y-3">
+                <label class="text-xs font-semibold text-[#17211F] dark:text-[#F2F5F4]">
+                    Tangkapan Layar / Thumbnail Project
+                </label>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- File Upload -->
+                    <div class="p-4 rounded-xl border border-dashed border-[#DDE5E2] dark:border-[#24322F] text-center space-y-2 bg-[#F6F8F7] dark:bg-[#0F1413]">
+                        <svg class="w-8 h-8 text-[#66736F] mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <p class="text-xs text-[#66736F]">Unggah file gambar (PNG, JPG, WebP - maks 4MB)</p>
+                        <input type="file" name="thumbnail" accept="image/*" class="text-xs text-[#66736F]">
+                    </div>
+
+                    <!-- URL Alternative -->
+                    <div class="space-y-1.5">
+                        <label for="thumbnail_url" class="text-xs text-[#66736F] dark:text-[#8E9F9B]">
+                            Atau gunakan URL Gambar:
+                        </label>
+                        <input type="url" 
+                               name="thumbnail_url" 
+                               id="thumbnail_url"
+                               x-model="thumbnailUrl"
+                               placeholder="https://images.unsplash.com/..." 
+                               class="ny-input text-xs">
+                        <p class="text-[11px] text-[#66736F]">Jika dikosongkan, gambar ilustrasi developer otomatis digunakan.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- External Links: Live Demo, GitHub, Prototype -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                
+                <!-- Demo URL -->
+                <div class="space-y-1.5">
+                    <label for="demo_url" class="text-xs font-semibold text-[#17211F] dark:text-[#F2F5F4] flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span>Live Demo (Opsional)</span>
+                    </label>
+                    <input type="url" 
+                           name="demo_url" 
+                           id="demo_url"
+                           x-model="demoUrl"
+                           placeholder="https://projectkamu.com" 
+                           class="ny-input text-xs">
+                </div>
+
+                <!-- GitHub URL -->
+                <div class="space-y-1.5">
+                    <label for="github_url" class="text-xs font-semibold text-[#17211F] dark:text-[#F2F5F4] flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+                        </svg>
+                        <span>GitHub Repo (Opsional)</span>
+                    </label>
+                    <input type="url" 
+                           name="github_url" 
+                           id="github_url"
+                           x-model="githubUrl"
+                           placeholder="https://github.com/user/repo" 
+                           class="ny-input text-xs">
+                </div>
+
+                <!-- Prototype URL -->
+                <div class="space-y-1.5">
+                    <label for="prototype_url" class="text-xs font-semibold text-[#17211F] dark:text-[#F2F5F4] flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                        <span>Figma / Prototype (Opsional)</span>
+                    </label>
+                    <input type="url" 
+                           name="prototype_url" 
+                           id="prototype_url"
+                           x-model="prototypeUrl"
+                           placeholder="https://figma.com/proto/..." 
+                           class="ny-input text-xs">
+                </div>
+
+            </div>
+
+            <!-- Stepper Actions -->
+            <div class="flex items-center justify-between pt-4 border-t border-[#DDE5E2] dark:border-[#24322F]">
+                <x-button @click="goToStep(1)" type="button" variant="secondary" size="md">
+                    &larr; Kembali
+                </x-button>
+                <x-button @click="goToStep(3)" type="button" variant="primary" size="md">
+                    <span>Lanjut: Technology</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </x-button>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             SECTION 03: TECHNOLOGY
+             ============================================================ -->
+        <div x-show="currentStep === 3" class="ny-card p-6 sm:p-8 space-y-5 bg-white dark:bg-[#151D1B] border border-[#DDE5E2] dark:border-[#24322F]">
+            <div class="border-b border-[#DDE5E2] dark:border-[#24322F] pb-3">
+                <span class="text-[11px] font-mono font-bold text-[#0F766E] dark:text-teal-400">LANGKAH 03 DARI 05</span>
+                <h2 class="text-base sm:text-lg font-bold text-[#17211F] dark:text-[#F2F5F4]">Tech Stacks & Tools</h2>
+                <p class="text-xs text-[#66736F] dark:text-[#8E9F9B]">Tentukan bahasa pemrograman, framework, dan tools yang dipakai.</p>
+            </div>
+
+            <div class="space-y-3">
+                <!-- Tag Input Box -->
+                <div class="space-y-1.5">
+                    <label for="tech_input" class="text-xs font-semibold text-[#17211F] dark:text-[#F2F5F4]">
+                        Ketik nama teknologi lalu tekan Enter atau klik Tambah:
+                    </label>
+                    <div class="flex gap-2">
+                        <input type="text" 
+                               id="tech_input"
+                               x-model="techInput"
+                               @keydown.enter.prevent="addTech()"
+                               placeholder="Contoh: Laravel, Vue, TailwindCSS, PostgreSQL, Docker..." 
+                               class="ny-input font-mono text-xs">
+                        <x-button @click="addTech()" type="button" variant="secondary" size="sm" class="shrink-0">
+                            Tambah
+                        </x-button>
+                    </div>
+                </div>
+
+                <!-- Active Chips -->
+                <div class="p-3 rounded-xl bg-[#F6F8F7] dark:bg-[#0F1413] border border-[#DDE5E2] dark:border-[#24322F] min-h-[52px] flex items-center flex-wrap gap-2">
+                    <template x-for="(tech, index) in techList" :key="index">
+                        <span class="inline-flex items-center gap-1.5 font-mono text-xs px-2.5 py-1 rounded-md bg-[#CCFBF1] dark:bg-teal-950/50 text-[#0F766E] dark:text-teal-300 border border-teal-200/60 dark:border-teal-800/40">
+                            <span x-text="tech"></span>
+                            <button @click="removeTech(index)" type="button" class="hover:text-rose-600 transition" aria-label="Hapus tag">&times;</button>
+                        </span>
+                    </template>
+                    <p x-show="techList.length === 0" class="text-xs text-[#66736F] italic">
+                        Belum ada teknologi ditambahkan. Minimal sertakan 1 tech stack.
+                    </p>
+                </div>
+
+                <!-- Quick Suggestions -->
+                <div class="space-y-1.5 pt-2">
+                    <span class="text-[11px] font-mono text-[#66736F] dark:text-[#8E9F9B]">Pilihan Populer:</span>
+                    <div class="flex flex-wrap gap-1.5">
+                        @foreach(['Laravel', 'Vue.js', 'React', 'TailwindCSS', 'TypeScript', 'Next.js', 'Python', 'Go', 'Flutter', 'PostgreSQL', 'MySQL', 'Docker'] as $suggestion)
+                            <button @click="addTech('{{ $suggestion }}')" 
+                                    type="button" 
+                                    class="tech-pill text-[11px]">
+                                + {{ $suggestion }}
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stepper Actions -->
+            <div class="flex items-center justify-between pt-4 border-t border-[#DDE5E2] dark:border-[#24322F]">
+                <x-button @click="goToStep(2)" type="button" variant="secondary" size="md">
+                    &larr; Kembali
+                </x-button>
+                <x-button @click="goToStep(4)" type="button" variant="primary" size="md">
+                    <span>Lanjut: Knowledge</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </x-button>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             SECTION 04: KNOWLEDGE SHARING
+             ============================================================ -->
+        <div x-show="currentStep === 4" class="ny-card p-6 sm:p-8 space-y-5 bg-white dark:bg-[#151D1B] border border-[#DDE5E2] dark:border-[#24322F]">
+            <div class="border-b border-[#DDE5E2] dark:border-[#24322F] pb-3">
+                <span class="text-[11px] font-mono font-bold text-[#0F766E] dark:text-teal-400">LANGKAH 04 DARI 05</span>
+                <h2 class="text-base sm:text-lg font-bold text-[#17211F] dark:text-[#F2F5F4]">Knowledge Sharing & How to Run</h2>
+                <p class="text-xs text-[#66736F] dark:text-[#8E9F9B]">NampungYuk adalah tempat berbagi pengalaman developer, bukan sekadar etalase.</p>
+            </div>
+
+            <!-- Full Description / About -->
+            <div class="space-y-1.5">
+                <label for="description" class="text-xs font-semibold text-[#17211F] dark:text-[#F2F5F4]">
+                    Tentang Project Ini (Deskripsi Lengkap)
+                </label>
+                <textarea name="description" 
+                          id="description" 
+                          rows="4"
+                          x-model="description"
+                          placeholder="Jelaskan latar belakang, arsitektur, atau fitur-fitur penting yang dibangun..."
+                          class="ny-input text-xs sm:text-sm"></textarea>
+            </div>
+
+            <!-- Challenges -->
+            <div class="space-y-1.5">
+                <label for="challenges" class="text-xs font-semibold text-[#17211F] dark:text-[#F2F5F4] flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                    <span>Tantangan Teknis yang Dihadapi (Challenges)</span>
+                </label>
+                <textarea name="challenges" 
+                          id="challenges" 
+                          rows="3"
+                          x-model="challenges"
+                          placeholder="Contoh: Kesulitan saat sinkronisasi state WebSocket real-time, optimasi query N+1..."
+                          class="ny-input text-xs sm:text-sm"></textarea>
+            </div>
+
+            <!-- Learnings -->
+            <div class="space-y-1.5">
+                <label for="learnings" class="text-xs font-semibold text-[#17211F] dark:text-[#F2F5F4] flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span>Apa yang Dipelajari & Solusinya (Learnings)</span>
+                </label>
+                <textarea name="learnings" 
+                          id="learnings" 
+                          rows="3"
+                          x-model="learnings"
+                          placeholder="Contoh: Belajar mengimplementasikan batch indexing Redis dan pattern event-driven..."
+                          class="ny-input text-xs sm:text-sm"></textarea>
+            </div>
+
+            <!-- How To Run (Truthful instructions) -->
+            <div class="space-y-1.5">
+                <label for="setup_instructions" class="text-xs font-semibold text-[#17211F] dark:text-[#F2F5F4] flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-[#0F766E] dark:bg-teal-400"></span>
+                    <span>Cara Menjalankan Project (Opsional — Hanya tampil jika diisi)</span>
+                </label>
+                <textarea name="setup_instructions" 
+                          id="setup_instructions" 
+                          rows="4"
+                          x-model="setupInstructions"
+                          placeholder="git clone https://github.com/kamu/project.git&#10;composer install&#10;php artisan migrate&#10;npm install && npm run dev"
+                          class="ny-input font-mono text-xs"></textarea>
+                <p class="text-[11px] text-[#66736F]">Tuliskan langkah-langkah nyata untuk menjalankan project di lokal.</p>
+            </div>
+
+            <!-- Stepper Actions -->
+            <div class="flex items-center justify-between pt-4 border-t border-[#DDE5E2] dark:border-[#24322F]">
+                <x-button @click="goToStep(3)" type="button" variant="secondary" size="md">
+                    &larr; Kembali
+                </x-button>
+                <x-button @click="goToStep(5)" type="button" variant="primary" size="md">
+                    <span>Lanjut: Preview & Publikasikan</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </x-button>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             SECTION 05: PREVIEW & SUBMIT
+             ============================================================ -->
+        <div x-show="currentStep === 5" class="space-y-6">
+            <div class="ny-card p-6 sm:p-8 space-y-4 bg-white dark:bg-[#151D1B] border border-[#DDE5E2] dark:border-[#24322F]">
+                <div class="border-b border-[#DDE5E2] dark:border-[#24322F] pb-3">
+                    <span class="text-[11px] font-mono font-bold text-[#0F766E] dark:text-teal-400">LANGKAH 05 DARI 05</span>
+                    <h2 class="text-base sm:text-lg font-bold text-[#17211F] dark:text-[#F2F5F4]">Pratinjau Publikasi</h2>
+                    <p class="text-xs text-[#66736F] dark:text-[#8E9F9B]">Berikut tampilan bagaimana project ini akan terlihat di feed komunitas.</p>
+                </div>
+
+                <!-- Mockup Preview Card -->
+                <div class="ny-card p-4 sm:p-5 space-y-3 bg-[#F6F8F7] dark:bg-[#0F1413] border border-[#DDE5E2] dark:border-[#24322F]">
+                    
+                    <div class="flex items-center justify-between gap-2 text-xs">
+                        <div class="flex items-center gap-2">
+                            <x-user-avatar :user="Auth::user()" size="sm" />
+                            <div>
+                                <span class="font-bold text-[#17211F] dark:text-[#F2F5F4]">{{ Auth::user()->name }}</span>
+                                <span class="text-[#66736F] text-[11px]">&bull; Baru saja</span>
+                            </div>
+                        </div>
+
+                        <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-teal-50 dark:bg-teal-950/40 text-[#0F766E] dark:text-teal-300 border border-teal-200 dark:border-teal-800"
+                              x-text="status.toUpperCase()"></span>
+                    </div>
+
+                    <div class="space-y-1">
+                        <h3 class="font-bold text-base text-[#17211F] dark:text-[#F2F5F4]" x-text="title || 'Judul Project'"></h3>
+                        <p class="text-xs text-[#66736F] dark:text-[#8E9F9B]" x-text="tagline || 'Tagline ringkas project'"></p>
+                    </div>
+
+                    <!-- Tech chips preview -->
+                    <div class="flex flex-wrap gap-1.5 pt-1">
+                        <template x-for="tech in techList" :key="tech">
+                            <span class="tech-pill text-[11px]">
+                                #<span x-text="tech"></span>
+                            </span>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Final Verification & CTA Button -->
+                <div class="flex items-center justify-between pt-4 border-t border-[#DDE5E2] dark:border-[#24322F]">
+                    <x-button @click="goToStep(4)" type="button" variant="secondary" size="md">
+                        &larr; Ubah Data
+                    </x-button>
+
+                    <x-button type="submit" variant="primary" size="lg">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span>Publikasikan Project</span>
+                    </x-button>
+                </div>
+            </div>
+        </div>
+
+    </form>
 
 </div>
 @endsection
