@@ -5,19 +5,7 @@
         
         <!-- Brand Header -->
         <div class="flex items-center justify-between gap-3 px-1.5 pt-1">
-            <a href="{{ route('projects.index') }}" class="flex items-center gap-2.5 group">
-                <div class="w-8 h-8 rounded-lg bg-[#0F766E] text-white flex items-center justify-center font-mono font-bold text-xs shadow-xs group-hover:bg-[#115E59] transition">
-                    <span>{;}</span>
-                </div>
-                <div class="flex flex-col">
-                    <span class="text-sm font-extrabold tracking-tight text-[#17211F] dark:text-[#F2F5F4] leading-none flex items-center gap-1">
-                        Nampung<span class="text-[#0F766E] dark:text-teal-400">Yuk</span>
-                    </span>
-                    <span class="text-[9px] font-mono uppercase tracking-wider text-[#66736F] dark:text-[#8E9F9B] mt-0.5">
-                        Dev Showcase
-                    </span>
-                </div>
-            </a>
+            <x-logo size="md" :show-tagline="true" />
 
             <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#EBF0EE] dark:bg-[#1F2C29] text-[#66736F] dark:text-[#8E9F9B] border border-[#DDE5E2] dark:border-[#24322F]">
                 v1.0

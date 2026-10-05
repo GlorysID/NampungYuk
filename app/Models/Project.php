@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -43,6 +44,38 @@ class Project extends Model
             'tech_stacks' => 'array',
             'is_featured' => 'boolean',
         ];
+    }
+
+    /**
+     * Get normalized thumbnail URL.
+     */
+    protected function thumbnail(): Attribute
+    {
+        return Attribute::make(
+            get: function (?string $value): ?string {
+                if (! $value) {
+                    return null;
+                }
+
+                if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+                    if (preg_match('#/storage/(.+)$#', $value, $matches)) {
+                        return asset('storage/'.$matches[1]);
+                    }
+
+                    return $value;
+                }
+
+                if (str_starts_with($value, '/storage/')) {
+                    return asset(ltrim($value, '/'));
+                }
+
+                if (str_starts_with($value, 'storage/')) {
+                    return asset($value);
+                }
+
+                return asset('storage/'.$value);
+            }
+        );
     }
 
     public function user(): BelongsTo

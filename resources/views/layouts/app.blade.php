@@ -39,6 +39,9 @@
           activeCardIndex: -1,
           showHelpModal: false,
           toast: { show: false, message: '' },
+          init() {
+              window.notify = (msg) => this.notify(msg);
+          },
           notify(msg) {
               this.toast.message = msg;
               this.toast.show = true;
@@ -169,14 +172,7 @@
                     </button>
 
                     <!-- Mobile Brand Icon -->
-                    <a href="{{ route('projects.index') }}" class="flex lg:hidden items-center gap-2 group">
-                        <div class="w-7 h-7 rounded-lg bg-[#0F766E] text-white flex items-center justify-center font-mono font-bold text-xs shadow-xs">
-                            <span>{;}</span>
-                        </div>
-                        <span class="text-sm font-extrabold tracking-tight text-[#17211F] dark:text-[#F2F5F4] leading-none">
-                            Nampung<span class="text-[#0F766E] dark:text-teal-400">Yuk</span>
-                        </span>
-                    </a>
+                    <x-logo size="sm" class="lg:hidden" />
                 </div>
 
                 <!-- Center in Header: Universal Search -->
@@ -352,7 +348,7 @@
                 <!-- Clean Editorial Footer -->
                 <footer class="mt-16 pt-6 border-t border-[#DDE5E2] dark:border-[#24322F] text-xs text-[#66736F] dark:text-[#8E9F9B] flex flex-col sm:flex-row items-center justify-between gap-3">
                     <div class="flex items-center gap-2">
-                        <span class="font-bold text-[#17211F] dark:text-[#F2F5F4] font-mono">{;} NampungYuk</span>
+                        <x-logo size="sm" />
                         <span>&bull;</span>
                         <span>Platform Showcase Project & Pengalaman Developer</span>
                     </div>

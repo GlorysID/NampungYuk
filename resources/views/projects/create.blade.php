@@ -15,6 +15,7 @@
          projectType: '{{ old('project_type', 'web') }}',
          status: '{{ old('status', 'beta') }}',
          thumbnailUrl: '{{ old('thumbnail_url', '') }}',
+         previewImage: '',
          demoUrl: '{{ old('demo_url', '') }}',
          githubUrl: '{{ old('github_url', '') }}',
          prototypeUrl: '{{ old('prototype_url', '') }}',
@@ -25,6 +26,17 @@
          learnings: `{{ old('learnings', '') }}`,
          setupInstructions: `{{ old('setup_instructions', '') }}`,
 
+         handleFileSelect(event) {
+             const file = event.target.files[0];
+             if (file) {
+                 this.previewImage = URL.createObjectURL(file);
+             } else {
+                 this.previewImage = '';
+             }
+         },
+         get currentThumbnail() {
+             return this.previewImage || this.thumbnailUrl || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80';
+         },
          addTech(tech) {
              const t = (tech || this.techInput).trim();
              if (t && !this.techList.includes(t)) {
@@ -275,11 +287,18 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <!-- File Upload -->
                     <div class="p-4 rounded-xl border border-dashed border-[#DDE5E2] dark:border-[#24322F] text-center space-y-2 bg-[#F6F8F7] dark:bg-[#0F1413]">
-                        <svg class="w-8 h-8 text-[#66736F] mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
+                        <template x-if="previewImage">
+                            <div class="relative w-full aspect-video max-h-[160px] rounded-lg overflow-hidden border border-[#DDE5E2] dark:border-[#24322F] mb-2 mx-auto">
+                                <img :src="previewImage" alt="Preview Thumbnail" class="w-full h-full object-cover">
+                            </div>
+                        </template>
+                        <template x-if="!previewImage">
+                            <svg class="w-8 h-8 text-[#66736F] mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                        </template>
                         <p class="text-xs text-[#66736F]">Unggah file gambar (PNG, JPG, WebP - maks 4MB)</p>
-                        <input type="file" name="thumbnail" accept="image/*" class="text-xs text-[#66736F]">
+                        <input type="file" name="thumbnail" accept="image/*" @change="handleFileSelect($event)" class="text-xs text-[#66736F] w-full">
                     </div>
 
                     <!-- URL Alternative -->
@@ -294,6 +313,11 @@
                                placeholder="https://images.unsplash.com/..." 
                                class="ny-input text-xs">
                         <p class="text-[11px] text-[#66736F]">Jika dikosongkan, gambar ilustrasi developer otomatis digunakan.</p>
+                        <template x-if="thumbnailUrl && !previewImage">
+                            <div class="relative w-full aspect-video max-h-[120px] rounded-lg overflow-hidden border border-[#DDE5E2] dark:border-[#24322F] mt-2">
+                                <img :src="thumbnailUrl" alt="Preview URL" class="w-full h-full object-cover" onerror="this.parentElement.classList.add('hidden')">
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -542,6 +566,11 @@
                     <div class="space-y-1">
                         <h3 class="font-bold text-base text-[#17211F] dark:text-[#F2F5F4]" x-text="title || 'Judul Project'"></h3>
                         <p class="text-xs text-[#66736F] dark:text-[#8E9F9B]" x-text="tagline || 'Tagline ringkas project'"></p>
+                    </div>
+
+                    <!-- Visual Banner Preview -->
+                    <div class="relative w-full aspect-video max-h-[220px] rounded-lg overflow-hidden border border-[#DDE5E2] dark:border-[#24322F] bg-[#EBF0EE] dark:bg-[#1F2C29]">
+                        <img :src="currentThumbnail" alt="Preview Thumbnail" class="w-full h-full object-cover">
                     </div>
 
                     <!-- Tech chips preview -->

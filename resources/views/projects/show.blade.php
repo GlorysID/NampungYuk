@@ -260,6 +260,7 @@
                      alt="{{ $project->title }}" 
                      loading="lazy" 
                      decoding="async"
+                     onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80';"
                      class="w-full max-h-[500px] object-cover sm:object-contain mx-auto">
             </div>
         @endif
@@ -381,7 +382,7 @@
                               required
                               maxlength="1000"
                               placeholder="Bagikan apresiasi atau review arsitektur secara konstruktif..."
-                              class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white dark:bg-[#151D1B] border border-[#DDE5E2] dark:border-[#24322F] rounded-lg text-[#17211F] dark:text-[#F2F5F4] placeholder-[#66736F]/60 transition"></textarea>
+                              class="ny-input text-xs sm:text-sm"></textarea>
                 </div>
 
                 <div class="flex justify-end">

@@ -185,7 +185,7 @@ class ProjectController extends Controller
         $thumbnailPath = null;
         if ($request->hasFile('thumbnail')) {
             $path = $request->file('thumbnail')->store('thumbnails', 'public');
-            $thumbnailPath = asset('storage/'.$path);
+            $thumbnailPath = '/storage/'.$path;
         } elseif (! empty($validated['thumbnail_url'])) {
             $thumbnailPath = $validated['thumbnail_url'];
         } else {
