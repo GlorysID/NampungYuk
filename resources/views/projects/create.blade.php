@@ -52,7 +52,7 @@
          },
          canProceed(step) {
              if (step === 1) {
-                 return this.title.trim().length > 3 && this.tagline.trim().length > 5 && this.categoryId !== '';
+                 return this.title.trim().length >= 2 && this.tagline.trim().length >= 3 && this.categoryId !== '';
              }
              if (step === 3) {
                  return this.techList.length > 0;
@@ -61,11 +61,44 @@
          },
          goToStep(step) {
              if (step > this.currentStep && !this.canProceed(this.currentStep)) {
-                 if (window.notify) notify('Lengkapi kolom wajib terlebih dahulu.');
+                 if (window.notify) {
+                     if (this.currentStep === 1) {
+                         if (!this.title.trim() || this.title.trim().length < 2) notify('Judul project minimal 2 karakter.');
+                         else if (!this.tagline.trim() || this.tagline.trim().length < 3) notify('Tagline project minimal 3 karakter.');
+                         else if (!this.categoryId) notify('Pilih kategori project terlebih dahulu.');
+                     } else if (this.currentStep === 3) {
+                         notify('Minimal sertakan 1 teknologi (tech stack).');
+                     } else {
+                         notify('Lengkapi kolom wajib terlebih dahulu.');
+                     }
+                 }
                  return;
              }
              this.currentStep = Math.min(Math.max(step, 1), this.totalSteps);
              window.scrollTo({ top: 120, behavior: 'smooth' });
+         },
+         submitForm(e) {
+             if (!this.title.trim() || this.title.trim().length < 2) {
+                 this.goToStep(1);
+                 if (window.notify) notify('Judul project wajib diisi (minimal 2 karakter).');
+                 return;
+             }
+             if (!this.tagline.trim() || this.tagline.trim().length < 3) {
+                 this.goToStep(1);
+                 if (window.notify) notify('Tagline project wajib diisi (minimal 3 karakter).');
+                 return;
+             }
+             if (!this.categoryId) {
+                 this.goToStep(1);
+                 if (window.notify) notify('Pilih kategori project terlebih dahulu.');
+                 return;
+             }
+             if (!this.techList.length) {
+                 this.goToStep(3);
+                 if (window.notify) notify('Minimal sertakan 1 teknologi (tech stack).');
+                 return;
+             }
+             e.target.submit();
          }
      }">
 
@@ -148,7 +181,7 @@
     @endif
 
     <!-- Upload Form -->
-    <form action="{{ route('projects.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+    <form action="{{ route('projects.store') }}" method="POST" enctype="multipart/form-data" novalidate @submit.prevent="submitForm($event)" class="space-y-6">
         @csrf
 
         <!-- Hidden input for tech_stacks bound to Alpine -->
