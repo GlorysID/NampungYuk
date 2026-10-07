@@ -1,4 +1,4 @@
-@props([
+﻿@props([
     'title' => 'Belum ada data',
     'description' => null,
     'actionLabel' => null,
@@ -6,7 +6,7 @@
 ])
 
 <div class="ny-card p-8 sm:p-12 text-center space-y-3">
-    <div class="w-12 h-12 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-[#0F766E] dark:text-teal-400 mx-auto flex items-center justify-center border border-teal-200/50 dark:border-teal-800/40">
+    <div class="w-12 h-12 rounded-xl bg-[#d9fbf4] dark:bg-[#50d2c1]/12 text-[#0e9c8b] dark:text-[#50d2c1] mx-auto flex items-center justify-center border border-[#50d2c1]/30 dark:border-[#50d2c1]/30">
         {{ $icon ?? '' }}
         @if(!isset($icon))
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -16,11 +16,11 @@
     </div>
 
     <div class="space-y-1 max-w-sm mx-auto">
-        <h3 class="font-bold text-sm sm:text-base text-[#17211F] dark:text-[#F2F5F4]">
+        <h3 class="font-bold text-sm sm:text-base text-[#10161f] dark:text-[#eaecf0]">
             {{ $title }}
         </h3>
         @if($description)
-            <p class="text-xs text-[#66736F] dark:text-[#8E9F9B] leading-relaxed">
+            <p class="text-xs text-[#5c6979] dark:text-[#7e8a9a] leading-relaxed">
                 {{ $description }}
             </p>
         @endif

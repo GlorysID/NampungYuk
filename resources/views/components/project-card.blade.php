@@ -1,10 +1,10 @@
-@props([
+﻿@props([
     'project',
     'initialVote' => null,
     'isBookmarked' => false,
 ])
 
-<article class="project-nav-card ny-card p-4 sm:p-5 space-y-3.5 group bg-white dark:bg-[#151D1B] border border-[#DDE5E2] dark:border-[#24322F] transition duration-150"
+<article class="project-nav-card ny-card p-4 sm:p-5 space-y-3.5 group bg-white dark:bg-[#141821] border border-[#d5dbe2] dark:border-[#262d3a] transition duration-150"
          x-data="{
              score: {{ $project->score }},
              userVote: '{{ $initialVote }}',
@@ -79,7 +79,7 @@
 
     <!-- 1. Visual Preview Banner (Thumbnail) -->
     @if($project->thumbnail)
-        <div class="relative overflow-hidden rounded-xl bg-[#EBF0EE] dark:bg-[#1F2C29] border border-[#DDE5E2]/60 dark:border-[#24322F] aspect-video max-h-[280px]">
+        <div class="relative overflow-hidden rounded-xl bg-[#e6eaee] dark:bg-[#1e2530] border border-[#d5dbe2]/60 dark:border-[#262d3a] aspect-video max-h-[280px]">
             <a href="{{ route('projects.show', $project->slug) }}" class="block w-full h-full" tabindex="-1" aria-hidden="true">
                 <img src="{{ $project->thumbnail }}" 
                      alt="{{ $project->title }}" 
@@ -91,7 +91,7 @@
 
             @if($project->demo_url)
                 <a href="{{ $project->demo_url }}" target="_blank" rel="noopener noreferrer"
-                   class="absolute top-3 right-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono font-medium bg-white/95 dark:bg-[#151D1B]/95 text-[#0F766E] dark:text-teal-300 shadow-sm border border-[#DDE5E2] dark:border-[#24322F] hover:bg-white transition"
+                   class="absolute top-3 right-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono font-medium bg-white/95 dark:bg-[#141821]/95 text-[#0e9c8b] dark:text-[#50d2c1] border border-[#d5dbe2] dark:border-[#262d3a] hover:bg-white transition"
                    title="Buka Live Demo">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                     <span>Live Demo</span>
@@ -101,7 +101,7 @@
                 </a>
             @elseif($project->prototype_url)
                 <a href="{{ $project->prototype_url }}" target="_blank" rel="noopener noreferrer"
-                   class="absolute top-3 right-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono font-medium bg-white/95 dark:bg-[#151D1B]/95 text-purple-700 dark:text-purple-300 shadow-sm border border-purple-200 dark:border-purple-800 hover:bg-white transition"
+                   class="absolute top-3 right-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono font-medium bg-white/95 dark:bg-[#141821]/95 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-white transition"
                    title="Buka Prototipe Interaktif">
                     <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
                     <span>Prototipe</span>
@@ -115,13 +115,13 @@
 
     <!-- 3. Project Title & Tagline -->
     <div class="space-y-1">
-        <h2 class="text-base sm:text-lg font-bold text-[#17211F] dark:text-[#F2F5F4] leading-snug group-hover:text-[#0F766E] dark:group-hover:text-teal-400 transition">
+        <h2 class="text-base sm:text-lg font-bold text-[#10161f] dark:text-[#eaecf0] leading-snug group-hover:text-[#0e9c8b] dark:group-hover:text-[#50d2c1] transition">
             <a href="{{ route('projects.show', $project->slug) }}" class="card-detail-link focus-visible:rounded">
                 {{ $project->title }}
             </a>
         </h2>
 
-        <p class="text-xs sm:text-sm text-[#66736F] dark:text-[#8E9F9B] leading-relaxed line-clamp-2">
+        <p class="text-xs sm:text-sm text-[#5c6979] dark:text-[#7e8a9a] leading-relaxed line-clamp-2">
             {{ $project->tagline }}
         </p>
     </div>
@@ -133,7 +133,7 @@
                 <x-tech-pill :name="$tech" />
             @endforeach
             @if(count($project->tech_stacks) > 5)
-                <span class="text-[11px] font-mono text-[#66736F] dark:text-[#8E9F9B] self-center">
+                <span class="text-[11px] font-mono text-[#5c6979] dark:text-[#7e8a9a] self-center">
                     +{{ count($project->tech_stacks) - 5 }}
                 </span>
             @endif

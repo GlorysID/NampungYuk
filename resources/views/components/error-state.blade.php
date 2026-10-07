@@ -1,4 +1,4 @@
-@props([
+﻿@props([
     'title' => 'Terjadi Kesalahan',
     'message' => 'Gagal memuat data. Silakan coba kembali beberapa saat lagi.',
     'retryUrl' => null,
@@ -12,8 +12,8 @@
     </div>
 
     <div class="space-y-1">
-        <h3 class="font-bold text-sm text-[#17211F] dark:text-[#F2F5F4]">{{ $title }}</h3>
-        <p class="text-xs text-[#66736F] dark:text-[#8E9F9B] max-w-sm mx-auto">{{ $message }}</p>
+        <h3 class="font-bold text-sm text-[#10161f] dark:text-[#eaecf0]">{{ $title }}</h3>
+        <p class="text-xs text-[#5c6979] dark:text-[#7e8a9a] max-w-sm mx-auto">{{ $message }}</p>
     </div>
 
     @if($retryUrl)

@@ -1,4 +1,4 @@
-@props([
+﻿@props([
     'name',
     'id' => null,
     'label' => null,
@@ -18,7 +18,7 @@
 
 <div class="space-y-1.5">
     @if($label)
-        <label for="{{ $inputId }}" class="flex items-center justify-between text-xs font-semibold text-[#17211F] dark:text-[#F2F5F4]">
+        <label for="{{ $inputId }}" class="flex items-center justify-between text-xs font-semibold text-[#10161f] dark:text-[#eaecf0]">
             <span class="flex items-center gap-1">
                 {{ $label }}
                 @if($required)
@@ -26,7 +26,7 @@
                 @endif
             </span>
             @if($hint)
-                <span class="text-[11px] font-normal text-[#66736F] dark:text-[#8E9F9B]">{{ $hint }}</span>
+                <span class="text-[11px] font-normal text-[#5c6979] dark:text-[#7e8a9a]">{{ $hint }}</span>
             @endif
         </label>
     @endif
@@ -39,10 +39,10 @@
                placeholder="{{ $placeholder }}"
                @if($required) required @endif
                {{ $attributes->merge([
-                   'class' => 'w-full px-3.5 py-2 text-xs sm:text-sm bg-white dark:bg-[#151D1B] border rounded-lg text-[#17211F] dark:text-[#F2F5F4] placeholder-[#66736F]/60 transition ' . 
+                   'class' => 'w-full px-3.5 py-2 text-xs sm:text-sm bg-white dark:bg-[#141821] border rounded-lg text-[#10161f] dark:text-[#eaecf0] placeholder-[#5c6979]/60 transition ' . 
                    ($hasError 
                        ? 'border-rose-400 dark:border-rose-500 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20' 
-                       : 'border-[#DDE5E2] dark:border-[#24322F] focus:border-[#0F766E] dark:focus:border-[#14B8A6] focus:ring-2 focus:ring-[#0F766E]/20')
+                       : 'border-[#d5dbe2] dark:border-[#262d3a] focus:border-[#0e9c8b] dark:focus:border-[#50d2c1] focus:ring-2 focus:ring-[#0e9c8b]/20')
                ]) }} />
     </div>
 

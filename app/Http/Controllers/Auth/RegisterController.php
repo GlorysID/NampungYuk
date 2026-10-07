@@ -26,7 +26,7 @@ class RegisterController extends Controller
         User::create($request->validated());
 
         return redirect()
-            ->route('register')
-            ->with('status', 'Registrasi berhasil! Akun Anda telah dibuat.');
+            ->route('login')
+            ->with('status', 'Registrasi berhasil! Silakan masuk dengan akun barumu.');
     }
 }

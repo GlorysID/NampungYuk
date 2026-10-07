@@ -1,4 +1,4 @@
-@props([
+﻿@props([
     'size' => 'md', // 'sm', 'md', 'lg'
     'showText' => true,
     'showTagline' => false,
@@ -18,7 +18,7 @@
             'tagline' => 'text-[10px]',
         ],
         'lg' => [
-            'icon' => 'w-10 h-10 rounded-xl text-sm',
+            'icon' => 'w-10 h-10 rounded-lg text-sm',
             'text' => 'text-xl',
             'tagline' => 'text-xs',
         ],
@@ -37,17 +37,17 @@
     @endif
 
         <!-- Icon Badge -->
-        <div class="{{ $sizes['icon'] }} bg-[#0F766E] hover:bg-[#115E59] text-white flex items-center justify-center font-mono font-bold shadow-xs transition shrink-0">
+        <div class="{{ $sizes['icon'] }} bg-[#0e9c8b] hover:bg-[#0b7d70] text-white flex items-center justify-center font-mono font-bold transition shrink-0">
             <span>{;}</span>
         </div>
 
         @if($showText)
             <div class="flex flex-col">
-                <span class="{{ $sizes['text'] }} font-extrabold tracking-tight text-[#17211F] dark:text-[#F2F5F4] leading-none flex items-center gap-0.5">
-                    Nampung<span class="text-[#0F766E] dark:text-teal-400">Yuk</span>
+                <span class="{{ $sizes['text'] }} font-extrabold tracking-tight text-[#10161f] dark:text-[#eaecf0] leading-none flex items-center gap-0.5">
+                    Nampung<span class="text-[#0e9c8b] dark:text-[#50d2c1]">Yuk</span>
                 </span>
                 @if($showTagline)
-                    <span class="{{ $sizes['tagline'] }} font-mono uppercase tracking-wider text-[#66736F] dark:text-[#8E9F9B] mt-0.5">
+                    <span class="{{ $sizes['tagline'] }} font-mono uppercase tracking-wider text-[#5c6979] dark:text-[#7e8a9a] mt-0.5">
                         Dev Showcase
                     </span>
                 @endif

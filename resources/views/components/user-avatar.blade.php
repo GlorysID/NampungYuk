@@ -1,4 +1,4 @@
-@props([
+﻿@props([
     'user' => null,
     'name' => null,
     'avatar' => null,
@@ -25,4 +25,4 @@
      alt="{{ $displayName }}" 
      loading="lazy"
      decoding="async"
-     {{ $attributes->merge(['class' => "$sizeClasses bg-[#EBF0EE] dark:bg-[#1F2C29] object-cover ring-1 ring-[#DDE5E2] dark:ring-[#24322F] shrink-0"]) }}>
+     {{ $attributes->merge(['class' => "$sizeClasses bg-[#e6eaee] dark:bg-[#1e2530] object-cover ring-1 ring-[#d5dbe2] dark:ring-[#262d3a] shrink-0"]) }}>

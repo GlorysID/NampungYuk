@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'NampungYuk — Platform Showcase Project & Pengalaman Developer')
 @section('meta_description', 'Temukan karya project codingan terbaik dari developer Indonesia. Pelajari arsitektur, tech stack, dan tantangan yang mereka hadapi.')
@@ -14,21 +14,21 @@
 
             <!-- ACTIVE FILTER BAR (Only visible when filter or search is active) -->
             @if($categorySlug || $techFilter || $search)
-                <div class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-white dark:bg-[#151D1B] border border-[#DDE5E2] dark:border-[#24322F] text-xs">
+                <div class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-white dark:bg-[#141821] border border-[#d5dbe2] dark:border-[#262d3a] text-xs">
                     <div class="flex items-center gap-2 flex-wrap">
-                        <span class="text-[#66736F] dark:text-[#8E9F9B] font-medium">Filter aktif:</span>
+                        <span class="text-[#5c6979] dark:text-[#7e8a9a] font-medium">Filter aktif:</span>
                         @if($categorySlug)
-                            <span class="px-2 py-0.5 rounded-md bg-[#EBF0EE] dark:bg-[#1F2C29] text-[#17211F] dark:text-[#F2F5F4] font-medium text-[11px] border border-[#DDE5E2] dark:border-[#24322F]">
+                            <span class="px-2 py-0.5 rounded-md bg-[#e6eaee] dark:bg-[#1e2530] text-[#10161f] dark:text-[#eaecf0] font-medium text-[11px] border border-[#d5dbe2] dark:border-[#262d3a]">
                                 Kategori: {{ $categorySlug }}
                             </span>
                         @endif
                         @if($techFilter)
-                            <span class="px-2 py-0.5 rounded-md bg-teal-50 dark:bg-teal-950/40 text-[#0F766E] dark:text-teal-300 font-mono text-[11px] border border-teal-200 dark:border-teal-800">
+                            <span class="px-2 py-0.5 rounded-md bg-[#d9fbf4] dark:bg-[#50d2c1]/12 text-[#0e9c8b] dark:text-[#50d2c1] font-mono text-[11px] border border-[#50d2c1]/30 dark:border-[#50d2c1]/30">
                                 #{{ $techFilter }}
                             </span>
                         @endif
                         @if($search)
-                            <span class="px-2 py-0.5 rounded-md bg-[#EBF0EE] dark:bg-[#1F2C29] text-[#17211F] dark:text-[#F2F5F4] text-[11px] border border-[#DDE5E2] dark:border-[#24322F]">
+                            <span class="px-2 py-0.5 rounded-md bg-[#e6eaee] dark:bg-[#1e2530] text-[#10161f] dark:text-[#eaecf0] text-[11px] border border-[#d5dbe2] dark:border-[#262d3a]">
                                 "{{ $search }}"
                             </span>
                         @endif
@@ -73,10 +73,10 @@
         <aside class="xl:col-span-4 sticky top-20 self-start space-y-4 max-h-[calc(100vh-5.5rem)] overflow-y-auto pr-1">
 
             <!-- BLOCK 2: Active Creators (Top Contributors) -->
-            <div class="ny-card p-4 space-y-3 bg-white dark:bg-[#151D1B]">
+            <div class="ny-card p-4 space-y-3 bg-white dark:bg-[#141821]">
                 <div class="flex items-center justify-between">
-                    <h3 class="font-bold text-xs uppercase tracking-wider text-[#66736F] dark:text-[#8E9F9B] flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5 text-[#0F766E] dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <h3 class="font-bold text-xs uppercase tracking-wider text-[#5c6979] dark:text-[#7e8a9a] flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-[#0e9c8b] dark:text-[#50d2c1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                         </svg>
                         <span>Top Kontributor</span>
@@ -86,31 +86,31 @@
                 <div class="space-y-2.5">
                     @forelse($topDevelopers as $dev)
                         <a href="{{ route('profile.show', $dev->username) }}" 
-                           class="flex items-center justify-between p-2 rounded-lg hover:bg-[#F0F4F2] dark:hover:bg-[#1B2623] transition group">
+                           class="flex items-center justify-between p-2 rounded-lg hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c] transition group">
                             <div class="flex items-center gap-2.5 min-w-0">
                                 <x-user-avatar :user="$dev" size="sm" />
                                 <div class="min-w-0">
-                                    <p class="font-bold text-xs text-[#17211F] dark:text-[#F2F5F4] group-hover:text-[#0F766E] dark:group-hover:text-teal-400 transition truncate">
+                                    <p class="font-bold text-xs text-[#10161f] dark:text-[#eaecf0] group-hover:text-[#0e9c8b] dark:group-hover:text-[#50d2c1] transition truncate">
                                         {{ $dev->name }}
                                     </p>
-                                    <p class="text-[11px] font-mono text-[#66736F] dark:text-[#8E9F9B] truncate">&#64;{{ $dev->username }}</p>
+                                    <p class="text-[11px] font-mono text-[#5c6979] dark:text-[#7e8a9a] truncate">&#64;{{ $dev->username }}</p>
                                 </div>
                             </div>
-                            <span class="text-[11px] font-mono font-semibold text-[#0F766E] dark:text-teal-400 px-2 py-0.5 rounded bg-teal-50 dark:bg-teal-950/40 border border-teal-200/60 dark:border-teal-800/40 shrink-0">
+                            <span class="text-[11px] font-mono font-semibold text-[#0e9c8b] dark:text-[#50d2c1] px-2 py-0.5 rounded bg-[#d9fbf4] dark:bg-[#50d2c1]/12 border border-[#50d2c1]/30 dark:border-[#50d2c1]/30 shrink-0">
                                 {{ $dev->reputation_points }} pt
                             </span>
                         </a>
                     @empty
-                        <p class="text-xs text-[#66736F] py-2 text-center">Belum ada kontributor terdaftar.</p>
+                        <p class="text-xs text-[#5c6979] py-2 text-center">Belum ada kontributor terdaftar.</p>
                     @endforelse
                 </div>
             </div>
 
             <!-- BLOCK 3: Recent Discussions / Feedback -->
-            <div class="ny-card p-4 space-y-3 bg-white dark:bg-[#151D1B]">
+            <div class="ny-card p-4 space-y-3 bg-white dark:bg-[#141821]">
                 <div class="flex items-center justify-between">
-                    <h3 class="font-bold text-xs uppercase tracking-wider text-[#66736F] dark:text-[#8E9F9B] flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5 text-[#0F766E] dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <h3 class="font-bold text-xs uppercase tracking-wider text-[#5c6979] dark:text-[#7e8a9a] flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-[#0e9c8b] dark:text-[#50d2c1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
                         </svg>
                         <span>Diskusi Terbaru</span>
@@ -119,19 +119,19 @@
 
                 <div class="space-y-3">
                     @forelse($recentReviews as $comment)
-                        <div class="p-2.5 rounded-lg bg-[#F6F8F7] dark:bg-[#0F1413] border border-[#DDE5E2]/60 dark:border-[#24322F] space-y-1.5">
+                        <div class="p-2.5 rounded-lg bg-[#eceff1] dark:bg-[#0b0e11] border border-[#d5dbe2]/60 dark:border-[#262d3a] space-y-1.5">
                             <div class="flex items-center justify-between text-[11px]">
-                                <span class="font-semibold text-[#17211F] dark:text-[#F2F5F4] truncate max-w-[120px]">
+                                <span class="font-semibold text-[#10161f] dark:text-[#eaecf0] truncate max-w-[120px]">
                                     {{ $comment->authorName() }}
                                 </span>
-                                <span class="text-[#66736F] dark:text-[#8E9F9B]">{{ $comment->created_at->diffForHumans() }}</span>
+                                <span class="text-[#5c6979] dark:text-[#7e8a9a]">{{ $comment->created_at->diffForHumans() }}</span>
                             </div>
-                            <p class="text-xs text-[#66736F] dark:text-[#8E9F9B] line-clamp-2 leading-relaxed">
+                            <p class="text-xs text-[#5c6979] dark:text-[#7e8a9a] line-clamp-2 leading-relaxed">
                                 "{{ $comment->content }}"
                             </p>
                             @if($comment->project)
                                 <a href="{{ route('projects.show', $comment->project->slug) }}#komentar" 
-                                   class="text-[11px] font-medium text-[#0F766E] dark:text-teal-400 hover:underline flex items-center gap-1 truncate pt-0.5">
+                                   class="text-[11px] font-medium text-[#0e9c8b] dark:text-[#50d2c1] hover:underline flex items-center gap-1 truncate pt-0.5">
                                     <span>di {{ $comment->project->title }}</span>
                                     <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -140,7 +140,7 @@
                             @endif
                         </div>
                     @empty
-                        <p class="text-xs text-[#66736F] py-2 text-center">Belum ada diskusi terbaru.</p>
+                        <p class="text-xs text-[#5c6979] py-2 text-center">Belum ada diskusi terbaru.</p>
                     @endforelse
                 </div>
             </div>
