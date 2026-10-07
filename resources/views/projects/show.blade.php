@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', $project->title . ' — NampungYuk')
 @section('meta_description', $project->tagline)
@@ -271,7 +271,7 @@
             <!-- SECTION 1: About This Project (Description) -->
             <section class="space-y-3">
                 <h2 class="text-sm font-bold uppercase tracking-wider text-[#5c6979] dark:text-[#7e8a9a] font-mono flex items-center gap-2">
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#0e9c8b] dark:bg-teal-400"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#0e9c8b] dark:bg-[#50d2c1]"></span>
                     <span>Tentang Project Ini</span>
                 </h2>
                 
@@ -290,7 +290,7 @@
             @if(is_array($project->tech_stacks) && count($project->tech_stacks) > 0)
                 <section class="space-y-3 pt-6 border-t border-[#d5dbe2]/80 dark:border-[#262d3a]">
                     <h2 class="text-sm font-bold uppercase tracking-wider text-[#5c6979] dark:text-[#7e8a9a] font-mono flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full bg-[#0e9c8b] dark:bg-teal-400"></span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#0e9c8b] dark:bg-[#50d2c1]"></span>
                         <span>Teknologi & Tools yang Digunakan</span>
                     </h2>
                     
@@ -335,7 +335,7 @@
                 <section class="space-y-3 pt-6 border-t border-[#d5dbe2]/80 dark:border-[#262d3a]">
                     <div class="flex items-center justify-between">
                         <h2 class="text-sm font-bold uppercase tracking-wider text-[#5c6979] dark:text-[#7e8a9a] font-mono flex items-center gap-2">
-                            <span class="w-1.5 h-1.5 rounded-full bg-[#0e9c8b] dark:bg-teal-400"></span>
+                            <span class="w-1.5 h-1.5 rounded-full bg-[#0e9c8b] dark:bg-[#50d2c1]"></span>
                             <span>Cara Menjalankan Project (Setup Instructions)</span>
                         </h2>
 

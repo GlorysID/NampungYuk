@@ -1,4 +1,4 @@
-﻿@props([
+@props([
     'user' => null,
     'name' => null,
     'avatar' => null,

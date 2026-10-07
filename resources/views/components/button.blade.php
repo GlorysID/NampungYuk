@@ -1,4 +1,4 @@
-﻿@props([
+@props([
     'variant' => 'primary', // 'primary', 'secondary', 'soft', 'ghost', 'danger'
     'size' => 'md', // 'sm', 'md', 'lg'
     'href' => null,
@@ -17,7 +17,7 @@
     $variantClasses = [
         'primary' => 'bg-[#0e9c8b] hover:bg-[#0b7d70] text-[#04110f] border border-transparent',
         'secondary' => 'bg-white dark:bg-[#141821] hover:bg-[#f2f4f6] dark:hover:bg-[#1e2530] text-[#10161f] dark:text-[#eaecf0] border border-[#d5dbe2] dark:border-[#262d3a]',
-        'soft' => 'bg-[#d9fbf4] dark:bg-[#50d2c1]/12 text-[#0e9c8b] dark:text-[#6ee7d5] hover:bg-[#c8fff4] dark:hover:bg-teal-900/50 border border-[#50d2c1]/30',
+        'soft' => 'bg-[#d9fbf4] dark:bg-[#50d2c1]/12 text-[#0e9c8b] dark:text-[#6ee7d5] hover:bg-[#c8fff4] dark:hover:bg-[#50d2c1]/20 border border-[#50d2c1]/30',
         'ghost' => 'bg-transparent text-[#5c6979] dark:text-[#7e8a9a] hover:bg-[#f2f4f6] dark:hover:bg-[#1e2530] hover:text-[#10161f] dark:hover:text-white',
         'danger' => 'bg-rose-600 hover:bg-rose-700 text-white border border-transparent',
     ][$variant] ?? 'bg-[#0e9c8b] hover:bg-[#0b7d70] text-[#04110f]';

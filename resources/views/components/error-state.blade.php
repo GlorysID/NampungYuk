@@ -1,4 +1,4 @@
-﻿@props([
+@props([
     'title' => 'Terjadi Kesalahan',
     'message' => 'Gagal memuat data. Silakan coba kembali beberapa saat lagi.',
     'retryUrl' => null,

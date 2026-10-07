@@ -1,4 +1,4 @@
-﻿@props([
+@props([
     'project',
     'initialVote' => null,
     'isBookmarked' => false,

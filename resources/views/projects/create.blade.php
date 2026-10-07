@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Pamerkan Karya Codingan — NampungYuk')
 @section('meta_description', 'Bagikan karya project codingan kamu kepada komunitas developer. Jelaskan arsitektur, tantangan, dan apa yang kamu pelajari.')
@@ -126,35 +126,35 @@
         <div class="grid grid-cols-5 gap-1 sm:gap-2 text-center text-xs">
             
             <button @click="goToStep(1)" type="button" 
-                    :class="{ 'text-[#0e9c8b] dark:text-[#50d2c1] font-bold border-b-2 border-[#0e9c8b] dark:border-teal-400': currentStep === 1, 'text-[#5c6979] dark:text-[#7e8a9a]': currentStep !== 1 }"
+                    :class="{ 'text-[#0e9c8b] dark:text-[#50d2c1] font-bold border-b-2 border-[#0e9c8b] dark:border-[#50d2c1]': currentStep === 1, 'text-[#5c6979] dark:text-[#7e8a9a]': currentStep !== 1 }"
                     class="py-2 flex flex-col sm:flex-row items-center justify-center gap-1 transition">
                 <span class="font-mono text-[10px] sm:text-xs">01</span>
                 <span class="hidden sm:inline">Project</span>
             </button>
 
             <button @click="goToStep(2)" type="button" 
-                    :class="{ 'text-[#0e9c8b] dark:text-[#50d2c1] font-bold border-b-2 border-[#0e9c8b] dark:border-teal-400': currentStep === 2, 'text-[#5c6979] dark:text-[#7e8a9a]': currentStep !== 2 }"
+                    :class="{ 'text-[#0e9c8b] dark:text-[#50d2c1] font-bold border-b-2 border-[#0e9c8b] dark:border-[#50d2c1]': currentStep === 2, 'text-[#5c6979] dark:text-[#7e8a9a]': currentStep !== 2 }"
                     class="py-2 flex flex-col sm:flex-row items-center justify-center gap-1 transition">
                 <span class="font-mono text-[10px] sm:text-xs">02</span>
                 <span class="hidden sm:inline">Showcase</span>
             </button>
 
             <button @click="goToStep(3)" type="button" 
-                    :class="{ 'text-[#0e9c8b] dark:text-[#50d2c1] font-bold border-b-2 border-[#0e9c8b] dark:border-teal-400': currentStep === 3, 'text-[#5c6979] dark:text-[#7e8a9a]': currentStep !== 3 }"
+                    :class="{ 'text-[#0e9c8b] dark:text-[#50d2c1] font-bold border-b-2 border-[#0e9c8b] dark:border-[#50d2c1]': currentStep === 3, 'text-[#5c6979] dark:text-[#7e8a9a]': currentStep !== 3 }"
                     class="py-2 flex flex-col sm:flex-row items-center justify-center gap-1 transition">
                 <span class="font-mono text-[10px] sm:text-xs">03</span>
                 <span class="hidden sm:inline">Tech</span>
             </button>
 
             <button @click="goToStep(4)" type="button" 
-                    :class="{ 'text-[#0e9c8b] dark:text-[#50d2c1] font-bold border-b-2 border-[#0e9c8b] dark:border-teal-400': currentStep === 4, 'text-[#5c6979] dark:text-[#7e8a9a]': currentStep !== 4 }"
+                    :class="{ 'text-[#0e9c8b] dark:text-[#50d2c1] font-bold border-b-2 border-[#0e9c8b] dark:border-[#50d2c1]': currentStep === 4, 'text-[#5c6979] dark:text-[#7e8a9a]': currentStep !== 4 }"
                     class="py-2 flex flex-col sm:flex-row items-center justify-center gap-1 transition">
                 <span class="font-mono text-[10px] sm:text-xs">04</span>
                 <span class="hidden sm:inline">Knowledge</span>
             </button>
 
             <button @click="goToStep(5)" type="button" 
-                    :class="{ 'text-[#0e9c8b] dark:text-[#50d2c1] font-bold border-b-2 border-[#0e9c8b] dark:border-teal-400': currentStep === 5, 'text-[#5c6979] dark:text-[#7e8a9a]': currentStep !== 5 }"
+                    :class="{ 'text-[#0e9c8b] dark:text-[#50d2c1] font-bold border-b-2 border-[#0e9c8b] dark:border-[#50d2c1]': currentStep === 5, 'text-[#5c6979] dark:text-[#7e8a9a]': currentStep !== 5 }"
                     class="py-2 flex flex-col sm:flex-row items-center justify-center gap-1 transition">
                 <span class="font-mono text-[10px] sm:text-xs">05</span>
                 <span class="hidden sm:inline">Preview</span>
@@ -543,7 +543,7 @@
             <!-- How To Run (Truthful instructions) -->
             <div class="space-y-1.5">
                 <label for="setup_instructions" class="text-xs font-semibold text-[#10161f] dark:text-[#eaecf0] flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-[#0e9c8b] dark:bg-teal-400"></span>
+                    <span class="w-2 h-2 rounded-full bg-[#0e9c8b] dark:bg-[#50d2c1]"></span>
                     <span>Cara Menjalankan Project (Opsional — Hanya tampil jika diisi)</span>
                 </label>
                 <textarea name="setup_instructions" 

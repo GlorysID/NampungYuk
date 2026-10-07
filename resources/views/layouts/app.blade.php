@@ -323,7 +323,7 @@
             <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col justify-between">
                 <div>
                     @if(session('success'))
-                        <div class="mb-5 p-3.5 rounded-lg bg-[#d9fbf4] dark:bg-[#50d2c1]/14 border border-teal-200 dark:border-[#50d2c1]/30 text-[#0e9c8b] dark:text-[#6ee7d5] text-xs flex items-center gap-2" role="alert">
+                        <div class="mb-5 p-3.5 rounded-lg bg-[#d9fbf4] dark:bg-[#50d2c1]/14 border border-[#50d2c1]/30 dark:border-[#50d2c1]/30 text-[#0e9c8b] dark:text-[#6ee7d5] text-xs flex items-center gap-2" role="alert">
                             <svg class="w-4 h-4 text-[#0e9c8b] dark:text-[#50d2c1] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>

@@ -1,4 +1,4 @@
-﻿@props([
+@props([
     'title' => 'Belum ada data',
     'description' => null,
     'actionLabel' => null,

@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Koleksi Tersimpan — NampungYuk')
 @section('meta_description', 'Koleksi project codingan pilihan yang disimpan untuk dipelajari kembali.')

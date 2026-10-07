@@ -1,4 +1,4 @@
-﻿@props([
+@props([
     'size' => 'md', // 'sm', 'md', 'lg'
     'showText' => true,
     'showTagline' => false,

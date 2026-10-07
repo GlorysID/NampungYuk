@@ -1,4 +1,4 @@
-﻿@props([
+@props([
     'variant' => 'neutral', // 'teal', 'neutral', 'success', 'warning', 'danger', 'purple'
     'size' => 'sm',
 ])
