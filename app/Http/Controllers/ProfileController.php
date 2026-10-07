@@ -30,6 +30,9 @@ class ProfileController extends Controller
         $totalUpvotesReceived = $user->projects()->sum('upvotes_count');
         $totalProjects = $user->projects()->count();
 
+        $followersCount = $user->followers()->count();
+        $followingCount = $user->following()->count();
+
         $currentUserId = auth()->id();
         $userBookmarkedIds = $currentUserId
             ? ProjectBookmark::where('user_id', $currentUserId)->pluck('project_id')->toArray()
@@ -38,6 +41,6 @@ class ProfileController extends Controller
             ? ProjectVote::where('user_id', $currentUserId)->pluck('type', 'project_id')->toArray()
             : [];
 
-        return view('users.show', compact('user', 'projects', 'comments', 'totalUpvotesReceived', 'totalProjects', 'userBookmarkedIds', 'userVotes'));
+        return view('users.show', compact('user', 'projects', 'comments', 'totalUpvotesReceived', 'totalProjects', 'userBookmarkedIds', 'userVotes', 'followersCount', 'followingCount'));
     }
 }

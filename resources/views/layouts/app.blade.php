@@ -228,6 +228,60 @@
 
                     <!-- User Session Menu -->
                     @auth
+                        <!-- Notification Bell + Dropdown -->
+                        <div class="relative" x-data="notificationBell()" x-init="init()">
+                            <button @click="open = !open; if (open) refresh()"
+                                    type="button"
+                                    class="relative w-8 h-8 rounded-md flex items-center justify-center text-[#5c6979] hover:text-[#10161f] dark:text-[#7e8a9a] dark:hover:text-white hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c] transition"
+                                    aria-label="Notifikasi"
+                                    :aria-expanded="open">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                                </svg>
+                                <span x-show="unreadCount > 0" x-cloak class="hl-badge-dot" x-text="unreadCount > 9 ? '9+' : unreadCount"></span>
+                            </button>
+
+                            <div x-show="open"
+                                 @click.away="open = false"
+                                 x-cloak
+                                 x-transition:enter="transition ease-out duration-150"
+                                 x-transition:enter-start="opacity-0 -translate-y-1"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 class="absolute right-0 mt-2 w-80 bg-white dark:bg-[#141821] rounded-lg border border-[#d5dbe2] dark:border-[#262d3a] z-50 overflow-hidden">
+                                <div class="flex items-center justify-between px-4 py-2.5 border-b border-[#d5dbe2] dark:border-[#262d3a]">
+                                    <span class="hl-label">Notifikasi</span>
+                                    <button @click="markAll()" x-show="unreadCount > 0" type="button" class="text-[11px] font-medium text-[#0e9c8b] dark:text-[#50d2c1] hover:underline">
+                                        Tandai dibaca
+                                    </button>
+                                </div>
+
+                                <div class="max-h-96 overflow-y-auto divide-y divide-[#d5dbe2] dark:divide-[#262d3a]">
+                                    <template x-for="n in notifications" :key="n.id">
+                                        <a :href="n.data.url || '#'"
+                                           class="flex items-start gap-2.5 px-4 py-3 transition hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c]"
+                                           :class="!n.read ? 'bg-[#d9fbf4]/40 dark:bg-[#50d2c1]/[0.06]' : ''">
+                                            <img x-show="n.data.actor_avatar" :src="n.data.actor_avatar" alt="" class="w-7 h-7 rounded-md object-cover ring-1 ring-[#d5dbe2] dark:ring-[#262d3a] shrink-0">
+                                            <div class="min-w-0 flex-1">
+                                                <p class="text-xs text-[#10161f] dark:text-[#eaecf0] leading-snug" x-text="n.data.message"></p>
+                                                <p class="text-[10px] font-mono text-[#5c6979] dark:text-[#7e8a9a] mt-0.5" x-text="n.created_at"></p>
+                                            </div>
+                                            <span x-show="!n.read" class="w-1.5 h-1.5 rounded-full bg-[#0e9c8b] dark:bg-[#50d2c1] mt-1.5 shrink-0"></span>
+                                        </a>
+                                    </template>
+
+                                    <template x-if="notifications.length === 0">
+                                        <div class="px-4 py-8 text-center text-xs text-[#5c6979] dark:text-[#7e8a9a]">
+                                            Belum ada notifikasi baru.
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <a href="{{ route('notifications.index') }}" class="block px-4 py-2.5 text-center text-xs font-semibold text-[#0e9c8b] dark:text-[#50d2c1] border-t border-[#d5dbe2] dark:border-[#262d3a] hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c] transition">
+                                    Lihat semua notifikasi
+                                </a>
+                            </div>
+                        </div>
+
                         <!-- Koleksi Link (Hanya Saat Login) -->
                         <a href="{{ route('projects.bookmarks') }}" 
                            title="Koleksi Project Tersimpan"
@@ -401,12 +455,27 @@
 
         <!-- Koleksi -->
         <a href="{{ route('projects.bookmarks') }}" 
-           class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition {{ request()->routeIs('projects.bookmarks') ? 'text-[#0e9c8b] dark:text-[#50d2c1] font-bold' : 'text-[#5c6979] dark:text-[#7e8a9a]' }}">
+           class="hidden sm:flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition {{ request()->routeIs('projects.bookmarks') ? 'text-[#0e9c8b] dark:text-[#50d2c1] font-bold' : 'text-[#5c6979] dark:text-[#7e8a9a]' }}">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
             </svg>
             <span>Koleksi</span>
         </a>
+
+        <!-- Notifikasi (Mobile Bell) -->
+        @auth
+            <a href="{{ route('notifications.index') }}"
+               x-data="notificationBell()" x-init="init()"
+               class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition {{ request()->routeIs('notifications.index') ? 'text-[#0e9c8b] dark:text-[#50d2c1] font-bold' : 'text-[#5c6979] dark:text-[#7e8a9a]' }}">
+                <span class="relative">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    </svg>
+                    <span x-show="unreadCount > 0" x-cloak class="hl-badge-dot" x-text="unreadCount > 9 ? '9+' : unreadCount"></span>
+                </span>
+                <span>Notif</span>
+            </a>
+        @endauth
 
         <!-- Profile or Login -->
         @auth

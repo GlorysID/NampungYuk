@@ -23,6 +23,10 @@
     </div>
 
     <div class="flex items-center gap-1.5 shrink-0">
+        @if($project->user && auth()->check() && auth()->id() !== $project->user->id)
+            <x-follow-button :user="$project->user" size="sm" />
+        @endif
+
         @if($project->category)
             <a href="{{ route('projects.index', ['kategori' => $project->category->slug]) }}" 
                class="text-[11px] font-mono font-medium px-2 py-0.5 rounded-md bg-[#e6eaee] dark:bg-[#1e2530] text-[#5c6979] dark:text-[#7e8a9a] hover:text-[#0e9c8b] dark:hover:text-[#50d2c1] border border-[#d5dbe2] dark:border-[#262d3a] transition">

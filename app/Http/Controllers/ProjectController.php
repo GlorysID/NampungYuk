@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\CommentPosted;
+use App\Events\ProjectPublished;
 use App\Models\Category;
 use App\Models\Project;
 use App\Models\ProjectBookmark;
 use App\Models\ProjectComment;
 use App\Models\ProjectVote;
 use App\Models\User;
+use App\Notifications\ProjectTrendingNotification;
+use App\Notifications\ProjectUploadedNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -42,6 +46,10 @@ class ProjectController extends Controller
 
         // Apply Tab Sorting
         switch ($tab) {
+            case 'following':
+                $followingIds = Auth::check() ? Auth::user()->followingIds() : [];
+                $query->whereIn('user_id', $followingIds)->recent();
+                break;
             case 'prototype':
                 $query->whereNotNull('prototype_url')->trending();
                 break;
@@ -75,7 +83,19 @@ class ProjectController extends Controller
             ->take(5)
             ->get();
 
-        // 3. Recent Discussions
+        // 3. Suggested developers to follow (not already followed, not self)
+        $suggestedDevelopers = collect();
+        if (Auth::check()) {
+            $authUser = Auth::user();
+            $followingIds = $authUser->followingIds();
+            $suggestedDevelopers = User::where('id', '!=', $authUser->id)
+                ->whereNotIn('id', $followingIds)
+                ->orderByDesc('reputation_points')
+                ->take(3)
+                ->get();
+        }
+
+        // 4. Recent Discussions
         $recentReviews = ProjectComment::with(['user', 'project'])
             ->whereHas('project')
             ->latest()
@@ -102,8 +122,49 @@ class ProjectController extends Controller
             'tab',
             'categorySlug',
             'techFilter',
-            'search'
+            'search',
+            'suggestedDevelopers'
         ));
+    }
+
+    /**
+     * Return the latest published projects as JSON (for real-time feed pulse).
+     */
+    public function latest(Request $request): JsonResponse
+    {
+        $since = $request->query('since');
+
+        $query = Project::with(['user', 'category'])->recent();
+
+        if ($since) {
+            $query->where('created_at', '>', $since);
+        }
+
+        $projects = $query->take(20)->get()->map(fn (Project $p) => [
+            'id' => $p->id,
+            'title' => $p->title,
+            'slug' => $p->slug,
+            'tagline' => $p->tagline,
+            'thumbnail' => $p->thumbnail,
+            'score' => $p->score,
+            'comments_count' => $p->comments_count,
+            'views_count' => $p->views_count,
+            'is_new' => $p->created_at->diffInHours(now()) < 24,
+            'author' => $p->user?->name,
+            'username' => $p->user?->username,
+            'avatar' => $p->user?->avatar,
+            'category' => $p->category?->name,
+            'tech_stacks' => array_slice($p->tech_stacks ?? [], 0, 5),
+            'created_at' => $p->created_at->diffForHumans(),
+            'created_iso' => $p->created_at->toIso8601String(),
+            'url' => route('projects.show', $p->slug),
+        ]);
+
+        return response()->json([
+            'count' => $projects->count(),
+            'server_time' => now()->toIso8601String(),
+            'projects' => $projects,
+        ]);
     }
 
     /**
@@ -236,6 +297,14 @@ class ProjectController extends Controller
         // Increment category count
         $project->category->increment('projects_count');
 
+        // Notify followers about the new project + broadcast to live feed.
+        $project->load('user');
+        $followers = $user->followers;
+        foreach ($followers as $follower) {
+            $follower->notify(new ProjectUploadedNotification($project));
+        }
+        ProjectPublished::dispatch($project);
+
         return redirect()->route('projects.show', $project->slug)
             ->with('success', 'Project codingan kamu berhasil dipamerkan dan tampil di feed!');
     }
@@ -327,6 +396,17 @@ class ProjectController extends Controller
 
         $project->refresh();
 
+        // Notify author when their project crosses a "trending" milestone.
+        if (
+            $type === 'up'
+            && ! $isAuthor
+            && $project->user
+            && $project->score >= 50
+            && $project->score - 1 < 50
+        ) {
+            $project->user->notify(new ProjectTrendingNotification($project));
+        }
+
         return response()->json([
             'success' => true,
             'score' => $project->score,
@@ -362,6 +442,9 @@ class ProjectController extends Controller
         ]);
 
         $project->increment('comments_count');
+
+        $comment->load('user');
+        CommentPosted::dispatch($comment);
 
         if ($request->wantsJson()) {
             return response()->json([

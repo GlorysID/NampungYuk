@@ -4,7 +4,7 @@
     'isBookmarked' => false,
 ])
 
-<article class="project-nav-card ny-card p-4 sm:p-5 space-y-3.5 group bg-white dark:bg-[#141821] border border-[#d5dbe2] dark:border-[#262d3a] transition duration-150"
+<article class="project-nav-card ny-card ny-card--interactive p-4 sm:p-5 space-y-3.5 group bg-white dark:bg-[#141821] border border-[#d5dbe2] dark:border-[#262d3a] transition duration-150"
          x-data="{
              score: {{ $project->score }},
              userVote: '{{ $initialVote }}',
@@ -86,8 +86,12 @@
                      loading="lazy" 
                      decoding="async"
                      onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80';"
-                     class="w-full h-full object-cover group-hover:scale-[1.01] transition duration-300">
+                     class="w-full h-full object-cover transition duration-300">
             </a>
+
+            @if($project->created_at->diffInHours(now()) < 24)
+                <span class="hl-new-badge absolute top-3 left-3">New</span>
+            @endif
 
             @if($project->demo_url)
                 <a href="{{ $project->demo_url }}" target="_blank" rel="noopener noreferrer"
@@ -115,11 +119,16 @@
 
     <!-- 3. Project Title & Tagline -->
     <div class="space-y-1">
-        <h2 class="text-base sm:text-lg font-bold text-[#10161f] dark:text-[#eaecf0] leading-snug group-hover:text-[#0e9c8b] dark:group-hover:text-[#50d2c1] transition">
-            <a href="{{ route('projects.show', $project->slug) }}" class="card-detail-link focus-visible:rounded">
-                {{ $project->title }}
-            </a>
-        </h2>
+        <div class="flex items-center gap-2 flex-wrap">
+            <h2 class="text-base sm:text-lg font-bold text-[#10161f] dark:text-[#eaecf0] leading-snug transition">
+                <a href="{{ route('projects.show', $project->slug) }}" class="card-detail-link focus-visible:rounded hover:text-[#0e9c8b] dark:hover:text-[#50d2c1]">
+                    {{ $project->title }}
+                </a>
+            </h2>
+            @if(! $project->thumbnail && $project->created_at->diffInHours(now()) < 24)
+                <span class="hl-new-badge">New</span>
+            @endif
+        </div>
 
         <p class="text-xs sm:text-sm text-[#5c6979] dark:text-[#7e8a9a] leading-relaxed line-clamp-2">
             {{ $project->tagline }}

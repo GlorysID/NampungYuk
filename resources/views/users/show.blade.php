@@ -41,6 +41,8 @@
                             <span>GitHub</span>
                         </x-button>
                     @endif
+
+                    <x-follow-button :user="$user" />
                 </div>
 
                 @if($user->bio)
@@ -63,6 +65,20 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
                         </svg>
                         <span>{{ $totalProjects }} Karya Project</span>
+                    </span>
+
+                    <span class="inline-flex items-center gap-1.5 text-[#5c6979] dark:text-[#7e8a9a] font-mono">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6-4a3 3 0 11-3-3 3 3 0 013 3z"/>
+                        </svg>
+                        <span><strong class="text-[#10161f] dark:text-[#eaecf0]">{{ $followersCount }}</strong> Pengikut</span>
+                    </span>
+
+                    <span class="inline-flex items-center gap-1.5 text-[#5c6979] dark:text-[#7e8a9a] font-mono">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                        </svg>
+                        <span><strong class="text-[#10161f] dark:text-[#eaecf0]">{{ $followingCount }}</strong> Mengikuti</span>
                     </span>
 
                     <span class="inline-flex items-center gap-1.5 text-[#5c6979] dark:text-[#7e8a9a] font-mono">

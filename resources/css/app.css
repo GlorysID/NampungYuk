@@ -128,11 +128,95 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     border: 1px solid var(--border-color);
     border-radius: 0.5rem; /* 8px */
     box-shadow: none;
-    transition: border-color 140ms ease, background-color 140ms ease;
+    transition: background-color 140ms ease, border-color 140ms ease;
 }
 
-.ny-card:hover {
-    border-color: color-mix(in srgb, var(--primary) 55%, var(--border-color));
+/* Hyperliquid-style interaction: elevation via surface tint only.
+   No glowing outline, no colored border flash. */
+.ny-card--interactive:hover {
+    background-color: var(--surface-hover);
+}
+
+/* "NEW" pulse badge (mint, terminal chip) */
+.hl-new-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-family: var(--font-mono);
+    font-size: 0.5625rem; /* 9px */
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.0625rem 0.375rem;
+    border-radius: 0.25rem;
+    background-color: var(--primary-soft);
+    color: var(--primary-soft-text);
+    border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+}
+
+.hl-new-badge::before {
+    content: '';
+    width: 4px;
+    height: 4px;
+    border-radius: 9999px;
+    background-color: var(--primary);
+    animation: hl-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes hl-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+}
+
+/* Fresh feed item slide-in */
+@keyframes hl-slide-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.hl-feed-enter {
+    animation: hl-slide-in 260ms ease-out;
+}
+
+/* Notification bell badge */
+.hl-badge-dot {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    min-width: 1rem;
+    height: 1rem;
+    padding: 0 0.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 0.5625rem;
+    font-weight: 700;
+    line-height: 1;
+    border-radius: 9999px;
+    background-color: var(--primary);
+    color: #04110f;
+}
+
+/* Feed row hover: subtle left accent bar, terminal-like (no full outline) */
+.project-nav-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.project-nav-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: transparent;
+    transition: background-color 160ms ease;
+}
+
+.project-nav-card:hover::before {
+    background-color: var(--primary);
 }
 
 /* Primary Button (Neon mint, 8px radius) */

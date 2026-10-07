@@ -45,4 +45,52 @@ class User extends Authenticatable
     {
         return $this->hasMany(ProjectComment::class);
     }
+
+    /**
+     * Users that this user follows.
+     */
+    public function following()
+    {
+        return $this->belongsToMany(
+            User::class,
+            'follows',
+            'follower_id',
+            'following_id'
+        )->withTimestamps();
+    }
+
+    /**
+     * Users that follow this user.
+     */
+    public function followers()
+    {
+        return $this->belongsToMany(
+            User::class,
+            'follows',
+            'following_id',
+            'follower_id'
+        )->withTimestamps();
+    }
+
+    /**
+     * Whether this user follows the given user.
+     */
+    public function isFollowing(?User $user): bool
+    {
+        if (! $user || $this->id === $user->id) {
+            return false;
+        }
+
+        return $this->following()->whereKey($user->id)->exists();
+    }
+
+    /**
+     * IDs of users this user follows (for feed filtering).
+     *
+     * @return array<int, int>
+     */
+    public function followingIds(): array
+    {
+        return $this->following()->pluck('users.id')->toArray();
+    }
 }

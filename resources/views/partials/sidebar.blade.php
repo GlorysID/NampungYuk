@@ -36,7 +36,7 @@
 
             <!-- Semua Karya (Feed) -->
             <a href="{{ route('projects.index') }}" 
-               class="flex items-center justify-between px-3 py-2 rounded-lg font-medium transition {{ $isAllFeed ? 'bg-[#d9fbf4] dark:bg-[#50d2c1]/12 font-semibold' : 'text-[#5c6979] dark:text-[#7e8a9a] hover:text-[#10161f] dark:hover:text-white hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c]' }}">
+               class="flex items-center justify-between px-3 py-2 rounded-md font-medium transition {{ $isAllFeed ? 'bg-[#d9fbf4] dark:bg-[#50d2c1]/12 text-[#0e9c8b] dark:text-[#50d2c1] font-semibold' : 'text-[#5c6979] dark:text-[#7e8a9a] hover:text-[#10161f] dark:hover:text-white hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c]' }}">
                 <div class="flex items-center gap-2.5">
                     <svg class="w-4 h-4 {{ $isAllFeed ? 'text-[#0e9c8b] dark:text-[#50d2c1]' : 'opacity-70' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
@@ -47,6 +47,22 @@
                     <span class="w-1.5 h-1.5 rounded-full bg-[#0e9c8b] dark:bg-[#50d2c1]"></span>
                 @endif
             </a>
+
+            <!-- Following (Mengikuti) -->
+            @auth
+                <a href="{{ route('projects.index', ['tab' => 'following']) }}" 
+                   class="flex items-center justify-between px-3 py-2 rounded-md font-medium transition {{ $currentTab === 'following' ? 'bg-[#d9fbf4] dark:bg-[#50d2c1]/12 text-[#0e9c8b] dark:text-[#50d2c1] font-semibold' : 'text-[#5c6979] dark:text-[#7e8a9a] hover:text-[#10161f] dark:hover:text-white hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c]' }}">
+                    <div class="flex items-center gap-2.5">
+                        <svg class="w-4 h-4 {{ $currentTab === 'following' ? 'text-[#0e9c8b] dark:text-[#50d2c1]' : 'opacity-70' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6-4a3 3 0 11-3-3 3 3 0 013 3z"/>
+                        </svg>
+                        <span>Mengikuti</span>
+                    </div>
+                    @if($currentTab === 'following')
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#0e9c8b] dark:bg-[#50d2c1]"></span>
+                    @endif
+                </a>
+            @endauth
 
             <!-- Trending -->
             <a href="{{ route('projects.index', ['tab' => 'trend']) }}" 

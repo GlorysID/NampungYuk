@@ -4,7 +4,21 @@
 @section('meta_description', 'Temukan karya project codingan terbaik dari developer Indonesia. Pelajari arsitektur, tech stack, dan tantangan yang mereka hadapi.')
 
 @section('content')
-<div class="space-y-6">
+<div class="space-y-6" x-data="liveFeed()" x-init="init()">
+
+    <!-- LIVE PULSE: muncul saat ada project baru (real-time via Reverb) -->
+    <div x-show="newCount > 0" x-cloak
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 -translate-y-2"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         class="flex justify-center">
+        <button @click="revealNew()"
+                type="button"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-[#0e9c8b] text-[#04110f] text-xs font-bold hover:bg-[#0b7d70] transition active:scale-[0.98]">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#04110f] animate-pulse"></span>
+            <span x-text="newCount + ' project baru — klik untuk lihat'"></span>
+        </button>
+    </div>
 
     <!-- 2-COLUMN WORKSPACE: MAIN FEED (XL: 8 COLS) + COMMUNITY SIDEBAR (XL: 4 COLS) -->
     <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
@@ -71,6 +85,39 @@
 
         <!-- SECONDARY SIDEBAR: COMMUNITY BLOCKS (xl:col-span-4) - FIXED/STICKY -->
         <aside class="xl:col-span-4 sticky top-20 self-start space-y-4 max-h-[calc(100vh-5.5rem)] overflow-y-auto pr-1">
+
+            <!-- BLOCK 0: Who to follow (Social onboarding) -->
+            @auth
+                @if(isset($suggestedDevelopers) && $suggestedDevelopers->count() > 0)
+                    <div class="ny-card p-4 space-y-3 bg-white dark:bg-[#141821]">
+                        <div class="flex items-center justify-between">
+                            <h3 class="hl-label flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 text-[#0e9c8b] dark:text-[#50d2c1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                                </svg>
+                                <span>Untuk Diikuti</span>
+                            </h3>
+                        </div>
+
+                        <div class="space-y-2.5">
+                            @foreach($suggestedDevelopers as $dev)
+                                <div class="flex items-center justify-between gap-2">
+                                    <a href="{{ route('profile.show', $dev->username) }}" class="flex items-center gap-2.5 min-w-0 group">
+                                        <x-user-avatar :user="$dev" size="sm" />
+                                        <div class="min-w-0">
+                                            <p class="font-bold text-xs text-[#10161f] dark:text-[#eaecf0] group-hover:text-[#0e9c8b] dark:group-hover:text-[#50d2c1] transition truncate">
+                                                {{ $dev->name }}
+                                            </p>
+                                            <p class="text-[11px] font-mono text-[#5c6979] dark:text-[#7e8a9a] truncate">&#64;{{ $dev->username }}</p>
+                                        </div>
+                                    </a>
+                                    <x-follow-button :user="$dev" size="sm" />
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+            @endauth
 
             <!-- BLOCK 2: Active Creators (Top Contributors) -->
             <div class="ny-card p-4 space-y-3 bg-white dark:bg-[#141821]">
