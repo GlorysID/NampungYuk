@@ -353,6 +353,16 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     position: relative;
     overflow: hidden;
     border-radius: var(--radius-lg);
+    transition: background-color 150ms ease;
+}
+
+/* X-style hover: row brightens slightly, no movement */
+.project-nav-card:hover {
+    background-color: #f2f2f2;
+}
+
+.dark .project-nav-card:hover {
+    background-color: #0f0f0f;
 }
 
 /* Primary button — solid high-contrast (Vercel: black in light, white in dark) */

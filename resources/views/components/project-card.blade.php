@@ -7,7 +7,7 @@
     'uid' => 'p',
 ])
 
-<article class="project-nav-card ny-card ny-card--interactive p-4 sm:p-5 space-y-4 group"
+<article class="project-nav-card ny-card p-4 sm:p-5 space-y-4 group"
          x-data="{
              score: {{ $project->score }},
              userVote: '{{ $initialVote }}',
@@ -118,7 +118,7 @@
         <div class="flex items-start justify-between gap-2">
             <div class="flex items-center gap-2 flex-wrap min-w-0">
                 <h2 class="text-base sm:text-lg font-bold text-[#000000] dark:text-[#fafafa] leading-snug transition">
-                    <a href="{{ route('projects.show', $project->slug) }}" class="card-detail-link focus-visible:rounded hover:text-[#0070f3] dark:hover:text-[#3291ff]">
+                    <a href="{{ route('projects.show', $project->slug) }}" class="card-detail-link focus-visible:rounded">
                         {{ $project->title }}
                     </a>
                 </h2>
@@ -156,16 +156,16 @@
         </p>
     </div>
 
-    <!-- 3. Thumbnail (X-style: compact, left-aligned, bounded width) -->
+    <!-- 3. Thumbnail (full-width, centered, rounded frame) -->
     @if($project->thumbnail)
-        <div class="relative inline-block max-w-full w-[min(100%,18rem)] overflow-hidden rounded-2xl border border-[#e2e2e2] dark:border-[#1f1f1f] bg-[#f2f2f2] dark:bg-[#171717]">
+        <div class="relative block mx-auto max-w-full w-full overflow-hidden rounded-2xl border border-[#e2e2e2] dark:border-[#1f1f1f] bg-[#f2f2f2] dark:bg-[#171717]">
             <a href="{{ route('projects.show', $project->slug) }}" class="block aspect-video" tabindex="-1" aria-hidden="true">
                 <img src="{{ $project->thumbnail }}"
                      alt="{{ $project->title }}"
                      loading="lazy"
                      decoding="async"
                      onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80';"
-                     class="w-full h-full object-cover transition duration-300 hover:scale-[1.03]">
+                     class="w-full h-full object-cover">
             </a>
 
             @if($project->created_at->diffInHours(now()) < 24)
