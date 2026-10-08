@@ -180,7 +180,7 @@ class ProjectController extends Controller
      */
     public function show(string $slug, Request $request): View
     {
-        $project = Project::with(['user', 'category', 'comments.user', 'forkedFrom.user'])
+        $project = Project::with(['user', 'category', 'comments.user', 'repostedFrom.user'])
             ->where('slug', $slug)
             ->firstOrFail();
 

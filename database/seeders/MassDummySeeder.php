@@ -15,8 +15,19 @@ class MassDummySeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Real Portrait Photos for selected profiles
-        $realPhotos = [
+        // 1. Real Portrait Photos (Unsplash + randomuser.me) — real people, no generative avatars.
+        // randomuser.me serves 0-99 per gender as stable, hotlinkable real portraits.
+        $malePhotos = array_map(
+            fn ($n) => 'https://randomuser.me/api/portraits/men/'.$n.'.jpg',
+            range(1, 99)
+        );
+        $femalePhotos = array_map(
+            fn ($n) => 'https://randomuser.me/api/portraits/women/'.$n.'.jpg',
+            range(1, 99)
+        );
+
+        // A few high-quality Unsplash portraits mixed in for variety.
+        $unsplashPhotos = [
             'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
             'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
             'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
@@ -37,22 +48,13 @@ class MassDummySeeder extends Seeder
             'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
             'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
             'https://images.unsplash.com/photo-1586297135537-94bc9ba060aa?auto=format&fit=crop&w=400&q=80',
-            'https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=400&q=80',
-            'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=400&q=80',
-            'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=400&q=80',
-            'https://images.unsplash.com/photo-1534751516642-a1714f5a596a?auto=format&fit=crop&w=400&q=80',
-            'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=400&q=80',
-            'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=400&q=80',
-            'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?auto=format&fit=crop&w=400&q=80',
-            'https://images.unsplash.com/photo-1499952127939-9bbf5af6c51c?auto=format&fit=crop&w=400&q=80',
-            'https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?auto=format&fit=crop&w=400&q=80',
-            'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?auto=format&fit=crop&w=400&q=80',
-            'https://images.unsplash.com/photo-1566492031773-4f4e44671857?auto=format&fit=crop&w=400&q=80',
-            'https://images.unsplash.com/photo-1584999734482-0361aecad844?auto=format&fit=crop&w=400&q=80',
-            'https://images.unsplash.com/photo-1542909168-82c3e7fdca5c?auto=format&fit=crop&w=400&q=80',
-            'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&w=400&q=80',
-            'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
         ];
+
+        // Shuffle deterministic-ish pools so avatars don't follow a fixed gender order per index.
+        $malePool = $malePhotos;
+        $femalePool = $femalePhotos;
+        shuffle($malePool);
+        shuffle($femalePool);
 
         // 2. Name generation components
         $firstNamesMale = [
@@ -102,7 +104,6 @@ class MassDummySeeder extends Seeder
 
         // 3. Create 100 Realistic Dummy Developers
         $newUsers = [];
-        $photoIndex = 0;
         $commonPassword = Hash::make('password123');
 
         for ($i = 1; $i <= 100; $i++) {
@@ -115,16 +116,14 @@ class MassDummySeeder extends Seeder
 
             $username = Str::slug(Str::lower($firstName).'_'.Str::lower($lastName).'_'.$i, '_');
 
-            // Determine Avatar: ~40% photo profiles, rest use diverse DiceBear avatars
-            if ($i % 5 <= 1 && $photoIndex < count($realPhotos)) {
-                $avatar = $realPhotos[$photoIndex];
-                $photoIndex++;
-            } elseif ($i % 3 === 0) {
-                $avatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed='.urlencode($fullName);
-            } elseif ($i % 3 === 1) {
-                $avatar = 'https://api.dicebear.com/7.x/bottts/svg?seed='.urlencode($fullName);
+            // Avatar: 100% real portrait photos. Prefer gender-matched randomuser pool,
+            // sprinkle in Unsplash portraits so the feed looks natural and varied.
+            if ($i % 7 === 0) {
+                $avatar = $unsplashPhotos[array_rand($unsplashPhotos)];
+            } elseif ($isFemale) {
+                $avatar = $femalePool[$i % count($femalePool)];
             } else {
-                $avatar = 'https://api.dicebear.com/7.x/personas/svg?seed='.urlencode($fullName);
+                $avatar = $malePool[$i % count($malePool)];
             }
 
             $user = User::updateOrCreate(

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -7,62 +7,109 @@
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --font-sans: 'Geist', 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-display: 'Geist', 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'Geist Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-    /* Hyperliquid-style neon mint accent */
-    --color-brand-50: #eafffb;
-    --color-brand-100: #c8fff4;
-    --color-brand-200: #97f7e8;
-    --color-brand-300: #6ee7d5;
-    --color-brand-400: #50d2c1;
-    --color-brand-500: #34bfae;
-    --color-brand-600: #1f9e90;
-    --color-brand-700: #187a70;
-    --color-brand-800: #145f58;
-    --color-brand-900: #114b46;
-    --color-brand-950: #042f2e;
+    /* Vercel Geist gray scale (the workhorse) */
+    --color-geist-50: #fafafa;
+    --color-geist-100: #f5f5f5;
+    --color-geist-200: #eaeaea;
+    --color-geist-300: #e8e8e8;
+    --color-geist-400: #e2e2e2;
+    --color-geist-500: #d8d8d8;
+    --color-geist-600: #a8a8a8;
+    --color-geist-700: #888888;
+    --color-geist-800: #666666;
+    --color-geist-900: #454545;
+    --color-geist-1000: #171717;
+
+    /* Vercel blue (single accent) */
+    --color-blue-500: #0070f3;
+    --color-blue-600: #0761d1;
+    --color-blue-400: #3291ff;
 }
 
 /* ==========================================================================
-   Hyperliquid-style Tokens (Dark-first Trading Terminal)
+   Design Tokens — "NampungYuk" · Vercel Geist palette
+   Black / White / Gray + single Vercel blue · Dark-first
    ========================================================================== */
 :root {
-    /* Light = "soft charcoal" variant (still terminal-flavored) */
-    --bg-app: #eceff1;
-    --surface: #ffffff;
-    --surface-hover: #f2f4f6;
-    --surface-muted: #e6eaee;
-    --primary: #0e9c8b;
-    --primary-hover: #0b7d70;
-    --primary-soft: #d9fbf4;
-    --primary-soft-text: #0b7d70;
-    --text-main: #10161f;
-    --text-muted: #5c6979;
-    --border-color: #d5dbe2;
-    --border-subtle: #e3e8ed;
-    --danger: #e23a52;
-    --warning: #d98218;
-    --success: #12a866;
+    /* ---- LIGHT theme (Vercel light, with real separation) ---- */
+    --bg-app: #fafafa;          /* page canvas — subtle gray, NOT white */
+    --bg-elevated: #ffffff;
+    --surface: #ffffff;         /* cards/panels float above the gray canvas */
+    --surface-hover: #f2f2f2;
+    --surface-muted: #f2f2f2;   /* inputs/pills clearly distinct */
+    --surface-glass: rgba(255, 255, 255, 0.85);
+
+    --primary: #0070f3;
+    --primary-hover: #0761d1;
+    --primary-soft: #e8f2ff;
+    --primary-soft-text: #0761d1;
+    --accent: #0070f3;
+    --accent-soft: #e8f2ff;
+
+    --text-main: #171717;
+    --text-muted: #666666;
+    --text-faint: #8f8f8f;
+
+    --border-color: #e2e2e2;    /* stronger borders so cards read as cards */
+    --border-subtle: #ededed;
+    --border-strong: #cfcfcf;
+
+    --danger: #ee0000;
+    --warning: #f5a623;
+    --success: #17c964;
+
+    /* Vercel keeps gradients for "launch day" only — subtle here */
+    --gradient-brand: linear-gradient(135deg, #000000 0%, #333333 100%);
+    --gradient-brand-soft: linear-gradient(135deg, rgba(0,0,0,0.05), rgba(0,112,243,0.06));
+
+    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.05), 0 2px 8px -2px rgba(0, 0, 0, 0.06);
+    --shadow-lift: 0 6px 18px -6px rgba(0, 0, 0, 0.14), 0 2px 4px -2px rgba(0, 0, 0, 0.08);
+    --shadow-glow: 0 0 0 1px rgba(0, 112, 243, 0.14), 0 8px 30px -8px rgba(0, 112, 243, 0.25);
+
+    --radius-sm: 0.375rem;  /* 6px — Vercel canonical */
+    --radius-md: 0.5rem;    /* 8px */
+    --radius-lg: 0.75rem;   /* 12px */
+    --radius-xl: 1rem;      /* 16px */
 }
 
 .dark {
-    /* Hyperliquid core palette */
-    --bg-app: #0b0e11;
-    --surface: #141821;
-    --surface-hover: #1b212c;
-    --surface-muted: #1e2530;
-    --primary: #50d2c1;
-    --primary-hover: #6ee7d5;
-    --primary-soft: rgba(80, 210, 193, 0.14);
-    --primary-soft-text: #6ee7d5;
-    --text-main: #eaecf0;
-    --text-muted: #7e8a9a;
-    --border-color: #262d3a;
-    --border-subtle: #1c222c;
-    --danger: #f6465d;
-    --warning: #f0a020;
-    --success: #16c784;
+    /* ---- DARK theme (Vercel dark, canonical) ---- */
+    --bg-app: #000000;
+    --bg-elevated: #0a0a0a;
+    --surface: #0a0a0a;
+    --surface-hover: #111111;
+    --surface-muted: #171717;
+    --surface-glass: rgba(10, 10, 10, 0.72);
+
+    --primary: #3291ff;
+    --primary-hover: #47a8ff;
+    --primary-soft: rgba(50, 145, 255, 0.14);
+    --primary-soft-text: #47a8ff;
+    --accent: #3291ff;
+    --accent-soft: rgba(50, 145, 255, 0.14);
+
+    --text-main: #fafafa;
+    --text-muted: #a0a0a0;
+    --text-faint: #666666;
+
+    --border-color: #1f1f1f;
+    --border-subtle: #171717;
+    --border-strong: #2e2e2e;
+
+    --danger: #f32e40;
+    --warning: #f5a623;
+    --success: #17c964;
+
+    --gradient-brand: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
+    --gradient-brand-soft: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(50,145,255,0.08));
+
+    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.5), 0 2px 8px -2px rgba(0, 0, 0, 0.4);
+    --shadow-lift: 0 8px 30px -8px rgba(0, 0, 0, 0.8), 0 0 0 1px #1f1f1f;
+    --shadow-glow: 0 0 0 1px rgba(50, 145, 255, 0.3), 0 8px 30px -8px rgba(50, 145, 255, 0.35);
 }
 
 /* ==========================================================================
@@ -72,13 +119,10 @@ html {
     scroll-behavior: smooth;
     background-color: var(--bg-app);
     color: var(--text-main);
-    /* Keep the scrollbar space reserved so content never jumps when it appears */
     scrollbar-gutter: stable;
-    /* Offset anchor jumps so headings don't hide under the sticky header */
-    scroll-padding-top: 5rem;
+    scroll-padding-top: 5.5rem;
 }
 
-/* Smooth, momentum-friendly scrolling everywhere (desktop + touch + inner panes) */
 html,
 body,
 .ny-scroll {
@@ -93,6 +137,25 @@ body {
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    position: relative;
+}
+
+/* Ambient aura — Vercel blue, extremely subtle (keeps canvas mostly neutral) */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(55% 45% at 10% -8%, rgba(0, 112, 243, 0.06), transparent 60%),
+        radial-gradient(45% 40% at 98% 0%, rgba(0, 112, 243, 0.04), transparent 55%);
+}
+
+.dark body::before {
+    background:
+        radial-gradient(55% 45% at 10% -8%, rgba(50, 145, 255, 0.10), transparent 60%),
+        radial-gradient(45% 40% at 98% 0%, rgba(50, 145, 255, 0.06), transparent 55%);
 }
 
 /* Accessible focus styling */
@@ -104,30 +167,24 @@ body {
 input:focus-visible, select:focus-visible, textarea:focus-visible {
     outline: none !important;
     border-color: var(--primary) !important;
-    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.2) !important;
-}
-
-.dark input:focus-visible, .dark select:focus-visible, .dark textarea:focus-visible {
-    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.25) !important;
+    box-shadow: 0 0 0 4px var(--primary-soft) !important;
 }
 
 /* ==========================================================================
-   Smooth, unobtrusive scrollbars (Hyperliquid-style)
+   Smooth, unobtrusive scrollbars
    ========================================================================== */
-/* Firefox */
 * {
     scrollbar-width: thin;
     scrollbar-color: color-mix(in srgb, var(--text-muted) 35%, transparent) transparent;
 }
 
 *:hover {
-    scrollbar-color: color-mix(in srgb, var(--primary) 55%, transparent) transparent;
+    scrollbar-color: color-mix(in srgb, var(--primary) 60%, transparent) transparent;
 }
 
-/* WebKit (Chrome, Edge, Safari) */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
 }
 
 ::-webkit-scrollbar-track {
@@ -137,14 +194,13 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 ::-webkit-scrollbar-thumb {
     background-color: color-mix(in srgb, var(--text-muted) 30%, transparent);
     border-radius: 9999px;
-    /* Inset the thumb for a lighter, floating feel */
-    border: 2px solid transparent;
+    border: 3px solid transparent;
     background-clip: content-box;
     transition: background-color 160ms ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background-color: color-mix(in srgb, var(--primary) 55%, transparent);
+    background-color: color-mix(in srgb, var(--primary) 60%, transparent);
     background-clip: content-box;
 }
 
@@ -153,173 +209,230 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 
 /* ==========================================================================
-   Reusable Design Component Utilities (Hyperliquid-style)
+   Component Utilities — Vercel Geist (borders do the work, not shadows)
    ========================================================================== */
 
-/* Flat terminal panel (8px radius, crisp border, no soft blur) */
+/* Card — flat surface, precise border (Vercel signature) */
 .ny-card {
     background-color: var(--surface);
     border: 1px solid var(--border-color);
-    border-radius: 0.5rem; /* 8px */
+    border-radius: var(--radius-lg);
     box-shadow: none;
-    transition: background-color 140ms ease, border-color 140ms ease;
+    transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 200ms ease,
+                border-color 200ms ease,
+                background-color 200ms ease;
 }
 
-/* Hyperliquid-style interaction: elevation via surface tint only.
-   No glowing outline, no colored border flash. */
+/* Solid panel */
+.hl-panel {
+    background-color: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: none;
+}
+
+.ny-glass {
+    background-color: var(--surface-glass);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+}
+
+/* Interactive hover — border steps up + subtle lift (Vercel hover language) */
 .ny-card--interactive:hover {
-    background-color: var(--surface-hover);
+    transform: translateY(-2px);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-lift);
 }
 
-/* "NEW" pulse badge (mint, terminal chip) */
+/* Gradient helpers — Vercel neutral (black↔white), used sparingly */
+.ny-gradient-text {
+    background: var(--gradient-brand);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+
+.ny-gradient-bg {
+    background: var(--gradient-brand);
+}
+
+.ny-gradient-ring {
+    position: relative;
+}
+
+.ny-gradient-ring::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--gradient-brand);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+/* "NEW" badge — solid black (light) / white (dark), Vercel high-contrast */
 .hl-new-badge {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    font-family: var(--font-mono);
-    font-size: 0.5625rem; /* 9px */
-    font-weight: 700;
-    letter-spacing: 0.08em;
+    font-family: var(--font-sans);
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     text-transform: uppercase;
-    padding: 0.0625rem 0.375rem;
-    border-radius: 0.25rem;
-    background-color: var(--primary-soft);
-    color: var(--primary-soft-text);
-    border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    background: #000000;
+    color: #ffffff;
+    border: 1px solid transparent;
+}
+
+.dark .hl-new-badge {
+    background: #ffffff;
+    color: #000000;
 }
 
 .hl-new-badge::before {
     content: '';
-    width: 4px;
-    height: 4px;
+    width: 5px;
+    height: 5px;
     border-radius: 9999px;
-    background-color: var(--primary);
+    background-color: #ffffff;
     animation: hl-pulse 1.6s ease-in-out infinite;
 }
 
 @keyframes hl-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.35; }
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
 }
 
-/* Fresh feed item slide-in */
 @keyframes hl-slide-in {
-    from { opacity: 0; transform: translateY(-6px); }
+    from { opacity: 0; transform: translateY(-8px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 .hl-feed-enter {
-    animation: hl-slide-in 260ms ease-out;
+    animation: hl-slide-in 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Notification bell badge */
+/* Notification bell badge — gradient dot */
 .hl-badge-dot {
     position: absolute;
-    top: -3px;
-    right: -3px;
-    min-width: 1rem;
-    height: 1rem;
-    padding: 0 0.25rem;
+    top: -4px;
+    right: -4px;
+    min-width: 1.125rem;
+    height: 1.125rem;
+    padding: 0 0.3rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-family: var(--font-mono);
-    font-size: 0.5625rem;
+    font-family: var(--font-sans);
+    font-size: 0.625rem;
     font-weight: 700;
     line-height: 1;
     border-radius: 9999px;
-    background-color: var(--primary);
-    color: #04110f;
+    background: #000000;
+    color: #ffffff;
+    border: 2px solid var(--surface);
 }
 
-/* Feed row hover: subtle left accent bar, terminal-like (no full outline) */
+.dark .hl-badge-dot {
+    background: #ffffff;
+    color: #000000;
+}
+
+/* Feed card */
 .project-nav-card {
     position: relative;
     overflow: hidden;
+    border-radius: var(--radius-lg);
 }
 
-.project-nav-card::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background-color: transparent;
-    transition: background-color 160ms ease;
-}
-
-.project-nav-card:hover::before {
-    background-color: var(--primary);
-}
-
-/* Primary Button (Neon mint, 8px radius) */
+/* Primary button — solid high-contrast (Vercel: black in light, white in dark) */
 .btn-primary {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.375rem;
-    padding: 0.5rem 0.875rem;
-    font-size: 0.8125rem; /* 13px */
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
     font-weight: 600;
-    border-radius: 0.5rem; /* 8px */
-    background-color: var(--primary);
-    color: #04110f;
+    border-radius: var(--radius-md);
+    background-color: #000000;
+    color: #ffffff;
     border: 1px solid transparent;
     letter-spacing: 0.01em;
-    transition: background-color 140ms ease, transform 100ms ease;
+    transition: background-color 140ms ease, transform 140ms ease, box-shadow 200ms ease;
     cursor: pointer;
 }
 
 .btn-primary:hover {
-    background-color: var(--primary-hover);
+    background-color: #333333;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+}
+
+.dark .btn-primary {
+    background-color: #ffffff;
+    color: #000000;
+}
+
+.dark .btn-primary:hover {
+    background-color: #ededed;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
 }
 
 .btn-primary:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
 }
 
-/* Secondary Button (Flat surface, crisp border) */
+/* Secondary button — surface + border */
 .btn-secondary {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.375rem;
-    padding: 0.5rem 0.875rem;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
     font-size: 0.8125rem;
-    font-weight: 500;
-    border-radius: 0.5rem;
-    background-color: var(--surface);
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    background-color: transparent;
     color: var(--text-main);
     border: 1px solid var(--border-color);
-    transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+    transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease;
     cursor: pointer;
 }
 
 .btn-secondary:hover {
     background-color: var(--surface-hover);
-    border-color: var(--primary);
-    color: var(--primary);
+    border-color: var(--border-strong);
+    color: var(--text-main);
 }
 
 .btn-secondary:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
 }
 
-/* Soft Accent Button */
+/* Soft accent button */
 .btn-soft {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.375rem;
-    padding: 0.4375rem 0.75rem;
+    padding: 0.5rem 0.875rem;
     font-size: 0.75rem;
     font-weight: 600;
-    border-radius: 0.5rem;
+    border-radius: 9999px;
     background-color: var(--primary-soft);
     color: var(--primary-soft-text);
-    border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
-    transition: background-color 140ms ease;
+    border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent);
+    transition: background-color 160ms ease, transform 140ms ease;
     cursor: pointer;
 }
 
@@ -327,19 +440,19 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     background-color: color-mix(in srgb, var(--primary) 22%, transparent);
 }
 
-/* Ghost Button */
+/* Ghost button */
 .btn-ghost {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.375rem;
-    padding: 0.4375rem 0.625rem;
+    padding: 0.5rem 0.75rem;
     font-size: 0.75rem;
-    font-weight: 500;
-    border-radius: 0.5rem;
+    font-weight: 600;
+    border-radius: 9999px;
     background: transparent;
     color: var(--text-muted);
-    transition: background-color 140ms ease, color 140ms ease;
+    transition: background-color 160ms ease, color 160ms ease;
     cursor: pointer;
 }
 
@@ -348,125 +461,122 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     color: var(--text-main);
 }
 
-/* Clean Form Input (8px radius, terminal look) */
+/* Form input — rounded, soft, focus glow */
 .ny-input {
     width: 100%;
-    padding: 0.5625rem 0.875rem;
-    font-size: 0.8125rem;
-    background-color: var(--surface);
+    padding: 0.6875rem 1rem;
+    font-size: 0.875rem;
+    background-color: var(--surface-muted);
     color: var(--text-main);
     border: 1px solid var(--border-color);
-    border-radius: 0.5rem; /* 8px */
-    transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+    border-radius: var(--radius-md);
+    transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
 }
 
 .ny-input::placeholder {
-    color: var(--text-muted);
-    opacity: 0.7;
+    color: var(--text-faint);
+    opacity: 1;
 }
 
-/* Tech Pill / Tag (mono, tight) */
+/* Tech pill — rounded, subtle */
 .tech-pill {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
-    font-family: var(--font-mono);
-    font-size: 0.6875rem; /* 11px */
-    padding: 0.1875rem 0.5rem;
-    border-radius: 0.375rem; /* 6px */
+    gap: 0.3rem;
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
     background-color: var(--surface-muted);
     color: var(--text-muted);
     border: 1px solid var(--border-color);
-    transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+    transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
 }
 
 .tech-pill:hover {
     background-color: var(--primary-soft);
     color: var(--primary-soft-text);
-    border-color: color-mix(in srgb, var(--primary) 40%, transparent);
+    border-color: color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
-/* Hyperliquid stat / number helper — always mono + tabular */
+/* Numeric helper — mono only where numbers matter */
 .hl-stat {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
 }
 
-/* Small uppercase section label (bar-style) */
+/* Section label — friendly uppercase (not terminal) */
 .hl-label {
-    font-family: var(--font-mono);
-    font-size: 0.625rem; /* 10px */
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    color: var(--text-faint);
 }
 
-/* Flat bordered panel variant (denser than ny-card) */
-.hl-panel {
-    background-color: var(--surface);
-    border: 1px solid var(--border-color);
-    border-radius: 0.5rem;
-}
-
-/* Keyboard active outline */
 .keyboard-active-card {
-    outline: 1.5px solid var(--primary) !important;
-    outline-offset: 2px !important;
+    outline: 2px solid var(--primary) !important;
+    outline-offset: 3px !important;
     border-color: var(--primary) !important;
+    box-shadow: var(--shadow-lift);
 }
 
-/* Backwards compatibility aliases to avoid breaking any legacy view */
+/* ---- Legacy aliases (kept so existing views keep working) ---- */
 .spotlight-card {
     background-color: var(--surface);
     border: 1px solid var(--border-color);
-    border-radius: 0.5rem;
-    box-shadow: none;
-    transition: border-color 140ms ease;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-soft);
+    transition: box-shadow 200ms ease, border-color 200ms ease, transform 200ms ease;
 }
 
 .spotlight-card:hover {
-    border-color: var(--primary);
+    box-shadow: var(--shadow-lift);
+    border-color: color-mix(in srgb, var(--primary) 45%, var(--border-color));
 }
 
 .btn-vercel-primary {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.375rem;
-    padding: 0.5rem 0.875rem;
+    gap: 0.4rem;
+    padding: 0.5625rem 1rem;
     font-size: 0.8125rem;
     font-weight: 600;
-    border-radius: 0.5rem;
-    background-color: var(--primary);
-    color: #04110f;
+    border-radius: 9999px;
+    background-image: var(--gradient-brand);
+    color: #ffffff;
     border: 1px solid transparent;
-    transition: background-color 140ms ease;
+    box-shadow: 0 6px 18px -6px rgba(99, 102, 241, 0.7);
+    transition: box-shadow 200ms ease;
 }
 
 .btn-vercel-primary:hover {
-    background-color: var(--primary-hover);
+    box-shadow: 0 10px 26px -6px rgba(99, 102, 241, 0.85);
 }
 
 .linear-pill {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
-    font-family: var(--font-mono);
+    gap: 0.3rem;
+    font-family: var(--font-sans);
     font-size: 0.6875rem;
-    padding: 0.1875rem 0.5rem;
-    border-radius: 0.375rem;
+    font-weight: 600;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
     background-color: var(--surface-muted);
     color: var(--text-muted);
     border: 1px solid var(--border-color);
-    transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+    transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
 }
 
 .linear-pill:hover {
     background-color: var(--primary-soft);
     color: var(--primary-soft-text);
-    border-color: color-mix(in srgb, var(--primary) 40%, transparent);
+    border-color: color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
 /* Motion reduction */

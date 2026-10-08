@@ -6,21 +6,21 @@
 ])
 
 @php
-    $baseClass = 'inline-flex items-center justify-center font-medium transition cursor-pointer select-none active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none';
+    $baseClass = 'inline-flex items-center justify-center font-semibold transition cursor-pointer select-none active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none';
 
     $sizeClasses = [
-        'sm' => 'text-xs px-2.5 py-1.5 rounded-lg gap-1.5',
-        'md' => 'text-xs sm:text-sm px-3.5 py-2 rounded-lg gap-2 font-semibold',
-        'lg' => 'text-sm sm:text-base px-4 py-2.5 rounded-xl gap-2 font-semibold',
-    ][$size] ?? 'text-xs px-3.5 py-2 rounded-lg gap-2 font-semibold';
+        'sm' => 'text-xs px-3.5 py-1.5 rounded-full gap-1.5',
+        'md' => 'text-sm px-4 py-2.5 rounded-full gap-2',
+        'lg' => 'text-base px-5 py-3 rounded-full gap-2',
+    ][$size] ?? 'text-sm px-4 py-2.5 rounded-full gap-2';
 
     $variantClasses = [
-        'primary' => 'bg-[#0e9c8b] hover:bg-[#0b7d70] text-[#04110f] border border-transparent',
-        'secondary' => 'bg-white dark:bg-[#141821] hover:bg-[#f2f4f6] dark:hover:bg-[#1e2530] text-[#10161f] dark:text-[#eaecf0] border border-[#d5dbe2] dark:border-[#262d3a]',
-        'soft' => 'bg-[#d9fbf4] dark:bg-[#50d2c1]/12 text-[#0e9c8b] dark:text-[#6ee7d5] hover:bg-[#c8fff4] dark:hover:bg-[#50d2c1]/20 border border-[#50d2c1]/30',
-        'ghost' => 'bg-transparent text-[#5c6979] dark:text-[#7e8a9a] hover:bg-[#f2f4f6] dark:hover:bg-[#1e2530] hover:text-[#10161f] dark:hover:text-white',
+        'primary' => 'btn-primary',
+        'secondary' => 'bg-[#f2f2f2] dark:bg-[#171717] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] text-[#000000] dark:text-[#fafafa] border border-[#e2e2e2] dark:border-[#1f1f1f] hover:border-[#d8d8d8] dark:hover:border-[#3a4270] hover:text-[#0070f3] dark:hover:text-[#47a8ff]',
+        'soft' => 'bg-[#e8f2ff] dark:bg-[#3291ff]/16 text-[#0761d1] dark:text-[#47a8ff] hover:bg-[#d0e7ff] dark:hover:bg-[#3291ff]/24 border border-[#3291ff]/25',
+        'ghost' => 'bg-transparent text-[#666666] dark:text-[#a0a0a0] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] hover:text-[#000000] dark:hover:text-white',
         'danger' => 'bg-rose-600 hover:bg-rose-700 text-white border border-transparent',
-    ][$variant] ?? 'bg-[#0e9c8b] hover:bg-[#0b7d70] text-[#04110f]';
+    ][$variant] ?? 'btn-primary';
 @endphp
 
 @if($href)

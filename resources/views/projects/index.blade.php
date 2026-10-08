@@ -14,8 +14,8 @@
          class="flex justify-center">
         <button @click="revealNew()"
                 type="button"
-                class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-[#0e9c8b] text-[#04110f] text-xs font-bold hover:bg-[#0b7d70] transition active:scale-[0.98]">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#04110f] animate-pulse"></span>
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-[#0070f3] text-[#ffffff] text-xs font-bold hover:bg-[#0761d1] transition active:scale-[0.98]">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#ffffff] animate-pulse"></span>
             <span x-text="newCount + ' project baru — klik untuk lihat'"></span>
         </button>
     </div>
@@ -28,21 +28,21 @@
 
             <!-- ACTIVE FILTER BAR (Only visible when filter or search is active) -->
             @if($categorySlug || $techFilter || $search)
-                <div class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-white dark:bg-[#141821] border border-[#d5dbe2] dark:border-[#262d3a] text-xs">
+                <div class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-white dark:bg-[#0a0a0a] border border-[#e2e2e2] dark:border-[#1f1f1f] text-xs">
                     <div class="flex items-center gap-2 flex-wrap">
-                        <span class="text-[#5c6979] dark:text-[#7e8a9a] font-medium">Filter aktif:</span>
+                        <span class="text-[#666666] dark:text-[#a0a0a0] font-medium">Filter aktif:</span>
                         @if($categorySlug)
-                            <span class="px-2 py-0.5 rounded-md bg-[#e6eaee] dark:bg-[#1e2530] text-[#10161f] dark:text-[#eaecf0] font-medium text-[11px] border border-[#d5dbe2] dark:border-[#262d3a]">
+                            <span class="px-2 py-0.5 rounded-md bg-[#f2f2f2] dark:bg-[#171717] text-[#000000] dark:text-[#fafafa] font-medium text-[11px] border border-[#e2e2e2] dark:border-[#1f1f1f]">
                                 Kategori: {{ $categorySlug }}
                             </span>
                         @endif
                         @if($techFilter)
-                            <span class="px-2 py-0.5 rounded-md bg-[#d9fbf4] dark:bg-[#50d2c1]/12 text-[#0e9c8b] dark:text-[#50d2c1] font-mono text-[11px] border border-[#50d2c1]/30 dark:border-[#50d2c1]/30">
+                            <span class="px-2 py-0.5 rounded-md bg-[#e8f2ff] dark:bg-[#3291ff]/12 text-[#0070f3] dark:text-[#3291ff] font-mono text-[11px] border border-[#3291ff]/30 dark:border-[#3291ff]/30">
                                 #{{ $techFilter }}
                             </span>
                         @endif
                         @if($search)
-                            <span class="px-2 py-0.5 rounded-md bg-[#e6eaee] dark:bg-[#1e2530] text-[#10161f] dark:text-[#eaecf0] text-[11px] border border-[#d5dbe2] dark:border-[#262d3a]">
+                            <span class="px-2 py-0.5 rounded-md bg-[#f2f2f2] dark:bg-[#171717] text-[#000000] dark:text-[#fafafa] text-[11px] border border-[#e2e2e2] dark:border-[#1f1f1f]">
                                 "{{ $search }}"
                             </span>
                         @endif
@@ -89,10 +89,10 @@
             <!-- BLOCK 0: Who to follow (Social onboarding) -->
             @auth
                 @if(isset($suggestedDevelopers) && $suggestedDevelopers->count() > 0)
-                    <div class="ny-card p-4 space-y-3 bg-white dark:bg-[#141821]">
+                    <div class="ny-card p-4 space-y-3 bg-white dark:bg-[#0a0a0a]">
                         <div class="flex items-center justify-between">
                             <h3 class="hl-label flex items-center gap-1.5">
-                                <svg class="w-3.5 h-3.5 text-[#0e9c8b] dark:text-[#50d2c1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-3.5 h-3.5 text-[#0070f3] dark:text-[#3291ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
                                 </svg>
                                 <span>Untuk Diikuti</span>
@@ -105,10 +105,10 @@
                                     <a href="{{ route('profile.show', $dev->username) }}" class="flex items-center gap-2.5 min-w-0 group">
                                         <x-user-avatar :user="$dev" size="sm" />
                                         <div class="min-w-0">
-                                            <p class="font-bold text-xs text-[#10161f] dark:text-[#eaecf0] group-hover:text-[#0e9c8b] dark:group-hover:text-[#50d2c1] transition truncate">
+                                            <p class="font-bold text-xs text-[#000000] dark:text-[#fafafa] group-hover:text-[#0070f3] dark:group-hover:text-[#3291ff] transition truncate">
                                                 {{ $dev->name }}
                                             </p>
-                                            <p class="text-[11px] font-mono text-[#5c6979] dark:text-[#7e8a9a] truncate">&#64;{{ $dev->username }}</p>
+                                            <p class="text-[11px] font-mono text-[#666666] dark:text-[#a0a0a0] truncate">&#64;{{ $dev->username }}</p>
                                         </div>
                                     </a>
                                     <x-follow-button :user="$dev" size="sm" />
@@ -120,10 +120,10 @@
             @endauth
 
             <!-- BLOCK 2: Active Creators (Top Contributors) -->
-            <div class="ny-card p-4 space-y-3 bg-white dark:bg-[#141821]">
+            <div class="ny-card p-4 space-y-3 bg-white dark:bg-[#0a0a0a]">
                 <div class="flex items-center justify-between">
-                    <h3 class="font-bold text-xs uppercase tracking-wider text-[#5c6979] dark:text-[#7e8a9a] flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5 text-[#0e9c8b] dark:text-[#50d2c1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <h3 class="font-bold text-xs uppercase tracking-wider text-[#666666] dark:text-[#a0a0a0] flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-[#0070f3] dark:text-[#3291ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                         </svg>
                         <span>Top Kontributor</span>
@@ -133,31 +133,31 @@
                 <div class="space-y-2.5">
                     @forelse($topDevelopers as $dev)
                         <a href="{{ route('profile.show', $dev->username) }}" 
-                           class="flex items-center justify-between p-2 rounded-lg hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c] transition group">
+                           class="flex items-center justify-between p-2 rounded-lg hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition group">
                             <div class="flex items-center gap-2.5 min-w-0">
                                 <x-user-avatar :user="$dev" size="sm" />
                                 <div class="min-w-0">
-                                    <p class="font-bold text-xs text-[#10161f] dark:text-[#eaecf0] group-hover:text-[#0e9c8b] dark:group-hover:text-[#50d2c1] transition truncate">
+                                    <p class="font-bold text-xs text-[#000000] dark:text-[#fafafa] group-hover:text-[#0070f3] dark:group-hover:text-[#3291ff] transition truncate">
                                         {{ $dev->name }}
                                     </p>
-                                    <p class="text-[11px] font-mono text-[#5c6979] dark:text-[#7e8a9a] truncate">&#64;{{ $dev->username }}</p>
+                                    <p class="text-[11px] font-mono text-[#666666] dark:text-[#a0a0a0] truncate">&#64;{{ $dev->username }}</p>
                                 </div>
                             </div>
-                            <span class="text-[11px] font-mono font-semibold text-[#0e9c8b] dark:text-[#50d2c1] px-2 py-0.5 rounded bg-[#d9fbf4] dark:bg-[#50d2c1]/12 border border-[#50d2c1]/30 dark:border-[#50d2c1]/30 shrink-0">
+                            <span class="text-[11px] font-mono font-semibold text-[#0070f3] dark:text-[#3291ff] px-2 py-0.5 rounded bg-[#e8f2ff] dark:bg-[#3291ff]/12 border border-[#3291ff]/30 dark:border-[#3291ff]/30 shrink-0">
                                 {{ $dev->reputation_points }} pt
                             </span>
                         </a>
                     @empty
-                        <p class="text-xs text-[#5c6979] py-2 text-center">Belum ada kontributor terdaftar.</p>
+                        <p class="text-xs text-[#666666] py-2 text-center">Belum ada kontributor terdaftar.</p>
                     @endforelse
                 </div>
             </div>
 
             <!-- BLOCK 3: Recent Discussions / Feedback -->
-            <div class="ny-card p-4 space-y-3 bg-white dark:bg-[#141821]">
+            <div class="ny-card p-4 space-y-3 bg-white dark:bg-[#0a0a0a]">
                 <div class="flex items-center justify-between">
-                    <h3 class="font-bold text-xs uppercase tracking-wider text-[#5c6979] dark:text-[#7e8a9a] flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5 text-[#0e9c8b] dark:text-[#50d2c1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <h3 class="font-bold text-xs uppercase tracking-wider text-[#666666] dark:text-[#a0a0a0] flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-[#0070f3] dark:text-[#3291ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
                         </svg>
                         <span>Diskusi Terbaru</span>
@@ -166,19 +166,19 @@
 
                 <div class="space-y-3">
                     @forelse($recentReviews as $comment)
-                        <div class="p-2.5 rounded-lg bg-[#eceff1] dark:bg-[#0b0e11] border border-[#d5dbe2]/60 dark:border-[#262d3a] space-y-1.5">
+                        <div class="p-2.5 rounded-lg bg-[#ffffff] dark:bg-[#000000] border border-[#e2e2e2]/60 dark:border-[#1f1f1f] space-y-1.5">
                             <div class="flex items-center justify-between text-[11px]">
-                                <span class="font-semibold text-[#10161f] dark:text-[#eaecf0] truncate max-w-[120px]">
+                                <span class="font-semibold text-[#000000] dark:text-[#fafafa] truncate max-w-[120px]">
                                     {{ $comment->authorName() }}
                                 </span>
-                                <span class="text-[#5c6979] dark:text-[#7e8a9a]">{{ $comment->created_at->diffForHumans() }}</span>
+                                <span class="text-[#666666] dark:text-[#a0a0a0]">{{ $comment->created_at->diffForHumans() }}</span>
                             </div>
-                            <p class="text-xs text-[#5c6979] dark:text-[#7e8a9a] line-clamp-2 leading-relaxed">
+                            <p class="text-xs text-[#666666] dark:text-[#a0a0a0] line-clamp-2 leading-relaxed">
                                 "{{ $comment->content }}"
                             </p>
                             @if($comment->project)
                                 <a href="{{ route('projects.show', $comment->project->slug) }}#komentar" 
-                                   class="text-[11px] font-medium text-[#0e9c8b] dark:text-[#50d2c1] hover:underline flex items-center gap-1 truncate pt-0.5">
+                                   class="text-[11px] font-medium text-[#0070f3] dark:text-[#3291ff] hover:underline flex items-center gap-1 truncate pt-0.5">
                                     <span>di {{ $comment->project->title }}</span>
                                     <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -187,7 +187,7 @@
                             @endif
                         </div>
                     @empty
-                        <p class="text-xs text-[#5c6979] py-2 text-center">Belum ada diskusi terbaru.</p>
+                        <p class="text-xs text-[#666666] py-2 text-center">Belum ada diskusi terbaru.</p>
                     @endforelse
                 </div>
             </div>

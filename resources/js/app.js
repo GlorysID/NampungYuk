@@ -44,10 +44,14 @@ document.addEventListener('alpine:init', () => {
     /**
      * Follow button: optimistic toggle with server sync.
      */
-    Alpine.data('followButton', ({ following, count, url }) => ({
+    Alpine.data('followButton', ({ following, count, url, username = '' }) => ({
         following,
         count,
+        url,
+        username,
         loading: false,
+        menuOpen: false,
+        hoverUnfollow: false,
 
         async toggle() {
             if (this.loading) return;
@@ -55,6 +59,8 @@ document.addEventListener('alpine:init', () => {
 
             const previous = this.following;
             this.following = ! previous;
+            this.menuOpen = false;
+            this.hoverUnfollow = false;
 
             try {
                 const token = document.querySelector('meta[name=csrf-token]')?.content;

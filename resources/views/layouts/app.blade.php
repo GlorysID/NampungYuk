@@ -33,7 +33,7 @@
         [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="bg-[#eceff1] dark:bg-[#0b0e11] text-[#10161f] dark:text-[#eaecf0] min-h-screen transition-colors duration-150 antialiased selection:bg-[#d9fbf4] selection:text-[#0e9c8b] relative overflow-x-hidden pb-16 lg:pb-0"
+<body class="bg-[#ffffff] dark:bg-[#000000] text-[#000000] dark:text-[#fafafa] min-h-screen transition-colors duration-150 antialiased selection:bg-[#e8f2ff] selection:text-[#0070f3] relative overflow-x-hidden pb-16 lg:pb-0"
       x-data="{
           mobileSidebarOpen: false,
           activeCardIndex: -1,
@@ -128,13 +128,13 @@
              x-transition:leave="transition ease-in-out duration-250 transform"
              x-transition:leave-start="translate-x-0"
              x-transition:leave-end="-translate-x-full"
-             class="relative flex-1 flex flex-col max-w-xs w-full h-full bg-white dark:bg-[#141821] border-r border-[#d5dbe2] dark:border-[#262d3a] z-10">
+             class="relative flex-1 flex flex-col max-w-xs w-full h-full bg-white dark:bg-[#0a0a0a] border-r border-[#e2e2e2] dark:border-[#1f1f1f] z-10">
             
             <!-- Close Button -->
             <div class="absolute top-3 right-3 z-20">
                 <button @click="mobileSidebarOpen = false" 
                         type="button"
-                        class="p-1.5 rounded-md text-[#5c6979] dark:text-[#7e8a9a] hover:text-[#10161f] dark:hover:text-white hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c] transition"
+                        class="p-1.5 rounded-md text-[#666666] dark:text-[#a0a0a0] hover:text-[#000000] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition"
                         aria-label="Tutup Menu">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -147,24 +147,24 @@
     </div>
 
     <!-- MAIN TWO-PANE LAYOUT -->
-    <div class="min-h-screen flex">
+    <div class="min-h-screen flex gap-0 lg:gap-4 lg:px-4 lg:pt-4">
         
-        <!-- DESKTOP FIXED SIDEBAR -->
-        <aside class="hidden lg:flex lg:flex-col lg:w-64 xl:w-72 shrink-0 sticky top-0 h-screen z-30 bg-white dark:bg-[#141821] border-r border-[#d5dbe2] dark:border-[#262d3a]">
+        <!-- DESKTOP FLOATING SIDEBAR -->
+        <aside class="hidden lg:flex lg:flex-col lg:w-64 xl:w-72 shrink-0 sticky top-4 h-[calc(100vh-2rem)] z-30 ny-glass rounded-2xl overflow-hidden">
             @include('partials.sidebar')
         </aside>
 
         <!-- RIGHT WORKSPACE AREA -->
         <div class="flex-1 flex flex-col min-w-0">
             
-            <!-- TOP HEADER -->
-            <header class="sticky top-0 z-20 h-14 sm:h-16 bg-white/95 dark:bg-[#0b0e11]/95 backdrop-blur-md border-b border-[#d5dbe2] dark:border-[#262d3a] px-4 sm:px-6 flex items-center justify-between gap-3">
+            <!-- TOP HEADER (glass) -->
+            <header class="sticky top-0 lg:top-4 z-20 h-14 sm:h-16 ny-glass rounded-none lg:rounded-2xl px-4 sm:px-6 flex items-center justify-between gap-3">
                 
                 <!-- Left in Header: Mobile Hamburger Toggle + Brand for small screens -->
                 <div class="flex items-center gap-2 sm:gap-3 shrink-0">
                     <button @click="mobileSidebarOpen = true" 
                             type="button"
-                            class="lg:hidden p-1.5 rounded-md border border-[#d5dbe2] dark:border-[#262d3a] text-[#5c6979] dark:text-[#7e8a9a] hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c] transition"
+                            class="lg:hidden p-1.5 rounded-md border border-[#e2e2e2] dark:border-[#1f1f1f] text-[#666666] dark:text-[#a0a0a0] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition"
                             aria-label="Buka Menu Sidebar">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
@@ -183,7 +183,7 @@
                         @if(request('tech')) <input type="hidden" name="tech" value="{{ request('tech') }}"> @endif
                         
                         <div class="relative flex items-center">
-                            <svg class="w-4 h-4 text-[#5c6979] dark:text-[#7e8a9a] absolute left-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-4 h-4 text-[#666666] dark:text-[#a0a0a0] absolute left-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                             </svg>
                             <input type="text" 
@@ -192,14 +192,14 @@
                                    value="{{ request('q') }}"
                                    placeholder="Cari project, teknologi, atau creator..." 
                                    aria-label="Cari project, teknologi, atau creator"
-                                   class="w-full pl-9 sm:pl-10 pr-12 sm:pr-14 py-1.5 text-xs sm:text-sm bg-[#eceff1] dark:bg-[#0b0e11] border border-[#d5dbe2] dark:border-[#262d3a] rounded-md text-[#10161f] dark:text-[#eaecf0] placeholder-[#5c6979]/60 transition">
+                                   class="w-full pl-9 sm:pl-10 pr-12 sm:pr-14 py-1.5 text-xs sm:text-sm bg-[#ffffff] dark:bg-[#000000] border border-[#e2e2e2] dark:border-[#1f1f1f] rounded-md text-[#000000] dark:text-[#fafafa] placeholder-[#666666]/60 transition">
                             
                             <div class="absolute right-2.5 hidden sm:flex items-center gap-1 pointer-events-none">
-                                <kbd class="px-1.5 py-0.5 text-[10px] font-mono font-bold text-[#5c6979] dark:text-[#7e8a9a] bg-white dark:bg-[#141821] border border-[#d5dbe2] dark:border-[#262d3a] rounded">⌘K</kbd>
+                                <kbd class="px-1.5 py-0.5 text-[10px] font-mono font-bold text-[#666666] dark:text-[#a0a0a0] bg-white dark:bg-[#0a0a0a] border border-[#e2e2e2] dark:border-[#1f1f1f] rounded">⌘K</kbd>
                             </div>
 
                             @if(request('q'))
-                                <a href="{{ route('projects.index') }}" class="absolute right-8 text-[#5c6979] hover:text-[#10161f] p-0.5" title="Hapus pencarian">
+                                <a href="{{ route('projects.index') }}" class="absolute right-8 text-[#666666] hover:text-[#000000] p-0.5" title="Hapus pencarian">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                     </svg>
@@ -215,7 +215,7 @@
                     <!-- Theme Toggle Button -->
                     <button @click="$store.theme.toggle()"
                             type="button"
-                            class="w-8 h-8 rounded-md flex items-center justify-center text-[#5c6979] hover:text-[#10161f] dark:text-[#7e8a9a] dark:hover:text-white hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c] transition"
+                            class="w-8 h-8 rounded-md flex items-center justify-center text-[#666666] hover:text-[#000000] dark:text-[#a0a0a0] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition"
                             aria-label="Ganti mode gelap atau terang"
                             title="Mode Gelap / Terang">
                         <svg x-show="!$store.theme.dark" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -232,7 +232,7 @@
                         <div class="relative" x-data="notificationBell()" x-init="init()">
                             <button @click="open = !open; if (open) refresh()"
                                     type="button"
-                                    class="relative w-8 h-8 rounded-md flex items-center justify-center text-[#5c6979] hover:text-[#10161f] dark:text-[#7e8a9a] dark:hover:text-white hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c] transition"
+                                    class="relative w-8 h-8 rounded-md flex items-center justify-center text-[#666666] hover:text-[#000000] dark:text-[#a0a0a0] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition"
                                     aria-label="Notifikasi"
                                     :aria-expanded="open">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -247,36 +247,36 @@
                                  x-transition:enter="transition ease-out duration-150"
                                  x-transition:enter-start="opacity-0 -translate-y-1"
                                  x-transition:enter-end="opacity-100 translate-y-0"
-                                 class="absolute right-0 mt-2 w-80 bg-white dark:bg-[#141821] rounded-lg border border-[#d5dbe2] dark:border-[#262d3a] z-50 overflow-hidden">
-                                <div class="flex items-center justify-between px-4 py-2.5 border-b border-[#d5dbe2] dark:border-[#262d3a]">
+                                 class="absolute right-0 mt-2 w-80 bg-white dark:bg-[#0a0a0a] rounded-lg border border-[#e2e2e2] dark:border-[#1f1f1f] z-50 overflow-hidden">
+                                <div class="flex items-center justify-between px-4 py-2.5 border-b border-[#e2e2e2] dark:border-[#1f1f1f]">
                                     <span class="hl-label">Notifikasi</span>
-                                    <button @click="markAll()" x-show="unreadCount > 0" type="button" class="text-[11px] font-medium text-[#0e9c8b] dark:text-[#50d2c1] hover:underline">
+                                    <button @click="markAll()" x-show="unreadCount > 0" type="button" class="text-[11px] font-medium text-[#0070f3] dark:text-[#3291ff] hover:underline">
                                         Tandai dibaca
                                     </button>
                                 </div>
 
-                                <div class="max-h-96 overflow-y-auto divide-y divide-[#d5dbe2] dark:divide-[#262d3a]">
+                                <div class="max-h-96 overflow-y-auto divide-y divide-[#eaeaea] dark:divide-[#1f1f1f]">
                                     <template x-for="n in notifications" :key="n.id">
                                         <a :href="n.data.url || '#'"
-                                           class="flex items-start gap-2.5 px-4 py-3 transition hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c]"
-                                           :class="!n.read ? 'bg-[#d9fbf4]/40 dark:bg-[#50d2c1]/[0.06]' : ''">
-                                            <img x-show="n.data.actor_avatar" :src="n.data.actor_avatar" alt="" class="w-7 h-7 rounded-md object-cover ring-1 ring-[#d5dbe2] dark:ring-[#262d3a] shrink-0">
+                                           class="flex items-start gap-2.5 px-4 py-3 transition hover:bg-[#f5f5f5] dark:hover:bg-[#111111]"
+                                           :class="!n.read ? 'bg-[#e8f2ff]/40 dark:bg-[#3291ff]/[0.06]' : ''">
+                                            <img x-show="n.data.actor_avatar" :src="n.data.actor_avatar" alt="" class="w-7 h-7 rounded-md object-cover ring-1 ring-[#eaeaea] dark:ring-[#1f1f1f] shrink-0">
                                             <div class="min-w-0 flex-1">
-                                                <p class="text-xs text-[#10161f] dark:text-[#eaecf0] leading-snug" x-text="n.data.message"></p>
-                                                <p class="text-[10px] font-mono text-[#5c6979] dark:text-[#7e8a9a] mt-0.5" x-text="n.created_at"></p>
+                                                <p class="text-xs text-[#000000] dark:text-[#fafafa] leading-snug" x-text="n.data.message"></p>
+                                                <p class="text-[10px] font-mono text-[#666666] dark:text-[#a0a0a0] mt-0.5" x-text="n.created_at"></p>
                                             </div>
-                                            <span x-show="!n.read" class="w-1.5 h-1.5 rounded-full bg-[#0e9c8b] dark:bg-[#50d2c1] mt-1.5 shrink-0"></span>
+                                            <span x-show="!n.read" class="w-1.5 h-1.5 rounded-full bg-[#0070f3] dark:bg-[#3291ff] mt-1.5 shrink-0"></span>
                                         </a>
                                     </template>
 
                                     <template x-if="notifications.length === 0">
-                                        <div class="px-4 py-8 text-center text-xs text-[#5c6979] dark:text-[#7e8a9a]">
+                                        <div class="px-4 py-8 text-center text-xs text-[#666666] dark:text-[#a0a0a0]">
                                             Belum ada notifikasi baru.
                                         </div>
                                     </template>
                                 </div>
 
-                                <a href="{{ route('notifications.index') }}" class="block px-4 py-2.5 text-center text-xs font-semibold text-[#0e9c8b] dark:text-[#50d2c1] border-t border-[#d5dbe2] dark:border-[#262d3a] hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c] transition">
+                                <a href="{{ route('notifications.index') }}" class="block px-4 py-2.5 text-center text-xs font-semibold text-[#0070f3] dark:text-[#3291ff] border-t border-[#e2e2e2] dark:border-[#1f1f1f] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition">
                                     Lihat semua notifikasi
                                 </a>
                             </div>
@@ -295,7 +295,7 @@
                         <div class="relative" x-data="{ open: false }">
                             <button @click="open = !open" 
                                     type="button"
-                                    class="flex items-center gap-1.5 p-0.5 rounded-md hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c] transition"
+                                    class="flex items-center gap-1.5 p-0.5 rounded-md hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition"
                                     aria-haspopup="true"
                                     :aria-expanded="open"
                                     aria-label="Menu akun {{ Auth::user()->name }}">
@@ -304,33 +304,33 @@
                             <div x-show="open" 
                                  @click.away="open = false" 
                                  x-cloak 
-                                 class="absolute right-0 mt-2 w-52 bg-white dark:bg-[#141821] rounded-lg border border-[#d5dbe2] dark:border-[#262d3a] py-1.5 z-50 text-xs">
-                                <div class="px-4 py-2 border-b border-[#d5dbe2] dark:border-[#262d3a]">
-                                    <p class="font-bold truncate text-[#10161f] dark:text-[#eaecf0]">{{ Auth::user()->name }}</p>
-                                    <p class="text-[11px] text-[#5c6979] dark:text-[#7e8a9a] font-mono truncate">&#64;{{ Auth::user()->username }}</p>
+                                 class="absolute right-0 mt-2 w-52 bg-white dark:bg-[#0a0a0a] rounded-lg border border-[#e2e2e2] dark:border-[#1f1f1f] py-1.5 z-50 text-xs">
+                                <div class="px-4 py-2 border-b border-[#e2e2e2] dark:border-[#1f1f1f]">
+                                    <p class="font-bold truncate text-[#000000] dark:text-[#fafafa]">{{ Auth::user()->name }}</p>
+                                    <p class="text-[11px] text-[#666666] dark:text-[#a0a0a0] font-mono truncate">&#64;{{ Auth::user()->username }}</p>
                                 </div>
-                                <a href="{{ route('profile.show', Auth::user()->username) }}" class="flex items-center gap-2 px-4 py-2 text-[#10161f] dark:text-[#eaecf0] hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c] transition">
-                                    <svg class="w-3.5 h-3.5 text-[#5c6979]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <a href="{{ route('profile.show', Auth::user()->username) }}" class="flex items-center gap-2 px-4 py-2 text-[#000000] dark:text-[#fafafa] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition">
+                                    <svg class="w-3.5 h-3.5 text-[#666666]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                                     </svg>
                                     <span>Profil Saya</span>
                                 </a>
-                                <a href="{{ route('projects.bookmarks') }}" class="flex items-center gap-2 px-4 py-2 text-[#10161f] dark:text-[#eaecf0] hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c] transition">
-                                    <svg class="w-3.5 h-3.5 text-[#5c6979]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <a href="{{ route('projects.bookmarks') }}" class="flex items-center gap-2 px-4 py-2 text-[#000000] dark:text-[#fafafa] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition">
+                                    <svg class="w-3.5 h-3.5 text-[#666666]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
                                     </svg>
                                     <span>Koleksi Tersimpan</span>
                                 </a>
-                                <a href="{{ route('projects.create') }}" class="flex items-center gap-2 px-4 py-2 text-[#10161f] dark:text-[#eaecf0] hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c] transition">
-                                    <svg class="w-3.5 h-3.5 text-[#5c6979]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <a href="{{ route('projects.create') }}" class="flex items-center gap-2 px-4 py-2 text-[#000000] dark:text-[#fafafa] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition">
+                                    <svg class="w-3.5 h-3.5 text-[#666666]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                                     </svg>
                                     <span>Pamerkan Project</span>
                                 </a>
-                                <div class="border-t border-[#d5dbe2] dark:border-[#262d3a] my-1"></div>
+                                <div class="border-t border-[#e2e2e2] dark:border-[#1f1f1f] my-1"></div>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
-                                    <button type="submit" class="w-full text-left px-4 py-2 text-[#e23a52] hover:bg-rose-50 dark:hover:bg-rose-950/30 transition flex items-center gap-2">
+                                    <button type="submit" class="w-full text-left px-4 py-2 text-[#e11d48] hover:bg-rose-50 dark:hover:bg-rose-950/30 transition flex items-center gap-2">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                                         </svg>
@@ -342,7 +342,7 @@
                     @else
                         <!-- Guest Actions -->
                         <div class="flex items-center gap-2 text-xs">
-                            <a href="{{ route('login') }}" class="px-3 py-1.5 text-[#5c6979] dark:text-[#7e8a9a] hover:text-[#0e9c8b] font-medium transition">
+                            <a href="{{ route('login') }}" class="px-3 py-1.5 text-[#666666] dark:text-[#a0a0a0] hover:text-[#0070f3] font-medium transition">
                                 Masuk
                             </a>
                             <a href="{{ route('register') }}" class="btn-primary py-1.5 px-3 text-xs">
@@ -355,11 +355,11 @@
             </header>
 
             <!-- MAIN WORKSPACE CONTENT CONTAINER -->
-            <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col justify-between">
+            <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-6 py-6 lg:py-6 flex-1 flex flex-col justify-between">
                 <div>
                     @if(session('success'))
-                        <div class="mb-5 p-3.5 rounded-lg bg-[#d9fbf4] dark:bg-[#50d2c1]/14 border border-[#50d2c1]/30 dark:border-[#50d2c1]/30 text-[#0e9c8b] dark:text-[#6ee7d5] text-xs flex items-center gap-2" role="alert">
-                            <svg class="w-4 h-4 text-[#0e9c8b] dark:text-[#50d2c1] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="mb-5 p-3.5 rounded-lg bg-[#e8f2ff] dark:bg-[#3291ff]/14 border border-[#3291ff]/30 dark:border-[#3291ff]/30 text-[#0070f3] dark:text-[#47a8ff] text-xs flex items-center gap-2" role="alert">
+                            <svg class="w-4 h-4 text-[#0070f3] dark:text-[#3291ff] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                             <span>{{ session('success') }}</span>
@@ -367,8 +367,8 @@
                     @endif
 
                     @if(session('status'))
-                        <div class="mb-5 p-3.5 rounded-lg bg-[#e6eaee] dark:bg-[#1e2530] border border-[#d5dbe2] dark:border-[#262d3a] text-[#10161f] dark:text-[#eaecf0] text-xs flex items-center gap-2" role="status">
-                            <svg class="w-4 h-4 text-[#5c6979] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="mb-5 p-3.5 rounded-lg bg-[#f2f2f2] dark:bg-[#171717] border border-[#e2e2e2] dark:border-[#1f1f1f] text-[#000000] dark:text-[#fafafa] text-xs flex items-center gap-2" role="status">
+                            <svg class="w-4 h-4 text-[#666666] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                             <span>{{ session('status') }}</span>
@@ -381,18 +381,18 @@
                 </div>
 
                 <!-- Clean Editorial Footer -->
-                <footer class="mt-16 pt-6 border-t border-[#d5dbe2] dark:border-[#262d3a] text-xs text-[#5c6979] dark:text-[#7e8a9a] flex flex-col sm:flex-row items-center justify-between gap-3">
+                <footer class="mt-16 pt-6 border-t border-[#e2e2e2] dark:border-[#1f1f1f] text-xs text-[#666666] dark:text-[#a0a0a0] flex flex-col sm:flex-row items-center justify-between gap-3">
                     <div class="flex items-center gap-2">
                         <x-logo size="sm" />
                         <span>&bull;</span>
                         <span>Platform Showcase Project & Pengalaman Developer</span>
                     </div>
-                    <div class="flex items-center gap-4 text-[#5c6979] dark:text-[#7e8a9a] text-xs">
-                        <a href="{{ route('projects.index') }}" class="hover:text-[#0e9c8b] transition">Feed</a>
-                        <a href="{{ route('projects.create') }}" class="hover:text-[#0e9c8b] transition">Pamerkan</a>
-                        <a href="{{ route('projects.bookmarks') }}" class="hover:text-[#0e9c8b] transition">Koleksi</a>
-                        <button @click="showHelpModal = true" class="hover:text-[#0e9c8b] transition">Shortcuts (?)</button>
-                        <a href="https://github.com/GlorysID/NampungYuk" target="_blank" rel="noopener noreferrer" class="hover:text-[#0e9c8b] transition">GitHub</a>
+                    <div class="flex items-center gap-4 text-[#666666] dark:text-[#a0a0a0] text-xs">
+                        <a href="{{ route('projects.index') }}" class="hover:text-[#0070f3] transition">Feed</a>
+                        <a href="{{ route('projects.create') }}" class="hover:text-[#0070f3] transition">Pamerkan</a>
+                        <a href="{{ route('projects.bookmarks') }}" class="hover:text-[#0070f3] transition">Koleksi</a>
+                        <button @click="showHelpModal = true" class="hover:text-[#0070f3] transition">Shortcuts (?)</button>
+                        <a href="https://github.com/GlorysID/NampungYuk" target="_blank" rel="noopener noreferrer" class="hover:text-[#0070f3] transition">GitHub</a>
                     </div>
                 </footer>
             </div>
@@ -402,12 +402,12 @@
     </div>
 
     <!-- MOBILE BOTTOM NAVIGATION BAR (Sticky for Mobile-First Flow) -->
-    <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#0b0e11]/95 backdrop-blur-md border-t border-[#d5dbe2] dark:border-[#262d3a] px-2 py-1.5 flex items-center justify-around text-[10px] select-none"
+    <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#000000]/95 backdrop-blur-md border-t border-[#e2e2e2] dark:border-[#1f1f1f] px-2 py-1.5 flex items-center justify-around text-[10px] select-none"
          aria-label="Navigasi Utama Mobile">
         
         <!-- Home -->
         <a href="{{ route('projects.index') }}" 
-           class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition {{ request()->routeIs('projects.index') && !request('tab') ? 'text-[#0e9c8b] dark:text-[#50d2c1] font-bold' : 'text-[#5c6979] dark:text-[#7e8a9a]' }}">
+           class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition {{ request()->routeIs('projects.index') && !request('tab') ? 'text-[#0070f3] dark:text-[#3291ff] font-bold' : 'text-[#666666] dark:text-[#a0a0a0]' }}">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
             </svg>
@@ -416,7 +416,7 @@
 
         <!-- Explore / Trending -->
         <a href="{{ route('projects.index', ['tab' => 'trend']) }}" 
-           class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition {{ request('tab') === 'trend' ? 'text-[#0e9c8b] dark:text-[#50d2c1] font-bold' : 'text-[#5c6979] dark:text-[#7e8a9a]' }}">
+           class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition {{ request('tab') === 'trend' ? 'text-[#0070f3] dark:text-[#3291ff] font-bold' : 'text-[#666666] dark:text-[#a0a0a0]' }}">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/>
             </svg>
@@ -426,17 +426,17 @@
         <!-- Upload CTA (Special Emphasis) -->
         <a href="{{ route('projects.create') }}" 
            class="flex flex-col items-center gap-0.5 px-3 py-1 -mt-3 text-white">
-            <div class="w-10 h-10 rounded-full bg-[#0e9c8b] hover:bg-[#0b7d70] dark:hover:bg-[#6ee7d5] flex items-center justify-center active:scale-95 transition">
+            <div class="w-10 h-10 rounded-full bg-[#0070f3] hover:bg-[#0761d1] dark:hover:bg-[#47a8ff] flex items-center justify-center active:scale-95 transition">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
                 </svg>
             </div>
-            <span class="text-[9px] font-semibold text-[#0e9c8b] dark:text-[#50d2c1]">Pamerkan</span>
+            <span class="text-[9px] font-semibold text-[#0070f3] dark:text-[#3291ff]">Pamerkan</span>
         </a>
 
         <!-- Koleksi -->
         <a href="{{ route('projects.bookmarks') }}" 
-           class="hidden sm:flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition {{ request()->routeIs('projects.bookmarks') ? 'text-[#0e9c8b] dark:text-[#50d2c1] font-bold' : 'text-[#5c6979] dark:text-[#7e8a9a]' }}">
+           class="hidden sm:flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition {{ request()->routeIs('projects.bookmarks') ? 'text-[#0070f3] dark:text-[#3291ff] font-bold' : 'text-[#666666] dark:text-[#a0a0a0]' }}">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
             </svg>
@@ -447,7 +447,7 @@
         @auth
             <a href="{{ route('notifications.index') }}"
                x-data="notificationBell()" x-init="init()"
-               class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition {{ request()->routeIs('notifications.index') ? 'text-[#0e9c8b] dark:text-[#50d2c1] font-bold' : 'text-[#5c6979] dark:text-[#7e8a9a]' }}">
+               class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition {{ request()->routeIs('notifications.index') ? 'text-[#0070f3] dark:text-[#3291ff] font-bold' : 'text-[#666666] dark:text-[#a0a0a0]' }}">
                 <span class="relative">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
@@ -461,13 +461,13 @@
         <!-- Profile or Login -->
         @auth
             <a href="{{ route('profile.show', Auth::user()->username) }}" 
-               class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition {{ request()->routeIs('profile.show') ? 'text-[#0e9c8b] dark:text-[#50d2c1] font-bold' : 'text-[#5c6979] dark:text-[#7e8a9a]' }}">
+               class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition {{ request()->routeIs('profile.show') ? 'text-[#0070f3] dark:text-[#3291ff] font-bold' : 'text-[#666666] dark:text-[#a0a0a0]' }}">
                 <x-user-avatar :user="Auth::user()" size="xs" />
                 <span class="truncate max-w-[48px]">Profil</span>
             </a>
         @else
             <a href="{{ route('login') }}" 
-               class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition text-[#5c6979] dark:text-[#7e8a9a]">
+               class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition text-[#666666] dark:text-[#a0a0a0]">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                 </svg>
@@ -485,18 +485,18 @@
          role="dialog"
          aria-modal="true"
          aria-labelledby="modal-shortcuts-title">
-        <div class="ny-card max-w-md w-full bg-white dark:bg-[#141821] p-6 space-y-4"
+        <div class="ny-card max-w-md w-full bg-white dark:bg-[#0a0a0a] p-6 space-y-4"
              x-transition:enter="transition ease-out duration-150"
              x-transition:enter-start="opacity-0 scale-95"
              x-transition:enter-end="opacity-100 scale-100">
-            <div class="flex items-center justify-between border-b border-[#d5dbe2] dark:border-[#262d3a] pb-3">
-                <h3 id="modal-shortcuts-title" class="font-bold text-sm text-[#10161f] dark:text-[#eaecf0] flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-[#0e9c8b]"></span>
+            <div class="flex items-center justify-between border-b border-[#e2e2e2] dark:border-[#1f1f1f] pb-3">
+                <h3 id="modal-shortcuts-title" class="font-bold text-sm text-[#000000] dark:text-[#fafafa] flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-[#0070f3]"></span>
                     <span>Shortcut Keyboard</span>
                 </h3>
                 <button @click="showHelpModal = false" 
                         type="button"
-                        class="text-[#5c6979] hover:text-[#10161f] dark:hover:text-white inline-flex items-center gap-1 text-xs font-mono transition" 
+                        class="text-[#666666] hover:text-[#000000] dark:hover:text-white inline-flex items-center gap-1 text-xs font-mono transition" 
                         aria-label="Tutup dialog shortcut">
                     <span>Esc</span>
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -506,33 +506,33 @@
             </div>
 
             <div class="space-y-2 text-xs">
-                <div class="flex items-center justify-between py-1.5 border-b border-[#d5dbe2]/60 dark:border-[#262d3a]/60">
-                    <span class="text-[#5c6979] dark:text-[#7e8a9a]">Pilih project berikutnya</span>
-                    <kbd class="px-2 py-0.5 font-mono font-bold rounded bg-[#e6eaee] dark:bg-[#1e2530] border border-[#d5dbe2] dark:border-[#262d3a]">J</kbd>
+                <div class="flex items-center justify-between py-1.5 border-b border-[#e2e2e2]/60 dark:border-[#1f1f1f]/60">
+                    <span class="text-[#666666] dark:text-[#a0a0a0]">Pilih project berikutnya</span>
+                    <kbd class="px-2 py-0.5 font-mono font-bold rounded bg-[#f2f2f2] dark:bg-[#171717] border border-[#e2e2e2] dark:border-[#1f1f1f]">J</kbd>
                 </div>
-                <div class="flex items-center justify-between py-1.5 border-b border-[#d5dbe2]/60 dark:border-[#262d3a]/60">
-                    <span class="text-[#5c6979] dark:text-[#7e8a9a]">Pilih project sebelumnya</span>
-                    <kbd class="px-2 py-0.5 font-mono font-bold rounded bg-[#e6eaee] dark:bg-[#1e2530] border border-[#d5dbe2] dark:border-[#262d3a]">K</kbd>
+                <div class="flex items-center justify-between py-1.5 border-b border-[#e2e2e2]/60 dark:border-[#1f1f1f]/60">
+                    <span class="text-[#666666] dark:text-[#a0a0a0]">Pilih project sebelumnya</span>
+                    <kbd class="px-2 py-0.5 font-mono font-bold rounded bg-[#f2f2f2] dark:bg-[#171717] border border-[#e2e2e2] dark:border-[#1f1f1f]">K</kbd>
                 </div>
-                <div class="flex items-center justify-between py-1.5 border-b border-[#d5dbe2]/60 dark:border-[#262d3a]/60">
-                    <span class="text-[#5c6979] dark:text-[#7e8a9a]">Buka detail project aktif</span>
-                    <kbd class="px-2 py-0.5 font-mono font-bold rounded bg-[#e6eaee] dark:bg-[#1e2530] border border-[#d5dbe2] dark:border-[#262d3a]">Enter</kbd>
+                <div class="flex items-center justify-between py-1.5 border-b border-[#e2e2e2]/60 dark:border-[#1f1f1f]/60">
+                    <span class="text-[#666666] dark:text-[#a0a0a0]">Buka detail project aktif</span>
+                    <kbd class="px-2 py-0.5 font-mono font-bold rounded bg-[#f2f2f2] dark:bg-[#171717] border border-[#e2e2e2] dark:border-[#1f1f1f]">Enter</kbd>
                 </div>
-                <div class="flex items-center justify-between py-1.5 border-b border-[#d5dbe2]/60 dark:border-[#262d3a]/60">
-                    <span class="text-[#5c6979] dark:text-[#7e8a9a]">Beri Upvote pada project aktif</span>
-                    <kbd class="px-2 py-0.5 font-mono font-bold rounded bg-[#e6eaee] dark:bg-[#1e2530] border border-[#d5dbe2] dark:border-[#262d3a]">U</kbd>
+                <div class="flex items-center justify-between py-1.5 border-b border-[#e2e2e2]/60 dark:border-[#1f1f1f]/60">
+                    <span class="text-[#666666] dark:text-[#a0a0a0]">Beri Upvote pada project aktif</span>
+                    <kbd class="px-2 py-0.5 font-mono font-bold rounded bg-[#f2f2f2] dark:bg-[#171717] border border-[#e2e2e2] dark:border-[#1f1f1f]">U</kbd>
                 </div>
-                <div class="flex items-center justify-between py-1.5 border-b border-[#d5dbe2]/60 dark:border-[#262d3a]/60">
-                    <span class="text-[#5c6979] dark:text-[#7e8a9a]">Simpan ke Koleksi (Bookmark)</span>
-                    <kbd class="px-2 py-0.5 font-mono font-bold rounded bg-[#e6eaee] dark:bg-[#1e2530] border border-[#d5dbe2] dark:border-[#262d3a]">B</kbd>
+                <div class="flex items-center justify-between py-1.5 border-b border-[#e2e2e2]/60 dark:border-[#1f1f1f]/60">
+                    <span class="text-[#666666] dark:text-[#a0a0a0]">Simpan ke Koleksi (Bookmark)</span>
+                    <kbd class="px-2 py-0.5 font-mono font-bold rounded bg-[#f2f2f2] dark:bg-[#171717] border border-[#e2e2e2] dark:border-[#1f1f1f]">B</kbd>
                 </div>
-                <div class="flex items-center justify-between py-1.5 border-b border-[#d5dbe2]/60 dark:border-[#262d3a]/60">
-                    <span class="text-[#5c6979] dark:text-[#7e8a9a]">Fokus kolom pencarian</span>
-                    <kbd class="px-2 py-0.5 font-mono font-bold rounded bg-[#e6eaee] dark:bg-[#1e2530] border border-[#d5dbe2] dark:border-[#262d3a]">/ atau ⌘K</kbd>
+                <div class="flex items-center justify-between py-1.5 border-b border-[#e2e2e2]/60 dark:border-[#1f1f1f]/60">
+                    <span class="text-[#666666] dark:text-[#a0a0a0]">Fokus kolom pencarian</span>
+                    <kbd class="px-2 py-0.5 font-mono font-bold rounded bg-[#f2f2f2] dark:bg-[#171717] border border-[#e2e2e2] dark:border-[#1f1f1f]">/ atau ⌘K</kbd>
                 </div>
                 <div class="flex items-center justify-between py-1.5">
-                    <span class="text-[#5c6979] dark:text-[#7e8a9a]">Tutup dialog</span>
-                    <kbd class="px-2 py-0.5 font-mono font-bold rounded bg-[#e6eaee] dark:bg-[#1e2530] border border-[#d5dbe2] dark:border-[#262d3a]">Esc</kbd>
+                    <span class="text-[#666666] dark:text-[#a0a0a0]">Tutup dialog</span>
+                    <kbd class="px-2 py-0.5 font-mono font-bold rounded bg-[#f2f2f2] dark:bg-[#171717] border border-[#e2e2e2] dark:border-[#1f1f1f]">Esc</kbd>
                 </div>
             </div>
 
@@ -555,8 +555,8 @@
          x-cloak
          role="alert"
          aria-live="polite"
-         class="fixed bottom-20 lg:bottom-6 right-6 z-50 flex items-center gap-2 bg-[#10161f] dark:bg-[#1e2530] text-white px-4 py-2.5 rounded-lg text-xs font-medium border border-[#262d3a]">
-        <svg class="w-4 h-4 text-[#50d2c1] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+         class="fixed bottom-20 lg:bottom-6 right-6 z-50 flex items-center gap-2 bg-[#000000] dark:bg-[#171717] text-white px-4 py-2.5 rounded-lg text-xs font-medium border border-[#1f1f1f]">
+        <svg class="w-4 h-4 text-[#3291ff] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
         </svg>
         <span x-text="toast.message"></span>

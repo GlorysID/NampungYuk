@@ -9,7 +9,10 @@
     $displayName = $user ? $user->name : ($name ?? 'Developer');
     $avatarUrl = $user ? ($user->avatar ?? null) : $avatar;
     if (! $avatarUrl) {
-        $avatarUrl = 'https://api.dicebear.com/7.x/bottts/svg?seed=' . urlencode($displayName);
+        // Deterministic real portrait fallback (randomuser.me = real people photos).
+        $bucket = crc32($displayName) % 99 + 1;
+        $subset = (crc32($displayName) % 2 === 0) ? 'men' : 'women';
+        $avatarUrl = "https://randomuser.me/api/portraits/{$subset}/{$bucket}.jpg";
     }
 
     $sizeClasses = [
@@ -25,4 +28,4 @@
      alt="{{ $displayName }}" 
      loading="lazy"
      decoding="async"
-     {{ $attributes->merge(['class' => "$sizeClasses bg-[#e6eaee] dark:bg-[#1e2530] object-cover ring-1 ring-[#d5dbe2] dark:ring-[#262d3a] shrink-0"]) }}>
+     {{ $attributes->merge(['class' => "$sizeClasses bg-[#f2f2f2] dark:bg-[#171717] object-cover ring-1 ring-[#eaeaea] dark:ring-[#1f1f1f] shrink-0"]) }}>
