@@ -3,6 +3,8 @@
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\CommunityController;
+use App\Http\Controllers\CommunityPostController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
@@ -13,6 +15,10 @@ Route::get('/', [ProjectController::class, 'index'])->name('projects.index');
 Route::get('/project/{slug}', [ProjectController::class, 'show'])->name('projects.show');
 Route::get('/u/{username}', [ProfileController::class, 'show'])->name('profile.show');
 Route::get('/feed/latest', [ProjectController::class, 'latest'])->name('projects.latest');
+
+// Communities (public view)
+Route::get('/komunitas', [CommunityController::class, 'index'])->name('communities.index');
+Route::get('/komunitas/{slug}', [CommunityController::class, 'show'])->name('communities.show');
 
 Route::middleware('auth')->group(function () {
     Route::get('/unggah', [ProjectController::class, 'create'])->name('projects.create');
@@ -37,6 +43,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifikasi/latest', [NotificationController::class, 'latest'])->name('notifications.latest');
     Route::post('/notifikasi/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifikasi/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
+
+    // Communities (member actions)
+    Route::post('/komunitas', [CommunityController::class, 'store'])->name('communities.store');
+    Route::post('/komunitas/{community:slug}/join', [CommunityController::class, 'toggleJoin'])->name('communities.join');
+    Route::post('/komunitas/{community:slug}/post', [CommunityPostController::class, 'store'])->name('communities.post');
+    Route::post('/community-post/{post}/vote', [CommunityPostController::class, 'vote'])->name('communities.post.vote');
+    Route::post('/community-post/{post}/comment', [CommunityPostController::class, 'comment'])->name('communities.post.comment');
 });
 
 Route::middleware('guest')->group(function () {

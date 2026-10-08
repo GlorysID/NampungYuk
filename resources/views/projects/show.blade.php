@@ -303,69 +303,77 @@
 
         </div>
 
-        <!-- Visual Preview Gallery -->
+        <!-- TWO-COLUMN: Gallery (left) + About & Tools (right) -->
         @php $gallery = $project->galleryImages(); @endphp
-        @if(count($gallery) > 0)
-            <div x-data="{ active: 0 }">
-                <div class="bg-[#000000] border-b border-[#e4e4e7] dark:border-[#1f1f1f] overflow-hidden max-h-[500px] flex items-center justify-center">
-                    <img :src="['{{ implode("','", $gallery) }}'][active]"
-                         alt="{{ $project->title }}"
-                         loading="lazy"
-                         decoding="async"
-                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80';"
-                         class="w-full max-h-[500px] object-cover sm:object-contain mx-auto">
-                </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-0 border-b border-[#e4e4e7] dark:border-[#1f1f1f]">
 
-                @if(count($gallery) > 1)
-                    <div class="flex gap-2 p-3 overflow-x-auto bg-[#ffffff] dark:bg-[#000000] border-b border-[#e4e4e7] dark:border-[#1f1f1f]">
-                        @foreach($gallery as $i => $img)
-                            <button type="button" @click="active = {{ $i }}"
-                                    :class="active === {{ $i }} ? 'ring-2 ring-[#0070f3] dark:ring-[#3291ff]' : 'opacity-60 hover:opacity-100'"
-                                    class="shrink-0 w-20 h-14 rounded-lg overflow-hidden border border-[#e4e4e7] dark:border-[#1f1f1f] transition">
-                                <img src="{{ $img }}" alt="" loading="lazy" class="w-full h-full object-cover">
-                            </button>
-                        @endforeach
-                    </div>
-                @endif
-            </div>
-        @endif
+            <!-- LEFT: Image gallery -->
+            <div class="border-b lg:border-b-0 lg:border-r border-[#e4e4e7] dark:border-[#1f1f1f] bg-[#000000]">
+                @if(count($gallery) > 0)
+                    <div x-data="{ active: 0 }">
+                        <div class="overflow-hidden aspect-video flex items-center justify-center">
+                            <img :src="['{{ implode("','", $gallery) }}'][active]"
+                                 alt="{{ $project->title }}"
+                                 loading="lazy"
+                                 decoding="async"
+                                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80';"
+                                 class="w-full h-full object-contain">
+                        </div>
 
-        <!-- ARTICLE BODY CONTENT -->
-        <div class="p-6 sm:p-8 space-y-8">
-            
-            <!-- SECTION 1: About This Project (Description) -->
-            <section class="space-y-3">
-                <h2 class="text-sm font-bold uppercase tracking-wider text-[#63636b] dark:text-[#a0a0a0] font-mono flex items-center gap-2">
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#0070f3] dark:bg-[#3291ff]"></span>
-                    <span>Tentang Project Ini</span>
-                </h2>
-                
-                @if($project->description)
-                    <div class="text-xs sm:text-sm text-[#18181b] dark:text-[#fafafa] leading-relaxed whitespace-pre-line space-y-3">
-                        {{ $project->description }}
+                        @if(count($gallery) > 1)
+                            <div class="flex gap-2 p-3 overflow-x-auto bg-[#ffffff] dark:bg-[#000000] border-t border-[#e4e4e7] dark:border-[#1f1f1f]">
+                                @foreach($gallery as $i => $img)
+                                    <button type="button" @click="active = {{ $i }}"
+                                            :class="active === {{ $i }} ? 'ring-2 ring-[#0070f3] dark:ring-[#3291ff]' : 'opacity-60 hover:opacity-100'"
+                                            class="shrink-0 w-20 h-14 rounded-lg overflow-hidden border border-[#e4e4e7] dark:border-[#1f1f1f] transition">
+                                        <img src="{{ $img }}" alt="" loading="lazy" class="w-full h-full object-cover">
+                                    </button>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
                 @else
-                    <p class="text-xs text-[#63636b] italic">
-                        Creator belum menyertakan deskripsi panjang untuk project ini.
-                    </p>
+                    <div class="aspect-video flex items-center justify-center text-[#63636b] text-xs">Tanpa gambar</div>
                 @endif
-            </section>
+            </div>
 
-            <!-- SECTION 2: Tech Stack -->
-            @if(is_array($project->tech_stacks) && count($project->tech_stacks) > 0)
-                <section class="space-y-3 pt-6 border-t border-[#e4e4e7]/80 dark:border-[#1f1f1f]">
-                    <h2 class="text-sm font-bold uppercase tracking-wider text-[#63636b] dark:text-[#a0a0a0] font-mono flex items-center gap-2">
+            <!-- RIGHT: About + Tools -->
+            <div class="p-6 sm:p-8 space-y-6">
+                <!-- About This Project -->
+                <section class="space-y-3">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-[#63636b] dark:text-[#a0a0a0] flex items-center gap-2">
                         <span class="w-1.5 h-1.5 rounded-full bg-[#0070f3] dark:bg-[#3291ff]"></span>
-                        <span>Teknologi & Tools yang Digunakan</span>
+                        <span>Tentang Project Ini</span>
                     </h2>
-                    
-                    <div class="flex flex-wrap gap-2">
-                        @foreach($project->tech_stacks as $tech)
-                            <x-tech-pill :name="$tech" />
-                        @endforeach
-                    </div>
+
+                    @if($project->description)
+                        <div class="text-xs sm:text-sm text-[#18181b] dark:text-[#fafafa] leading-relaxed whitespace-pre-line space-y-3">
+                            {{ $project->description }}
+                        </div>
+                    @else
+                        <p class="text-xs text-[#63636b] italic">Creator belum menyertakan deskripsi panjang untuk project ini.</p>
+                    @endif
                 </section>
-            @endif
+
+                <!-- Tools Used -->
+                @if(is_array($project->tech_stacks) && count($project->tech_stacks) > 0)
+                    <section class="space-y-3 pt-5 border-t border-[#e4e4e7] dark:border-[#1f1f1f]">
+                        <h2 class="text-sm font-bold uppercase tracking-wider text-[#63636b] dark:text-[#a0a0a0] flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-[#0070f3] dark:bg-[#3291ff]"></span>
+                            <span>Teknologi & Tools yang Digunakan</span>
+                        </h2>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach($project->tech_stacks as $tech)
+                                <x-tech-pill :name="$tech" />
+                            @endforeach
+                        </div>
+                    </section>
+                @endif
+            </div>
+        </div>
+
+        <!-- ARTICLE BODY CONTENT (rest) -->
+        <div class="p-6 sm:p-8 space-y-8">
 
             <!-- SECTION 3: Knowledge Sharing — What I Learned -->
             @if(!empty(trim((string)$project->learnings)))

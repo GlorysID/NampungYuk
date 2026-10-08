@@ -37,9 +37,9 @@
                 <div class="relative shrink-0">
                     <img src="{{ $user->avatar ?: 'https://randomuser.me/api/portraits/'.(crc32($user->name) % 2 === 0 ? 'men' : 'women').'/'.(crc32($user->name) % 99 + 1).'.jpg' }}"
                          alt="{{ $user->name }}"
-                         class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl object-cover ring-4 ring-white dark:ring-[#0a0a0a] bg-[#eeeeef] dark:bg-[#171717]">
+                         class="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover ring-4 ring-white dark:ring-[#0a0a0a] bg-[#eeeeef] dark:bg-[#171717]">
                     @if($isOwner)
-                        <span class="absolute -bottom-1 -right-1 w-6 h-6 rounded-md bg-[#0070f3] dark:bg-[#3291ff] text-[#ffffff] flex items-center justify-center ring-2 ring-white dark:ring-[#0a0a0a]">
+                        <span class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#0070f3] dark:bg-[#3291ff] text-[#ffffff] flex items-center justify-center ring-2 ring-white dark:ring-[#0a0a0a]">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                         </span>
                     @endif
@@ -66,18 +66,6 @@
                             <span>Edit Profil</span>
                         </button>
                     @else
-                        @if($user->website_url)
-                            <a href="{{ $user->website_url }}" target="_blank" rel="noopener noreferrer" class="btn-secondary text-xs py-2 px-3">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
-                                <span>Website</span>
-                            </a>
-                        @endif
-                        @if($user->github_url)
-                            <a href="{{ $user->github_url }}" target="_blank" rel="noopener noreferrer" class="btn-secondary text-xs py-2 px-3">
-                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
-                                <span>GitHub</span>
-                            </a>
-                        @endif
                         <x-follow-button :user="$user" />
                     @endif
                 </div>
@@ -85,6 +73,21 @@
 
             @if($user->bio)
                 <p class="text-xs sm:text-sm text-[#18181b] dark:text-[#fafafa] leading-relaxed mt-4 max-w-2xl">{{ $user->bio }}</p>
+            @endif
+
+            <!-- ===== PROFILE LINKS (link-in-bio list) ===== -->
+            @if($user->links->count() > 0)
+                <div class="mt-4 flex flex-wrap gap-2 max-w-2xl">
+                    @foreach($user->links as $link)
+                        <a href="{{ $link->url }}" target="_blank" rel="noopener noreferrer"
+                           class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#e4e4e7] dark:border-[#1f1f1f] bg-white dark:bg-[#0a0a0a] hover:border-[#0070f3] dark:hover:border-[#3291ff] hover:bg-[#f7f7f8] dark:hover:bg-[#111111] transition group"
+                           title="{{ $link->url }}">
+                            <svg class="w-3.5 h-3.5 text-[#0070f3] dark:text-[#3291ff] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                            <span class="text-xs font-semibold text-[#18181b] dark:text-[#fafafa] group-hover:text-[#0070f3] dark:group-hover:text-[#3291ff] transition">{{ $link->label }}</span>
+                            <span class="text-[11px] text-[#63636b] dark:text-[#a0a0a0] hidden sm:inline">{{ $link->domain() }}</span>
+                        </a>
+                    @endforeach
+                </div>
             @endif
 
             <!-- ===== STAT TERMINAL BAR (mono, dense, hoverable) ===== -->
@@ -150,6 +153,14 @@
             <span class="hl-stat text-[10px] px-1.5 py-0.5 rounded" :class="activeTab === 'comments' ? 'bg-black/15' : 'bg-[#eeeeef] dark:bg-[#171717]'">{{ $comments->count() }}</span>
         </button>
 
+        <button @click="activeTab = 'reposts'"
+                :class="activeTab === 'reposts' ? 'bg-[#0070f3] text-[#ffffff] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:bg-[#f5f5f5] dark:hover:bg-[#111111]'"
+                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-md text-xs font-medium transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+            <span>Repost</span>
+            <span class="hl-stat text-[10px] px-1.5 py-0.5 rounded" :class="activeTab === 'reposts' ? 'bg-black/15' : 'bg-[#eeeeef] dark:bg-[#171717]'">{{ $totalReposts }}</span>
+        </button>
+
         @if($isOwner)
             <button @click="activeTab = 'likes'"
                     :class="activeTab === 'likes' ? 'bg-[#0070f3] text-[#ffffff] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:bg-[#f5f5f5] dark:hover:bg-[#111111]'"
@@ -175,6 +186,26 @@
 
         @if($projects->hasPages())
             <div class="pt-2">{{ $projects->links() }}</div>
+        @endif
+    </div>
+
+    <!-- ===================== TAB: REPOSTS ===================== -->
+    <div x-show="activeTab === 'reposts'" x-cloak class="space-y-4">
+        <p class="text-[11px] text-[#63636b] dark:text-[#a0a0a0] px-1">
+            Project yang dibagikan ulang oleh {{ $isOwner ? 'kamu' : $user->name }}.
+        </p>
+        @forelse($repostedProjects as $project)
+            @php
+                $isBookmarked = in_array($project->id, $userBookmarkedIds ?? []);
+                $initialVote = $userVotes[$project->id] ?? null;
+            @endphp
+            <x-project-card :project="$project" :initial-vote="$initialVote" :is-bookmarked="$isBookmarked" :is-reposted="true" uid="repost" />
+        @empty
+            <x-empty-state title="Belum ada repost" description="Project yang dibagikan ulang akan muncul di sini." />
+        @endforelse
+
+        @if($repostedProjects->hasPages())
+            <div class="pt-2">{{ $repostedProjects->links() }}</div>
         @endif
     </div>
 
@@ -222,7 +253,60 @@
              @click.self="editOpen = false"
              @keydown.escape.window="editOpen = false"
              role="dialog" aria-modal="true"
-             x-data="{ preview: null, bannerPreview: null }">
+             x-data="{
+                preview: null, bannerPreview: null,
+                crop: { open: false, tag: 'avatar', file: null, url: null, scale: 1, x: 0, y: 0, drag: false, sx: 0, sy: 0, ox: 0, oy: 0, natW: 0, natH: 0, fw: 0, fh: 0 },
+                startCrop(file, tag) {
+                    if (!file) return;
+                    this.crop = Object.assign(this.crop, { open: true, tag, file, url: URL.createObjectURL(file), scale: 1, x: 0, y: 0, natW: 0, natH: 0, coverScale: 1 });
+                    this.$nextTick(() => {
+                        const f = this.$refs.cropFrame; this.crop.fw = f.clientWidth; this.crop.fh = f.clientHeight;
+                        const img = this.$refs.cropImg;
+                        const onload = () => {
+                            this.crop.natW = img.naturalWidth; this.crop.natH = img.naturalHeight;
+                            this.crop.coverScale = Math.max(this.crop.fw / this.crop.natW, this.crop.fh / this.crop.natH);
+                            this.crop.scale = this.crop.coverScale;
+                        };
+                        if (img.complete) onload(); else img.onload = onload;
+                    });
+                },
+                cropDown(e) { const p = e.touches ? e.touches[0] : e; this.crop.drag = true; this.crop.sx = p.clientX; this.crop.sy = p.clientY; this.crop.ox = this.crop.x; this.crop.oy = this.crop.y; },
+                cropMove(e) {
+                    if (!this.crop.drag) return;
+                    const p = e.touches ? e.touches[0] : e;
+                    this.crop.x = this.crop.ox + (p.clientX - this.crop.sx);
+                    this.crop.y = this.crop.oy + (p.clientY - this.crop.sy);
+                    this.clampCrop();
+                },
+                clampCrop() {
+                    const dw = this.crop.natW * this.crop.scale, dh = this.crop.natH * this.crop.scale;
+                    const mx = Math.max(0, (dw - this.crop.fw) / 2), my = Math.max(0, (dh - this.crop.fh) / 2);
+                    this.crop.x = Math.max(-mx, Math.min(mx, this.crop.x));
+                    this.crop.y = Math.max(-my, Math.min(my, this.crop.y));
+                },
+                cropUp() { this.crop.drag = false; },
+                cropZoom(d) { this.crop.scale = Math.max(0.1, this.crop.scale + d); this.clampCrop(); },
+                async applyCrop() {
+                    const c = this.crop;
+                    if (!c.natW) return;
+                    const ratio = c.tag === 'banner' ? 3 : 1; // banner 3:1, avatar 1:1
+                    const W = 900, H = Math.round(900 / ratio);
+                    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+                    const ctx = cv.getContext('2d'); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+                    const sr = W / c.fw;
+                    const dw = c.natW * c.scale * sr, dh = c.natH * c.scale * sr;
+                    const dx = (W - dw) / 2 + c.x * sr, dy = (H - dh) / 2 + c.y * sr;
+                    ctx.drawImage(this.$refs.cropImg, dx, dy, dw, dh);
+                    const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.92));
+                    const file = new File([blob], c.tag + '.jpg', { type: 'image/jpeg' });
+                    const input = c.tag === 'avatar' ? this.$refs.avatarInput : this.$refs.bannerInput;
+                    const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files;
+                    const previewUrl = URL.createObjectURL(blob);
+                    if (c.tag === 'avatar') this.preview = previewUrl; else this.bannerPreview = previewUrl;
+                    this.crop.open = false;
+                },
+                cancelCrop() { this.crop.open = false; }
+             }">
             <div class="hl-panel w-full max-w-lg my-6 bg-white dark:bg-[#0a0a0a] overflow-hidden"
                  x-transition:enter="transition ease-out duration-150"
                  x-transition:enter-start="opacity-0 scale-95"
@@ -258,10 +342,11 @@
                                     Ganti banner
                                 </span>
                             </div>
-                            <input type="file" name="banner" accept="image/*" class="hidden"
-                                   @change="const f = $event.target.files[0]; if (f) bannerPreview = URL.createObjectURL(f)">
+                            <input type="file" accept="image/*" class="hidden"
+                                   @change="startCrop($event.target.files[0], 'banner')">
+                            <input type="file" x-ref="bannerInput" name="banner" class="hidden">
                         </label>
-                        <p class="text-[10px] text-[#63636b] dark:text-[#a0a0a0]">JPG, PNG, WEBP · maks 4MB · rasio lebar disarankan.</p>
+                        <p class="text-[10px] text-[#63636b] dark:text-[#a0a0a0]">JPG, PNG, WEBP · maks 4MB · kamu bisa pilih bagian foto setelah upload.</p>
                         @error('banner') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
                     </div>
 
@@ -274,10 +359,11 @@
                             <label for="avatar" class="btn-secondary text-xs py-1.5 px-3 cursor-pointer inline-flex">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                 <span>Ganti avatar</span>
-                                <input type="file" id="avatar" name="avatar" accept="image/*" class="hidden"
-                                       @change="const f = $event.target.files[0]; if (f) preview = URL.createObjectURL(f)">
+                                <input type="file" id="avatar" accept="image/*" class="hidden"
+                                       @change="startCrop($event.target.files[0], 'avatar')">
+                                <input type="file" x-ref="avatarInput" name="avatar" class="hidden">
                             </label>
-                            <p class="text-[10px] text-[#63636b] dark:text-[#a0a0a0]">Maks 2MB</p>
+                            <p class="text-[10px] text-[#63636b] dark:text-[#a0a0a0]">Maks 2MB · kamu bisa pilih bagian foto setelah upload.</p>
                             @error('avatar') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
                         </div>
                     </div>
@@ -307,18 +393,37 @@
                         @error('bio') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div class="space-y-1">
-                            <label for="github_url" class="text-xs font-semibold text-[#18181b] dark:text-[#fafafa]">URL GitHub</label>
-                            <input type="url" id="github_url" name="github_url" value="{{ old('github_url', $user->github_url) }}" placeholder="https://github.com/username" class="ny-input text-sm">
-                            @error('github_url') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
+                    <!-- Dynamic profile links (link-in-bio), max 6 -->
+                    <div class="space-y-2 pt-1 border-t border-[#e4e4e7] dark:border-[#1f1f1f]"
+                         x-data="{ links: {{ Illuminate\Support\Js::from($user->links->map(fn($l) => ['label' => $l->label, 'url' => $l->url])->values()) }} }">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-semibold text-[#18181b] dark:text-[#fafafa]">Link Profil</label>
+                            <span class="text-[10px] text-[#63636b] dark:text-[#a0a0a0]" x-text="links.length + '/6'"></span>
                         </div>
 
-                        <div class="space-y-1">
-                            <label for="website_url" class="text-xs font-semibold text-[#18181b] dark:text-[#fafafa]">Website / Portfolio</label>
-                            <input type="url" id="website_url" name="website_url" value="{{ old('website_url', $user->website_url) }}" placeholder="https://portofolio-kamu.com" class="ny-input text-sm">
-                            @error('website_url') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
-                        </div>
+                        <template x-for="(link, i) in links" :key="i">
+                            <div class="flex items-center gap-2">
+                                <input type="text" :name="'links[' + i + '][label]'" x-model="link.label"
+                                       placeholder="Keterangan (mis. Portfolio)" maxlength="40"
+                                       class="ny-input text-xs !w-32 shrink-0">
+                                <input type="url" :name="'links[' + i + '][url]'" x-model="link.url"
+                                       placeholder="https://..." class="ny-input text-xs flex-1 min-w-0">
+                                <button type="button" @click="links.splice(i, 1)"
+                                        class="shrink-0 w-8 h-8 rounded-md flex items-center justify-center text-[#63636b] dark:text-[#a0a0a0] hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition"
+                                        title="Hapus link">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                        </template>
+
+                        <button type="button" @click="if (links.length < 6) links.push({ label: '', url: '' })"
+                                :disabled="links.length >= 6"
+                                class="btn-secondary text-xs py-1.5 px-3 disabled:opacity-40">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            <span>Tambah Link</span>
+                        </button>
+                        @error('links') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
+                        @error('links.*.url') <p class="text-rose-500 text-[11px]">Pastikan semua URL valid.</p> @enderror
                     </div>
 
                     <div class="flex items-center justify-end gap-2 pt-1 border-t border-[#e4e4e7] dark:border-[#1f1f1f] mt-2">
@@ -329,6 +434,53 @@
                         </button>
                     </div>
                 </form>
+            </div>
+
+            <!-- CROP OVERLAY (choose which part of the photo is visible) -->
+            <div x-show="crop.open" x-cloak
+                 class="fixed inset-0 z-[60] bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-4"
+                 @keydown.escape.window="cancelCrop()">
+                <div class="w-full max-w-md space-y-4">
+                    <p class="text-center text-xs text-white/70">Seret gambar untuk mengatur posisi · gunakan tombol zoom untuk memperbesar</p>
+
+                    <!-- Crop frame -->
+                    <div class="mx-auto rounded-xl overflow-hidden bg-black relative touch-none select-none cursor-move"
+                         :style="crop.tag === 'banner' ? 'width:100%;aspect-ratio:3/1' : 'width:260px;height:260px'"
+                         x-ref="cropFrame"
+                         @mousedown="cropDown($event)" @mousemove="cropMove($event)" @mouseup="cropUp()" @mouseleave="cropUp()"
+                         @touchstart.prevent="cropDown($event)" @touchmove.prevent="cropMove($event)" @touchend="cropUp()">
+                        <img x-ref="cropImg" :src="crop.url" alt=""
+                             class="absolute pointer-events-none select-none"
+                             :style="`
+                                width: ${(crop.natW * crop.scale) || 0}px;
+                                height: ${(crop.natH * crop.scale) || 0}px;
+                                left: ${crop.fw / 2 - (crop.natW * crop.scale) / 2 + crop.x}px;
+                                top: ${crop.fh / 2 - (crop.natH * crop.scale) / 2 + crop.y}px;
+                             `">
+                        <!-- guide overlay -->
+                        <div class="absolute inset-0 pointer-events-none" :class="crop.tag === 'avatar' ? 'rounded-full' : ''"
+                             style="box-shadow: 0 0 0 9999px rgba(0,0,0,0.35);"></div>
+                    </div>
+
+                    <!-- Zoom controls -->
+                    <div class="flex items-center justify-center gap-3">
+                        <button type="button" @click="cropZoom(-0.1)" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+                        </button>
+                        <input type="range" min="0.1" max="4" step="0.01" :value="crop.scale" @input="crop.scale = parseFloat($event.target.value); clampCrop()" class="w-40 accent-[#0070f3]">
+                        <button type="button" @click="cropZoom(0.1)" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center justify-center gap-2 pt-1">
+                        <button type="button" @click="cancelCrop()" class="btn-secondary text-xs py-2 px-4">Batal</button>
+                        <button type="button" @click="applyCrop()" class="btn-primary text-xs py-2 px-4">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span>Terapkan</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     @endif

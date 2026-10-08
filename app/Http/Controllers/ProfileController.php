@@ -46,11 +46,26 @@ class ProfileController extends Controller
             'name' => $data['name'],
             'username' => $data['username'],
             'bio' => $data['bio'] ?? null,
-            'github_url' => $data['github_url'] ?? null,
-            'website_url' => $data['website_url'] ?? null,
             ...(isset($data['avatar']) ? ['avatar' => $data['avatar']] : []),
             ...(isset($data['banner']) ? ['banner' => $data['banner']] : []),
         ]);
+
+        // Sync dynamic profile links (max 6, ordered).
+        if ($request->has('links')) {
+            $links = collect($request->input('links', []))
+                ->filter(fn ($l) => ! empty(trim((string) ($l['url'] ?? ''))))
+                ->take(6)
+                ->values();
+
+            $user->links()->delete();
+            foreach ($links as $i => $link) {
+                $user->links()->create([
+                    'label' => trim((string) ($link['label'] ?? '')) ?: 'Link',
+                    'url' => trim((string) $link['url']),
+                    'sort_order' => $i,
+                ]);
+            }
+        }
 
         return redirect()
             ->route('profile.show', $user->username)
@@ -110,6 +125,15 @@ class ProfileController extends Controller
 
         $totalLikes = $isOwner ? $user->likedProjects()->count() : 0;
 
+        // Reposted projects — what this user reshared (visible to everyone).
+        $repostedProjects = $user->repostedProjects()
+            ->with(['category', 'user', 'repostedFrom'])
+            ->visibleTo($viewerId)
+            ->latest('project_reposts.created_at')
+            ->paginate(10, ['*'], 'reposts');
+
+        $totalReposts = $user->reposts()->count();
+
         $userBookmarkedIds = $currentUserId
             ? ProjectBookmark::where('user_id', $currentUserId)->pluck('project_id')->toArray()
             : [];
@@ -126,10 +150,12 @@ class ProfileController extends Controller
             'projects',
             'pinnedProjects',
             'likedProjects',
+            'repostedProjects',
             'comments',
             'totalUpvotesReceived',
             'totalProjects',
             'totalLikes',
+            'totalReposts',
             'userBookmarkedIds',
             'userVotes',
             'userRepostedIds',

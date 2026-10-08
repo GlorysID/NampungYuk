@@ -124,6 +124,40 @@ class User extends Authenticatable
     }
 
     /**
+     * Custom profile links (link-in-bio), ordered.
+     */
+    public function links()
+    {
+        return $this->hasMany(UserLink::class)->orderBy('sort_order');
+    }
+
+    /**
+     * Communities this user owns.
+     */
+    public function ownedCommunities()
+    {
+        return $this->hasMany(Community::class, 'owner_id');
+    }
+
+    /**
+     * Communities this user is a member of.
+     */
+    public function communities()
+    {
+        return $this->belongsToMany(Community::class, 'community_members')
+            ->withPivot('role')
+            ->withTimestamps();
+    }
+
+    /**
+     * Community posts authored by this user.
+     */
+    public function communityPosts()
+    {
+        return $this->hasMany(CommunityPost::class)->latest();
+    }
+
+    /**
      * Projects this user has pinned to their profile.
      */
     public function pinnedProjects()

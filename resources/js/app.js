@@ -16,6 +16,212 @@ document.addEventListener('alpine:init', () => {
     });
 
     /**
+     * Image cropper — client-side canvas crop with drag + zoom, no library.
+     * Usage: x-data="imageCropper({ aspect: 1, outputName: 'avatar' })"
+     * Exposes: open(file), close(), apply(), plus drag/zoom state and a hidden
+     * file input that receives the cropped blob for form submission.
+     */
+    Alpine.data('imageCropper', ({ aspect = 1, outputName = 'image' } = {}) => ({
+        open: false,
+        imgSrc: null,
+        imgEl: null,
+        // transform state
+        scale: 1,
+        offsetX: 0,
+        offsetY: 0,
+        dragging: false,
+        startX: 0,
+        startY: 0,
+        startOffsetX: 0,
+        startOffsetY: 0,
+        frameW: 0,
+        frameH: 0,
+        natW: 0,
+        natH: 0,
+
+        init() {
+            // measure the crop frame after it renders
+            this.$watch('open', (v) => {
+                if (v) this.$nextTick(() => this.measure());
+            });
+        },
+
+        measure() {
+            const frame = this.$refs.frame;
+            if (frame) {
+                this.frameW = frame.clientWidth;
+                this.frameH = frame.clientHeight;
+            }
+        },
+
+        openWith(file) {
+            if (!file) return;
+            this.imgSrc = URL.createObjectURL(file);
+            this.scale = 1;
+            this.offsetX = 0;
+            this.offsetY = 0;
+            this.open = true;
+            this.$nextTick(() => {
+                this.measure();
+                const i = this.$refs.image;
+                if (i) {
+                    i.onload = () => {
+                        this.natW = i.naturalWidth;
+                        this.natH = i.naturalHeight;
+                        // fit so image covers the frame
+                        const coverScale = Math.max(this.frameW / this.natW, this.frameH / this.natH);
+                        this.scale = coverScale;
+                        this.clampOffsets();
+                    };
+                    if (i.complete) i.onload();
+                }
+            });
+        },
+
+        clampOffsets() {
+            const dispW = this.natW * this.scale;
+            const dispH = this.natH * this.scale;
+            const maxX = Math.max(0, (dispW - this.frameW) / 2);
+            const maxY = Math.max(0, (dispH - this.frameH) / 2);
+            this.offsetX = Math.max(-maxX, Math.min(maxX, this.offsetX));
+            this.offsetY = Math.max(-maxY, Math.min(maxY, this.offsetY));
+        },
+
+        onDown(e) {
+            this.dragging = true;
+            const p = e.touches ? e.touches[0] : e;
+            this.startX = p.clientX;
+            this.startY = p.clientY;
+            this.startOffsetX = this.offsetX;
+            this.startOffsetY = this.offsetY;
+        },
+        onMove(e) {
+            if (!this.dragging) return;
+            const p = e.touches ? e.touches[0] : e;
+            this.offsetX = this.startOffsetX + (p.clientX - this.startX);
+            this.offsetY = this.startOffsetY + (p.clientY - this.startY);
+            this.clampOffsets();
+        },
+        onUp() {
+            this.dragging = false;
+        },
+
+        zoomBy(delta) {
+            this.scale = Math.max(0.1, this.scale + delta);
+            this.clampOffsets();
+        },
+
+        close() {
+            this.open = false;
+            if (this.imgSrc) URL.revokeObjectURL(this.imgSrc);
+            this.imgSrc = null;
+        },
+
+        async apply() {
+            if (!this.natW || !this.natH) return;
+            const outW = aspect >= 1 ? 900 : 900 * aspect;
+            const outH = 900 / aspect;
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(outW);
+            canvas.height = Math.round(outH);
+            const ctx = canvas.getContext('2d');
+
+            // Map: displayed image top-left relative to frame center
+            const scaleRatio = canvas.width / this.frameW;
+            const drawW = this.natW * this.scale * scaleRatio;
+            const drawH = this.natH * this.scale * scaleRatio;
+            const drawX = (canvas.width - drawW) / 2 + this.offsetX * scaleRatio;
+            const drawY = (canvas.height - drawH) / 2 + this.offsetY * scaleRatio;
+
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(this.imgEl, drawX, drawY, drawW, drawH);
+
+            const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.92));
+            if (!blob) return;
+            const file = new File([blob], outputName + '.jpg', { type: 'image/jpeg' });
+
+            // Put the cropped file into the hidden input bound to the form.
+            const input = this.$refs.hidden;
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+
+            // preview update (if provided via callback)
+            if (typeof this.onCropped === 'function') {
+                this.onCropped(URL.createObjectURL(blob));
+            }
+            this.close();
+        },
+    }));
+
+    /**
+     * Community post vote (up/down).
+     */
+    Alpine.data('communityPostVote', ({ score, userVote, voteUrl }) => ({
+        score,
+        userVote,
+        voting: false,
+        async vote(type) {
+            if (this.voting) return;
+            this.voting = true;
+            try {
+                const token = document.querySelector('meta[name=csrf-token]')?.content;
+                const res = await fetch(voteUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
+                    body: JSON.stringify({ type }),
+                });
+                if (res.status === 401) { window.location.href = '/login'; return; }
+                const data = await res.json();
+                if (data.success) {
+                    this.score = data.score;
+                    this.userVote = data.user_vote;
+                }
+            } catch (e) {
+                // silent
+            } finally {
+                this.voting = false;
+            }
+        },
+    }));
+
+    /**
+     * Community join/leave toggle.
+     */
+    Alpine.data('communityJoin', ({ joined, url }) => ({
+        joined,
+        loading: false,
+        async toggle() {
+            if (this.loading) return;
+            this.loading = true;
+            const prev = this.joined;
+            this.joined = !prev;
+            try {
+                const token = document.querySelector('meta[name=csrf-token]')?.content;
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
+                });
+                if (res.status === 401) { window.location.href = '/login'; return; }
+                const data = await res.json();
+                if (data.success) {
+                    this.joined = data.joined;
+                    if (window.notify) window.notify(data.message);
+                } else {
+                    this.joined = prev;
+                    if (window.notify) window.notify(data.message || 'Gagal memproses.');
+                }
+            } catch (e) {
+                this.joined = prev;
+                if (window.notify) window.notify('Gagal memproses, coba lagi.');
+            } finally {
+                this.loading = false;
+            }
+        },
+    }));
+
+    /**
      * Live feed: listens to the "feed" broadcast channel and shows a
      * "N project baru" pulse so users can pull fresh posts without a manual refresh.
      */
