@@ -7,11 +7,11 @@ use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
-class ProjectForkedNotification extends Notification
+class ProjectRepostedNotification extends Notification
 {
     use Queueable;
 
-    public function __construct(public Project $fork, public User $by)
+    public function __construct(public Project $project, public User $by)
     {
         //
     }
@@ -30,15 +30,15 @@ class ProjectForkedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'type' => 'project_forked',
+            'type' => 'project_reposted',
             'actor_name' => $this->by->name,
             'actor_username' => $this->by->username,
             'actor_avatar' => $this->by->avatar,
-            'project_title' => $this->fork->title,
-            'project_slug' => $this->fork->slug,
-            'thumbnail' => $this->fork->thumbnail,
-            'message' => $this->by->name.' mem-fork project kamu: '.$this->fork->title,
-            'url' => route('projects.show', $this->fork->slug),
+            'project_title' => $this->project->title,
+            'project_slug' => $this->project->slug,
+            'thumbnail' => $this->project->thumbnail,
+            'message' => $this->by->name.' membagikan ulang project kamu: '.$this->project->title,
+            'url' => route('projects.show', $this->project->slug),
         ];
     }
 }

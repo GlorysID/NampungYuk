@@ -2,6 +2,7 @@
     'project',
     'initialVote' => null,
     'isBookmarked' => false,
+    'isReposted' => false,
 ])
 
 <div class="flex items-center justify-between gap-3 pt-3 border-t border-[#d5dbe2]/80 dark:border-[#262d3a] text-xs">
@@ -65,8 +66,29 @@
         </span>
     </div>
 
-    <!-- Right: Bookmark & Share Actions -->
+    <!-- Right: Repost, Bookmark & Share Actions -->
     <div class="flex items-center gap-1.5">
+        <!-- Repost Button (disabled for own project) -->
+        @auth
+            @if($project->user_id !== auth()->id())
+                <button @click="repost()"
+                        type="button"
+                        :disabled="isReposting"
+                        :aria-pressed="isReposted"
+                        :title="isReposted ? 'Batalkan repost' : 'Bagikan ulang ke profilmu'"
+                        :class="{
+                            'text-[#0e9c8b] dark:text-[#50d2c1] bg-[#d9fbf4] dark:bg-[#50d2c1]/12 border-[#50d2c1]/30 dark:border-[#50d2c1]/30': isReposted,
+                            'text-[#5c6979] dark:text-[#7e8a9a] hover:text-[#0e9c8b] dark:hover:text-[#50d2c1] border-transparent hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c]': !isReposted
+                        }"
+                        class="btn-repost inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border transition active:scale-95 disabled:opacity-60">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                    </svg>
+                    <span class="font-mono text-[11px] tabular-nums" x-text="repostsCount > 0 ? repostsCount : ''"></span>
+                </button>
+            @endif
+        @endauth
+
         <!-- Bookmark Toggle -->
         <button @click="toggleBookmark()"
                 type="button"

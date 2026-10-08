@@ -2,6 +2,7 @@
     'project',
     'initialVote' => null,
     'isBookmarked' => false,
+    'isReposted' => false,
     'isOwner' => false,
     'uid' => 'p',
 ])
@@ -11,8 +12,38 @@
              score: {{ $project->score }},
              userVote: '{{ $initialVote }}',
              isBookmarked: {{ $isBookmarked ? 'true' : 'false' }},
+             isReposted: {{ $isReposted ? 'true' : 'false' }},
+             repostsCount: {{ $project->reposts_count }},
              isVoting: false,
              isBookmarking: false,
+             isReposting: false,
+             async repost() {
+                 if (this.isReposting) return;
+                 this.isReposting = true;
+                 try {
+                     const res = await fetch('{{ route('projects.repost', $project) }}', {
+                         method: 'POST',
+                         headers: {
+                             'Content-Type': 'application/json',
+                             'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                             'Accept': 'application/json'
+                         }
+                     });
+                     if (res.status === 401) { window.location.href = '{{ route('login') }}'; return; }
+                     const data = await res.json();
+                     if (data.success) {
+                         this.isReposted = data.reposted;
+                         this.repostsCount = data.reposts_count;
+                         if (window.notify) notify(data.message);
+                     } else if (window.notify) {
+                         notify(data.message || 'Gagal repost.');
+                     }
+                 } catch(e) {
+                     if (window.notify) notify('Gagal repost.');
+                 } finally {
+                     this.isReposting = false;
+                 }
+             },
              async vote(type) {
                  if (this.isVoting) return;
                  this.isVoting = true;
@@ -102,12 +133,12 @@
                 </span>
             @endif
 
-            @if($project->isFork())
-                <a href="{{ $project->forkedFrom ? route('projects.show', $project->forkedFrom->slug) : '#' }}"
+            @if($project->isRepost())
+                <a href="{{ $project->repostedFrom ? route('projects.show', $project->repostedFrom->slug) : '#' }}"
                    class="absolute bottom-3 right-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-[#0b0e11]/85 text-[#50d2c1] backdrop-blur-sm hover:bg-[#0b0e11] transition"
-                   title="Fork dari {{ $project->forkedFrom?->title }}">
+                   title="Repost dari {{ $project->repostedFrom?->title }}">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                    Fork
+                    Repost
                 </a>
             @endif
 
@@ -180,6 +211,6 @@
     @endif
 
     <!-- 5. Action Bar (Voting, Comments, View Count, Bookmark, Share) -->
-    <x-project-actions :project="$project" :initial-vote="$initialVote" :is-bookmarked="$isBookmarked" />
+    <x-project-actions :project="$project" :initial-vote="$initialVote" :is-bookmarked="$isBookmarked" :is-reposted="$isReposted" />
 
 </article>

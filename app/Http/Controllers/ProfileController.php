@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\ProjectBookmark;
+use App\Models\ProjectRepost;
 use App\Models\ProjectVote;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -12,16 +13,6 @@ use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
-    /**
-     * Show the form to edit the authenticated user's profile.
-     */
-    public function edit(): View
-    {
-        $user = auth()->user();
-
-        return view('users.edit', compact('user'));
-    }
-
     /**
      * Update the authenticated user's profile.
      */
@@ -41,12 +32,23 @@ class ProfileController extends Controller
             $data['avatar'] = '/storage/'.$path;
         }
 
+        if ($request->hasFile('banner')) {
+            if ($user->banner && str_contains($user->banner, '/storage/banners/')) {
+                $oldBanner = str_replace('/storage/', '', strstr($user->banner, '/storage/banners/'));
+                Storage::disk('public')->delete($oldBanner);
+            }
+
+            $bannerPath = $request->file('banner')->store('banners', 'public');
+            $data['banner'] = '/storage/'.$bannerPath;
+        }
+
         $user->update([
             'name' => $data['name'],
             'username' => $data['username'],
             'bio' => $data['bio'] ?? null,
             'github_url' => $data['github_url'] ?? null,
             ...(isset($data['avatar']) ? ['avatar' => $data['avatar']] : []),
+            ...(isset($data['banner']) ? ['banner' => $data['banner']] : []),
         ]);
 
         return redirect()
@@ -68,21 +70,21 @@ class ProfileController extends Controller
         $viewerId = $isOwner ? $currentUserId : null;
 
         $allProjects = $user->projects()
-            ->with(['category', 'user', 'forkedFrom'])
+            ->with(['category', 'user', 'repostedFrom'])
             ->visibleTo($viewerId)
             ->latest()
             ->get();
 
         // Pinned projects appear first, only surfaced on the owner's view order.
         $pinnedProjects = $user->pinnedProjects()
-            ->with(['category', 'user', 'forkedFrom'])
+            ->with(['category', 'user', 'repostedFrom'])
             ->visibleTo($viewerId)
             ->get();
 
         $pinnedIds = $pinnedProjects->pluck('id')->all();
 
         $projects = $user->projects()
-            ->with(['category', 'user', 'forkedFrom'])
+            ->with(['category', 'user', 'repostedFrom'])
             ->visibleTo($viewerId)
             ->whereNotIn('id', $pinnedIds)
             ->latest()
@@ -102,7 +104,7 @@ class ProfileController extends Controller
 
         // Likes tab is only shown to the owner.
         $likedProjects = $isOwner
-            ? $user->likedProjects()->with(['category', 'user', 'forkedFrom'])->latest('project_votes.created_at')->paginate(10, ['*'], 'likes')
+            ? $user->likedProjects()->with(['category', 'user', 'repostedFrom'])->latest('project_votes.created_at')->paginate(10, ['*'], 'likes')
             : collect();
 
         $totalLikes = $isOwner ? $user->likedProjects()->count() : 0;
@@ -112,6 +114,10 @@ class ProfileController extends Controller
             : [];
         $userVotes = $currentUserId
             ? ProjectVote::where('user_id', $currentUserId)->pluck('type', 'project_id')->toArray()
+            : [];
+
+        $userRepostedIds = $currentUserId
+            ? ProjectRepost::where('user_id', $currentUserId)->pluck('project_id')->toArray()
             : [];
 
         return view('users.show', compact(
@@ -125,6 +131,7 @@ class ProfileController extends Controller
             'totalLikes',
             'userBookmarkedIds',
             'userVotes',
+            'userRepostedIds',
             'followersCount',
             'followingCount',
             'isOwner'

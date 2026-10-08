@@ -282,25 +282,6 @@
                             </div>
                         </div>
 
-                        <!-- Koleksi Link (Hanya Saat Login) -->
-                        <a href="{{ route('projects.bookmarks') }}" 
-                           title="Koleksi Project Tersimpan"
-                           class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold text-[#5c6979] dark:text-[#7e8a9a] hover:text-[#0e9c8b] transition">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
-                            </svg>
-                            <span class="hidden md:inline">Koleksi</span>
-                        </a>
-
-                        <!-- Keyboard Shortcuts Helper Button (Hanya Saat Login) -->
-                        <button @click="showHelpModal = true"
-                                type="button"
-                                class="hidden sm:flex items-center justify-center w-8 h-8 rounded-md text-[#5c6979] hover:text-[#0e9c8b] hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c] transition"
-                                aria-label="Bantuan shortcut keyboard"
-                                title="Shortcut Keyboard (?)">
-                            <span class="text-xs font-mono font-bold">?</span>
-                        </button>
-
                         <!-- Upload CTA -->
                         <a href="{{ route('projects.create') }}" 
                            class="btn-primary py-1.5 px-3 text-xs hidden sm:inline-flex">
@@ -345,12 +326,6 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                                     </svg>
                                     <span>Pamerkan Project</span>
-                                </a>
-                                <a href="{{ route('profile.edit') }}" class="flex items-center gap-2 px-4 py-2 text-[#10161f] dark:text-[#eaecf0] hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c] transition">
-                                    <svg class="w-3.5 h-3.5 text-[#5c6979]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                    </svg>
-                                    <span>Pengaturan Profil</span>
                                 </a>
                                 <div class="border-t border-[#d5dbe2] dark:border-[#262d3a] my-1"></div>
                                 <form method="POST" action="{{ route('logout') }}">

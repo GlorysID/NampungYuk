@@ -64,7 +64,7 @@
                         $initialVote = $userVotes[$project->id] ?? null;
                     @endphp
                     
-                    <x-project-card :project="$project" :initial-vote="$initialVote" :is-bookmarked="$isBookmarked" />
+                    <x-project-card :project="$project" :initial-vote="$initialVote" :is-bookmarked="$isBookmarked" :is-reposted="in_array($project->id, $userRepostedIds ?? [])" />
                 @empty
                     <x-empty-state 
                         title="Tidak ada project ditemukan" 

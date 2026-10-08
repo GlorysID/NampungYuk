@@ -9,21 +9,26 @@
                 : (request('tab') === 'comments' ? 'comments' : 'projects');
 @endphp
 
-<div class="space-y-5" x-data="{ activeTab: '{{ $initialTab }}' }">
+<div class="space-y-5" x-data="{ activeTab: '{{ $initialTab }}', editOpen: {{ $errors->any() && $isOwner ? 'true' : 'false' }} }">
 
     <!-- ===================== PROFILE HERO ===================== -->
     <div class="hl-panel overflow-hidden">
 
-        <!-- Cover banner (Hyperliquid gradient mesh, no slop) -->
+        <!-- Cover banner (uploaded image, or Hyperliquid gradient mesh fallback) -->
         <div class="relative h-28 sm:h-36 bg-[#0b0e11] dark:bg-[#0b0e11]">
-            <div class="absolute inset-0 opacity-90"
-                 style="background:
-                    radial-gradient(120% 140% at 0% 0%, rgba(80,210,193,0.35) 0%, transparent 55%),
-                    radial-gradient(120% 140% at 100% 0%, rgba(14,156,139,0.28) 0%, transparent 55%),
-                    linear-gradient(180deg, rgba(20,24,33,0) 0%, rgba(11,14,17,0.6) 100%);"></div>
-            <!-- faint grid overlay for terminal feel -->
-            <div class="absolute inset-0 opacity-[0.07]"
-                 style="background-image: linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px); background-size: 26px 26px;"></div>
+            @if($user->banner)
+                <img src="{{ $user->banner }}" alt="Banner {{ $user->name }}" class="absolute inset-0 w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0b0e11]/70 to-transparent"></div>
+            @else
+                <div class="absolute inset-0 opacity-90"
+                     style="background:
+                        radial-gradient(120% 140% at 0% 0%, rgba(80,210,193,0.35) 0%, transparent 55%),
+                        radial-gradient(120% 140% at 100% 0%, rgba(14,156,139,0.28) 0%, transparent 55%),
+                        linear-gradient(180deg, rgba(20,24,33,0) 0%, rgba(11,14,17,0.6) 100%);"></div>
+                <!-- faint grid overlay for terminal feel -->
+                <div class="absolute inset-0 opacity-[0.07]"
+                     style="background-image: linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px); background-size: 26px 26px;"></div>
+            @endif
         </div>
 
         <div class="px-5 sm:px-6 pb-5 -mt-10 sm:-mt-12">
@@ -56,10 +61,10 @@
                 <!-- Actions -->
                 <div class="flex items-center gap-2 shrink-0 pb-1">
                     @if($isOwner)
-                        <a href="{{ route('profile.edit') }}" class="btn-secondary text-xs py-2 px-3">
+                        <button type="button" @click="editOpen = true" class="btn-secondary text-xs py-2 px-3">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                             <span>Edit Profil</span>
-                        </a>
+                        </button>
                     @else
                         @if($user->github_url)
                             <a href="{{ $user->github_url }}" target="_blank" rel="noopener noreferrer" class="btn-secondary text-xs py-2 px-3">
@@ -157,7 +162,7 @@
                 $isBookmarked = in_array($project->id, $userBookmarkedIds ?? []);
                 $initialVote = $userVotes[$project->id] ?? null;
             @endphp
-            <x-project-card :project="$project" :initial-vote="$initialVote" :is-bookmarked="$isBookmarked" :is-owner="$isOwner" />
+            <x-project-card :project="$project" :initial-vote="$initialVote" :is-bookmarked="$isBookmarked" :is-owner="$isOwner" :is-reposted="in_array($project->id, $userRepostedIds ?? [])" />
         @empty
             <x-empty-state title="Belum ada karya codingan" description="Developer ini belum mempublikasikan project ke NampungYuk." />
         @endforelse
@@ -203,6 +208,116 @@
             <x-empty-state title="Belum ada ulasan" description="Developer ini belum memberikan komentar pada project lain." />
         @endforelse
     </div>
+
+    <!-- ===================== EDIT PROFILE MODAL ===================== -->
+    @if($isOwner)
+        <div x-show="editOpen" x-cloak
+             class="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto bg-black/55 backdrop-blur-xs"
+             @click.self="editOpen = false"
+             @keydown.escape.window="editOpen = false"
+             role="dialog" aria-modal="true"
+             x-data="{ preview: null, bannerPreview: null }">
+            <div class="hl-panel w-full max-w-lg my-6 bg-white dark:bg-[#141821] overflow-hidden"
+                 x-transition:enter="transition ease-out duration-150"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100">
+
+                <!-- Modal header -->
+                <div class="flex items-center justify-between px-5 py-3.5 border-b border-[#d5dbe2] dark:border-[#262d3a]">
+                    <div class="flex items-center gap-2">
+                        <h3 class="font-bold text-sm text-[#10161f] dark:text-[#eaecf0]">Edit Profil</h3>
+                        <span class="hl-label">Profil</span>
+                    </div>
+                    <button type="button" @click="editOpen = false" class="text-[#5c6979] hover:text-[#10161f] dark:hover:text-white transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="px-5 py-4 space-y-4 max-h-[75vh] overflow-y-auto">
+                    @csrf
+                    @method('PUT')
+
+                    <!-- Banner upload -->
+                    <div class="space-y-2">
+                        <p class="hl-label">Banner Profil</p>
+                        <label class="relative block h-24 rounded-lg overflow-hidden border border-[#d5dbe2] dark:border-[#262d3a] cursor-pointer group">
+                            <img x-show="bannerPreview" :src="bannerPreview" class="absolute inset-0 w-full h-full object-cover" alt="">
+                            <div x-show="!bannerPreview" class="absolute inset-0 bg-[#e6eaee] dark:bg-[#1e2530] flex items-center justify-center"
+                                 style="background-image: radial-gradient(120% 140% at 0% 0%, rgba(80,210,193,0.28) 0%, transparent 55%);">
+                                <span class="text-[11px] font-mono text-[#5c6979] dark:text-[#7e8a9a]">Klik untuk unggah banner</span>
+                            </div>
+                            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition flex items-center justify-center">
+                                <span class="opacity-0 group-hover:opacity-100 transition text-white text-[11px] font-semibold flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    Ganti banner
+                                </span>
+                            </div>
+                            <input type="file" name="banner" accept="image/*" class="hidden"
+                                   @change="const f = $event.target.files[0]; if (f) bannerPreview = URL.createObjectURL(f)">
+                        </label>
+                        <p class="text-[10px] text-[#5c6979] dark:text-[#7e8a9a]">JPG, PNG, WEBP · maks 4MB · rasio lebar disarankan.</p>
+                        @error('banner') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
+                    </div>
+
+                    <!-- Avatar + name/username -->
+                    <div class="flex items-center gap-4">
+                        <img :src="preview || '{{ $user->avatar ?: 'https://api.dicebear.com/7.x/bottts/svg?seed='.urlencode($user->name) }}'"
+                             alt="{{ $user->name }}"
+                             class="w-16 h-16 rounded-full object-cover ring-1 ring-[#d5dbe2] dark:ring-[#262d3a] shrink-0">
+                        <div class="flex-1 space-y-1.5">
+                            <label for="avatar" class="btn-secondary text-xs py-1.5 px-3 cursor-pointer inline-flex">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                <span>Ganti avatar</span>
+                                <input type="file" id="avatar" name="avatar" accept="image/*" class="hidden"
+                                       @change="const f = $event.target.files[0]; if (f) preview = URL.createObjectURL(f)">
+                            </label>
+                            <p class="text-[10px] text-[#5c6979] dark:text-[#7e8a9a]">Maks 2MB</p>
+                            @error('avatar') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                            <label for="name" class="text-xs font-semibold text-[#10161f] dark:text-[#eaecf0]">Nama Lengkap</label>
+                            <input type="text" id="name" name="name" value="{{ old('name', $user->name) }}" class="ny-input text-sm">
+                            @error('name') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
+                        </div>
+                        <div class="space-y-1">
+                            <label for="username" class="text-xs font-semibold text-[#10161f] dark:text-[#eaecf0]">Username</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#5c6979] dark:text-[#7e8a9a] font-mono text-sm">@</span>
+                                <input type="text" id="username" name="username" value="{{ old('username', $user->username) }}" class="ny-input text-sm font-mono pl-7">
+                            </div>
+                            @error('username') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <div class="flex items-center justify-between">
+                            <label for="bio" class="text-xs font-semibold text-[#10161f] dark:text-[#eaecf0]">Bio</label>
+                            <span class="text-[10px] font-mono text-[#5c6979] dark:text-[#7e8a9a]">maks 280</span>
+                        </div>
+                        <textarea id="bio" name="bio" rows="3" maxlength="280" class="ny-input text-sm resize-none" placeholder="Ceritakan spesialisasimu...">{{ old('bio', $user->bio) }}</textarea>
+                        @error('bio') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div class="space-y-1">
+                        <label for="github_url" class="text-xs font-semibold text-[#10161f] dark:text-[#eaecf0]">URL GitHub</label>
+                        <input type="url" id="github_url" name="github_url" value="{{ old('github_url', $user->github_url) }}" placeholder="https://github.com/username" class="ny-input text-sm">
+                        @error('github_url') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 pt-1 border-t border-[#d5dbe2] dark:border-[#262d3a] mt-2">
+                        <button type="button" @click="editOpen = false" class="btn-secondary text-xs py-2 px-4">Batal</button>
+                        <button type="submit" class="btn-primary text-xs py-2 px-4">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span>Simpan</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
 
 </div>
 @endsection

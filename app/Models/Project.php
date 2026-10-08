@@ -16,7 +16,7 @@ class Project extends Model
     protected $fillable = [
         'user_id',
         'category_id',
-        'forked_from_id',
+        'reposted_from_id',
         'project_type',
         'status',
         'visibility',
@@ -37,7 +37,7 @@ class Project extends Model
         'score',
         'comments_count',
         'views_count',
-        'forks_count',
+        'reposts_count',
         'is_featured',
         'is_pinned',
     ];
@@ -89,19 +89,19 @@ class Project extends Model
     }
 
     /**
-     * The project this one was forked from (if any).
+     * The project this one was reposted from (if any).
      */
-    public function forkedFrom(): BelongsTo
+    public function repostedFrom(): BelongsTo
     {
-        return $this->belongsTo(Project::class, 'forked_from_id');
+        return $this->belongsTo(Project::class, 'reposted_from_id');
     }
 
     /**
-     * Projects forked from this project.
+     * Reposts referencing this project.
      */
-    public function forks(): HasMany
+    public function reposts(): HasMany
     {
-        return $this->hasMany(Project::class, 'forked_from_id');
+        return $this->hasMany(ProjectRepost::class);
     }
 
     /**
@@ -124,9 +124,9 @@ class Project extends Model
         return $this->visibility === 'private';
     }
 
-    public function isFork(): bool
+    public function isRepost(): bool
     {
-        return ! is_null($this->forked_from_id);
+        return ! is_null($this->reposted_from_id);
     }
 
     public function category(): BelongsTo

@@ -6,11 +6,12 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'username', 'email', 'password', 'avatar', 'bio', 'github_url', 'reputation_points', 'google_id'])]
+#[Fillable(['name', 'username', 'email', 'password', 'avatar', 'banner', 'bio', 'github_url', 'reputation_points', 'google_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -28,6 +29,34 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Get normalized banner URL.
+     */
+    protected function banner(): Attribute
+    {
+        return Attribute::make(
+            get: function (?string $value): ?string {
+                if (! $value) {
+                    return null;
+                }
+
+                if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+                    if (preg_match('#/storage/(.+)$#', $value, $matches)) {
+                        return asset('storage/'.$matches[1]);
+                    }
+
+                    return $value;
+                }
+
+                if (str_starts_with($value, '/storage/')) {
+                    return asset(ltrim($value, '/'));
+                }
+
+                return asset('storage/'.$value);
+            }
+        );
     }
 
     /**
@@ -115,5 +144,36 @@ class User extends Authenticatable
             'user_id',
             'project_id'
         )->wherePivot('type', 'up')->withTimestamps();
+    }
+
+    /**
+     * Projects this user has reposted.
+     */
+    public function reposts()
+    {
+        return $this->hasMany(ProjectRepost::class);
+    }
+
+    /**
+     * Projects reposted by this user (the original projects).
+     */
+    public function repostedProjects()
+    {
+        return $this->belongsToMany(
+            Project::class,
+            'project_reposts',
+            'user_id',
+            'project_id'
+        )->withTimestamps();
+    }
+
+    /**
+     * IDs of projects this user has reposted.
+     *
+     * @return array<int, int>
+     */
+    public function repostedProjectIds(): array
+    {
+        return $this->reposts()->pluck('project_id')->toArray();
     }
 }

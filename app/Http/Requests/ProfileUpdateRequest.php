@@ -34,6 +34,7 @@ class ProfileUpdateRequest extends FormRequest
             'bio' => ['nullable', 'string', 'max:280'],
             'github_url' => ['nullable', 'url', 'max:255'],
             'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:2048'],
+            'banner' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:4096'],
         ];
     }
 
@@ -46,6 +47,7 @@ class ProfileUpdateRequest extends FormRequest
             'username.regex' => 'Username hanya boleh berisi huruf, angka, dan underscore.',
             'bio.max' => 'Bio maksimal 280 karakter.',
             'avatar.max' => 'Ukuran avatar maksimal 2MB.',
+            'banner.max' => 'Ukuran banner maksimal 4MB.',
         ];
     }
 }

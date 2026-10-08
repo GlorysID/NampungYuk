@@ -8,9 +8,10 @@ use App\Models\Category;
 use App\Models\Project;
 use App\Models\ProjectBookmark;
 use App\Models\ProjectComment;
+use App\Models\ProjectRepost;
 use App\Models\ProjectVote;
 use App\Models\User;
-use App\Notifications\ProjectForkedNotification;
+use App\Notifications\ProjectRepostedNotification;
 use App\Notifications\ProjectTrendingNotification;
 use App\Notifications\ProjectUploadedNotification;
 use Illuminate\Http\JsonResponse;
@@ -113,6 +114,10 @@ class ProjectController extends Controller
             ? ProjectVote::where('user_id', $userId)->pluck('type', 'project_id')->toArray()
             : [];
 
+        $userRepostedIds = $userId
+            ? ProjectRepost::where('user_id', $userId)->pluck('project_id')->toArray()
+            : [];
+
         return view('projects.index', compact(
             'projects',
             'categories',
@@ -121,6 +126,7 @@ class ProjectController extends Controller
             'recentReviews',
             'userBookmarkedIds',
             'userVotes',
+            'userRepostedIds',
             'tab',
             'categorySlug',
             'techFilter',
@@ -205,7 +211,11 @@ class ProjectController extends Controller
             ? ProjectBookmark::where('project_id', $project->id)->where('user_id', $userId)->exists()
             : false;
 
-        return view('projects.show', compact('project', 'categories', 'relatedProjects', 'userVote', 'isBookmarked'));
+        $userReposted = $userId
+            ? ProjectRepost::where('project_id', $project->id)->where('user_id', $userId)->exists()
+            : false;
+
+        return view('projects.show', compact('project', 'categories', 'relatedProjects', 'userVote', 'isBookmarked', 'userReposted'));
     }
 
     /**
@@ -530,10 +540,11 @@ class ProjectController extends Controller
     }
 
     /**
-     * Fork (clone) another developer's project, including its code & setup.
-     * Creates a full owned copy with attribution to the original.
+     * Repost another developer's project to your own feed.
+     * A repost is a lightweight share (like a retweet): it references the
+     * original project instead of cloning it, and is always public.
      */
-    public function fork(Request $request, Project $project): JsonResponse|RedirectResponse
+    public function repost(Request $request, Project $project): JsonResponse|RedirectResponse
     {
         $user = Auth::user();
         if (! $user) {
@@ -545,91 +556,59 @@ class ProjectController extends Controller
         }
 
         if ($project->user_id === $user->id) {
+            $message = 'Kamu tidak bisa repost project sendiri.';
             if ($request->wantsJson()) {
-                return response()->json(['message' => 'Kamu tidak bisa fork project sendiri.'], 422);
+                return response()->json(['message' => $message], 422);
             }
 
-            return back()->with('error', 'Kamu tidak bisa fork project sendiri.');
+            return back()->with('error', $message);
         }
 
-        // The original must be public to be forked.
+        // The original must be public to be reposted.
         if ($project->isPrivate()) {
+            $message = 'Project ini private dan tidak bisa di-repost.';
             if ($request->wantsJson()) {
-                return response()->json(['message' => 'Project ini private dan tidak bisa di-fork.'], 403);
+                return response()->json(['message' => $message], 403);
             }
 
-            return back()->with('error', 'Project ini private dan tidak bisa di-fork.');
+            return back()->with('error', $message);
         }
 
-        $validated = $request->validate([
-            'visibility' => ['nullable', 'in:public,private'],
-        ]);
+        // Already reposted? Treat as un-repost (toggle).
+        $existing = ProjectRepost::where('project_id', $project->id)
+            ->where('user_id', $user->id)
+            ->first();
 
-        $baseSlug = Str::slug($project->title).'-fork';
-        $slug = $baseSlug;
-        $count = 1;
-        while (Project::where('slug', $slug)->exists()) {
-            $slug = "{$baseSlug}-{$count}";
-            $count++;
+        if ($existing) {
+            $existing->delete();
+            $project->decrement('reposts_count');
+            $reposted = false;
+            $message = 'Repost dibatalkan.';
+        } else {
+            ProjectRepost::create([
+                'project_id' => $project->id,
+                'user_id' => $user->id,
+            ]);
+            $project->increment('reposts_count');
+            $reposted = true;
+            $message = 'Project berhasil di-repost ke profilmu!';
+
+            // Notify the original author.
+            if ($project->user) {
+                $project->user->notify(new ProjectRepostedNotification($project, $user));
+            }
         }
 
-        $fork = Project::create([
-            'user_id' => $user->id,
-            'category_id' => $project->category_id,
-            'forked_from_id' => $project->id,
-            'project_type' => $project->project_type,
-            'status' => $project->status,
-            'visibility' => $validated['visibility'] ?? 'public',
-            'title' => $project->title,
-            'slug' => $slug,
-            'tagline' => $project->tagline,
-            'description' => $project->description,
-            'challenges' => $project->challenges,
-            'learnings' => $project->learnings,
-            'setup_instructions' => $project->setup_instructions,
-            'thumbnail' => $project->thumbnail,
-            'demo_url' => $project->demo_url,
-            'github_url' => $project->github_url,
-            'prototype_url' => $project->prototype_url,
-            'tech_stacks' => $project->tech_stacks,
-            'upvotes_count' => 1,
-            'downvotes_count' => 0,
-            'score' => 1,
-            'comments_count' => 0,
-            'views_count' => 0,
-            'forks_count' => 0,
-            'is_featured' => false,
-            'is_pinned' => false,
-        ]);
-
-        // Auto-upvote the fork by its owner.
-        ProjectVote::create([
-            'project_id' => $fork->id,
-            'user_id' => $user->id,
-            'ip_address' => $request->ip(),
-            'type' => 'up',
-        ]);
-
-        $project->increment('forks_count');
-        $project->category->increment('projects_count');
-
-        // Notify the original author.
-        if ($project->user) {
-            $project->user->notify(new ProjectForkedNotification($fork, $user));
-        }
-
-        ProjectPublished::dispatch($fork->load('user'));
-
-        $message = 'Project berhasil di-fork ke akunmu!';
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
+                'reposted' => $reposted,
+                'reposts_count' => $project->fresh()->reposts_count,
                 'message' => $message,
-                'redirect' => route('projects.show', $fork->slug),
             ]);
         }
 
-        return redirect()->route('projects.show', $fork->slug)->with('success', $message);
+        return back()->with('success', $message);
     }
 
     /**
