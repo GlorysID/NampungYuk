@@ -20,11 +20,11 @@
         </button>
     </div>
 
-    <!-- 2-COLUMN WORKSPACE: MAIN FEED (XL: 8 COLS) + COMMUNITY SIDEBAR (XL: 4 COLS) -->
+    <!-- 2-COLUMN WORKSPACE: MAIN FEED (XL: 7 COLS) + COMMUNITY SIDEBAR (XL: 5 COLS) -->
     <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
 
         <!-- MAIN SHOWCASE FEED (xl:col-span-8) -->
-        <div class="xl:col-span-8 space-y-4">
+        <div class="xl:col-span-8 space-y-4 w-full max-w-2xl mx-auto">
 
             <!-- ACTIVE FILTER BAR (Only visible when filter or search is active) -->
             @if($categorySlug || $techFilter || $search)

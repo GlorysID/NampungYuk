@@ -16,8 +16,10 @@ class Project extends Model
     protected $fillable = [
         'user_id',
         'category_id',
+        'forked_from_id',
         'project_type',
         'status',
+        'visibility',
         'title',
         'slug',
         'tagline',
@@ -35,7 +37,9 @@ class Project extends Model
         'score',
         'comments_count',
         'views_count',
+        'forks_count',
         'is_featured',
+        'is_pinned',
     ];
 
     protected function casts(): array
@@ -43,6 +47,7 @@ class Project extends Model
         return [
             'tech_stacks' => 'array',
             'is_featured' => 'boolean',
+            'is_pinned' => 'boolean',
         ];
     }
 
@@ -81,6 +86,47 @@ class Project extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * The project this one was forked from (if any).
+     */
+    public function forkedFrom(): BelongsTo
+    {
+        return $this->belongsTo(Project::class, 'forked_from_id');
+    }
+
+    /**
+     * Projects forked from this project.
+     */
+    public function forks(): HasMany
+    {
+        return $this->hasMany(Project::class, 'forked_from_id');
+    }
+
+    /**
+     * Scope: only projects visible to the given viewer.
+     * Public projects are always visible; private ones only to their owner.
+     */
+    public function scopeVisibleTo(Builder $query, ?int $viewerId): Builder
+    {
+        return $query->where(function (Builder $q) use ($viewerId) {
+            $q->where('visibility', 'public');
+
+            if ($viewerId) {
+                $q->orWhere('user_id', $viewerId);
+            }
+        });
+    }
+
+    public function isPrivate(): bool
+    {
+        return $this->visibility === 'private';
+    }
+
+    public function isFork(): bool
+    {
+        return ! is_null($this->forked_from_id);
     }
 
     public function category(): BelongsTo

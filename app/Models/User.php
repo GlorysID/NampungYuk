@@ -93,4 +93,27 @@ class User extends Authenticatable
     {
         return $this->following()->pluck('users.id')->toArray();
     }
+
+    /**
+     * Projects this user has pinned to their profile.
+     */
+    public function pinnedProjects()
+    {
+        return $this->hasMany(Project::class)
+            ->where('is_pinned', true)
+            ->orderByDesc('updated_at');
+    }
+
+    /**
+     * Projects this user has upvoted (liked).
+     */
+    public function likedProjects()
+    {
+        return $this->belongsToMany(
+            Project::class,
+            'project_votes',
+            'user_id',
+            'project_id'
+        )->wherePivot('type', 'up')->withTimestamps();
+    }
 }

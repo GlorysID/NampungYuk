@@ -25,6 +25,14 @@ Route::middleware('auth')->group(function () {
     // Social graph: follow / unfollow
     Route::post('/u/{user:username}/follow', [FollowController::class, 'toggle'])->name('follow.toggle');
 
+    // Profile settings
+    Route::get('/pengaturan/profil', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/pengaturan/profil', [ProfileController::class, 'update'])->name('profile.update');
+
+    // Project fork & pin
+    Route::post('/project/{project}/fork', [ProjectController::class, 'fork'])->name('projects.fork');
+    Route::post('/project/{project}/pin', [ProjectController::class, 'togglePin'])->name('projects.pin');
+
     // Notifications
     Route::get('/notifikasi', [NotificationController::class, 'index'])->name('notifications.index');
     Route::get('/notifikasi/latest', [NotificationController::class, 'latest'])->name('notifications.latest');

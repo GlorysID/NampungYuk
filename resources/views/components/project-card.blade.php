@@ -2,6 +2,8 @@
     'project',
     'initialVote' => null,
     'isBookmarked' => false,
+    'isOwner' => false,
+    'uid' => 'p',
 ])
 
 <article class="project-nav-card ny-card ny-card--interactive p-4 sm:p-5 space-y-3.5 group bg-white dark:bg-[#141821] border border-[#d5dbe2] dark:border-[#262d3a] transition duration-150"
@@ -79,7 +81,7 @@
 
     <!-- 1. Visual Preview Banner (Thumbnail) -->
     @if($project->thumbnail)
-        <div class="relative overflow-hidden rounded-xl bg-[#e6eaee] dark:bg-[#1e2530] border border-[#d5dbe2]/60 dark:border-[#262d3a] aspect-video max-h-[280px]">
+        <div class="relative overflow-hidden rounded-xl bg-[#e6eaee] dark:bg-[#1e2530] border border-[#d5dbe2]/60 dark:border-[#262d3a] w-full aspect-video">
             <a href="{{ route('projects.show', $project->slug) }}" class="block w-full h-full" tabindex="-1" aria-hidden="true">
                 <img src="{{ $project->thumbnail }}" 
                      alt="{{ $project->title }}" 
@@ -91,6 +93,22 @@
 
             @if($project->created_at->diffInHours(now()) < 24)
                 <span class="hl-new-badge absolute top-3 left-3">New</span>
+            @endif
+
+            @if($project->isPrivate())
+                <span class="absolute bottom-3 left-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase bg-[#0b0e11]/85 text-amber-300 backdrop-blur-sm">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    Private
+                </span>
+            @endif
+
+            @if($project->isFork())
+                <a href="{{ $project->forkedFrom ? route('projects.show', $project->forkedFrom->slug) : '#' }}"
+                   class="absolute bottom-3 right-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-[#0b0e11]/85 text-[#50d2c1] backdrop-blur-sm hover:bg-[#0b0e11] transition"
+                   title="Fork dari {{ $project->forkedFrom?->title }}">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                    Fork
+                </a>
             @endif
 
             @if($project->demo_url)
@@ -119,14 +137,26 @@
 
     <!-- 3. Project Title & Tagline -->
     <div class="space-y-1">
-        <div class="flex items-center gap-2 flex-wrap">
-            <h2 class="text-base sm:text-lg font-bold text-[#10161f] dark:text-[#eaecf0] leading-snug transition">
-                <a href="{{ route('projects.show', $project->slug) }}" class="card-detail-link focus-visible:rounded hover:text-[#0e9c8b] dark:hover:text-[#50d2c1]">
-                    {{ $project->title }}
-                </a>
-            </h2>
-            @if(! $project->thumbnail && $project->created_at->diffInHours(now()) < 24)
-                <span class="hl-new-badge">New</span>
+        <div class="flex items-start justify-between gap-2">
+            <div class="flex items-center gap-2 flex-wrap min-w-0">
+                <h2 class="text-base sm:text-lg font-bold text-[#10161f] dark:text-[#eaecf0] leading-snug transition">
+                    <a href="{{ route('projects.show', $project->slug) }}" class="card-detail-link focus-visible:rounded hover:text-[#0e9c8b] dark:hover:text-[#50d2c1]">
+                        {{ $project->title }}
+                    </a>
+                </h2>
+                @if(! $project->thumbnail && $project->created_at->diffInHours(now()) < 24)
+                    <span class="hl-new-badge">New</span>
+                @endif
+            </div>
+
+            @if($isOwner)
+                <form method="POST" action="{{ route('projects.pin', $project) }}" class="shrink-0">
+                    @csrf
+                    <button type="submit" title="{{ $project->is_pinned ? 'Lepas sematan' : 'Sematkan ke profil' }}"
+                            class="w-7 h-7 rounded-md flex items-center justify-center transition {{ $project->is_pinned ? 'text-[#0e9c8b] dark:text-[#50d2c1] bg-[#50d2c1]/10' : 'text-[#5c6979] dark:text-[#7e8a9a] hover:text-[#0e9c8b] dark:hover:text-[#50d2c1] hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c]' }}">
+                        <svg class="w-3.5 h-3.5" fill="{{ $project->is_pinned ? 'currentColor' : 'none' }}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 3a1 1 0 00-1 1v1.586l-4.293 4.293a1 1 0 00-.29.546l-.585 3.51-2.125 2.124a1 1 0 00.046 1.418l.001.001-1.045 1.045a1 1 0 001.414 1.414L9.16 20.9l.001.001a1 1 0 001.418.046l2.124-2.125 3.51-.585a1 1 0 00.546-.29L21 13.657H22a1 1 0 000-2h-1V7a1 1 0 00-1-1h-4zM7 17l-3.293 3.293a1 1 0 01-1.414-1.414L5.586 15.586 7 17z"/></svg>
+                    </button>
+                </form>
             @endif
         </div>
 

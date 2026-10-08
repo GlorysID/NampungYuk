@@ -11,6 +11,35 @@
          isBookmarked: {{ $isBookmarked ? 'true' : 'false' }},
          isVoting: false,
          isBookmarking: false,
+         forkOpen: false,
+         forking: false,
+         forkVisibility: 'public',
+         async submitFork() {
+             if (this.forking) return;
+             this.forking = true;
+             try {
+                 const res = await fetch('{{ route('projects.fork', $project) }}', {
+                     method: 'POST',
+                     headers: {
+                         'Content-Type': 'application/json',
+                         'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                         'Accept': 'application/json'
+                     },
+                     body: JSON.stringify({ visibility: this.forkVisibility })
+                 });
+                 if (res.status === 401) { window.location.href = '{{ route('login') }}'; return; }
+                 const data = await res.json();
+                 if (data.success) {
+                     window.location.href = data.redirect;
+                 } else if (window.notify) {
+                     notify(data.message || 'Gagal fork project.');
+                     this.forking = false;
+                 }
+             } catch(e) {
+                 if (window.notify) notify('Gagal fork project.');
+                 this.forking = false;
+             }
+         },
          async vote(type) {
              if (this.isVoting) return;
              this.isVoting = true;
@@ -184,6 +213,26 @@
                         </svg>
                         <span>Prototipe Interaktif</span>
                     </x-button>
+                @endif
+
+                <!-- Fork button (hidden for own project) -->
+                @auth
+                    @if($project->user_id !== auth()->id() && ! $project->isPrivate())
+                        <button type="button" @click="forkOpen = true" class="btn-secondary text-xs py-2 px-3">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                            <span>Fork</span>
+                            @if($project->forks_count > 0)
+                                <span class="hl-stat text-[10px] text-[#5c6979] dark:text-[#7e8a9a]">{{ $project->forks_count }}</span>
+                            @endif
+                        </button>
+                    @endif
+                @endauth
+
+                @if($project->isFork() && $project->forkedFrom)
+                    <a href="{{ route('projects.show', $project->forkedFrom->slug) }}" class="btn-soft text-xs py-2 px-3" title="Project asal">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                        <span>Fork dari {{ $project->forkedFrom->user?->username ?? 'seseorang' }}</span>
+                    </a>
                 @endif
 
                 <!-- Voting controls in header -->
@@ -452,6 +501,55 @@
             </div>
         </section>
     @endif
+
+    <!-- FORK MODAL -->
+    <div x-show="forkOpen" x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+         @click.self="forkOpen = false"
+         role="dialog" aria-modal="true">
+        <div class="hl-panel max-w-sm w-full p-5 space-y-4 bg-white dark:bg-[#141821]"
+             x-transition:enter="transition ease-out duration-150"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100">
+            <div class="flex items-start justify-between gap-3">
+                <div>
+                    <h3 class="font-bold text-sm text-[#10161f] dark:text-[#eaecf0]">Fork Project</h3>
+                    <p class="text-[11px] text-[#5c6979] dark:text-[#7e8a9a] mt-0.5">Salinan penuh (kode, tech stack, setup) akan dibuat di akunmu dengan atribusi ke project asal.</p>
+                </div>
+                <button type="button" @click="forkOpen = false" class="text-[#5c6979] hover:text-[#10161f] dark:hover:text-white transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <div class="space-y-2">
+                <p class="hl-label">Visibilitas Salinan</p>
+                <label class="flex items-center gap-2.5 p-2.5 rounded-md border cursor-pointer transition"
+                       :class="forkVisibility === 'public' ? 'border-[#50d2c1] bg-[#d9fbf4]/50 dark:bg-[#50d2c1]/10' : 'border-[#d5dbe2] dark:border-[#262d3a]'">
+                    <input type="radio" name="ff" value="public" x-model="forkVisibility" class="text-[#0e9c8b] focus:ring-[#0e9c8b]">
+                    <span class="text-xs">
+                        <strong class="text-[#10161f] dark:text-[#eaecf0]">Publik</strong>
+                        <span class="block text-[10px] text-[#5c6979] dark:text-[#7e8a9a]">Tampil di feed & profil.</span>
+                    </span>
+                </label>
+                <label class="flex items-center gap-2.5 p-2.5 rounded-md border cursor-pointer transition"
+                       :class="forkVisibility === 'private' ? 'border-[#50d2c1] bg-[#d9fbf4]/50 dark:bg-[#50d2c1]/10' : 'border-[#d5dbe2] dark:border-[#262d3a]'">
+                    <input type="radio" name="ff" value="private" x-model="forkVisibility" class="text-[#0e9c8b] focus:ring-[#0e9c8b]">
+                    <span class="text-xs">
+                        <strong class="text-[#10161f] dark:text-[#eaecf0]">Privat</strong>
+                        <span class="block text-[10px] text-[#5c6979] dark:text-[#7e8a9a]">Hanya kamu yang bisa lihat.</span>
+                    </span>
+                </label>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-1">
+                <button type="button" @click="forkOpen = false" class="btn-secondary text-xs py-2 px-3">Batal</button>
+                <button type="button" @click="submitFork()" :disabled="forking" class="btn-primary text-xs py-2 px-3 disabled:opacity-60">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                    <span x-text="forking ? 'Memproses...' : 'Fork Sekarang'"></span>
+                </button>
+            </div>
+        </div>
+    </div>
 
 </div>
 @endsection

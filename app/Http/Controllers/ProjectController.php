@@ -10,6 +10,7 @@ use App\Models\ProjectBookmark;
 use App\Models\ProjectComment;
 use App\Models\ProjectVote;
 use App\Models\User;
+use App\Notifications\ProjectForkedNotification;
 use App\Notifications\ProjectTrendingNotification;
 use App\Notifications\ProjectUploadedNotification;
 use Illuminate\Http\JsonResponse;
@@ -32,6 +33,7 @@ class ProjectController extends Controller
         $search = $request->query('q') ?? $request->query('search');
 
         $query = Project::with(['user', 'category'])
+            ->visibleTo(Auth::id())
             ->search($search);
 
         if ($categorySlug) {
@@ -172,9 +174,14 @@ class ProjectController extends Controller
      */
     public function show(string $slug, Request $request): View
     {
-        $project = Project::with(['user', 'category', 'comments.user'])
+        $project = Project::with(['user', 'category', 'comments.user', 'forkedFrom.user'])
             ->where('slug', $slug)
             ->firstOrFail();
+
+        // Private projects are only visible to their owner.
+        if ($project->isPrivate() && $project->user_id !== Auth::id()) {
+            abort(404);
+        }
 
         // Session-based view counting (prevents counting on every refresh)
         $viewKey = 'viewed_project_'.$project->id;
@@ -222,6 +229,7 @@ class ProjectController extends Controller
             'category_id' => ['required', 'exists:categories,id'],
             'project_type' => ['nullable', 'string', 'max:50'],
             'status' => ['nullable', 'string', 'in:idea,prototype,beta,production,archived'],
+            'visibility' => ['nullable', 'in:public,private'],
             'tech_stacks' => ['required', 'string'],
             'description' => ['nullable', 'string'],
             'challenges' => ['nullable', 'string'],
@@ -266,6 +274,7 @@ class ProjectController extends Controller
             'category_id' => $validated['category_id'],
             'project_type' => $validated['project_type'] ?? 'web',
             'status' => $validated['status'] ?? 'beta',
+            'visibility' => $validated['visibility'] ?? 'public',
             'title' => $validated['title'],
             'slug' => $slug,
             'tagline' => $validated['tagline'],
@@ -518,5 +527,149 @@ class ProjectController extends Controller
         $userVotes = ProjectVote::where('user_id', $userId)->pluck('type', 'project_id')->toArray();
 
         return view('projects.bookmarks', compact('projects', 'categories', 'userBookmarkedIds', 'userVotes'));
+    }
+
+    /**
+     * Fork (clone) another developer's project, including its code & setup.
+     * Creates a full owned copy with attribution to the original.
+     */
+    public function fork(Request $request, Project $project): JsonResponse|RedirectResponse
+    {
+        $user = Auth::user();
+        if (! $user) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Unauthenticated.'], 401);
+            }
+
+            return redirect()->route('login');
+        }
+
+        if ($project->user_id === $user->id) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Kamu tidak bisa fork project sendiri.'], 422);
+            }
+
+            return back()->with('error', 'Kamu tidak bisa fork project sendiri.');
+        }
+
+        // The original must be public to be forked.
+        if ($project->isPrivate()) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Project ini private dan tidak bisa di-fork.'], 403);
+            }
+
+            return back()->with('error', 'Project ini private dan tidak bisa di-fork.');
+        }
+
+        $validated = $request->validate([
+            'visibility' => ['nullable', 'in:public,private'],
+        ]);
+
+        $baseSlug = Str::slug($project->title).'-fork';
+        $slug = $baseSlug;
+        $count = 1;
+        while (Project::where('slug', $slug)->exists()) {
+            $slug = "{$baseSlug}-{$count}";
+            $count++;
+        }
+
+        $fork = Project::create([
+            'user_id' => $user->id,
+            'category_id' => $project->category_id,
+            'forked_from_id' => $project->id,
+            'project_type' => $project->project_type,
+            'status' => $project->status,
+            'visibility' => $validated['visibility'] ?? 'public',
+            'title' => $project->title,
+            'slug' => $slug,
+            'tagline' => $project->tagline,
+            'description' => $project->description,
+            'challenges' => $project->challenges,
+            'learnings' => $project->learnings,
+            'setup_instructions' => $project->setup_instructions,
+            'thumbnail' => $project->thumbnail,
+            'demo_url' => $project->demo_url,
+            'github_url' => $project->github_url,
+            'prototype_url' => $project->prototype_url,
+            'tech_stacks' => $project->tech_stacks,
+            'upvotes_count' => 1,
+            'downvotes_count' => 0,
+            'score' => 1,
+            'comments_count' => 0,
+            'views_count' => 0,
+            'forks_count' => 0,
+            'is_featured' => false,
+            'is_pinned' => false,
+        ]);
+
+        // Auto-upvote the fork by its owner.
+        ProjectVote::create([
+            'project_id' => $fork->id,
+            'user_id' => $user->id,
+            'ip_address' => $request->ip(),
+            'type' => 'up',
+        ]);
+
+        $project->increment('forks_count');
+        $project->category->increment('projects_count');
+
+        // Notify the original author.
+        if ($project->user) {
+            $project->user->notify(new ProjectForkedNotification($fork, $user));
+        }
+
+        ProjectPublished::dispatch($fork->load('user'));
+
+        $message = 'Project berhasil di-fork ke akunmu!';
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'redirect' => route('projects.show', $fork->slug),
+            ]);
+        }
+
+        return redirect()->route('projects.show', $fork->slug)->with('success', $message);
+    }
+
+    /**
+     * Toggle pinning a project to the top of the owner's profile (max 3).
+     */
+    public function togglePin(Request $request, Project $project): JsonResponse|RedirectResponse
+    {
+        $user = Auth::user();
+        if (! $user || $project->user_id !== $user->id) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Forbidden.'], 403);
+            }
+
+            abort(403);
+        }
+
+        if (! $project->is_pinned) {
+            $pinnedCount = $user->pinnedProjects()->count();
+            if ($pinnedCount >= 3) {
+                $message = 'Maksimal 3 project yang bisa disematkan.';
+                if ($request->wantsJson()) {
+                    return response()->json(['message' => $message], 422);
+                }
+
+                return back()->with('error', $message);
+            }
+        }
+
+        $project->update(['is_pinned' => ! $project->is_pinned]);
+
+        $message = $project->is_pinned ? 'Project disematkan ke profil.' : 'Project dilepas dari sematan.';
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'is_pinned' => $project->is_pinned,
+                'message' => $message,
+            ]);
+        }
+
+        return back()->with('success', $message);
     }
 }

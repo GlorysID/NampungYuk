@@ -72,6 +72,18 @@ html {
     scroll-behavior: smooth;
     background-color: var(--bg-app);
     color: var(--text-main);
+    /* Keep the scrollbar space reserved so content never jumps when it appears */
+    scrollbar-gutter: stable;
+    /* Offset anchor jumps so headings don't hide under the sticky header */
+    scroll-padding-top: 5rem;
+}
+
+/* Smooth, momentum-friendly scrolling everywhere (desktop + touch + inner panes) */
+html,
+body,
+.ny-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
 }
 
 body {
@@ -99,10 +111,23 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.25) !important;
 }
 
-/* Subtle, clean developer scrollbar */
+/* ==========================================================================
+   Smooth, unobtrusive scrollbars (Hyperliquid-style)
+   ========================================================================== */
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--text-muted) 35%, transparent) transparent;
+}
+
+*:hover {
+    scrollbar-color: color-mix(in srgb, var(--primary) 55%, transparent) transparent;
+}
+
+/* WebKit (Chrome, Edge, Safari) */
 ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -110,12 +135,21 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(102, 115, 111, 0.3);
+    background-color: color-mix(in srgb, var(--text-muted) 30%, transparent);
     border-radius: 9999px;
+    /* Inset the thumb for a lighter, floating feel */
+    border: 2px solid transparent;
+    background-clip: content-box;
+    transition: background-color 160ms ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(102, 115, 111, 0.5);
+    background-color: color-mix(in srgb, var(--primary) 55%, transparent);
+    background-clip: content-box;
+}
+
+::-webkit-scrollbar-corner {
+    background: transparent;
 }
 
 /* ==========================================================================

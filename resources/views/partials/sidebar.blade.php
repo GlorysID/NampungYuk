@@ -129,17 +129,49 @@
             </p>
 
             @if(isset($categories) && count($categories) > 0)
-                <div class="space-y-0.5">
-                    @foreach($categories as $category)
-                        @php $isCatActive = (request('kategori') === $category->slug); @endphp
+                @php
+                    $activeCatSlug = request('kategori');
+                    // Always show the 5 largest categories, plus the active one (even if it is not in the top 5).
+                    $topCategories = $categories->sortByDesc('projects_count')->take(5);
+                    $restCategories = $categories->sortByDesc('projects_count')->slice(5);
+                    $activeInRest = $activeCatSlug && $restCategories->contains('slug', $activeCatSlug);
+                @endphp
+
+                <div class="space-y-0.5" x-data="{ showAllCats: {{ $activeInRest ? 'true' : 'false' }} }">
+                    @foreach($topCategories as $category)
+                        @php $isCatActive = ($activeCatSlug === $category->slug); @endphp
                         <a href="{{ route('projects.index', ['kategori' => $category->slug]) }}" 
-                           class="flex items-center justify-between px-3 py-1.5 rounded-lg text-xs transition {{ $isCatActive ? 'bg-[#d9fbf4] dark:bg-[#50d2c1]/12 font-semibold' : 'text-[#5c6979] dark:text-[#7e8a9a] hover:text-[#10161f] dark:hover:text-white hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c]' }}">
+                           class="flex items-center justify-between px-3 py-1.5 rounded-md text-xs transition {{ $isCatActive ? 'bg-[#d9fbf4] dark:bg-[#50d2c1]/12 text-[#0e9c8b] dark:text-[#50d2c1] font-semibold' : 'text-[#5c6979] dark:text-[#7e8a9a] hover:text-[#10161f] dark:hover:text-white hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c]' }}">
                             <span class="truncate">{{ $category->name }}</span>
                             <span class="text-[10px] font-mono tabular-nums px-1.5 py-0.2 rounded {{ $isCatActive ? 'bg-[#50d2c1]/20 text-[#0e9c8b] dark:text-[#6ee7d5]' : 'bg-[#e6eaee] dark:bg-[#1e2530] text-[#5c6979]' }}">
                                 {{ $category->projects_count }}
                             </span>
                         </a>
                     @endforeach
+
+                    @if($restCategories->count() > 0)
+                        <div x-show="showAllCats" x-cloak class="space-y-0.5">
+                            @foreach($restCategories as $category)
+                                @php $isCatActive = ($activeCatSlug === $category->slug); @endphp
+                                <a href="{{ route('projects.index', ['kategori' => $category->slug]) }}" 
+                                   class="flex items-center justify-between px-3 py-1.5 rounded-md text-xs transition {{ $isCatActive ? 'bg-[#d9fbf4] dark:bg-[#50d2c1]/12 text-[#0e9c8b] dark:text-[#50d2c1] font-semibold' : 'text-[#5c6979] dark:text-[#7e8a9a] hover:text-[#10161f] dark:hover:text-white hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c]' }}">
+                                    <span class="truncate">{{ $category->name }}</span>
+                                    <span class="text-[10px] font-mono tabular-nums px-1.5 py-0.2 rounded {{ $isCatActive ? 'bg-[#50d2c1]/20 text-[#0e9c8b] dark:text-[#6ee7d5]' : 'bg-[#e6eaee] dark:bg-[#1e2530] text-[#5c6979]' }}">
+                                        {{ $category->projects_count }}
+                                    </span>
+                                </a>
+                            @endforeach
+                        </div>
+
+                        <button type="button"
+                                @click="showAllCats = !showAllCats"
+                                class="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium text-[#5c6979] dark:text-[#7e8a9a] hover:text-[#0e9c8b] dark:hover:text-[#50d2c1] hover:bg-[#f2f4f6] dark:hover:bg-[#1b212c] transition">
+                            <span x-text="showAllCats ? 'Sembunyikan' : 'Lihat semua ({{ $categories->count() }})'"></span>
+                            <svg class="w-3 h-3 transition-transform duration-200" :class="showAllCats ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                    @endif
                 </div>
             @endif
         </div>
