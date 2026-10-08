@@ -12,8 +12,8 @@
     </div>
 
     <div class="space-y-1">
-        <h3 class="font-bold text-base text-[#000000] dark:text-[#fafafa]">{{ $title }}</h3>
-        <p class="text-sm text-[#666666] dark:text-[#a0a0a0] max-w-sm mx-auto">{{ $message }}</p>
+        <h3 class="font-bold text-base text-[#18181b] dark:text-[#fafafa]">{{ $title }}</h3>
+        <p class="text-sm text-[#63636b] dark:text-[#a0a0a0] max-w-sm mx-auto">{{ $message }}</p>
     </div>
 
     @if($retryUrl)

@@ -28,11 +28,11 @@
 
             <!-- ACTIVE FILTER BAR (Only visible when filter or search is active) -->
             @if($categorySlug || $techFilter || $search)
-                <div class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-white dark:bg-[#0a0a0a] border border-[#e2e2e2] dark:border-[#1f1f1f] text-xs">
+                <div class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-white dark:bg-[#0a0a0a] border border-[#e4e4e7] dark:border-[#1f1f1f] text-xs">
                     <div class="flex items-center gap-2 flex-wrap">
-                        <span class="text-[#666666] dark:text-[#a0a0a0] font-medium">Filter aktif:</span>
+                        <span class="text-[#63636b] dark:text-[#a0a0a0] font-medium">Filter aktif:</span>
                         @if($categorySlug)
-                            <span class="px-2 py-0.5 rounded-md bg-[#f2f2f2] dark:bg-[#171717] text-[#000000] dark:text-[#fafafa] font-medium text-[11px] border border-[#e2e2e2] dark:border-[#1f1f1f]">
+                            <span class="px-2 py-0.5 rounded-md bg-[#eeeeef] dark:bg-[#171717] text-[#18181b] dark:text-[#fafafa] font-medium text-[11px] border border-[#e4e4e7] dark:border-[#1f1f1f]">
                                 Kategori: {{ $categorySlug }}
                             </span>
                         @endif
@@ -42,7 +42,7 @@
                             </span>
                         @endif
                         @if($search)
-                            <span class="px-2 py-0.5 rounded-md bg-[#f2f2f2] dark:bg-[#171717] text-[#000000] dark:text-[#fafafa] text-[11px] border border-[#e2e2e2] dark:border-[#1f1f1f]">
+                            <span class="px-2 py-0.5 rounded-md bg-[#eeeeef] dark:bg-[#171717] text-[#18181b] dark:text-[#fafafa] text-[11px] border border-[#e4e4e7] dark:border-[#1f1f1f]">
                                 "{{ $search }}"
                             </span>
                         @endif
@@ -105,10 +105,10 @@
                                     <a href="{{ route('profile.show', $dev->username) }}" class="flex items-center gap-2.5 min-w-0 group">
                                         <x-user-avatar :user="$dev" size="sm" />
                                         <div class="min-w-0">
-                                            <p class="font-bold text-xs text-[#000000] dark:text-[#fafafa] group-hover:text-[#0070f3] dark:group-hover:text-[#3291ff] transition truncate">
+                                            <p class="font-bold text-xs text-[#18181b] dark:text-[#fafafa] group-hover:text-[#0070f3] dark:group-hover:text-[#3291ff] transition truncate">
                                                 {{ $dev->name }}
                                             </p>
-                                            <p class="text-[11px] font-mono text-[#666666] dark:text-[#a0a0a0] truncate">&#64;{{ $dev->username }}</p>
+                                            <p class="text-[11px] font-mono text-[#63636b] dark:text-[#a0a0a0] truncate">&#64;{{ $dev->username }}</p>
                                         </div>
                                     </a>
                                     <x-follow-button :user="$dev" size="sm" />
@@ -122,7 +122,7 @@
             <!-- BLOCK 2: Active Creators (Top Contributors) -->
             <div class="ny-card p-4 space-y-3 bg-white dark:bg-[#0a0a0a]">
                 <div class="flex items-center justify-between">
-                    <h3 class="font-bold text-xs uppercase tracking-wider text-[#666666] dark:text-[#a0a0a0] flex items-center gap-1.5">
+                    <h3 class="font-bold text-xs uppercase tracking-wider text-[#63636b] dark:text-[#a0a0a0] flex items-center gap-1.5">
                         <svg class="w-3.5 h-3.5 text-[#0070f3] dark:text-[#3291ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                         </svg>
@@ -133,22 +133,22 @@
                 <div class="space-y-2.5">
                     @forelse($topDevelopers as $dev)
                         <a href="{{ route('profile.show', $dev->username) }}" 
-                           class="flex items-center justify-between p-2 rounded-lg hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition group">
+                           class="flex items-center justify-between p-2 rounded-lg hover:bg-[#f7f7f8] dark:hover:bg-[#111111] transition group">
                             <div class="flex items-center gap-2.5 min-w-0">
                                 <x-user-avatar :user="$dev" size="sm" />
                                 <div class="min-w-0">
-                                    <p class="font-bold text-xs text-[#000000] dark:text-[#fafafa] group-hover:text-[#0070f3] dark:group-hover:text-[#3291ff] transition truncate">
+                                    <p class="font-bold text-xs text-[#18181b] dark:text-[#fafafa] group-hover:text-[#0070f3] dark:group-hover:text-[#3291ff] transition truncate">
                                         {{ $dev->name }}
                                     </p>
-                                    <p class="text-[11px] font-mono text-[#666666] dark:text-[#a0a0a0] truncate">&#64;{{ $dev->username }}</p>
+                                    <p class="text-[11px] font-mono text-[#63636b] dark:text-[#a0a0a0] truncate">&#64;{{ $dev->username }}</p>
                                 </div>
                             </div>
-                            <span class="text-[11px] font-mono font-semibold text-[#0070f3] dark:text-[#3291ff] px-2 py-0.5 rounded bg-[#e8f2ff] dark:bg-[#3291ff]/12 border border-[#3291ff]/30 dark:border-[#3291ff]/30 shrink-0">
+                            <span class="text-[11px] font-mono font-semibold text-[#0070f3] dark:text-[#3291ff] px-2 py-0.5 rounded bg-[#e6f0ff] dark:bg-[#3291ff]/12 border border-[#3291ff]/30 dark:border-[#3291ff]/30 shrink-0">
                                 {{ $dev->reputation_points }} pt
                             </span>
                         </a>
                     @empty
-                        <p class="text-xs text-[#666666] py-2 text-center">Belum ada kontributor terdaftar.</p>
+                        <p class="text-xs text-[#63636b] py-2 text-center">Belum ada kontributor terdaftar.</p>
                     @endforelse
                 </div>
             </div>
@@ -156,7 +156,7 @@
             <!-- BLOCK 3: Recent Discussions / Feedback -->
             <div class="ny-card p-4 space-y-3 bg-white dark:bg-[#0a0a0a]">
                 <div class="flex items-center justify-between">
-                    <h3 class="font-bold text-xs uppercase tracking-wider text-[#666666] dark:text-[#a0a0a0] flex items-center gap-1.5">
+                    <h3 class="font-bold text-xs uppercase tracking-wider text-[#63636b] dark:text-[#a0a0a0] flex items-center gap-1.5">
                         <svg class="w-3.5 h-3.5 text-[#0070f3] dark:text-[#3291ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
                         </svg>
@@ -166,14 +166,14 @@
 
                 <div class="space-y-3">
                     @forelse($recentReviews as $comment)
-                        <div class="p-2.5 rounded-lg bg-[#ffffff] dark:bg-[#000000] border border-[#e2e2e2]/60 dark:border-[#1f1f1f] space-y-1.5">
+                        <div class="p-2.5 rounded-lg bg-[#ffffff] dark:bg-[#000000] border border-[#e4e4e7]/60 dark:border-[#1f1f1f] space-y-1.5">
                             <div class="flex items-center justify-between text-[11px]">
-                                <span class="font-semibold text-[#000000] dark:text-[#fafafa] truncate max-w-[120px]">
+                                <span class="font-semibold text-[#18181b] dark:text-[#fafafa] truncate max-w-[120px]">
                                     {{ $comment->authorName() }}
                                 </span>
-                                <span class="text-[#666666] dark:text-[#a0a0a0]">{{ $comment->created_at->diffForHumans() }}</span>
+                                <span class="text-[#63636b] dark:text-[#a0a0a0]">{{ $comment->created_at->diffForHumans() }}</span>
                             </div>
-                            <p class="text-xs text-[#666666] dark:text-[#a0a0a0] line-clamp-2 leading-relaxed">
+                            <p class="text-xs text-[#63636b] dark:text-[#a0a0a0] line-clamp-2 leading-relaxed">
                                 "{{ $comment->content }}"
                             </p>
                             @if($comment->project)
@@ -187,7 +187,7 @@
                             @endif
                         </div>
                     @empty
-                        <p class="text-xs text-[#666666] py-2 text-center">Belum ada diskusi terbaru.</p>
+                        <p class="text-xs text-[#63636b] py-2 text-center">Belum ada diskusi terbaru.</p>
                     @endforelse
                 </div>
             </div>

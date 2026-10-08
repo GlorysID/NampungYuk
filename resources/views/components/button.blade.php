@@ -16,9 +16,9 @@
 
     $variantClasses = [
         'primary' => 'btn-primary',
-        'secondary' => 'bg-[#f2f2f2] dark:bg-[#171717] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] text-[#000000] dark:text-[#fafafa] border border-[#e2e2e2] dark:border-[#1f1f1f] hover:border-[#d8d8d8] dark:hover:border-[#3a4270] hover:text-[#0070f3] dark:hover:text-[#47a8ff]',
+        'secondary' => 'bg-[#eeeeef] dark:bg-[#171717] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] text-[#18181b] dark:text-[#fafafa] border border-[#e4e4e7] dark:border-[#1f1f1f] hover:border-[#d8d8d8] dark:hover:border-[#3a4270] hover:text-[#0070f3] dark:hover:text-[#47a8ff]',
         'soft' => 'bg-[#e8f2ff] dark:bg-[#3291ff]/16 text-[#0761d1] dark:text-[#47a8ff] hover:bg-[#d0e7ff] dark:hover:bg-[#3291ff]/24 border border-[#3291ff]/25',
-        'ghost' => 'bg-transparent text-[#666666] dark:text-[#a0a0a0] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] hover:text-[#000000] dark:hover:text-white',
+        'ghost' => 'bg-transparent text-[#63636b] dark:text-[#a0a0a0] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] hover:text-[#18181b] dark:hover:text-white',
         'danger' => 'bg-rose-600 hover:bg-rose-700 text-white border border-transparent',
     ][$variant] ?? 'btn-primary';
 @endphp

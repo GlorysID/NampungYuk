@@ -7,7 +7,7 @@
 <div class="space-y-6 max-w-4xl mx-auto">
 
     <!-- Header Banner -->
-    <div class="ny-card p-5 sm:p-6 flex items-center justify-between gap-4 bg-white dark:bg-[#0a0a0a] border border-[#e2e2e2] dark:border-[#1f1f1f]">
+    <div class="ny-card p-5 sm:p-6 flex items-center justify-between gap-4 bg-white dark:bg-[#0a0a0a] border border-[#e4e4e7] dark:border-[#1f1f1f]">
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-[#e8f2ff] dark:bg-[#3291ff]/12 text-[#0070f3] dark:text-[#3291ff] border border-[#3291ff]/30 dark:border-[#3291ff]/30 flex items-center justify-center shrink-0">
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -15,17 +15,17 @@
                 </svg>
             </div>
             <div>
-                <h1 class="text-base sm:text-lg font-extrabold text-[#000000] dark:text-[#fafafa]">
+                <h1 class="text-base sm:text-lg font-extrabold text-[#18181b] dark:text-[#fafafa]">
                     Koleksi Proyek Tersimpan
                 </h1>
-                <p class="text-xs text-[#666666] dark:text-[#a0a0a0]">
+                <p class="text-xs text-[#63636b] dark:text-[#a0a0a0]">
                     Project pilihan yang ingin kamu pelajari kembali, eksplorasi arsitekturnya, atau coba kodingannya.
                 </p>
             </div>
         </div>
 
         <a href="{{ route('projects.index') }}" 
-           class="text-xs text-[#666666] hover:text-[#0070f3] font-medium hidden sm:inline-flex items-center gap-1 transition">
+           class="text-xs text-[#63636b] hover:text-[#0070f3] font-medium hidden sm:inline-flex items-center gap-1 transition">
             <span>Jelajahi Feed</span>
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>

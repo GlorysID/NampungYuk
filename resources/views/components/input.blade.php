@@ -18,7 +18,7 @@
 
 <div class="space-y-1.5">
     @if($label)
-        <label for="{{ $inputId }}" class="flex items-center justify-between text-xs font-semibold text-[#000000] dark:text-[#fafafa]">
+        <label for="{{ $inputId }}" class="flex items-center justify-between text-xs font-semibold text-[#18181b] dark:text-[#fafafa]">
             <span class="flex items-center gap-1">
                 {{ $label }}
                 @if($required)
@@ -26,7 +26,7 @@
                 @endif
             </span>
             @if($hint)
-                <span class="text-[11px] font-normal text-[#666666] dark:text-[#a0a0a0]">{{ $hint }}</span>
+                <span class="text-[11px] font-normal text-[#63636b] dark:text-[#a0a0a0]">{{ $hint }}</span>
             @endif
         </label>
     @endif
@@ -39,10 +39,10 @@
                placeholder="{{ $placeholder }}"
                @if($required) required @endif
                {{ $attributes->merge([
-                   'class' => 'w-full px-4 py-2.5 text-sm rounded-[14px] bg-[#f2f2f2] dark:bg-[#171717] text-[#000000] dark:text-[#fafafa] placeholder-[#888888] dark:placeholder-[#6b7396] border transition ' .
+                   'class' => 'w-full px-4 py-2.5 text-sm rounded-[14px] bg-[#eeeeef] dark:bg-[#171717] text-[#18181b] dark:text-[#fafafa] placeholder-[#888888] dark:placeholder-[#6b7396] border transition ' .
                    ($hasError
                        ? 'border-rose-400 dark:border-rose-500 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/15'
-                       : 'border-[#e2e2e2] dark:border-[#1f1f1f] focus:border-[#0070f3] dark:focus:border-[#3291ff] focus:ring-4 focus:ring-[#3291ff]/15')
+                       : 'border-[#e4e4e7] dark:border-[#1f1f1f] focus:border-[#0070f3] dark:focus:border-[#3291ff] focus:ring-4 focus:ring-[#3291ff]/15')
                ]) }} />
     </div>
 

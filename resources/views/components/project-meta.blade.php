@@ -9,15 +9,15 @@
                 <x-user-avatar :user="$project->user" size="sm" />
             </a>
             <div class="min-w-0 flex items-center gap-1.5 min-w-0">
-                <a href="{{ route('profile.show', $project->user->username) }}" class="font-bold text-[#000000] dark:text-[#fafafa] hover:underline transition truncate">
+                <a href="{{ route('profile.show', $project->user->username) }}" class="font-bold text-[#18181b] dark:text-[#fafafa] hover:underline transition truncate">
                     {{ $project->user->name }}
                 </a>
-                <span class="text-[#8f8f8f] dark:text-[#666666] text-[11px] shrink-0">&middot;</span>
-                <span class="text-[#8f8f8f] dark:text-[#666666] text-[11px] shrink-0">{{ $project->created_at->diffForHumans() }}</span>
+                <span class="text-[#9096a2] dark:text-[#63636b] text-[11px] shrink-0">&middot;</span>
+                <span class="text-[#9096a2] dark:text-[#63636b] text-[11px] shrink-0">{{ $project->created_at->diffForHumans() }}</span>
             </div>
         @else
             <x-user-avatar name="Anon" size="sm" />
-            <span class="font-semibold text-[#666666] dark:text-[#a0a0a0]">Developer Anonim</span>
+            <span class="font-semibold text-[#63636b] dark:text-[#a0a0a0]">Developer Anonim</span>
         @endif
     </div>
 

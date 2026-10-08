@@ -27,6 +27,7 @@ class Project extends Model
         'challenges',
         'learnings',
         'thumbnail',
+        'images',
         'demo_url',
         'github_url',
         'prototype_url',
@@ -46,6 +47,7 @@ class Project extends Model
     {
         return [
             'tech_stacks' => 'array',
+            'images' => 'array',
             'is_featured' => 'boolean',
             'is_pinned' => 'boolean',
         ];
@@ -127,6 +129,62 @@ class Project extends Model
     public function isRepost(): bool
     {
         return ! is_null($this->reposted_from_id);
+    }
+
+    /**
+     * Normalize a stored image path/url into an absolute URL.
+     */
+    protected function normalizeImageUrl(?string $value): ?string
+    {
+        if (! $value) {
+            return null;
+        }
+
+        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+            if (preg_match('#/storage/(.+)$#', $value, $matches)) {
+                return asset('storage/'.$matches[1]);
+            }
+
+            return $value;
+        }
+
+        if (str_starts_with($value, '/storage/')) {
+            return asset(ltrim($value, '/'));
+        }
+
+        if (str_starts_with($value, 'storage/')) {
+            return asset($value);
+        }
+
+        return asset('storage/'.$value);
+    }
+
+    /**
+     * All gallery images (normalized), including the primary thumbnail first.
+     *
+     * @return array<int, string>
+     */
+    public function galleryImages(): array
+    {
+        $urls = [];
+
+        if ($this->thumbnail) {
+            $urls[] = $this->normalizeImageUrl($this->thumbnail);
+        }
+
+        foreach ((array) ($this->images ?? []) as $img) {
+            $normalized = $this->normalizeImageUrl($img);
+            if ($normalized && ! in_array($normalized, $urls, true)) {
+                $urls[] = $normalized;
+            }
+        }
+
+        return array_values(array_filter($urls));
+    }
+
+    public function imageCount(): int
+    {
+        return count($this->galleryImages());
     }
 
     public function category(): BelongsTo

@@ -106,7 +106,7 @@
     <!-- Top Breadcrumb & Navigation -->
     <div class="flex items-center justify-between text-xs">
         <a href="{{ route('projects.index') }}" 
-           class="inline-flex items-center gap-1.5 text-[#666666] dark:text-[#a0a0a0] hover:text-[#0070f3] dark:hover:text-[#3291ff] transition font-medium">
+           class="inline-flex items-center gap-1.5 text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3] dark:hover:text-[#3291ff] transition font-medium">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
             </svg>
@@ -125,7 +125,7 @@
                 $variant = $statusVariants[$project->status] ?? 'neutral';
             @endphp
             <div class="flex items-center gap-1.5 text-xs">
-                <span class="text-[#666666] dark:text-[#a0a0a0]">Status Proyek:</span>
+                <span class="text-[#63636b] dark:text-[#a0a0a0]">Status Proyek:</span>
                 <x-badge :variant="$variant" size="sm">
                     {{ $project->getStatusLabel() }}
                 </x-badge>
@@ -134,10 +134,10 @@
     </div>
 
     <!-- MAIN PROJECT ARTICLE CONTAINER -->
-    <article class="ny-card bg-white dark:bg-[#0a0a0a] overflow-hidden border border-[#e2e2e2] dark:border-[#1f1f1f]">
+    <article class="ny-card bg-white dark:bg-[#0a0a0a] overflow-hidden border border-[#e4e4e7] dark:border-[#1f1f1f]">
         
         <!-- Header Info Area -->
-        <div class="p-6 sm:p-8 border-b border-[#e2e2e2] dark:border-[#1f1f1f] space-y-5">
+        <div class="p-6 sm:p-8 border-b border-[#e4e4e7] dark:border-[#1f1f1f] space-y-5">
             
             <!-- Creator & Category Row -->
             <div class="flex items-center justify-between gap-4 flex-wrap">
@@ -148,12 +148,12 @@
                         </a>
                         <div>
                             <div class="flex items-center gap-2 flex-wrap">
-                                <a href="{{ route('profile.show', $project->user->username) }}" class="font-bold text-[#000000] dark:text-[#fafafa] text-sm sm:text-base hover:text-[#0070f3] dark:hover:text-[#3291ff] transition">
+                                <a href="{{ route('profile.show', $project->user->username) }}" class="font-bold text-[#18181b] dark:text-[#fafafa] text-sm sm:text-base hover:text-[#0070f3] dark:hover:text-[#3291ff] transition">
                                     {{ $project->user->name }}
                                 </a>
-                                <span class="text-[#666666] dark:text-[#a0a0a0] text-xs font-mono">&#64;{{ $project->user->username }}</span>
+                                <span class="text-[#63636b] dark:text-[#a0a0a0] text-xs font-mono">&#64;{{ $project->user->username }}</span>
                             </div>
-                            <div class="flex items-center gap-2 text-xs text-[#666666] dark:text-[#a0a0a0] mt-0.5">
+                            <div class="flex items-center gap-2 text-xs text-[#63636b] dark:text-[#a0a0a0] mt-0.5">
                                 <span>Dipamerkan {{ $project->created_at->translatedFormat('d F Y') }}</span>
                                 <span>&bull;</span>
                                 <span>{{ $project->views_count }} tayangan</span>
@@ -162,8 +162,8 @@
                     @else
                         <x-user-avatar name="Anonim" size="lg" />
                         <div>
-                            <p class="font-bold text-[#000000] dark:text-[#fafafa] text-sm sm:text-base">Developer Anonim</p>
-                            <span class="text-xs text-[#666666]">{{ $project->created_at->translatedFormat('d F Y') }}</span>
+                            <p class="font-bold text-[#18181b] dark:text-[#fafafa] text-sm sm:text-base">Developer Anonim</p>
+                            <span class="text-xs text-[#63636b]">{{ $project->created_at->translatedFormat('d F Y') }}</span>
                         </div>
                     @endif
                 </div>
@@ -171,7 +171,7 @@
                 <!-- Category Pill -->
                 @if($project->category)
                     <a href="{{ route('projects.index', ['kategori' => $project->category->slug]) }}" 
-                       class="text-xs font-mono font-medium px-3 py-1 rounded-lg bg-[#f2f2f2] dark:bg-[#171717] text-[#000000] dark:text-[#fafafa] hover:text-[#0070f3] dark:hover:text-[#3291ff] border border-[#e2e2e2] dark:border-[#1f1f1f] transition">
+                       class="text-xs font-mono font-medium px-3 py-1 rounded-lg bg-[#eeeeef] dark:bg-[#171717] text-[#18181b] dark:text-[#fafafa] hover:text-[#0070f3] dark:hover:text-[#3291ff] border border-[#e4e4e7] dark:border-[#1f1f1f] transition">
                         {{ $project->category->name }}
                     </a>
                 @endif
@@ -179,10 +179,10 @@
 
             <!-- Title & Tagline -->
             <div class="space-y-2">
-                <h1 class="text-xl sm:text-3xl font-extrabold text-[#000000] dark:text-[#fafafa] tracking-tight leading-snug">
+                <h1 class="text-xl sm:text-3xl font-extrabold text-[#18181b] dark:text-[#fafafa] tracking-tight leading-snug">
                     {{ $project->title }}
                 </h1>
-                <p class="text-sm sm:text-base text-[#666666] dark:text-[#a0a0a0] leading-relaxed max-w-3xl">
+                <p class="text-sm sm:text-base text-[#63636b] dark:text-[#a0a0a0] leading-relaxed max-w-3xl">
                     {{ $project->tagline }}
                 </p>
             </div>
@@ -237,7 +237,7 @@
                 @endif
 
                 <!-- Voting controls in header -->
-                <div class="inline-flex items-center rounded-lg bg-[#f2f2f2] dark:bg-[#171717] p-0.5 border border-[#e2e2e2] dark:border-[#1f1f1f]">
+                <div class="inline-flex items-center rounded-lg bg-[#eeeeef] dark:bg-[#171717] p-0.5 border border-[#e4e4e7] dark:border-[#1f1f1f]">
                     <button @click="vote('up')"
                             type="button"
                             :disabled="isVoting"
@@ -245,7 +245,7 @@
                             aria-label="Upvote project ini"
                             :class="{
                                 'bg-[#0070f3] text-white ': userVote === 'up',
-                                'text-[#666666] dark:text-[#a0a0a0] hover:text-[#0070f3] dark:hover:text-[#3291ff]': userVote !== 'up'
+                                'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3] dark:hover:text-[#3291ff]': userVote !== 'up'
                             }"
                             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition active:scale-95 disabled:opacity-60">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -263,7 +263,7 @@
                             aria-label="Downvote project ini"
                             :class="{
                                 'bg-rose-600 text-white ': userVote === 'down',
-                                'text-[#666666] dark:text-[#a0a0a0] hover:text-rose-600': userVote !== 'down'
+                                'text-[#63636b] dark:text-[#a0a0a0] hover:text-rose-600': userVote !== 'down'
                             }"
                             class="p-1.5 rounded-md transition active:scale-95 disabled:opacity-60">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -280,7 +280,7 @@
                         aria-label="Simpan project ke koleksi"
                         :class="{
                             'text-[#0070f3] dark:text-[#3291ff] bg-[#e8f2ff] dark:bg-[#3291ff]/12 border-[#3291ff]/30 dark:border-[#3291ff]/30': isBookmarked,
-                            'text-[#666666] dark:text-[#a0a0a0] hover:text-[#000000] dark:hover:text-white border-[#e2e2e2] dark:border-[#1f1f1f] bg-white dark:bg-[#0a0a0a]': !isBookmarked
+                            'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white border-[#e4e4e7] dark:border-[#1f1f1f] bg-white dark:bg-[#0a0a0a]': !isBookmarked
                         }"
                         class="p-2 rounded-lg border transition active:scale-95 disabled:opacity-60"
                         title="Simpan ke Koleksi">
@@ -293,7 +293,7 @@
                 <button @click="copyLink()"
                         type="button"
                         aria-label="Salin tautan project"
-                        class="p-2 rounded-lg border border-[#e2e2e2] dark:border-[#1f1f1f] bg-white dark:bg-[#0a0a0a] text-[#666666] dark:text-[#a0a0a0] hover:text-[#000000] dark:hover:text-white transition active:scale-95"
+                        class="p-2 rounded-lg border border-[#e4e4e7] dark:border-[#1f1f1f] bg-white dark:bg-[#0a0a0a] text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white transition active:scale-95"
                         title="Salin Tautan">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
@@ -303,15 +303,30 @@
 
         </div>
 
-        <!-- Visual Preview Banner -->
-        @if($project->thumbnail)
-            <div class="bg-[#000000] border-b border-[#e2e2e2] dark:border-[#1f1f1f] overflow-hidden max-h-[500px] flex items-center justify-center">
-                <img src="{{ $project->thumbnail }}" 
-                     alt="{{ $project->title }}" 
-                     loading="lazy" 
-                     decoding="async"
-                     onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80';"
-                     class="w-full max-h-[500px] object-cover sm:object-contain mx-auto">
+        <!-- Visual Preview Gallery -->
+        @php $gallery = $project->galleryImages(); @endphp
+        @if(count($gallery) > 0)
+            <div x-data="{ active: 0 }">
+                <div class="bg-[#000000] border-b border-[#e4e4e7] dark:border-[#1f1f1f] overflow-hidden max-h-[500px] flex items-center justify-center">
+                    <img :src="['{{ implode("','", $gallery) }}'][active]"
+                         alt="{{ $project->title }}"
+                         loading="lazy"
+                         decoding="async"
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80';"
+                         class="w-full max-h-[500px] object-cover sm:object-contain mx-auto">
+                </div>
+
+                @if(count($gallery) > 1)
+                    <div class="flex gap-2 p-3 overflow-x-auto bg-[#ffffff] dark:bg-[#000000] border-b border-[#e4e4e7] dark:border-[#1f1f1f]">
+                        @foreach($gallery as $i => $img)
+                            <button type="button" @click="active = {{ $i }}"
+                                    :class="active === {{ $i }} ? 'ring-2 ring-[#0070f3] dark:ring-[#3291ff]' : 'opacity-60 hover:opacity-100'"
+                                    class="shrink-0 w-20 h-14 rounded-lg overflow-hidden border border-[#e4e4e7] dark:border-[#1f1f1f] transition">
+                                <img src="{{ $img }}" alt="" loading="lazy" class="w-full h-full object-cover">
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
             </div>
         @endif
 
@@ -320,17 +335,17 @@
             
             <!-- SECTION 1: About This Project (Description) -->
             <section class="space-y-3">
-                <h2 class="text-sm font-bold uppercase tracking-wider text-[#666666] dark:text-[#a0a0a0] font-mono flex items-center gap-2">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-[#63636b] dark:text-[#a0a0a0] font-mono flex items-center gap-2">
                     <span class="w-1.5 h-1.5 rounded-full bg-[#0070f3] dark:bg-[#3291ff]"></span>
                     <span>Tentang Project Ini</span>
                 </h2>
                 
                 @if($project->description)
-                    <div class="text-xs sm:text-sm text-[#000000] dark:text-[#fafafa] leading-relaxed whitespace-pre-line space-y-3">
+                    <div class="text-xs sm:text-sm text-[#18181b] dark:text-[#fafafa] leading-relaxed whitespace-pre-line space-y-3">
                         {{ $project->description }}
                     </div>
                 @else
-                    <p class="text-xs text-[#666666] italic">
+                    <p class="text-xs text-[#63636b] italic">
                         Creator belum menyertakan deskripsi panjang untuk project ini.
                     </p>
                 @endif
@@ -338,8 +353,8 @@
 
             <!-- SECTION 2: Tech Stack -->
             @if(is_array($project->tech_stacks) && count($project->tech_stacks) > 0)
-                <section class="space-y-3 pt-6 border-t border-[#e2e2e2]/80 dark:border-[#1f1f1f]">
-                    <h2 class="text-sm font-bold uppercase tracking-wider text-[#666666] dark:text-[#a0a0a0] font-mono flex items-center gap-2">
+                <section class="space-y-3 pt-6 border-t border-[#e4e4e7]/80 dark:border-[#1f1f1f]">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-[#63636b] dark:text-[#a0a0a0] font-mono flex items-center gap-2">
                         <span class="w-1.5 h-1.5 rounded-full bg-[#0070f3] dark:bg-[#3291ff]"></span>
                         <span>Teknologi & Tools yang Digunakan</span>
                     </h2>
@@ -354,13 +369,13 @@
 
             <!-- SECTION 3: Knowledge Sharing — What I Learned -->
             @if(!empty(trim((string)$project->learnings)))
-                <section class="space-y-3 pt-6 border-t border-[#e2e2e2]/80 dark:border-[#1f1f1f]">
-                    <h2 class="text-sm font-bold uppercase tracking-wider text-[#666666] dark:text-[#a0a0a0] font-mono flex items-center gap-2">
+                <section class="space-y-3 pt-6 border-t border-[#e4e4e7]/80 dark:border-[#1f1f1f]">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-[#63636b] dark:text-[#a0a0a0] font-mono flex items-center gap-2">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                         <span>Apa yang Saya Pelajari (Learnings)</span>
                     </h2>
                     
-                    <div class="p-4 rounded-xl bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 text-xs sm:text-sm text-[#000000] dark:text-[#fafafa] leading-relaxed whitespace-pre-line">
+                    <div class="p-4 rounded-xl bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 text-xs sm:text-sm text-[#18181b] dark:text-[#fafafa] leading-relaxed whitespace-pre-line">
                         {{ $project->learnings }}
                     </div>
                 </section>
@@ -368,13 +383,13 @@
 
             <!-- SECTION 4: Knowledge Sharing — Challenges -->
             @if(!empty(trim((string)$project->challenges)))
-                <section class="space-y-3 pt-6 border-t border-[#e2e2e2]/80 dark:border-[#1f1f1f]">
-                    <h2 class="text-sm font-bold uppercase tracking-wider text-[#666666] dark:text-[#a0a0a0] font-mono flex items-center gap-2">
+                <section class="space-y-3 pt-6 border-t border-[#e4e4e7]/80 dark:border-[#1f1f1f]">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-[#63636b] dark:text-[#a0a0a0] font-mono flex items-center gap-2">
                         <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                         <span>Tantangan yang Dihadapi (Challenges)</span>
                     </h2>
                     
-                    <div class="p-4 rounded-xl bg-amber-50/40 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 text-xs sm:text-sm text-[#000000] dark:text-[#fafafa] leading-relaxed whitespace-pre-line">
+                    <div class="p-4 rounded-xl bg-amber-50/40 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 text-xs sm:text-sm text-[#18181b] dark:text-[#fafafa] leading-relaxed whitespace-pre-line">
                         {{ $project->challenges }}
                     </div>
                 </section>
@@ -382,9 +397,9 @@
 
             <!-- SECTION 5: How To Run (Truthful Setup Instructions Only) -->
             @if($project->hasSetupInstructions())
-                <section class="space-y-3 pt-6 border-t border-[#e2e2e2]/80 dark:border-[#1f1f1f]">
+                <section class="space-y-3 pt-6 border-t border-[#e4e4e7]/80 dark:border-[#1f1f1f]">
                     <div class="flex items-center justify-between">
-                        <h2 class="text-sm font-bold uppercase tracking-wider text-[#666666] dark:text-[#a0a0a0] font-mono flex items-center gap-2">
+                        <h2 class="text-sm font-bold uppercase tracking-wider text-[#63636b] dark:text-[#a0a0a0] font-mono flex items-center gap-2">
                             <span class="w-1.5 h-1.5 rounded-full bg-[#0070f3] dark:bg-[#3291ff]"></span>
                             <span>Cara Menjalankan Project (Setup Instructions)</span>
                         </h2>
@@ -408,11 +423,11 @@
     </article>
 
     <!-- SECTION 6: Comments & Discussion -->
-    <section id="komentar" class="ny-card p-6 sm:p-8 space-y-6 bg-white dark:bg-[#0a0a0a] border border-[#e2e2e2] dark:border-[#1f1f1f]">
+    <section id="komentar" class="ny-card p-6 sm:p-8 space-y-6 bg-white dark:bg-[#0a0a0a] border border-[#e4e4e7] dark:border-[#1f1f1f]">
         <div class="flex items-center justify-between">
-            <h2 class="text-base sm:text-lg font-bold text-[#000000] dark:text-[#fafafa] flex items-center gap-2">
+            <h2 class="text-base sm:text-lg font-bold text-[#18181b] dark:text-[#fafafa] flex items-center gap-2">
                 <span>Diskusi & Review Teknis</span>
-                <span class="text-xs font-mono font-normal px-2 py-0.5 rounded-md bg-[#f2f2f2] dark:bg-[#171717] text-[#666666] dark:text-[#a0a0a0]">
+                <span class="text-xs font-mono font-normal px-2 py-0.5 rounded-md bg-[#eeeeef] dark:bg-[#171717] text-[#63636b] dark:text-[#a0a0a0]">
                     {{ $project->comments_count }}
                 </span>
             </h2>
@@ -423,7 +438,7 @@
             <form action="{{ route('projects.comment', $project) }}" method="POST" class="space-y-3">
                 @csrf
                 <div class="space-y-1.5">
-                    <label for="comment-content" class="text-xs font-semibold text-[#000000] dark:text-[#fafafa]">
+                    <label for="comment-content" class="text-xs font-semibold text-[#18181b] dark:text-[#fafafa]">
                         Tuliskan tanggapan, pertanyaan, atau masukan untuk creator:
                     </label>
                     <textarea name="content" 
@@ -442,10 +457,10 @@
                 </div>
             </form>
         @else
-            <div class="p-4 rounded-xl bg-[#ffffff] dark:bg-[#000000] border border-[#e2e2e2] dark:border-[#1f1f1f] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div class="p-4 rounded-xl bg-[#ffffff] dark:bg-[#000000] border border-[#e4e4e7] dark:border-[#1f1f1f] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
                 <div class="space-y-0.5">
-                    <p class="font-semibold text-[#000000] dark:text-[#fafafa]">Ingin memberikan masukan atau pertanyaan?</p>
-                    <p class="text-[#666666] dark:text-[#a0a0a0]">Silakan masuk dengan akun kamu untuk bergabung dalam diskusi teknis ini.</p>
+                    <p class="font-semibold text-[#18181b] dark:text-[#fafafa]">Ingin memberikan masukan atau pertanyaan?</p>
+                    <p class="text-[#63636b] dark:text-[#a0a0a0]">Silakan masuk dengan akun kamu untuk bergabung dalam diskusi teknis ini.</p>
                 </div>
                 <x-button :href="route('login')" variant="primary" size="sm" class="shrink-0">
                     Masuk untuk Berkomentar
@@ -458,7 +473,7 @@
             @forelse($project->comments as $comment)
                 <x-comment-card :comment="$comment" />
             @empty
-                <p class="text-xs text-[#666666] dark:text-[#a0a0a0] text-center py-6">
+                <p class="text-xs text-[#63636b] dark:text-[#a0a0a0] text-center py-6">
                     Belum ada diskusi untuk project ini. Jadilah yang pertama memberikan masukan!
                 </p>
             @endforelse
@@ -468,7 +483,7 @@
     <!-- SECTION 7: Related Projects in Same Category -->
     @if(isset($relatedProjects) && count($relatedProjects) > 0)
         <section class="space-y-4 pt-4">
-            <h2 class="text-sm font-bold uppercase tracking-wider text-[#666666] dark:text-[#a0a0a0] font-mono">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-[#63636b] dark:text-[#a0a0a0] font-mono">
                 Project Terkait di Kategori Ini
             </h2>
 
@@ -479,18 +494,18 @@
                             <span class="text-[11px] font-mono text-[#0070f3] dark:text-[#3291ff] font-semibold">
                                 {{ $rel->category->name }}
                             </span>
-                            <h3 class="font-bold text-sm text-[#000000] dark:text-[#fafafa] hover:text-[#0070f3] transition">
+                            <h3 class="font-bold text-sm text-[#18181b] dark:text-[#fafafa] hover:text-[#0070f3] transition">
                                 <a href="{{ route('projects.show', $rel->slug) }}">
                                     {{ $rel->title }}
                                 </a>
                             </h3>
-                            <p class="text-xs text-[#666666] dark:text-[#a0a0a0] line-clamp-2">
+                            <p class="text-xs text-[#63636b] dark:text-[#a0a0a0] line-clamp-2">
                                 {{ $rel->tagline }}
                             </p>
                         </div>
 
-                        <div class="flex items-center justify-between text-[11px] pt-3 border-t border-[#e2e2e2]/60 dark:border-[#1f1f1f]/60">
-                            <span class="font-medium text-[#000000] dark:text-[#fafafa]">
+                        <div class="flex items-center justify-between text-[11px] pt-3 border-t border-[#e4e4e7]/60 dark:border-[#1f1f1f]/60">
+                            <span class="font-medium text-[#18181b] dark:text-[#fafafa]">
                                 {{ $rel->user?->name ?? 'Developer' }}
                             </span>
                             <span class="font-mono text-[#0070f3] font-semibold">

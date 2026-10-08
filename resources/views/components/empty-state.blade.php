@@ -16,11 +16,11 @@
     </div>
 
     <div class="space-y-1.5 max-w-sm mx-auto">
-        <h3 class="font-bold text-base text-[#000000] dark:text-[#fafafa]">
+        <h3 class="font-bold text-base text-[#18181b] dark:text-[#fafafa]">
             {{ $title }}
         </h3>
         @if($description)
-            <p class="text-sm text-[#666666] dark:text-[#a0a0a0] leading-relaxed">
+            <p class="text-sm text-[#63636b] dark:text-[#a0a0a0] leading-relaxed">
                 {{ $description }}
             </p>
         @endif

@@ -27,8 +27,8 @@
                 :class="following
                     ? (hoverUnfollow
                         ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-300 dark:border-rose-800'
-                        : 'bg-transparent text-[#000000] dark:text-[#fafafa] border border-[#d8d8d8] dark:border-[#2e2e2e]')
-                    : 'bg-[#000000] dark:bg-[#f2f2f2] text-[#ffffff] dark:text-[#000000] border border-transparent hover:bg-[#333333] dark:hover:bg-[#ededed]'"
+                        : 'bg-transparent text-[#18181b] dark:text-[#fafafa] border border-[#d8d8d8] dark:border-[#2e2e2e]')
+                    : 'bg-[#000000] dark:bg-[#eeeeef] text-[#ffffff] dark:text-[#18181b] border border-transparent hover:bg-[#333333] dark:hover:bg-[#ededed]'"
                 @mouseenter="hoverUnfollow = following"
                 @mouseleave="hoverUnfollow = false"
                 class="inline-flex items-center justify-center gap-1.5 rounded-full font-semibold transition active:scale-[0.98] disabled:opacity-60 {{ $size === 'sm' ? 'text-[11px] px-3 py-1' : 'text-xs px-4 py-1.5' }}">
@@ -42,7 +42,7 @@
              x-transition:enter-start="opacity-0 -translate-y-1"
              x-transition:enter-end="opacity-100 translate-y-0"
              @mouseleave="menuOpen = false"
-             class="absolute right-0 top-full mt-1.5 z-40 min-w-[220px] rounded-xl bg-white dark:bg-[#0a0a0a] border border-[#e2e2e2] dark:border-[#1f1f1f] shadow-lg overflow-hidden">
+             class="absolute right-0 top-full mt-1.5 z-40 min-w-[220px] rounded-xl bg-white dark:bg-[#0a0a0a] border border-[#e4e4e7] dark:border-[#1f1f1f] shadow-lg overflow-hidden">
             <button type="button"
                     @click="toggle(); menuOpen = false"
                     class="w-full flex items-start gap-2.5 px-3.5 py-2.5 text-left hover:bg-rose-50 dark:hover:bg-rose-950/40 transition">
@@ -51,7 +51,7 @@
                 </svg>
                 <span class="min-w-0">
                     <span class="block text-xs font-semibold text-rose-600 dark:text-rose-400" x-text="'Berhenti mengikuti @' + username"></span>
-                    <span class="block text-[10px] text-[#8f8f8f] dark:text-[#666666]">Repost mereka tidak akan tampil di timeline-mu.</span>
+                    <span class="block text-[10px] text-[#9096a2] dark:text-[#63636b]">Repost mereka tidak akan tampil di timeline-mu.</span>
                 </span>
             </button>
         </div>

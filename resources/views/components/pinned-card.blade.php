@@ -12,7 +12,7 @@
                  class="w-full aspect-video object-cover"
                  onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80';">
         @else
-            <div class="w-full aspect-video bg-[#f2f2f2] dark:bg-[#171717] flex items-center justify-center text-[#0070f3] dark:text-[#3291ff]">
+            <div class="w-full aspect-video bg-[#eeeeef] dark:bg-[#171717] flex items-center justify-center text-[#0070f3] dark:text-[#3291ff]">
                 <svg class="w-8 h-8 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
             </div>
         @endif
@@ -26,7 +26,7 @@
 
     <div class="p-3 space-y-2">
         <div class="flex items-center justify-between gap-2">
-            <a href="{{ route('projects.show', $project->slug) }}" class="font-bold text-xs text-[#000000] dark:text-[#fafafa] leading-snug line-clamp-2 hover:text-[#0070f3] dark:hover:text-[#3291ff] transition">
+            <a href="{{ route('projects.show', $project->slug) }}" class="font-bold text-xs text-[#18181b] dark:text-[#fafafa] leading-snug line-clamp-2 hover:text-[#0070f3] dark:hover:text-[#3291ff] transition">
                 {{ $project->title }}
             </a>
 
@@ -34,14 +34,14 @@
                 <form method="POST" action="{{ route('projects.pin', $project) }}" class="shrink-0">
                     @csrf
                     <button type="submit" title="{{ $pinned ? 'Lepas sematan' : 'Sematkan ke profil' }}"
-                            class="w-7 h-7 rounded-md flex items-center justify-center transition {{ $pinned ? 'text-[#0070f3] dark:text-[#3291ff] hover:bg-[#3291ff]/10' : 'text-[#666666] dark:text-[#a0a0a0] hover:text-[#0070f3] hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
+                            class="w-7 h-7 rounded-md flex items-center justify-center transition {{ $pinned ? 'text-[#0070f3] dark:text-[#3291ff] hover:bg-[#3291ff]/10' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3] hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
                         <svg class="w-3.5 h-3.5" fill="{{ $pinned ? 'currentColor' : 'none' }}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 3a1 1 0 00-1 1v1.586l-4.293 4.293a1 1 0 00-.29.546l-.585 3.51-2.125 2.124a1 1 0 00.046 1.418l.001.001-1.045 1.045a1 1 0 001.414 1.414L9.16 20.9l.001.001a1 1 0 001.418.046l2.124-2.125 3.51-.585a1 1 0 00.546-.29L21 13.657H22a1 1 0 000-2h-1V7a1 1 0 00-1-1h-4zM7 17l-3.293 3.293a1 1 0 01-1.414-1.414L5.586 15.586 7 17z"/></svg>
                     </button>
                 </form>
             @endif
         </div>
 
-        <div class="flex items-center gap-2 text-[10px] font-mono text-[#666666] dark:text-[#a0a0a0]">
+        <div class="flex items-center gap-2 text-[10px] font-mono text-[#63636b] dark:text-[#a0a0a0]">
             <span class="inline-flex items-center gap-1">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
                 {{ $project->score }}

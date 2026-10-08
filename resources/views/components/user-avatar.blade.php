@@ -28,4 +28,4 @@
      alt="{{ $displayName }}" 
      loading="lazy"
      decoding="async"
-     {{ $attributes->merge(['class' => "$sizeClasses bg-[#f2f2f2] dark:bg-[#171717] object-cover ring-1 ring-[#eaeaea] dark:ring-[#1f1f1f] shrink-0"]) }}>
+     {{ $attributes->merge(['class' => "$sizeClasses bg-[#eeeeef] dark:bg-[#171717] object-cover ring-1 ring-[#eaeaea] dark:ring-[#1f1f1f] shrink-0"]) }}>

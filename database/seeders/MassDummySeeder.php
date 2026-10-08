@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Category;
 use App\Models\Project;
 use App\Models\ProjectComment;
+use App\Models\ProjectRepost;
 use App\Models\ProjectVote;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -81,26 +82,49 @@ class MassDummySeeder extends Seeder
             'Manalu', 'Sinambela', 'Tobing', 'Tampubolon', 'Samosir', 'Saragih', 'Damanik', 'Purba', 'Kurnia', 'Subekti',
         ];
 
-        $bios = [
-            'Fullstack Laravel & Vue developer berbasis di Bandung. Suka ngulik clean code dan micro-frameworks.',
-            'Mahasiswa Teknik Informatika tingkat akhir. Sedang fokus belajar React, TypeScript, dan Next.js.',
-            'Junior Go developer yang hobi bikin microservices berkecepatan tinggi dan CLI tools otomatis.',
-            'Frontend enthusiast pecinta Tailwind CSS, animasi 60 FPS, dan UI minimalis fungsional.',
-            'Mobile developer (Flutter & Android native). Senang membangun aplikasi yang berdampak sosial langsung.',
-            'Backend dev @ Jakarta. Hobi ngulik PostgreSQL, Redis, RabbitMQ, dan containerization Docker.',
-            'UI/UX Designer yang mulai merambah ke dunia frontend engineering dan web animation.',
-            'Python programmer suka otomasi skrip, web scraping, data scraping, dan basic data science.',
-            'DevOps engineer pemula. Sedang mendalami Kubernetes, Terraform, dan CI/CD workflow GitHub Actions.',
-            'Software engineer freelance. Siap bantu wujudkan ide website, MVP, dan sistem informasi custom.',
-            'Penggemar Rust untuk systems programming. Linux enthusiast dan pemakai Neovim garis keras.',
-            'Suka berkontribusi ke open-source packages dan membagikan tips coding di forum komunitas.',
-            'Web developer fokus di ekosistem Vue 3, Nuxt, dan Pinia state management.',
-            'Tech enthusiast & self-taught coder. Suka eksperimen teknologi web modern dan visualisasi data.',
-            'iOS developer enthusiast (Swift & SwiftUI). Suka desain interaksi yang intuitif dan halus.',
-            'Web3 & smart contract explorer. Suka belajar Solidity dan arsitektur desentralisasi.',
-            'Security researcher & bug hunter pemula. Mengutamakan kode aman dan best practices OWASP.',
-            'Fullstack developer dengan pengalaman integrasi payment gateway lokal dan SMS/WhatsApp OTP.',
+        // Bio parts — combined programmatically so every dummy account gets a UNIQUE bio.
+        $bioRoles = [
+            'Fullstack developer', 'Backend engineer', 'Frontend engineer', 'Mobile developer',
+            'Software engineer', 'Web developer', 'DevOps engineer', 'Data engineer',
+            'Machine learning engineer', 'Game developer', 'UI/UX engineer', 'Platform engineer',
+            'Security engineer', 'QA automation engineer', 'Cloud architect', 'Systems programmer',
+            'API engineer', 'iOS developer', 'Android developer', 'Solutions architect',
         ];
+        $bioFocus = [
+            'fokus di ekosistem Laravel & Vue', 'spesialis React & TypeScript', 'mendalami Go dan microservices',
+            'ngulik Rust untuk systems programming', 'suka bangun CLI tool dan otomasi', 'bermain di dunia Flutter & Dart',
+            'gemar menyusun arsitektur clean & scalable', 'hobi bikin REST API cepat', 'mendalami Next.js & tRPC',
+            'suka real-time app dengan WebSocket', 'ngulik PostgreSQL & query optimization', 'berkecimpung di Docker & Kubernetes',
+            'menekuni Python & data pipeline', 'suka web scraping & bot otomasi', 'mendalami Solidity & smart contract',
+            'fokus pada keamanan aplikasi & audit', 'suka Tailwind CSS & design system', 'gemar bikin dashboard analitik',
+            'mendalami testing otomatis & CI/CD', 'suka membangun produk MVP cepat', 'hobi mobile-first UI',
+            'bermain dengan AI & LLM integration', 'suka refactor code yang bersih', 'mendalami GraphQL & federation',
+        ];
+        $bioCities = [
+            'di Jakarta', 'di Bandung', 'di Surabaya', 'di Yogyakarta', 'di Semarang', 'di Medan',
+            'di Makassar', 'di Denpasar', 'di Malang', 'di Bekasi', 'remote dari Bali', 'di Tangerang',
+            'di Palembang', 'di Solo', 'di Balikpapan', 'remote sepenuhnya',
+        ];
+        $bioTraits = [
+            'pecinta open-source', 'penikmat kopi & ngoding malam', 'suka sharing di komunitas', 'aktif kontribusi GitHub',
+            'hobi ngulik tool developer', 'suka ngajar & mentoring', 'kolektor side-project', 'pembelajar cepat',
+            'suka dokumentasi yang rapi', 'anti-code smell', 'penggemar clean architecture', 'suka pair programming',
+        ];
+        $bioClosers = [
+            'Sedang terbuka untuk kolaborasi.', 'Mari berkolaborasi!', 'Siap ngulik bareng.', 'Terbuka untuk diskusi teknis.',
+            'Yuk connect!', 'Senang bertemu developer lain.', 'Mari bertukar ide.', 'Salam ngoding!',
+        ];
+
+        // Deterministically produce unique bios by combining parts on the user index.
+        $makeBio = function (int $i) use ($bioRoles, $bioFocus, $bioCities, $bioTraits, $bioClosers): string {
+            $role = $bioRoles[$i % count($bioRoles)];
+            $focus = $bioFocus[($i * 7 + 3) % count($bioFocus)];
+            $city = $bioCities[($i * 5 + 1) % count($bioCities)];
+            $trait = $bioTraits[($i * 11 + 2) % count($bioTraits)];
+            $closer = $bioClosers[($i * 13 + 5) % count($bioClosers)];
+
+            return "{$role} {$focus}, berbasis {$city}. {$trait}. {$closer}";
+        };
 
         // 3. Create 100 Realistic Dummy Developers
         $newUsers = [];
@@ -133,7 +157,7 @@ class MassDummySeeder extends Seeder
                     'username' => $username,
                     'password' => $commonPassword,
                     'avatar' => $avatar,
-                    'bio' => $bios[array_rand($bios)],
+                    'bio' => $makeBio($i),
                     'github_url' => "https://github.com/{$username}",
                     'reputation_points' => rand(15, 680),
                     'created_at' => now()->subDays(rand(1, 90)),
@@ -430,6 +454,24 @@ class MassDummySeeder extends Seeder
             $score = $upvotes - $downvotes;
             $slug = Str::slug($tmpl['title']);
 
+            // ~40% of dummy projects get a multi-image gallery (2-4 extra shots).
+            $gallery = [];
+            if ($projectIndex % 5 <= 1) {
+                $shots = [
+                    'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1000&q=80',
+                    'https://images.unsplash.com/photo-1555949963-aa79dcee981c?auto=format&fit=crop&w=1000&q=80',
+                    'https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?auto=format&fit=crop&w=1000&q=80',
+                    'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1000&q=80',
+                    'https://images.unsplash.com/photo-1587620962725-abab7fe55159?auto=format&fit=crop&w=1000&q=80',
+                    'https://images.unsplash.com/photo-1607705703571-c5a8695f18f6?auto=format&fit=crop&w=1000&q=80',
+                    'https://images.unsplash.com/photo-1551650975-87deedd944c3?auto=format&fit=crop&w=1000&q=80',
+                    'https://images.unsplash.com/photo-1618477247222-acbdb0e159b3?auto=format&fit=crop&w=1000&q=80',
+                ];
+                shuffle($shots);
+                $take = rand(2, 4);
+                $gallery = array_slice($shots, 0, $take);
+            }
+
             $project = Project::updateOrCreate(
                 ['slug' => $slug],
                 [
@@ -440,6 +482,7 @@ class MassDummySeeder extends Seeder
                     'tagline' => $tmpl['tagline'],
                     'description' => $tmpl['desc'],
                     'thumbnail' => $tmpl['thumb'],
+                    'images' => ! empty($gallery) ? $gallery : null,
                     'demo_url' => 'https://'.Str::slug(explode(':', $tmpl['title'])[0]).'.example.com',
                     'github_url' => 'https://github.com/'.$author->username.'/'.Str::slug(explode(':', $tmpl['title'])[0]),
                     'prototype_url' => ($projectIndex % 3 === 0)
@@ -494,7 +537,77 @@ class MassDummySeeder extends Seeder
             $project->update(['comments_count' => $commCount]);
         }
 
-        // 8. Update Category Counts
+        // 8. Reposts — dummy accounts reshare each other's projects (engagement).
+        $allProjects = Project::with('user')->get();
+        foreach ($allProjects as $project) {
+            if (! $project->user) {
+                continue;
+            }
+
+            // 2 to 7 other developers repost this project.
+            $resharers = array_slice($newUsers, rand(0, 80), rand(2, 7));
+            $repostCount = 0;
+
+            foreach ($resharers as $resharer) {
+                if ($resharer->id === $project->user_id) {
+                    continue; // can't repost your own project
+                }
+
+                ProjectRepost::updateOrCreate(
+                    [
+                        'project_id' => $project->id,
+                        'user_id' => $resharer->id,
+                    ],
+                    [
+                        'created_at' => now()->subDays(rand(0, 20))->subHours(rand(1, 23)),
+                    ]
+                );
+                $repostCount++;
+            }
+
+            if ($repostCount > 0) {
+                $project->update(['reposts_count' => $repostCount]);
+            }
+        }
+
+        // 9. Threaded conversations — some comments reply to earlier ones (active discussion).
+        $replyPool = [
+            'Setuju banget sama poin ini!', 'Good insight, makasih sharingnya.',
+            'Wah iya, aku juga ngalamin hal serupa.', 'Menarik, boleh dijelasin lebih detail?',
+            'Nice one! Ini yang aku cari.', 'Boleh share snippet-nya gak?',
+            'Justru itu yang bikin challenge, hehe.', 'Keren, lanjut terus karyanya!',
+            'Aku malah kepikiran approach lain, tapi ini juga solid.', 'Mantap, noted!',
+        ];
+        foreach ($allProjects as $project) {
+            $rootComments = ProjectComment::where('project_id', $project->id)
+                ->whereNull('parent_id')
+                ->get();
+
+            foreach ($rootComments as $root) {
+                // ~50% chance of getting a reply.
+                if (rand(0, 1) === 0) {
+                    continue;
+                }
+
+                $replier = $newUsers[array_rand($newUsers)];
+                if ($replier->id === $root->user_id) {
+                    continue;
+                }
+
+                ProjectComment::create([
+                    'project_id' => $project->id,
+                    'user_id' => $replier->id,
+                    'parent_id' => $root->id,
+                    'content' => $replyPool[array_rand($replyPool)],
+                    'upvotes_count' => rand(0, 12),
+                    'created_at' => $root->created_at->addMinutes(rand(20, 600)),
+                ]);
+            }
+
+            $project->update(['comments_count' => ProjectComment::where('project_id', $project->id)->count()]);
+        }
+
+        // 10. Update Category Counts
         foreach (Category::all() as $cat) {
             $cat->update(['projects_count' => $cat->projects()->count()]);
         }

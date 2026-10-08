@@ -250,6 +250,8 @@ class ProjectController extends Controller
             'prototype_url' => ['nullable', 'url', 'max:255'],
             'thumbnail' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:4096'],
             'thumbnail_url' => ['nullable', 'url', 'max:255'],
+            'images' => ['nullable', 'array', 'max:8'],
+            'images.*' => ['image', 'mimes:jpeg,png,jpg,webp,gif', 'max:4096'],
         ]);
 
         $user = Auth::user();
@@ -269,6 +271,16 @@ class ProjectController extends Controller
             $thumbnailPath = $validated['thumbnail_url'];
         } else {
             $thumbnailPath = 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80';
+        }
+
+        // Handle additional gallery images (multiple uploads).
+        $galleryPaths = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                if ($image && $image->isValid()) {
+                    $galleryPaths[] = '/storage/'.$image->store('project-images', 'public');
+                }
+            }
         }
 
         $baseSlug = Str::slug($validated['title']);
@@ -293,6 +305,7 @@ class ProjectController extends Controller
             'learnings' => $validated['learnings'] ?? null,
             'setup_instructions' => $validated['setup_instructions'] ?? null,
             'thumbnail' => $thumbnailPath,
+            'images' => ! empty($galleryPaths) ? $galleryPaths : null,
             'demo_url' => $validated['demo_url'] ?? null,
             'github_url' => $validated['github_url'] ?? null,
             'prototype_url' => $validated['prototype_url'] ?? null,

@@ -47,6 +47,7 @@ class ProfileController extends Controller
             'username' => $data['username'],
             'bio' => $data['bio'] ?? null,
             'github_url' => $data['github_url'] ?? null,
+            'website_url' => $data['website_url'] ?? null,
             ...(isset($data['avatar']) ? ['avatar' => $data['avatar']] : []),
             ...(isset($data['banner']) ? ['banner' => $data['banner']] : []),
         ]);
