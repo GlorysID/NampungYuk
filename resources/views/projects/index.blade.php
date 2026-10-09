@@ -128,36 +128,40 @@
                 @endif
             @endauth
 
-            <!-- BLOCK 2: Active Creators (Top Contributors) -->
+            <!-- BLOCK 2: Trending Projects Today -->
             <div class="ny-card p-4 space-y-3 bg-white dark:bg-[#0a0a0a]">
                 <div class="flex items-center justify-between">
                     <h3 class="font-bold text-xs uppercase tracking-wider text-[#63636b] dark:text-[#a0a0a0] flex items-center gap-1.5">
                         <svg class="w-3.5 h-3.5 text-[#0070f3] dark:text-[#3291ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                         </svg>
-                        <span>Top Kontributor</span>
+                        <span>Trending Hari Ini</span>
                     </h3>
                 </div>
 
                 <div class="space-y-2.5">
-                    @forelse($topDevelopers as $dev)
-                        <a href="{{ route('profile.show', $dev->username) }}" 
-                           class="flex items-center justify-between p-2 rounded-lg hover:bg-[#f7f7f8] dark:hover:bg-[#111111] transition group">
-                            <div class="flex items-center gap-2.5 min-w-0">
-                                <x-user-avatar :user="$dev" size="sm" />
-                                <div class="min-w-0">
-                                    <p class="font-bold text-xs text-[#18181b] dark:text-[#fafafa] group-hover:text-[#0070f3] dark:group-hover:text-[#3291ff] transition truncate">
-                                        {{ $dev->name }}
-                                    </p>
-                                    <p class="text-[11px] font-mono text-[#63636b] dark:text-[#a0a0a0] truncate">&#64;{{ $dev->username }}</p>
-                                </div>
+                    @forelse($trendingToday as $i => $tp)
+                        <a href="{{ route('projects.show', $tp->slug) }}"
+                           class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#f7f7f8] dark:hover:bg-[#111111] transition group">
+                            <span class="text-xs font-mono font-bold text-[#63636b] dark:text-[#a0a0a0] w-4 shrink-0">{{ $i + 1 }}</span>
+                            <span class="w-8 h-8 rounded-lg overflow-hidden bg-[#eeeeef] dark:bg-[#171717] shrink-0">
+                                @if($tp->thumbnail)
+                                    <img src="{{ $tp->thumbnail }}" alt="" class="w-full h-full object-cover">
+                                @endif
+                            </span>
+                            <div class="min-w-0 flex-1">
+                                <p class="font-semibold text-xs text-[#18181b] dark:text-[#fafafa] group-hover:text-[#0070f3] dark:group-hover:text-[#3291ff] transition truncate">
+                                    {{ $tp->title }}
+                                </p>
+                                <p class="text-[10px] text-[#63636b] dark:text-[#a0a0a0] truncate">&#64;{{ $tp->user?->username ?? 'anon' }}</p>
                             </div>
-                            <span class="text-[11px] font-mono font-semibold text-[#0070f3] dark:text-[#3291ff] px-2 py-0.5 rounded bg-[#e6f0ff] dark:bg-[#3291ff]/12 border border-[#3291ff]/30 dark:border-[#3291ff]/30 shrink-0">
-                                {{ $dev->reputation_points }} pt
+                            <span class="text-[11px] font-mono font-semibold text-[#0070f3] dark:text-[#3291ff] px-2 py-0.5 rounded bg-[#e6f0ff] dark:bg-[#3291ff]/12 border border-[#3291ff]/30 shrink-0 inline-flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
+                                {{ $tp->score }}
                             </span>
                         </a>
                     @empty
-                        <p class="text-xs text-[#63636b] py-2 text-center">Belum ada kontributor terdaftar.</p>
+                        <p class="text-xs text-[#63636b] py-2 text-center">Belum ada project trending.</p>
                     @endforelse
                 </div>
             </div>

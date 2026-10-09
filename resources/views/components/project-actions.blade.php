@@ -6,45 +6,24 @@
 ])
 
 <div class="flex items-center justify-between gap-3 pt-3 border-t border-[#e4e4e7]/80 dark:border-[#1f1f1f] text-xs">
-    <!-- Left: Voting Controls + Comments Count -->
+    <!-- Left: Like + Comments Count -->
     <div class="flex items-center gap-1.5 sm:gap-2">
-        <!-- Upvote / Downvote Pill Container -->
-        <div class="inline-flex items-center rounded-lg bg-[#eeeeef] dark:bg-[#171717] p-0.5 border border-[#e4e4e7] dark:border-[#1f1f1f]">
-            <!-- Upvote Button -->
-            <button @click="vote('up')"
-                    type="button"
-                    :disabled="isVoting"
-                    :aria-pressed="userVote === 'up'"
-                    aria-label="Upvote project {{ $project->title }}"
-                    :class="{
-                        'bg-[#0070f3] text-white ': userVote === 'up',
-                        'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3] dark:hover:text-[#3291ff]': userVote !== 'up'
-                    }"
-                    class="btn-upvote inline-flex items-center gap-1 px-2.5 py-1 rounded-md font-semibold transition active:scale-95 disabled:opacity-60">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/>
-                </svg>
-                <span class="font-mono text-xs" x-text="score">{{ $project->score }}</span>
-            </button>
-
-            <span class="h-3 w-px bg-[#eaeaea] dark:bg-[#1f1f1f] mx-0.5" aria-hidden="true"></span>
-
-            <!-- Downvote Button -->
-            <button @click="vote('down')"
-                    type="button"
-                    :disabled="isVoting"
-                    :aria-pressed="userVote === 'down'"
-                    aria-label="Downvote project {{ $project->title }}"
-                    :class="{
-                        'bg-rose-600 text-white ': userVote === 'down',
-                        'text-[#63636b] dark:text-[#a0a0a0] hover:text-rose-600': userVote !== 'down'
-                    }"
-                    class="btn-downvote p-1 rounded-md transition active:scale-95 disabled:opacity-60">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
-                </svg>
-            </button>
-        </div>
+        <!-- Like Button -->
+        <button @click="vote('up')"
+                type="button"
+                :disabled="isVoting"
+                :aria-pressed="userVote === 'up'"
+                aria-label="Sukai project {{ $project->title }}"
+                :class="{
+                    'bg-[#0070f3] text-white dark:bg-[#3291ff] dark:text-[#000000]': userVote === 'up',
+                    'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3] dark:hover:text-[#3291ff]': userVote !== 'up'
+                }"
+                class="btn-upvote inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold transition active:scale-95 disabled:opacity-60">
+            <svg class="w-3.5 h-3.5" :fill="userVote === 'up' ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+            </svg>
+            <span class="font-mono text-xs" x-text="score">{{ $project->score }}</span>
+        </button>
 
         <!-- Comments Count Link -->
         <a href="{{ route('projects.show', $project->slug) }}#komentar" 

@@ -79,12 +79,24 @@ class ProjectController extends Controller
             'TypeScript', 'Next.js', 'Go', 'Flutter', 'Docker',
         ];
 
-        // 2. Active Creators by reputation
-        $topDevelopers = User::whereNotNull('reputation_points')
-            ->where('reputation_points', '>', 0)
-            ->orderByDesc('reputation_points')
+        // 2. Trending projects today (top by score in the last 24h)
+        $trendingToday = Project::with(['user', 'category'])
+            ->visibleTo(Auth::id())
+            ->where('created_at', '>=', now()->subDay())
+            ->orderByDesc('score')
             ->take(5)
             ->get();
+
+        // Fallback: if not enough today, fill from the past week
+        if ($trendingToday->count() < 5) {
+            $extra = Project::with(['user', 'category'])
+                ->visibleTo(Auth::id())
+                ->where('created_at', '<', now()->subDay())
+                ->orderByDesc('score')
+                ->take(5 - $trendingToday->count())
+                ->get();
+            $trendingToday = $trendingToday->concat($extra);
+        }
 
         // 3. Suggested developers to follow (not already followed, not self)
         $suggestedDevelopers = collect();
@@ -121,7 +133,7 @@ class ProjectController extends Controller
         return view('projects.index', compact(
             'projects',
             'categories',
-            'topDevelopers',
+            'trendingToday',
             'trendingTech',
             'recentReviews',
             'userBookmarkedIds',
@@ -342,95 +354,54 @@ class ProjectController extends Controller
     }
 
     /**
-     * AJAX Vote endpoint (upvote / downvote).
+     * AJAX Like endpoint (like / unlike). Likes only — no dislikes.
      */
     public function vote(Request $request, Project $project): JsonResponse
     {
-        $validated = $request->validate([
-            'type' => ['required', 'in:up,down'],
-        ]);
-
-        $type = $validated['type'];
         $userId = Auth::id();
-        $ip = $request->ip();
 
         if (! $userId) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
+        $isAuthor = ($project->user_id === $userId);
+
         $existingVote = ProjectVote::where('project_id', $project->id)
             ->where('user_id', $userId)
             ->first();
 
-        $currentVoteType = null;
-        $isAuthor = ($project->user_id === $userId);
-
         if ($existingVote) {
-            if ($existingVote->type === $type) {
-                // Remove vote (toggle off)
-                $existingVote->delete();
-                if ($type === 'up') {
-                    $project->decrement('upvotes_count');
-                    $project->decrement('score');
-                    // Deduct reputation if upvote was canceled
-                    if (! $isAuthor && $project->user) {
-                        $project->user->decrement('reputation_points', 5);
-                    }
-                } else {
-                    $project->decrement('downvotes_count');
-                    $project->increment('score');
-                }
-                $currentVoteType = null;
-            } else {
-                // Switch vote (e.g. from down to up, or up to down)
-                $existingVote->update(['type' => $type]);
-                if ($type === 'up') {
-                    $project->increment('upvotes_count');
-                    $project->decrement('downvotes_count');
-                    $project->increment('score', 2);
-                    // Switched from down to up: reward reputation
-                    if (! $isAuthor && $project->user) {
-                        $project->user->increment('reputation_points', 5);
-                    }
-                } else {
-                    $project->increment('downvotes_count');
-                    $project->decrement('upvotes_count');
-                    $project->decrement('score', 2);
-                    // Switched from up to down: deduct reputation
-                    if (! $isAuthor && $project->user) {
-                        $project->user->decrement('reputation_points', 5);
-                    }
-                }
-                $currentVoteType = $type;
+            // Toggle off (unlike).
+            $existingVote->delete();
+            $project->decrement('upvotes_count');
+            $project->decrement('score');
+            if (! $isAuthor && $project->user) {
+                $project->user->decrement('reputation_points', 5);
             }
+            $currentVoteType = null;
+            $liked = false;
         } else {
-            // New vote
+            // New like.
             ProjectVote::create([
                 'project_id' => $project->id,
                 'user_id' => $userId,
-                'ip_address' => $ip,
-                'type' => $type,
+                'ip_address' => $request->ip(),
+                'type' => 'up',
             ]);
-
-            if ($type === 'up') {
-                $project->increment('upvotes_count');
-                $project->increment('score');
-                if (! $isAuthor && $project->user) {
-                    $project->user->increment('reputation_points', 5);
-                }
-            } else {
-                $project->increment('downvotes_count');
-                $project->decrement('score');
+            $project->increment('upvotes_count');
+            $project->increment('score');
+            if (! $isAuthor && $project->user) {
+                $project->user->increment('reputation_points', 5);
             }
-
-            $currentVoteType = $type;
+            $currentVoteType = 'up';
+            $liked = true;
         }
 
         $project->refresh();
 
         // Notify author when their project crosses a "trending" milestone.
         if (
-            $type === 'up'
+            $liked
             && ! $isAuthor
             && $project->user
             && $project->score >= 50
@@ -443,7 +414,7 @@ class ProjectController extends Controller
             'success' => true,
             'score' => $project->score,
             'upvotes' => $project->upvotes_count,
-            'downvotes' => $project->downvotes_count,
+            'downvotes' => 0,
             'user_vote' => $currentVoteType,
         ]);
     }

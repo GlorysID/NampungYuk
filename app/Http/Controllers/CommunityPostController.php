@@ -71,40 +71,25 @@ class CommunityPostController extends Controller
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        $type = $request->validate(['type' => ['required', 'in:up,down']])['type'];
-
         $existing = CommunityPostVote::where('community_post_id', $post->id)
             ->where('user_id', $user->id)->first();
 
-        $current = null;
         if ($existing) {
-            if ($existing->type === $type) {
-                $existing->delete();
-                $type === 'up' ? $post->decrement('upvotes_count') : $post->decrement('downvotes_count');
-                $post->decrement('score', $type === 'up' ? 1 : -1);
-                $current = null;
-            } else {
-                $existing->update(['type' => $type]);
-                if ($type === 'up') {
-                    $post->increment('upvotes_count');
-                    $post->decrement('downvotes_count');
-                    $post->increment('score', 2);
-                } else {
-                    $post->increment('downvotes_count');
-                    $post->decrement('upvotes_count');
-                    $post->decrement('score', 2);
-                }
-                $current = $type;
-            }
+            // Unlike.
+            $existing->delete();
+            $post->decrement('upvotes_count');
+            $post->decrement('score');
+            $current = null;
         } else {
+            // Like.
             CommunityPostVote::create([
                 'community_post_id' => $post->id,
                 'user_id' => $user->id,
-                'type' => $type,
+                'type' => 'up',
             ]);
-            $type === 'up' ? $post->increment('upvotes_count') : $post->increment('downvotes_count');
-            $post->increment('score', $type === 'up' ? 1 : -1);
-            $current = $type;
+            $post->increment('upvotes_count');
+            $post->increment('score');
+            $current = 'up';
         }
 
         $post->refresh();

@@ -110,17 +110,11 @@
 
     <!-- Actions -->
     <div class="flex items-center gap-2 pt-2 border-t border-[#e4e4e7] dark:border-[#1f1f1f]">
-        <div class="inline-flex items-center rounded-full bg-[#eeeeef] dark:bg-[#171717] p-0.5">
-            <button @click="vote('up')" :disabled="voting" :class="userVote === 'up' ? 'bg-[#0070f3] text-white' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3]'"
-                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition active:scale-95 disabled:opacity-60">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
-                <span class="hl-stat" x-text="score">{{ $post->score }}</span>
-            </button>
-            <button @click="vote('down')" :disabled="voting" :class="userVote === 'down' ? 'bg-rose-600 text-white' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-rose-600'"
-                    class="p-1.5 rounded-full transition active:scale-95 disabled:opacity-60">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
-            </button>
-        </div>
+        <button @click="vote('up')" :disabled="voting" :class="userVote === 'up' ? 'bg-[#0070f3] text-white dark:bg-[#3291ff] dark:text-[#000000]' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3]'"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition active:scale-95 disabled:opacity-60">
+            <svg class="w-3.5 h-3.5" :fill="userVote === 'up' ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+            <span class="hl-stat" x-text="score">{{ $post->score }}</span>
+        </button>
 
         <span class="inline-flex items-center gap-1.5 px-2 text-[#63636b] dark:text-[#a0a0a0] text-xs">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
