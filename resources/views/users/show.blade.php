@@ -31,7 +31,7 @@
             @endif
         </div>
 
-        <div class="px-5 sm:px-6 pb-5 -mt-10 sm:-mt-12">
+        <div class="relative z-10 px-5 sm:px-6 pb-5 -mt-10 sm:-mt-12">
             <div class="flex flex-col sm:flex-row sm:items-end gap-4">
                 <!-- Avatar -->
                 <div class="relative shrink-0">
@@ -46,7 +46,7 @@
                 <!-- Name + bio -->
                 <div class="flex-1 min-w-0 pb-1">
                     <div class="flex items-center gap-2 min-w-0">
-                        <h1 class="text-xl sm:text-2xl font-bold text-[#18181b] dark:text-[#fafafa] tracking-tight truncate min-w-0">
+                        <h1 class="text-xl sm:text-2xl font-bold leading-snug text-[#18181b] dark:text-[#fafafa] tracking-tight truncate min-w-0">
                             {{ $user->name }}
                         </h1>
                         @if($user->is_admin ?? false)
