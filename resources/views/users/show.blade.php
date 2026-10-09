@@ -35,11 +35,9 @@
             <div class="flex flex-col sm:flex-row sm:items-end gap-4">
                 <!-- Avatar -->
                 <div class="relative shrink-0">
-                    <img src="{{ $user->avatar ?: 'https://randomuser.me/api/portraits/'.(crc32($user->name) % 2 === 0 ? 'men' : 'women').'/'.(crc32($user->name) % 99 + 1).'.jpg' }}"
-                         alt="{{ $user->name }}"
-                         class="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover ring-4 ring-white dark:ring-[#0a0a0a] bg-[#eeeeef] dark:bg-[#171717]">
+                    <x-user-avatar :user="$user" size="xl" class="ring-4 ring-white dark:ring-[#0a0a0a]!" />
                     @if($isOwner)
-                        <span class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#0070f3] dark:bg-[#3291ff] text-[#ffffff] flex items-center justify-center ring-2 ring-white dark:ring-[#0a0a0a]">
+                        <span class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#0070f3] dark:bg-[#3291ff] text-[#ffffff] flex items-center justify-center ring-2 ring-white dark:ring-[#0a0a0a] z-10">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                         </span>
                     @endif
@@ -352,9 +350,13 @@
 
                     <!-- Avatar + name/username -->
                     <div class="flex items-center gap-4">
-                        <img :src="preview || '{{ $user->avatar ?: 'https://randomuser.me/api/portraits/'.(crc32($user->name) % 2 === 0 ? 'men' : 'women').'/'.(crc32($user->name) % 99 + 1).'.jpg' }}'"
+                        <img x-show="preview || {{ $user->avatar ? 'true' : 'false' }}"
+                             :src="preview || '{{ $user->avatar }}'"
                              alt="{{ $user->name }}"
                              class="w-16 h-16 rounded-full object-cover ring-1 ring-[#eaeaea] dark:ring-[#1f1f1f] shrink-0">
+                        <span x-show="!(preview || {{ $user->avatar ? 'true' : 'false' }})"
+                              class="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold text-white ring-1 ring-[#eaeaea] dark:ring-[#1f1f1f] shrink-0"
+                              style="background-color: #4F46E5;">{{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}</span>
                         <div class="flex-1 space-y-1.5">
                             <label for="avatar" class="btn-secondary text-xs py-1.5 px-3 cursor-pointer inline-flex">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>

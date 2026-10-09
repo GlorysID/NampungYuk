@@ -61,6 +61,25 @@ class Community extends Model
         return $this->members()->where('user_id', $userId)->exists();
     }
 
+    /**
+     * Whether the given user is the owner or a moderator.
+     */
+    public function isModerator(?int $userId): bool
+    {
+        if (! $userId) {
+            return false;
+        }
+
+        if ($this->owner_id === $userId) {
+            return true;
+        }
+
+        return $this->members()
+            ->where('user_id', $userId)
+            ->whereIn('role', ['owner', 'mod'])
+            ->exists();
+    }
+
     public function scopeVisibleTo($query, ?int $viewerId)
     {
         return $query->where(function ($q) use ($viewerId) {

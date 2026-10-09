@@ -29,9 +29,16 @@ class CommunityPostController extends Controller
 
         $data = $request->validate([
             'content' => ['required', 'string', 'max:2000'],
+            'type' => ['nullable', 'in:discussion,question,announcement'],
             'images' => ['nullable', 'array', 'max:4'],
             'images.*' => ['image', 'mimes:jpeg,png,jpg,webp,gif', 'max:4096'],
         ]);
+
+        // Only owner/mod can post announcements.
+        $type = $data['type'] ?? 'discussion';
+        if ($type === 'announcement' && ! $community->isModerator($user->id)) {
+            $type = 'discussion';
+        }
 
         $images = [];
         if ($request->hasFile('images')) {
@@ -44,6 +51,7 @@ class CommunityPostController extends Controller
 
         $community->posts()->create([
             'user_id' => $user->id,
+            'type' => $type,
             'content' => $data['content'],
             'images' => ! empty($images) ? $images : null,
         ]);
@@ -149,5 +157,54 @@ class CommunityPostController extends Controller
         }
 
         return back()->with('success', 'Komentar terkirim!');
+    }
+
+    /**
+     * Toggle pin on a post (owner/mod only).
+     */
+    public function togglePin(Request $request, CommunityPost $post): RedirectResponse
+    {
+        $user = Auth::user();
+        $community = $post->community;
+        if (! $user || ! $community->isModerator($user->id)) {
+            abort(403);
+        }
+
+        $post->update(['is_pinned' => ! $post->is_pinned]);
+
+        return back()->with('success', $post->is_pinned ? 'Postingan disematkan.' : 'Sematan dilepas.');
+    }
+
+    /**
+     * Mark a question post as answered (owner/mod only).
+     */
+    public function markAnswered(Request $request, CommunityPost $post): RedirectResponse
+    {
+        $user = Auth::user();
+        $community = $post->community;
+        if (! $user || ! $community->isModerator($user->id)) {
+            abort(403);
+        }
+
+        $post->update(['is_answered' => ! $post->is_answered]);
+
+        return back()->with('success', $post->is_answered ? 'Ditandai terjawab.' : 'Tanda terjawab dilepas.');
+    }
+
+    /**
+     * Delete a post (owner/mod only).
+     */
+    public function destroy(Request $request, CommunityPost $post): RedirectResponse
+    {
+        $user = Auth::user();
+        $community = $post->community;
+        if (! $user || ! $community->isModerator($user->id)) {
+            abort(403);
+        }
+
+        $post->delete();
+        $community->decrement('posts_count');
+
+        return back()->with('success', 'Postingan dihapus.');
     }
 }

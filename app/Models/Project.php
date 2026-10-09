@@ -113,10 +113,10 @@ class Project extends Model
     public function scopeVisibleTo(Builder $query, ?int $viewerId): Builder
     {
         return $query->where(function (Builder $q) use ($viewerId) {
-            $q->where('visibility', 'public');
+            $q->where('projects.visibility', 'public');
 
             if ($viewerId) {
-                $q->orWhere('user_id', $viewerId);
+                $q->orWhere('projects.user_id', $viewerId);
             }
         });
     }

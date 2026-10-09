@@ -20,6 +20,12 @@ Route::get('/feed/latest', [ProjectController::class, 'latest'])->name('projects
 Route::get('/komunitas', [CommunityController::class, 'index'])->name('communities.index');
 Route::get('/komunitas/{slug}', [CommunityController::class, 'show'])->name('communities.show');
 
+// Chat / Obrolan (auth required)
+Route::middleware('auth')->group(function () {
+    Route::get('/obrolan', [\App\Http\Controllers\ChatController::class, 'index'])->name('chat.index');
+    Route::get('/obrolan/{user:username}', [\App\Http\Controllers\ChatController::class, 'show'])->name('chat.show');
+});
+
 Route::middleware('auth')->group(function () {
     Route::get('/unggah', [ProjectController::class, 'create'])->name('projects.create');
     Route::post('/unggah', [ProjectController::class, 'store'])->name('projects.store');
@@ -50,6 +56,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/komunitas/{community:slug}/post', [CommunityPostController::class, 'store'])->name('communities.post');
     Route::post('/community-post/{post}/vote', [CommunityPostController::class, 'vote'])->name('communities.post.vote');
     Route::post('/community-post/{post}/comment', [CommunityPostController::class, 'comment'])->name('communities.post.comment');
+
+    // Community moderation
+    Route::post('/community-post/{post}/pin', [CommunityPostController::class, 'togglePin'])->name('communities.post.pin');
+    Route::post('/community-post/{post}/answered', [CommunityPostController::class, 'markAnswered'])->name('communities.post.answered');
+    Route::delete('/community-post/{post}', [CommunityPostController::class, 'destroy'])->name('communities.post.destroy');
 });
 
 Route::middleware('guest')->group(function () {

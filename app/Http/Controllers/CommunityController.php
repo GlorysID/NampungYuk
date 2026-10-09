@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Community;
 use App\Models\CommunityMember;
+use App\Models\CommunityPost;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,27 +20,59 @@ class CommunityController extends Controller
     public function index(Request $request): View
     {
         $search = $request->query('q');
+        $tab = $request->query('tab', 'untukmu');
         $userId = Auth::id();
 
-        $query = Community::with('owner')
-            ->visibleTo($userId)
-            ->withCount('members');
+        // Communities the viewer may see.
+        $visibleCommunityIds = Community::visibleTo($userId)->pluck('id')->toArray();
 
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-
-        $communities = $query->orderByDesc('members_count')->orderByDesc('is_featured')->paginate(12)->withQueryString();
-
-        // Communities the user already joined (for button state).
         $joinedIds = $userId
             ? CommunityMember::where('user_id', $userId)->pluck('community_id')->toArray()
             : [];
 
-        return view('communities.index', compact('communities', 'joinedIds', 'search'));
+        // Feed of posts across visible communities (X-style timeline).
+        $postsQuery = CommunityPost::with(['user', 'community'])
+            ->whereIn('community_id', $visibleCommunityIds);
+
+        switch ($tab) {
+            case 'diikuti':
+                $postsQuery->whereIn('community_id', $joinedIds);
+                break;
+            case 'populer':
+                $postsQuery->orderByDesc('is_pinned')->orderByDesc('score');
+                break;
+            case 'baru':
+                $postsQuery->orderByDesc('is_pinned')->orderByDesc('created_at');
+                break;
+            case 'untukmu':
+            default:
+                $postsQuery->orderByDesc('is_pinned')->orderByDesc('created_at');
+                break;
+        }
+
+        if ($search) {
+            $postsQuery->where('content', 'like', "%{$search}%");
+        }
+
+        $posts = $postsQuery->paginate(12)->withQueryString();
+
+        $userVotes = $userId
+            ? \App\Models\CommunityPostVote::where('user_id', $userId)
+                ->whereIn('community_post_id', $posts->pluck('id'))
+                ->pluck('type', 'community_post_id')->toArray()
+            : [];
+
+        // Right sidebar: top communities + followed communities.
+        $topCommunities = Community::visibleTo($userId)
+            ->orderByDesc('members_count')
+            ->take(5)
+            ->get();
+
+        $followedCommunities = $userId
+            ? Community::whereIn('id', $joinedIds)->orderByDesc('members_count')->take(5)->get()
+            : collect();
+
+        return view('communities.index', compact('posts', 'userVotes', 'joinedIds', 'search', 'tab', 'topCommunities', 'followedCommunities', 'userId'));
     }
 
     /**
@@ -60,10 +93,16 @@ class CommunityController extends Controller
 
         $isMember = $community->hasMember($userId);
         $isOwner = $community->owner_id === $userId;
+        $isModerator = $community->isModerator($userId);
 
+        $tab = $request->query('tab', 'terbaru');
         $posts = $community->posts()
             ->with(['user', 'comments.user'])
-            ->paginate(10);
+            ->when($tab === 'terjawab', fn ($q) => $q->where('is_answered', true))
+            ->orderByDesc('is_pinned')
+            ->sortTab($tab)
+            ->paginate(10)
+            ->withQueryString();
 
         $members = $community->memberUsers()->orderByDesc('community_members.created_at')->take(12)->get();
 
@@ -74,7 +113,7 @@ class CommunityController extends Controller
                 ->pluck('type', 'community_post_id')->toArray()
             : [];
 
-        return view('communities.show', compact('community', 'posts', 'members', 'isMember', 'isOwner', 'userVotes'));
+        return view('communities.show', compact('community', 'posts', 'members', 'isMember', 'isOwner', 'isModerator', 'userVotes', 'tab'));
     }
 
     /**

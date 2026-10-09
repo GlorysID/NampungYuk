@@ -153,45 +153,6 @@
                 </div>
             </div>
 
-            <!-- BLOCK 3: Recent Discussions / Feedback -->
-            <div class="ny-card p-4 space-y-3 bg-white dark:bg-[#0a0a0a]">
-                <div class="flex items-center justify-between">
-                    <h3 class="font-bold text-xs uppercase tracking-wider text-[#63636b] dark:text-[#a0a0a0] flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5 text-[#0070f3] dark:text-[#3291ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-                        </svg>
-                        <span>Diskusi Terbaru</span>
-                    </h3>
-                </div>
-
-                <div class="space-y-3">
-                    @forelse($recentReviews as $comment)
-                        <div class="p-2.5 rounded-lg bg-[#ffffff] dark:bg-[#000000] border border-[#e4e4e7]/60 dark:border-[#1f1f1f] space-y-1.5">
-                            <div class="flex items-center justify-between text-[11px]">
-                                <span class="font-semibold text-[#18181b] dark:text-[#fafafa] truncate max-w-[120px]">
-                                    {{ $comment->authorName() }}
-                                </span>
-                                <span class="text-[#63636b] dark:text-[#a0a0a0]">{{ $comment->created_at->diffForHumans() }}</span>
-                            </div>
-                            <p class="text-xs text-[#63636b] dark:text-[#a0a0a0] line-clamp-2 leading-relaxed">
-                                "{{ $comment->content }}"
-                            </p>
-                            @if($comment->project)
-                                <a href="{{ route('projects.show', $comment->project->slug) }}#komentar" 
-                                   class="text-[11px] font-medium text-[#0070f3] dark:text-[#3291ff] hover:underline flex items-center gap-1 truncate pt-0.5">
-                                    <span>di {{ $comment->project->title }}</span>
-                                    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                    </svg>
-                                </a>
-                            @endif
-                        </div>
-                    @empty
-                        <p class="text-xs text-[#63636b] py-2 text-center">Belum ada diskusi terbaru.</p>
-                    @endforelse
-                </div>
-            </div>
-
         </aside>
 
     </div>

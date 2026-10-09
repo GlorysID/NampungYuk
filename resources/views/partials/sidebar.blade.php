@@ -122,30 +122,76 @@
             </a>
         </div>
 
-        <!-- Section 2: Explore (Kategori Kodingan) -->
-        <div class="space-y-1 pt-2">
-            <p class="px-2 text-[11px] font-bold uppercase tracking-wider text-[#63636b] dark:text-[#a0a0a0]">
-                Kategori Kodingan
+        <!-- Section: Komunitas (separate from Menu Utama) -->
+        <div class="space-y-1 pt-2 border-t border-[#e4e4e7] dark:border-[#1f1f1f]">
+            <p class="px-2 pt-2 text-[11px] font-bold uppercase tracking-wider text-[#63636b] dark:text-[#a0a0a0]">
+                Komunitas
             </p>
+            <a href="{{ route('communities.index') }}"
+               class="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium transition {{ request()->routeIs('communities.*') ? 'bg-[#e8f2ff] dark:bg-[#3291ff]/12 text-[#0070f3] dark:text-[#3291ff] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
+                <div class="flex items-center gap-2.5">
+                    <svg class="w-4 h-4 {{ request()->routeIs('communities.*') ? 'text-[#0070f3] dark:text-[#3291ff]' : 'opacity-70' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                    <span>Komunitas</span>
+                </div>
+                @if(request()->routeIs('communities.*'))
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#0070f3] dark:text-[#3291ff]"></span>
+                @endif
+            </a>
 
-            @if(isset($categories) && count($categories) > 0)
-                @php
-                    $activeCatSlug = request('kategori');
-                    // Always show the 5 largest categories, plus the active one (even if it is not in the top 5).
-                    $topCategories = $categories->sortByDesc('projects_count')->take(5);
-                    $restCategories = $categories->sortByDesc('projects_count')->slice(5);
-                    $activeInRest = $activeCatSlug && $restCategories->contains('slug', $activeCatSlug);
-                @endphp
+            <a href="{{ route('chat.index') }}"
+               class="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium transition {{ request()->routeIs('chat.*') ? 'bg-[#e8f2ff] dark:bg-[#3291ff]/12 text-[#0070f3] dark:text-[#3291ff] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
+                <div class="flex items-center gap-2.5">
+                    <svg class="w-4 h-4 {{ request()->routeIs('chat.*') ? 'text-[#0070f3] dark:text-[#3291ff]' : 'opacity-70' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                    </svg>
+                    <span>Obrolan</span>
+                </div>
+                @if(request()->routeIs('chat.*'))
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#0070f3] dark:text-[#3291ff]"></span>
+                @endif
+            </a>
+        </div>
 
+        <!-- Section: Kategori (contextual — kodingan di feed, komunitas di halaman komunitas) -->
+        @if(request()->routeIs('communities.*'))
+            {{-- Kategori komunitas: list komunitas teratas --}}
+            @php $sidebarCommunities = \App\Models\Community::visibleTo(auth()->id())->orderByDesc('members_count')->take(6)->get(); @endphp
+            @if($sidebarCommunities->count() > 0)
+            <div class="space-y-1 pt-2 border-t border-[#e4e4e7] dark:border-[#1f1f1f]">
+                <p class="px-2 pt-2 text-[11px] font-bold uppercase tracking-wider text-[#63636b] dark:text-[#a0a0a0]">
+                    Kategori Komunitas
+                </p>
+                @foreach($sidebarCommunities as $sc)
+                    @php $scActive = request('kategori') === $sc->slug; @endphp
+                    <a href="{{ route('communities.show', $sc->slug) }}"
+                       class="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs transition {{ $scActive ? 'bg-[#e8f2ff] dark:bg-[#3291ff]/12 text-[#0070f3] dark:text-[#3291ff] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
+                        <span class="truncate">{{ $sc->name }}</span>
+                        <span class="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded bg-[#eeeeef] dark:bg-[#171717] text-[#63636b]">{{ $sc->members_count }}</span>
+                    </a>
+                @endforeach
+            </div>
+            @endif
+        @elseif(isset($categories) && count($categories) > 0)
+            {{-- Kategori kodingan: tampil di feed/project --}}
+            @php
+                $activeCatSlug = request('kategori');
+                $topCategories = $categories->sortByDesc('projects_count')->take(6);
+                $restCategories = $categories->sortByDesc('projects_count')->slice(6);
+                $activeInRest = $activeCatSlug && $restCategories->contains('slug', $activeCatSlug);
+            @endphp
+            <div class="space-y-1 pt-2 border-t border-[#e4e4e7] dark:border-[#1f1f1f]">
+                <p class="px-2 pt-2 text-[11px] font-bold uppercase tracking-wider text-[#63636b] dark:text-[#a0a0a0]">
+                    Kategori Kodingan
+                </p>
                 <div class="space-y-0.5" x-data="{ showAllCats: {{ $activeInRest ? 'true' : 'false' }} }">
                     @foreach($topCategories as $category)
                         @php $isCatActive = ($activeCatSlug === $category->slug); @endphp
-                        <a href="{{ route('projects.index', ['kategori' => $category->slug]) }}" 
+                        <a href="{{ route('projects.index', ['kategori' => $category->slug]) }}"
                            class="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs transition {{ $isCatActive ? 'bg-[#e8f2ff] dark:bg-[#3291ff]/12 text-[#0070f3] dark:text-[#3291ff] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
                             <span class="truncate">{{ $category->name }}</span>
-                            <span class="text-[10px] font-mono tabular-nums px-1.5 py-0.2 rounded {{ $isCatActive ? 'bg-[#3291ff]/20 text-[#0070f3] dark:text-[#47a8ff]' : 'bg-[#eeeeef] dark:bg-[#171717] text-[#63636b]' }}">
-                                {{ $category->projects_count }}
-                            </span>
+                            <span class="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded {{ $isCatActive ? 'bg-[#3291ff]/20 text-[#0070f3] dark:text-[#47a8ff]' : 'bg-[#eeeeef] dark:bg-[#171717] text-[#63636b]' }}">{{ $category->projects_count }}</span>
                         </a>
                     @endforeach
 
@@ -153,28 +199,22 @@
                         <div x-show="showAllCats" x-cloak class="space-y-0.5">
                             @foreach($restCategories as $category)
                                 @php $isCatActive = ($activeCatSlug === $category->slug); @endphp
-                                <a href="{{ route('projects.index', ['kategori' => $category->slug]) }}" 
+                                <a href="{{ route('projects.index', ['kategori' => $category->slug]) }}"
                                    class="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs transition {{ $isCatActive ? 'bg-[#e8f2ff] dark:bg-[#3291ff]/12 text-[#0070f3] dark:text-[#3291ff] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
                                     <span class="truncate">{{ $category->name }}</span>
-                                    <span class="text-[10px] font-mono tabular-nums px-1.5 py-0.2 rounded {{ $isCatActive ? 'bg-[#3291ff]/20 text-[#0070f3] dark:text-[#47a8ff]' : 'bg-[#eeeeef] dark:bg-[#171717] text-[#63636b]' }}">
-                                        {{ $category->projects_count }}
-                                    </span>
+                                    <span class="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded {{ $isCatActive ? 'bg-[#3291ff]/20 text-[#0070f3] dark:text-[#47a8ff]' : 'bg-[#eeeeef] dark:bg-[#171717] text-[#63636b]' }}">{{ $category->projects_count }}</span>
                                 </a>
                             @endforeach
                         </div>
-
-                        <button type="button"
-                                @click="showAllCats = !showAllCats"
+                        <button type="button" @click="showAllCats = !showAllCats"
                                 class="w-full flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-medium text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3] dark:hover:text-[#3291ff] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition">
                             <span x-text="showAllCats ? 'Sembunyikan' : 'Lihat semua ({{ $categories->count() }})'"></span>
-                            <svg class="w-3 h-3 transition-transform duration-200" :class="showAllCats ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                            </svg>
+                            <svg class="w-3 h-3 transition-transform duration-200" :class="showAllCats ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
                     @endif
                 </div>
-            @endif
-        </div>
+            </div>
+        @endif
 
         <!-- Section 3: Tech Stacks -->
         <div class="space-y-1.5 pt-2 border-t border-[#e4e4e7] dark:border-[#1f1f1f]">
@@ -190,14 +230,6 @@
             </div>
         </div>
 
-    </div>
-
-    <!-- BOTTOM FOOTER -->
-    <div class="pt-4 border-t border-[#e4e4e7] dark:border-[#1f1f1f] text-[11px] text-[#63636b] dark:text-[#a0a0a0] flex items-center justify-between">
-        <span>NampungYuk &copy; {{ date('Y') }}</span>
-        <a href="https://github.com/GlorysID/NampungYuk" target="_blank" rel="noopener noreferrer" class="hover:text-[#18181b] dark:hover:text-white transition">
-            GitHub
-        </a>
     </div>
 
 </div>

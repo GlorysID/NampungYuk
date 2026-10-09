@@ -36,6 +36,23 @@ class CommunitySeeder extends Seeder
             'Tips: selalu tulis test dulu sebelum refactor, ngirit waktu banget.',
             'Meetup online kapan nih? Sudah kangen diskusi bareng.',
             'Baru rilis versi terbaru project saya, feedback-nya ditunggu ya!',
+            'Menurutku dokumentasi yang rapi itu investasi, bukan beban. Setuju?',
+            'Pertanyaan pemula: kapan sebaiknya pakai state management di frontend?',
+            'Akhirnya bisa ngerti Docker multi-stage build, hemat ukuran image 70%.',
+            'Rekomendasi baca apa nih buat naikin skill system design?',
+            'Code review di tim kalian pakai tools apa? Butuh saran.',
+            'Kadang bug paling susah itu typo satu huruf 😂 kalian pernah?',
+            'Sharing: pakai queue bikin response API turun dari 2s ke 200ms.',
+            'Ada grup belajar bareng untuk persiapan interview teknis?',
+            'Best practice nge-namain variable biar gampang dibaca tim gimana?',
+            'AI code assistant ngubah cara kerja ku banget, kalian gimana?',
+        ];
+
+        $announcePool = [
+            '📢 Pengumuman: Meetup online komunitas kita Sabtu depan jam 8 malam. Jangan lupa hadir!',
+            '📢 Panduan komunitas: mohon jaga diskusi tetap sopan & relevan. Terima kasih.',
+            '📢 Komunitas kita resmi mencapai 20+ anggota. Terima kasih semua!',
+            '📢 Akan ada sesi sharing "belajar X dari nol" pekan ini. Stay tuned!',
         ];
 
         $users = User::where('email', 'like', 'user%@nampungyuk.test')->get();
@@ -81,18 +98,28 @@ class CommunitySeeder extends Seeder
 
             $community->update(['members_count' => $community->members()->count()]);
 
-            // Posts
-            $postCount = rand(4, 9);
+            // Posts — more volume so the feed feels alive
+            $postCount = rand(8, 16);
             for ($p = 0; $p < $postCount; $p++) {
                 $author = $community->memberUsers()->inRandomOrder()->first() ?? $owner;
+                $type = ['discussion', 'discussion', 'discussion', 'question', 'question', 'announcement'][array_rand([0, 1, 2, 3, 4, 5])];
+                $isQuestion = $type === 'question';
+                $isAnnouncement = $type === 'announcement';
+                $answered = $isQuestion && rand(0, 1) === 1;
+
                 CommunityPost::create([
                     'community_id' => $community->id,
-                    'user_id' => $author->id,
-                    'content' => $postPool[array_rand($postPool)],
+                    'user_id' => $isAnnouncement ? $owner->id : $author->id,
+                    'type' => $type,
+                    'content' => $isAnnouncement
+                        ? $announcePool[array_rand($announcePool)]
+                        : $postPool[array_rand($postPool)],
                     'upvotes_count' => rand(2, 40),
                     'downvotes_count' => rand(0, 3),
                     'score' => rand(2, 38),
                     'comments_count' => 0,
+                    'is_pinned' => $isAnnouncement && rand(0, 1) === 1,
+                    'is_answered' => $answered,
                     'created_at' => now()->subDays(rand(0, 14))->subHours(rand(1, 23)),
                 ]);
             }
@@ -100,17 +127,25 @@ class CommunitySeeder extends Seeder
             $community->update(['posts_count' => $community->posts()->count()]);
         }
 
-        // A few comments on community posts
-        $commentPool = ['Setuju banget!', 'Wah menarik, makasih sharingnya.', 'Boleh dijelasin lebih detail?', 'Keren, lanjutkan!', 'Aku juga ngalamin hal serupa.'];
-        foreach (CommunityPost::inRandomOrder()->take(25)->get() as $post) {
-            $commenter = $users->random();
-            \App\Models\CommunityPostComment::create([
-                'community_post_id' => $post->id,
-                'user_id' => $commenter->id,
-                'content' => $commentPool[array_rand($commentPool)],
-                'created_at' => $post->created_at->addHours(rand(1, 10)),
-            ]);
-            $post->increment('comments_count');
+        // Comments on community posts — multiple per post for lively threads
+        $commentPool = [
+            'Setuju banget!', 'Wah menarik, makasih sharingnya.', 'Boleh dijelasin lebih detail?',
+            'Keren, lanjutkan!', 'Aku juga ngalamin hal serupa.', 'Ini yang aku cari, thanks!',
+            'Boleh share referensinya?', 'Nice insight, noted!', 'Menurutku tergantung konteks sih.',
+            'Langsung tak coba ya, makasih!',
+        ];
+        foreach (CommunityPost::inRandomOrder()->take(50)->get() as $post) {
+            $take = rand(1, 4);
+            for ($c = 0; $c < $take; $c++) {
+                $commenter = $users->random();
+                \App\Models\CommunityPostComment::create([
+                    'community_post_id' => $post->id,
+                    'user_id' => $commenter->id,
+                    'content' => $commentPool[array_rand($commentPool)],
+                    'created_at' => $post->created_at->addHours(rand(1, 10)),
+                ]);
+                $post->increment('comments_count');
+            }
         }
     }
 }

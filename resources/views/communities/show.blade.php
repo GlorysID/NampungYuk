@@ -41,7 +41,7 @@
                 <div class="flex items-center gap-1.5 mt-3">
                     <div class="flex -space-x-2">
                         @foreach($members->take(6) as $m)
-                            <img src="{{ $m->avatar ?: 'https://randomuser.me/api/portraits/'.(crc32($m->name) % 2 === 0 ? 'men' : 'women').'/'.(crc32($m->name) % 99 + 1).'.jpg' }}" alt="{{ $m->name }}" class="w-6 h-6 rounded-full ring-2 ring-white dark:ring-[#0a0a0a] object-cover">
+                            <x-user-avatar :user="$m" size="xs" class="ring-2 ring-white dark:ring-[#0a0a0a]!" />
                         @endforeach
                     </div>
                     <span class="text-[11px] text-[#63636b] dark:text-[#a0a0a0]">+{{ max(0, $community->members_count - 6) }} lainnya</span>
@@ -50,23 +50,48 @@
         </div>
     </div>
 
+    <!-- Sort tabs -->
+    <div class="hl-panel p-1.5 flex items-center gap-1.5">
+        @foreach(['terbaru' => 'Terbaru', 'populer' => 'Terpopuler', 'terjawab' => 'Terjawab'] as $key => $label)
+            <a href="{{ route('communities.show', ['slug' => $community->slug, 'tab' => $key]) }}"
+               class="inline-flex items-center gap-2 px-3.5 py-2 rounded-md text-xs font-medium transition {{ $tab === $key ? 'bg-[#0070f3] text-white dark:bg-[#3291ff] dark:text-[#000000] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
+                {{ $label }}
+            </a>
+        @endforeach
+    </div>
+
     <!-- Post composer (members only) -->
     @auth
         @if($isMember)
-            <form method="POST" action="{{ route('communities.post', $community) }}" enctype="multipart/form-data" class="ny-card p-4 space-y-3">
+            <form method="POST" action="{{ route('communities.post', $community) }}" enctype="multipart/form-data" class="ny-card p-4 space-y-3" x-data="{ type: 'discussion' }">
                 @csrf
                 <div class="flex gap-3">
                     <x-user-avatar :user="auth()->user()" size="sm" />
-                    <textarea name="content" required maxlength="2000" rows="2" placeholder="Tulis sesuatu untuk {{ $community->name }}..."
+                    <textarea name="content" required maxlength="2000" rows="2" placeholder="Bagikan ilmu, ajukan pertanyaan, atau mulai diskusi..."
                               class="ny-input text-sm resize-none flex-1"></textarea>
                 </div>
-                <div class="flex items-center justify-between pl-10">
-                    <label class="inline-flex items-center gap-1.5 text-xs text-[#63636b] dark:text-[#a0a0a0] cursor-pointer hover:text-[#0070f3] transition">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                        <span>Foto</span>
-                        <input type="file" name="images[]" accept="image/*" multiple class="hidden">
-                    </label>
-                    <button type="submit" class="btn-primary text-xs py-2 px-4">Posting</button>
+                <input type="hidden" name="type" :value="type">
+                <div class="flex flex-wrap items-center justify-between gap-2 pl-10">
+                    <div class="flex items-center gap-1.5">
+                        @foreach(['discussion' => 'Diskusi', 'question' => 'Tanya Jawab'] as $k => $lbl)
+                            <button type="button" @click="type = '{{ $k }}'"
+                                    :class="type === '{{ $k }}' ? 'bg-[#0070f3] text-white dark:bg-[#3291ff] dark:text-[#000000]' : 'bg-[#eeeeef] dark:bg-[#171717] text-[#63636b] dark:text-[#a0a0a0]'"
+                                    class="text-[11px] font-semibold px-3 py-1 rounded-full transition">{{ $lbl }}</button>
+                        @endforeach
+                        @if($isModerator)
+                            <button type="button" @click="type = 'announcement'"
+                                    :class="type === 'announcement' ? 'bg-violet-600 text-white' : 'bg-[#eeeeef] dark:bg-[#171717] text-[#63636b] dark:text-[#a0a0a0]'"
+                                    class="text-[11px] font-semibold px-3 py-1 rounded-full transition">Pengumuman</button>
+                        @endif
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="inline-flex items-center gap-1.5 text-xs text-[#63636b] dark:text-[#a0a0a0] cursor-pointer hover:text-[#0070f3] transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <span>Foto</span>
+                            <input type="file" name="images[]" accept="image/*" multiple class="hidden">
+                        </label>
+                        <button type="submit" class="btn-primary text-xs py-2 px-4">Posting</button>
+                    </div>
                 </div>
             </form>
         @else
@@ -79,7 +104,7 @@
     <!-- Community feed -->
     <div class="space-y-3">
         @forelse($posts as $post)
-            <x-community-post :post="$post" :initial-vote="$userVotes[$post->id] ?? null" :can-comment="$isMember" />
+            <x-community-post :post="$post" :initial-vote="$userVotes[$post->id] ?? null" :can-comment="$isMember" :can-moderate="$isModerator" />
         @empty
             <x-empty-state title="Belum ada postingan" description="Jadilah yang pertama memulai diskusi di komunitas ini." />
         @endforelse
