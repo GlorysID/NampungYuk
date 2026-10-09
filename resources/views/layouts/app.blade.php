@@ -147,7 +147,7 @@
     </div>
 
     <!-- MAIN TWO-PANE LAYOUT -->
-    <div class="min-h-screen flex gap-0 lg:gap-4 lg:px-4 lg:pt-4">
+    <div class="min-h-screen max-w-screen-2xl mx-auto flex gap-0 lg:gap-6 lg:px-4 xl:px-6 lg:pt-4">
         
         <!-- DESKTOP FLOATING SIDEBAR -->
         <aside class="hidden lg:flex lg:flex-col lg:w-64 xl:w-72 shrink-0 sticky top-4 h-[calc(100vh-2rem)] z-30 ny-glass rounded-2xl overflow-hidden">
@@ -349,7 +349,7 @@
             </header>
 
             <!-- MAIN WORKSPACE CONTENT CONTAINER -->
-            <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-6 py-6 lg:py-6 flex-1 flex flex-col justify-between">
+            <div class="w-full px-4 sm:px-6 lg:px-0 py-6 flex-1 flex flex-col justify-between">
                 <div>
                     @if(session('success'))
                         <div class="mb-5 p-3.5 rounded-lg bg-[#e8f2ff] dark:bg-[#3291ff]/14 border border-[#3291ff]/30 dark:border-[#3291ff]/30 text-[#0070f3] dark:text-[#47a8ff] text-xs flex items-center gap-2" role="alert">
