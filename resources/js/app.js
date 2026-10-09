@@ -1,5 +1,71 @@
 import Alpine from 'alpinejs';
 
+/**
+ * Scroll position restore.
+ * When navigating away from a page, remember the scroll offset keyed by path
+ * (marked "pending"), then restore it when the browser returns to that path
+ * (e.g. pressing back from a project detail page). This keeps the feed at the
+ * same position instead of jumping to the top.
+ */
+(function () {
+    const KEY = 'nyScrollPositions';
+
+    function readStore() {
+        try {
+            return JSON.parse(sessionStorage.getItem(KEY) || '{}');
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function writeStore(store) {
+        try {
+            sessionStorage.setItem(KEY, JSON.stringify(store));
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    const path = () => window.location.pathname + window.location.search;
+
+    // Take manual control so the browser doesn't fight our restore.
+    if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+    }
+
+    // Save the current scroll position right before navigating to another page.
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('a[href]');
+        if (!link) return;
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('#') || link.target === '_blank' || e.metaKey || e.ctrlKey || e.shiftKey) return;
+        if (link.hasAttribute('data-no-scroll-save')) return;
+
+        const url = new URL(link.href, window.location.origin);
+        // Only remember when leaving the current page for a different path.
+        if (url.pathname + url.search === path()) return;
+
+        const store = readStore();
+        store[path()] = { y: window.scrollY, pending: true };
+        writeStore(store);
+    });
+
+    // Restore on load if we came back to a page we saved.
+    window.addEventListener('load', () => {
+        const store = readStore();
+        const entry = store[path()];
+        if (entry && entry.pending && typeof entry.y === 'number') {
+            // Defer so layout/images settle enough for an accurate restore.
+            requestAnimationFrame(() => {
+                window.scrollTo({ top: entry.y, behavior: 'auto' });
+                setTimeout(() => window.scrollTo({ top: entry.y, behavior: 'auto' }), 60);
+            });
+            entry.pending = false;
+            writeStore(store);
+        }
+    });
+})();
+
 document.addEventListener('alpine:init', () => {
     Alpine.store('theme', {
         dark: document.documentElement.classList.contains('dark'),
