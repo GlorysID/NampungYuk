@@ -209,22 +209,8 @@
                     </form>
                 </div>
 
-                <!-- Right in Header: Quick Theme Toggle & Auth/User Actions -->
+                <!-- Right in Header: Auth/User Actions -->
                 <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                    
-                    <!-- Theme Toggle Button -->
-                    <button @click="$store.theme.toggle()"
-                            type="button"
-                            class="w-8 h-8 rounded-md flex items-center justify-center text-[#63636b] hover:text-[#18181b] dark:text-[#a0a0a0] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition"
-                            aria-label="Ganti mode gelap atau terang"
-                            title="Mode Gelap / Terang">
-                        <svg x-show="!$store.theme.dark" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
-                        </svg>
-                        <svg x-show="$store.theme.dark" x-cloak class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9h-1m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-                        </svg>
-                    </button>
 
                     <!-- User Session Menu -->
                     @auth
@@ -321,6 +307,23 @@
                                     </svg>
                                     <span>Koleksi Tersimpan</span>
                                 </a>
+
+                                <!-- Theme toggle -->
+                                <button type="button" @click="$store.theme.toggle()"
+                                        class="w-full flex items-center justify-between gap-2 px-4 py-2 text-[#18181b] dark:text-[#fafafa] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition">
+                                    <span class="flex items-center gap-2">
+                                        <svg class="w-3.5 h-3.5 text-[#63636b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                                        </svg>
+                                        <span x-show="!$store.theme.dark">Mode Terang</span>
+                                        <span x-show="$store.theme.dark" x-cloak>Tema Gelap</span>
+                                    </span>
+                                    <!-- switch -->
+                                    <span class="relative inline-flex w-9 h-5 rounded-full transition" :class="$store.theme.dark ? 'bg-[#0070f3] dark:bg-[#3291ff]' : 'bg-[#d5dbe2] dark:bg-[#2a3050]'">
+                                        <span class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform" :class="$store.theme.dark ? 'translate-x-4' : ''"></span>
+                                    </span>
+                                </button>
+
                                 <div class="border-t border-[#e4e4e7] dark:border-[#1f1f1f] my-1"></div>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
@@ -336,6 +339,16 @@
                     @else
                         <!-- Guest Actions -->
                         <div class="flex items-center gap-2 text-xs">
+                            <button type="button" @click="$store.theme.toggle()"
+                                    class="w-8 h-8 rounded-md flex items-center justify-center text-[#63636b] hover:text-[#18181b] dark:text-[#a0a0a0] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition"
+                                    aria-label="Ganti mode gelap atau terang">
+                                <svg x-show="!$store.theme.dark" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                                </svg>
+                                <svg x-show="$store.theme.dark" x-cloak class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9h-1m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                                </svg>
+                            </button>
                             <a href="{{ route('login') }}" class="px-3 py-1.5 text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3] font-medium transition">
                                 Masuk
                             </a>
