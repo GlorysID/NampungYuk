@@ -45,15 +45,15 @@
 
                 <!-- Name + bio -->
                 <div class="flex-1 min-w-0 pb-1">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <h1 class="text-xl sm:text-2xl font-bold text-[#18181b] dark:text-[#fafafa] tracking-tight truncate">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <h1 class="text-xl sm:text-2xl font-bold text-[#18181b] dark:text-[#fafafa] tracking-tight truncate min-w-0">
                             {{ $user->name }}
                         </h1>
                         @if($user->is_admin ?? false)
-                            <x-badge variant="teal" size="xs">Admin</x-badge>
+                            <x-badge variant="teal" size="xs" class="shrink-0">Admin</x-badge>
                         @endif
                     </div>
-                    <p class="text-xs sm:text-sm text-[#63636b] dark:text-[#a0a0a0] font-mono">&#64;{{ $user->username }}</p>
+                    <p class="text-xs sm:text-sm text-[#63636b] dark:text-[#a0a0a0] font-mono truncate">&#64;{{ $user->username }}</p>
                 </div>
 
                 <!-- Actions -->
