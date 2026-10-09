@@ -145,6 +145,156 @@ document.addEventListener('alpine:init', () => {
     });
 
     /**
+     * Space room: WebRTC mesh with Reverb signaling.
+     * Each participant connects directly to every other participant.
+     */
+    Alpine.data('spaceRoom', ({ spaceId, me, type, signalUrl, isHost }) => ({
+        joined: false,
+        micOn: false,
+        camOn: false,
+        peers: [],
+        localStream: null,
+        pcs: {},
+        pendingIce: {},
+        channel: null,
+
+        async init() {
+            if (! window.Echo) return;
+            this.channel = window.Echo.private('space.' + spaceId);
+            this.channel.listen('.space.signal', (e) => this.onSignal(e));
+        },
+
+        async join() {
+            try {
+                this.localStream = await navigator.mediaDevices.getUserMedia({
+                    audio: true,
+                    video: type === 'video',
+                });
+                this.micOn = true;
+                this.camOn = type === 'video';
+                if (this.$refs.localVideo) this.$refs.localVideo.srcObject = this.localStream;
+
+                const token = document.querySelector('meta[name=csrf-token]')?.content;
+                await fetch('/spaces/' + spaceId + '/join', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
+                });
+
+                this.joined = true;
+                if (window.notify) window.notify('Bergabung ke space.');
+            } catch (e) {
+                if (window.notify) window.notify('Tidak bisa akses kamera/mikrofon.');
+            }
+        },
+
+        async leave() {
+            try { this.localStream?.getTracks().forEach((t) => t.stop()); } catch (e) {}
+            Object.values(this.pcs).forEach((pc) => pc.close());
+            this.pcs = {};
+            this.peers = [];
+            this.joined = false;
+            const token = document.querySelector('meta[name=csrf-token]')?.content;
+            await fetch('/spaces/' + spaceId + '/leave', {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
+            });
+        },
+
+        toggleMic() {
+            const track = this.localStream?.getAudioTracks()[0];
+            if (! track) return;
+            track.enabled = ! track.enabled;
+            this.micOn = track.enabled;
+        },
+
+        toggleCam() {
+            const track = this.localStream?.getVideoTracks()[0];
+            if (! track) return;
+            track.enabled = ! track.enabled;
+            this.camOn = track.enabled;
+        },
+
+        createPeer(peerId, name) {
+            if (this.pcs[peerId]) return this.pcs[peerId];
+            const pc = new RTCPeerConnection({
+                iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+            });
+            this.pcs[peerId] = pc;
+
+            this.localStream?.getTracks().forEach((t) => pc.addTrack(t, this.localStream));
+
+            pc.onicecandidate = (ev) => {
+                if (ev.candidate) this.send('ice', peerId, ev.candidate);
+            };
+            pc.ontrack = (ev) => {
+                if (! this.peers.find((p) => p.id === peerId)) {
+                    this.peers.push({ id: peerId, name: name || 'Peserta' });
+                }
+                this.$nextTick(() => {
+                    const el = document.getElementById('peer-' + peerId);
+                    if (el && el.srcObject !== ev.streams[0]) el.srcObject = ev.streams[0];
+                });
+            };
+            return pc;
+        },
+
+        async onSignal(e) {
+            const from = e.from;
+            if (from === me) return;
+
+            if (e.kind === 'join') {
+                const pc = this.createPeer(from, e.payload?.name);
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                this.send('offer', from, offer);
+            } else if (e.kind === 'offer') {
+                const pc = this.createPeer(from, e.payload?.name);
+                await pc.setRemoteDescription(new RTCSessionDescription(e.payload));
+                await this.flushIce(from, pc);
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                this.send('answer', from, answer);
+            } else if (e.kind === 'answer') {
+                const pc = this.pcs[from];
+                if (pc) {
+                    await pc.setRemoteDescription(new RTCSessionDescription(e.payload));
+                    await this.flushIce(from, pc);
+                }
+            } else if (e.kind === 'ice') {
+                const pc = this.pcs[from];
+                if (pc && pc.remoteDescription) {
+                    try { await pc.addIceCandidate(new RTCIceCandidate(e.payload)); } catch (err) {}
+                } else {
+                    (this.pendingIce[from] = this.pendingIce[from] || []).push(e.payload);
+                }
+            } else if (e.kind === 'leave') {
+                this.pcs[from]?.close();
+                delete this.pcs[from];
+                this.peers = this.peers.filter((p) => p.id !== from);
+            }
+        },
+
+        async flushIce(peerId, pc) {
+            const queued = this.pendingIce[peerId] || [];
+            for (const c of queued) {
+                try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch (e) {}
+            }
+            this.pendingIce[peerId] = [];
+        },
+
+        async send(kind, to, payload) {
+            const token = document.querySelector('meta[name=csrf-token]')?.content;
+            try {
+                await fetch(signalUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
+                    body: JSON.stringify({ to, kind, payload }),
+                });
+            } catch (e) {}
+        },
+    }));
+
+    /**
      * Chat room: send messages and receive them live via Echo (Reverb).
      */
     Alpine.data('chatRoom', ({ conversationId, me, sendUrl }) => ({

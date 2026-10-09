@@ -152,6 +152,19 @@
                     <span class="w-1.5 h-1.5 rounded-full bg-[#0070f3] dark:text-[#3291ff]"></span>
                 @endif
             </a>
+
+            <a href="{{ route('spaces.index') }}"
+               class="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium transition {{ request()->routeIs('spaces.*') ? 'bg-[#e8f2ff] dark:bg-[#3291ff]/12 text-[#0070f3] dark:text-[#3291ff] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
+                <div class="flex items-center gap-2.5">
+                    <svg class="w-4 h-4 {{ request()->routeIs('spaces.*') ? 'text-[#0070f3] dark:text-[#3291ff]' : 'opacity-70' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-14 0m7 7v3m0-3a7 7 0 01-7-7m7 7a7 7 0 007-7M12 4a3 3 0 00-3 3v4a3 3 0 006 0V7a3 3 0 00-3-3z"/>
+                    </svg>
+                    <span>Spaces</span>
+                </div>
+                @if(request()->routeIs('spaces.*'))
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#0070f3] dark:text-[#3291ff]"></span>
+                @endif
+            </a>
         </div>
 
         <!-- Section: Kategori (contextual — kodingan di feed, komunitas di halaman komunitas) -->

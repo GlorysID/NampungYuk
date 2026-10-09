@@ -27,6 +27,17 @@ Route::middleware('auth')->group(function () {
     Route::post('/obrolan/{user:username}/kirim', [\App\Http\Controllers\ChatController::class, 'send'])->name('chat.send');
 });
 
+// Spaces (live audio/video)
+Route::get('/spaces', [\App\Http\Controllers\SpaceController::class, 'index'])->name('spaces.index');
+Route::middleware('auth')->group(function () {
+    Route::post('/spaces', [\App\Http\Controllers\SpaceController::class, 'store'])->name('spaces.store');
+    Route::get('/spaces/{slug}', [\App\Http\Controllers\SpaceController::class, 'show'])->name('spaces.show');
+    Route::post('/spaces/{space:slug}/join', [\App\Http\Controllers\SpaceController::class, 'join'])->name('spaces.join');
+    Route::post('/spaces/{space:slug}/leave', [\App\Http\Controllers\SpaceController::class, 'leave'])->name('spaces.leave');
+    Route::post('/spaces/{space:slug}/end', [\App\Http\Controllers\SpaceController::class, 'end'])->name('spaces.end');
+    Route::post('/spaces/{space:slug}/signal', [\App\Http\Controllers\SpaceController::class, 'signal'])->name('spaces.signal');
+});
+
 // Infinite-scroll feed fragments (HTML partials)
 Route::get('/feed-fragment/projects', [\App\Http\Controllers\InfiniteFeedController::class, 'projectFeed'])->name('feeds.projects');
 Route::get('/feed-fragment/communities', [\App\Http\Controllers\InfiniteFeedController::class, 'communityFeed'])->name('feeds.communities');
