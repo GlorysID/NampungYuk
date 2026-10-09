@@ -98,6 +98,26 @@ class ProjectController extends Controller
             $trendingToday = $trendingToday->concat($extra);
         }
 
+        // 2b. Hot discussions — most commented projects in the last 7 days
+        $hotDiscussions = Project::with(['user', 'category'])
+            ->visibleTo(Auth::id())
+            ->where('created_at', '>=', now()->subDays(7))
+            ->where('comments_count', '>', 0)
+            ->orderByDesc('comments_count')
+            ->take(5)
+            ->get();
+
+        if ($hotDiscussions->count() < 5) {
+            $moreHot = Project::with(['user', 'category'])
+                ->visibleTo(Auth::id())
+                ->where('comments_count', '>', 0)
+                ->whereNotIn('id', $hotDiscussions->pluck('id'))
+                ->orderByDesc('comments_count')
+                ->take(5 - $hotDiscussions->count())
+                ->get();
+            $hotDiscussions = $hotDiscussions->concat($moreHot);
+        }
+
         // 3. Suggested developers to follow (not already followed, not self)
         $suggestedDevelopers = collect();
         if (Auth::check()) {
@@ -134,6 +154,7 @@ class ProjectController extends Controller
             'projects',
             'categories',
             'trendingToday',
+            'hotDiscussions',
             'trendingTech',
             'recentReviews',
             'userBookmarkedIds',
