@@ -158,6 +158,23 @@ class User extends Authenticatable
     }
 
     /**
+     * Conversations this user participates in.
+     */
+    public function conversations()
+    {
+        return Conversation::where('user_one_id', $this->id)
+            ->orWhere('user_two_id', $this->id);
+    }
+
+    /**
+     * Messages sent by this user.
+     */
+    public function messages()
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    /**
      * Projects this user has pinned to their profile.
      */
     public function pinnedProjects()

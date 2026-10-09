@@ -24,6 +24,7 @@ Route::get('/komunitas/{slug}', [CommunityController::class, 'show'])->name('com
 Route::middleware('auth')->group(function () {
     Route::get('/obrolan', [\App\Http\Controllers\ChatController::class, 'index'])->name('chat.index');
     Route::get('/obrolan/{user:username}', [\App\Http\Controllers\ChatController::class, 'show'])->name('chat.show');
+    Route::post('/obrolan/{user:username}/kirim', [\App\Http\Controllers\ChatController::class, 'send'])->name('chat.send');
 });
 
 // Infinite-scroll feed fragments (HTML partials)

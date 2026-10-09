@@ -145,6 +145,67 @@ document.addEventListener('alpine:init', () => {
     });
 
     /**
+     * Chat room: send messages and receive them live via Echo (Reverb).
+     */
+    Alpine.data('chatRoom', ({ conversationId, me, sendUrl }) => ({
+        draft: '',
+        sending: false,
+        incoming: [],
+
+        init() {
+            this.$nextTick(() => this.scrollBottom());
+
+            if (window.Echo) {
+                window.Echo.private('conversation.' + conversationId)
+                    .listen('.message.sent', (e) => {
+                        if (e.sender_id === me) return;
+                        this.incoming.push(e);
+                        this.$nextTick(() => this.scrollBottom());
+                    });
+            }
+        },
+
+        scrollBottom() {
+            const el = this.$refs.scroll;
+            if (el) el.scrollTop = el.scrollHeight;
+        },
+
+        async send() {
+            const body = this.draft.trim();
+            if (! body || this.sending) return;
+            this.sending = true;
+            const prev = this.draft;
+            this.draft = '';
+            try {
+                const token = document.querySelector('meta[name=csrf-token]')?.content;
+                const res = await fetch(sendUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
+                    body: JSON.stringify({ body }),
+                });
+                if (res.status === 401) { window.location.href = '/login'; return; }
+                const data = await res.json();
+                if (data.success) {
+                    this.incoming.push({
+                        id: data.message.id,
+                        sender_id: data.message.sender_id,
+                        body: data.message.body,
+                        time: data.message.time,
+                        mine: true,
+                    });
+                    this.$nextTick(() => this.scrollBottom());
+                } else {
+                    this.draft = prev;
+                }
+            } catch (e) {
+                this.draft = prev;
+            } finally {
+                this.sending = false;
+            }
+        },
+    }));
+
+    /**
      * Image cropper — client-side canvas crop with drag + zoom, no library.
      * Usage: x-data="imageCropper({ aspect: 1, outputName: 'avatar' })"
      * Exposes: open(file), close(), apply(), plus drag/zoom state and a hidden

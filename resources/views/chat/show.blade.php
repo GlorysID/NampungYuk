@@ -10,21 +10,60 @@
         <span>Kembali ke Obrolan</span>
     </a>
 
-    <div class="ny-card p-4 flex items-center gap-3">
-        <x-user-avatar :user="$other" size="md" />
-        <div class="min-w-0">
-            <p class="font-bold text-sm text-[#18181b] dark:text-[#fafafa] truncate">{{ $other->name }}</p>
-            <p class="text-[11px] text-[#63636b] dark:text-[#a0a0a0] font-mono truncate">&#64;{{ $other->username }}</p>
+    <div class="ny-card flex flex-col h-[calc(100vh-14rem)] overflow-hidden"
+         x-data="chatRoom({
+             conversationId: {{ $conversation->id }},
+             me: {{ auth()->id() }},
+             sendUrl: '{{ route('chat.send', $other) }}'
+         })">
+        <!-- Header -->
+        <div class="flex items-center gap-3 p-3.5 border-b border-[#e4e4e7] dark:border-[#1f1f1f] shrink-0">
+            <x-user-avatar :user="$other" size="md" />
+            <div class="min-w-0 flex-1">
+                <p class="font-bold text-sm text-[#18181b] dark:text-[#fafafa] truncate">{{ $other->name }}</p>
+                <p class="text-[11px] text-[#63636b] dark:text-[#a0a0a0] font-mono truncate">&#64;{{ $other->username }}</p>
+            </div>
+            <a href="{{ route('profile.show', $other->username) }}" class="btn-secondary text-xs py-1.5 px-3 shrink-0">Profil</a>
         </div>
-        <a href="{{ route('profile.show', $other->username) }}" class="ml-auto btn-secondary text-xs py-1.5 px-3">Profil</a>
-    </div>
 
-    <div class="ny-card p-10 text-center space-y-3">
-        <div class="w-16 h-16 rounded-2xl ny-gradient-bg text-white mx-auto flex items-center justify-center">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        <!-- Messages -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-3" x-ref="scroll">
+            @forelse($messages as $m)
+                <div class="flex {{ $m->sender_id === auth()->id() ? 'justify-end' : 'justify-start' }}">
+                    <div class="max-w-[75%] px-3.5 py-2 rounded-2xl text-sm leading-relaxed {{ $m->sender_id === auth()->id() ? 'bg-[#0070f3] dark:bg-[#3291ff] text-white dark:text-[#000000] rounded-br-md' : 'bg-[#eeeeef] dark:bg-[#171717] text-[#18181b] dark:text-[#fafafa] rounded-bl-md' }}">
+                        <p class="whitespace-pre-line">{{ $m->body }}</p>
+                        <p class="text-[10px] mt-1 {{ $m->sender_id === auth()->id() ? 'text-white/70 dark:text-black/60' : 'text-[#8f8f8f] dark:text-[#666666]' }} font-mono">{{ $m->created_at->format('H:i') }}</p>
+                    </div>
+                </div>
+            @empty
+                <div class="h-full flex items-center justify-center text-center text-xs text-[#63636b] dark:text-[#a0a0a0]">
+                    Belum ada pesan. Mulai percakapan dengan {{ $other->name }}.
+                </div>
+            @endforelse
+
+            <template x-for="m in incoming" :key="m.id">
+                <div class="flex" :class="m.mine || m.sender_id === me ? 'justify-end' : 'justify-start'">
+                    <div class="max-w-[75%] px-3.5 py-2 rounded-2xl text-sm leading-relaxed"
+                         :class="(m.mine || m.sender_id === me)
+                            ? 'bg-[#0070f3] dark:bg-[#3291ff] text-white dark:text-[#000000] rounded-br-md'
+                            : 'bg-[#eeeeef] dark:bg-[#171717] text-[#18181b] dark:text-[#fafafa] rounded-bl-md'">
+                        <p class="whitespace-pre-line" x-text="m.body"></p>
+                        <p class="text-[10px] mt-1 font-mono"
+                           :class="(m.mine || m.sender_id === me) ? 'text-white/70 dark:text-black/60' : 'text-[#8f8f8f] dark:text-[#666666]'"
+                           x-text="m.time"></p>
+                    </div>
+                </div>
+            </template>
         </div>
-        <h3 class="font-bold text-base text-[#18181b] dark:text-[#fafafa]">Chat realtime segera hadir</h3>
-        <p class="text-sm text-[#63636b] dark:text-[#a0a0a0] max-w-sm mx-auto">Fitur obrolan langsung dengan {{ $other->name }} sedang dalam pengembangan.</p>
+
+        <!-- Composer -->
+        <form @submit.prevent="send()" class="flex items-center gap-2 p-3 border-t border-[#e4e4e7] dark:border-[#1f1f1f] shrink-0">
+            <input type="text" x-model="draft" maxlength="2000" placeholder="Tulis pesan..." class="ny-input text-sm flex-1" :disabled="sending">
+            <button type="submit" class="btn-primary text-xs py-2.5 px-4 shrink-0" :disabled="sending || !draft.trim()">
+                <span x-show="!sending">Kirim</span>
+                <span x-show="sending" x-cloak>...</span>
+            </button>
+        </form>
     </div>
 
 </div>
