@@ -50,14 +50,21 @@
         </div>
     </div>
 
-    <!-- Sort tabs -->
-    <div class="hl-panel p-1.5 flex items-center gap-1.5">
-        @foreach(['terbaru' => 'Terbaru', 'populer' => 'Terpopuler', 'terjawab' => 'Terjawab'] as $key => $label)
-            <a href="{{ route('communities.show', ['slug' => $community->slug, 'tab' => $key]) }}"
-               class="inline-flex items-center gap-2 px-3.5 py-2 rounded-md text-xs font-medium transition {{ $tab === $key ? 'bg-[#0070f3] text-white dark:bg-[#3291ff] dark:text-[#000000] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
-                {{ $label }}
-            </a>
-        @endforeach
+    <!-- Sort tabs + search -->
+    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div class="hl-panel p-1.5 flex items-center gap-1.5 shrink-0">
+            @foreach(['terbaru' => 'Terbaru', 'populer' => 'Terpopuler', 'terjawab' => 'Terjawab'] as $key => $label)
+                <a href="{{ route('communities.show', array_filter(['slug' => $community->slug, 'tab' => $key, 'q' => $search])) }}"
+                   class="inline-flex items-center gap-2 px-3.5 py-2 rounded-md text-xs font-medium transition {{ $tab === $key ? 'bg-[#0070f3] text-white dark:bg-[#3291ff] dark:text-[#000000] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
+                    {{ $label }}
+                </a>
+            @endforeach
+        </div>
+        <form method="GET" action="{{ route('communities.show', $community->slug) }}" class="relative flex-1">
+            @if($tab) <input type="hidden" name="tab" value="{{ $tab }}"> @endif
+            <svg class="w-4 h-4 text-[#63636b] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input type="text" name="q" value="{{ $search }}" placeholder="Cari di komunitas ini..." class="ny-input text-sm !pl-10">
+        </form>
     </div>
 
     <!-- Post composer (members only) -->
@@ -100,6 +107,44 @@
             </div>
         @endif
     @endauth
+
+    <!-- Manage members (owner only) -->
+    @if($isOwner && $memberList->count() > 0)
+        <div class="ny-card p-4 space-y-3" x-data="{ openMgmt: false }">
+            <button type="button" @click="openMgmt = !openMgmt" class="w-full flex items-center justify-between">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-[#63636b] dark:text-[#a0a0a0] flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-[#0070f3] dark:text-[#3291ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span>Kelola Anggota ({{ $memberList->count() }})</span>
+                </h3>
+                <svg class="w-4 h-4 text-[#63636b] transition-transform" :class="openMgmt ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+
+            <div x-show="openMgmt" x-cloak class="space-y-1.5 pt-1">
+                @foreach($memberList as $m)
+                    <div class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#f7f7f8] dark:hover:bg-[#111111] transition">
+                        <x-user-avatar :user="$m" size="sm" />
+                        <div class="min-w-0 flex-1">
+                            <p class="font-semibold text-xs text-[#18181b] dark:text-[#fafafa] truncate">{{ $m->name }}</p>
+                            <p class="text-[10px] text-[#63636b] dark:text-[#a0a0a0] truncate">&#64;{{ $m->username }}</p>
+                        </div>
+                        @if($m->id === $community->owner_id)
+                            <span class="text-[10px] font-bold uppercase text-[#0070f3] dark:text-[#3291ff] shrink-0">Owner</span>
+                        @else
+                            @if($m->pivot->role === 'mod')
+                                <span class="text-[10px] font-bold uppercase text-violet-600 dark:text-violet-400 shrink-0 mr-1">Mod</span>
+                            @endif
+                            <form method="POST" action="{{ route('communities.moderator', [$community, $m]) }}">
+                                @csrf
+                                <button type="submit" class="text-[11px] font-semibold px-2.5 py-1 rounded-full border transition shrink-0 {{ $m->pivot->role === 'mod' ? 'border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30' : 'border-[#0070f3]/30 text-[#0070f3] dark:text-[#3291ff] hover:bg-[#e6f0ff] dark:hover:bg-[#3291ff]/10' }}">
+                                    {{ $m->pivot->role === 'mod' ? 'Copot' : 'Jadikan Mod' }}
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
     <!-- Community feed (infinite scroll) -->
     <div x-data="infiniteFeed({

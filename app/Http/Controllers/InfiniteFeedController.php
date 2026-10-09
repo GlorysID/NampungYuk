@@ -111,11 +111,13 @@ class InfiniteFeedController extends Controller
     public function communityShowFeed(Request $request, Community $community)
     {
         $tab = $request->query('tab', 'terbaru');
+        $search = $request->query('q');
         $userId = Auth::id();
 
         $posts = $community->posts()
             ->with(['user', 'comments.user'])
             ->when($tab === 'terjawab', fn ($q) => $q->where('is_answered', true))
+            ->when($search, fn ($q) => $q->where('content', 'like', "%{$search}%"))
             ->orderByDesc('is_pinned')
             ->sortTab($tab)
             ->paginate(10)

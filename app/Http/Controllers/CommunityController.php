@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Community;
 use App\Models\CommunityMember;
 use App\Models\CommunityPost;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -96,15 +97,22 @@ class CommunityController extends Controller
         $isModerator = $community->isModerator($userId);
 
         $tab = $request->query('tab', 'terbaru');
+        $search = $request->query('q');
         $posts = $community->posts()
             ->with(['user', 'comments.user'])
             ->when($tab === 'terjawab', fn ($q) => $q->where('is_answered', true))
+            ->when($search, fn ($q) => $q->where('content', 'like', "%{$search}%"))
             ->orderByDesc('is_pinned')
             ->sortTab($tab)
             ->paginate(10)
             ->withQueryString();
 
         $members = $community->memberUsers()->orderByDesc('community_members.created_at')->take(12)->get();
+
+        // Owner: full member list with roles for moderation.
+        $memberList = $isOwner
+            ? $community->memberUsers()->orderByDesc('community_members.created_at')->get()
+            : collect();
 
         // Which posts the user has voted on.
         $userVotes = $userId
@@ -113,7 +121,7 @@ class CommunityController extends Controller
                 ->pluck('type', 'community_post_id')->toArray()
             : [];
 
-        return view('communities.show', compact('community', 'posts', 'members', 'isMember', 'isOwner', 'isModerator', 'userVotes', 'tab'));
+        return view('communities.show', compact('community', 'posts', 'members', 'memberList', 'isMember', 'isOwner', 'isModerator', 'userVotes', 'tab', 'search'));
     }
 
     /**
@@ -216,5 +224,32 @@ class CommunityController extends Controller
         }
 
         return back()->with('success', $message);
+    }
+
+    /**
+     * Promote a member to moderator / demote a moderator (owner only).
+     */
+    public function toggleModerator(Request $request, Community $community, User $user): RedirectResponse
+    {
+        $auth = Auth::user();
+        if (! $auth || $community->owner_id !== $auth->id) {
+            abort(403);
+        }
+
+        if ($user->id === $community->owner_id) {
+            return back()->with('error', 'Pemilik tidak bisa diubah rolenya.');
+        }
+
+        $member = CommunityMember::where('community_id', $community->id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $member->update([
+            'role' => $member->role === 'mod' ? 'member' : 'mod',
+        ]);
+
+        return back()->with('success', $member->role === 'mod'
+            ? $user->name.' diangkat menjadi moderator.'
+            : $user->name.' dicopot dari moderator.');
     }
 }

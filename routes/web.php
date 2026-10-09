@@ -60,6 +60,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/komunitas', [CommunityController::class, 'store'])->name('communities.store');
     Route::post('/komunitas/{community:slug}/join', [CommunityController::class, 'toggleJoin'])->name('communities.join');
     Route::post('/komunitas/{community:slug}/post', [CommunityPostController::class, 'store'])->name('communities.post');
+    Route::post('/komunitas/{community:slug}/moderator/{user}', [CommunityController::class, 'toggleModerator'])->name('communities.moderator');
     Route::post('/community-post/{post}/vote', [CommunityPostController::class, 'vote'])->name('communities.post.vote');
     Route::post('/community-post/{post}/comment', [CommunityPostController::class, 'comment'])->name('communities.post.comment');
 
