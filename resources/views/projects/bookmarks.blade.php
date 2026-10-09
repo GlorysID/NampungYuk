@@ -35,7 +35,7 @@
 
     <!-- Bookmarks List (infinite scroll) -->
     <div x-data="infiniteFeed({
-            nextPageUrl: {{ $projects->hasMorePages() ? Illuminate\Support\Js::from($projects->nextPageUrl()) : 'null' }},
+            nextPageUrl: {{ $projects->hasMorePages() ? Illuminate\Support\Js::from(route('feeds.bookmarks', ['page' => $projects->currentPage() + 1])) : 'null' }},
             lastPage: {{ $projects->lastPage() }}
          })">
         <div class="space-y-4" x-ref="items" data-feed-items>

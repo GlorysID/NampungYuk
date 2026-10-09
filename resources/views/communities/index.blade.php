@@ -42,7 +42,7 @@
             </form>
 
             <div x-data="infiniteFeed({
-                    nextPageUrl: {{ $posts->hasMorePages() ? Illuminate\Support\Js::from($posts->nextPageUrl()) : 'null' }},
+                    nextPageUrl: {{ $posts->hasMorePages() ? Illuminate\Support\Js::from(route('feeds.communities', request()->query() + ['page' => $posts->currentPage() + 1])) : 'null' }},
                     lastPage: {{ $posts->lastPage() }}
                  })">
                 <div class="space-y-3" x-ref="items" data-feed-items>
