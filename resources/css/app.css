@@ -118,6 +118,8 @@
    Base Resets & Typography
    ========================================================================== */
 html {
+    /* Bump the whole UI ~10% larger (rem-based) to be the new default. */
+    font-size: 110%;
     scroll-behavior: smooth;
     background-color: var(--bg-app);
     color: var(--text-main);

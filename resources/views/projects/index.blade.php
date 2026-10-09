@@ -178,28 +178,16 @@
                     </h3>
                 </div>
 
-                <div class="space-y-2.5">
-                    @forelse($hotDiscussions as $hp)
-                        <a href="{{ route('projects.show', $hp->slug) }}#komentar"
-                           class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#f7f7f8] dark:hover:bg-[#111111] transition group">
-                            <span class="w-8 h-8 rounded-lg overflow-hidden bg-[#eeeeef] dark:bg-[#171717] shrink-0">
-                                @if($hp->thumbnail)
-                                    <img src="{{ $hp->thumbnail }}" alt="" class="w-full h-full object-cover">
-                                @endif
-                            </span>
-                            <div class="min-w-0 flex-1">
-                                <p class="font-semibold text-xs text-[#18181b] dark:text-[#fafafa] group-hover:text-[#0070f3] dark:group-hover:text-[#3291ff] transition truncate">
-                                    {{ $hp->title }}
-                                </p>
-                                <p class="text-[10px] text-[#63636b] dark:text-[#a0a0a0] truncate">&#64;{{ $hp->user?->username ?? 'anon' }}</p>
-                            </div>
-                            <span class="text-[11px] font-mono font-semibold text-[#0070f3] dark:text-[#3291ff] px-2 py-0.5 rounded bg-[#e6f0ff] dark:bg-[#3291ff]/12 border border-[#3291ff]/30 shrink-0 inline-flex items-center gap-1">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-                                {{ $hp->comments_count }}
-                            </span>
+                <div class="flex flex-wrap gap-1.5 pt-0.5">
+                    @forelse($hotHashtags as $tag => $count)
+                        <a href="{{ route('projects.index', ['tech' => $tag]) }}"
+                           class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#eeeeef] dark:bg-[#171717] text-[#18181b] dark:text-[#fafafa] border border-[#e4e4e7] dark:border-[#1f1f1f] hover:border-[#0070f3] dark:hover:border-[#3291ff] hover:text-[#0070f3] dark:hover:text-[#3291ff] transition">
+                            <span class="text-[#0070f3] dark:text-[#3291ff]">#</span>
+                            <span class="truncate max-w-[120px]">{{ $tag }}</span>
+                            <span class="text-[10px] font-mono text-[#63636b] dark:text-[#a0a0a0]">{{ $count }}</span>
                         </a>
                     @empty
-                        <p class="text-xs text-[#63636b] py-2 text-center">Belum ada diskusi ramai.</p>
+                        <p class="text-xs text-[#63636b] py-2 text-center w-full">Belum ada hashtag hangat.</p>
                     @endforelse
                 </div>
             </div>

@@ -98,25 +98,24 @@ class ProjectController extends Controller
             $trendingToday = $trendingToday->concat($extra);
         }
 
-        // 2b. Hot discussions — most commented projects in the last 7 days
-        $hotDiscussions = Project::with(['user', 'category'])
+        // 2b. Hot hashtags — most-used tech tags across visible projects
+        $tagCounts = [];
+        Project::query()
             ->visibleTo(Auth::id())
-            ->where('created_at', '>=', now()->subDays(7))
-            ->where('comments_count', '>', 0)
-            ->orderByDesc('comments_count')
-            ->take(5)
-            ->get();
-
-        if ($hotDiscussions->count() < 5) {
-            $moreHot = Project::with(['user', 'category'])
-                ->visibleTo(Auth::id())
-                ->where('comments_count', '>', 0)
-                ->whereNotIn('id', $hotDiscussions->pluck('id'))
-                ->orderByDesc('comments_count')
-                ->take(5 - $hotDiscussions->count())
-                ->get();
-            $hotDiscussions = $hotDiscussions->concat($moreHot);
-        }
+            ->select('tech_stacks')
+            ->chunk(500, function ($rows) use (&$tagCounts) {
+                foreach ($rows as $row) {
+                    foreach ((array) $row->tech_stacks as $tag) {
+                        $tag = trim((string) $tag);
+                        if ($tag === '') {
+                            continue;
+                        }
+                        $tagCounts[$tag] = ($tagCounts[$tag] ?? 0) + 1;
+                    }
+                }
+            });
+        arsort($tagCounts);
+        $hotHashtags = array_slice($tagCounts, 0, 8, true);
 
         // 3. Suggested developers to follow (not already followed, not self)
         $suggestedDevelopers = collect();
@@ -154,7 +153,7 @@ class ProjectController extends Controller
             'projects',
             'categories',
             'trendingToday',
-            'hotDiscussions',
+            'hotHashtags',
             'trendingTech',
             'recentReviews',
             'userBookmarkedIds',
