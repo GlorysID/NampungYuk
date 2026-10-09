@@ -22,8 +22,9 @@ class ChatController extends Controller
         $search = $request->query('q');
 
         $conversations = Conversation::with(['userOne', 'userTwo'])
-            ->where('user_one_id', $userId)
-            ->orWhere('user_two_id', $userId)
+            ->where(function ($q) use ($userId) {
+                $q->where('user_one_id', $userId)->orWhere('user_two_id', $userId);
+            })
             ->orderByDesc('last_message_at')
             ->orderByDesc('updated_at')
             ->get()
