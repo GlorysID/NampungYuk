@@ -49,7 +49,7 @@ class CommunityPostController extends Controller
             }
         }
 
-        $community->posts()->create([
+        $post = $community->posts()->create([
             'user_id' => $user->id,
             'type' => $type,
             'content' => $data['content'],
@@ -57,6 +57,13 @@ class CommunityPostController extends Controller
         ]);
 
         $community->increment('posts_count');
+
+        // Notify all other members of the new post.
+        $post->load('user');
+        $community->memberUsers()
+            ->where('users.id', '!=', $user->id)
+            ->get()
+            ->each(fn ($member) => $member->notify(new \App\Notifications\CommunityPostNotification($post)));
 
         return back()->with('success', 'Postingan terkirim!');
     }
@@ -126,6 +133,12 @@ class CommunityPostController extends Controller
         ]);
 
         $post->increment('comments_count');
+
+        // Notify the post author (if not commenting on own post).
+        $comment->load('user');
+        if ($post->user && $post->user_id !== $user->id) {
+            $post->user->notify(new \App\Notifications\CommunityCommentNotification($comment));
+        }
 
         if ($request->wantsJson()) {
             return response()->json([

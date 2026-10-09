@@ -8,7 +8,7 @@
 
 @php $images = $post->imageUrls(); @endphp
 
-<article class="ny-card p-4 space-y-3 {{ $post->is_pinned ? 'border-[#0070f3]/40 dark:border-[#3291ff]/30' : '' }}"
+<article id="post-{{ $post->id }}" class="ny-card p-4 space-y-3 {{ $post->is_pinned ? 'border-[#0070f3]/40 dark:border-[#3291ff]/30' : '' }}"
          x-data="communityPostVote({
              score: {{ $post->score }},
              userVote: '{{ $initialVote }}',

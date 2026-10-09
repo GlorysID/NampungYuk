@@ -33,10 +33,12 @@
                         <img src="{{ $data['actor_avatar'] }}" alt="" class="w-9 h-9 rounded-md object-cover ring-1 ring-[#eaeaea] dark:ring-[#1f1f1f]">
                     @else
                         <div class="w-9 h-9 rounded-md bg-[#eeeeef] dark:bg-[#171717] flex items-center justify-center text-[#0070f3] dark:text-[#3291ff]">
-                            @if(($data['type'] ?? '') === 'project_uploaded')
+                            @if(($data['type'] ?? '') === 'project_uploaded' || ($data['type'] ?? '') === 'project_reposted')
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                             @elseif(($data['type'] ?? '') === 'project_trending')
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                            @elseif(($data['type'] ?? '') === 'community_post' || ($data['type'] ?? '') === 'community_comment')
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                             @else
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                             @endif
