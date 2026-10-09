@@ -67,6 +67,69 @@ import Alpine from 'alpinejs';
 })();
 
 document.addEventListener('alpine:init', () => {
+    /**
+     * Infinite scroll feed.
+     * Usage: x-data="infiniteFeed({ nextPageUrl: '...' })" on a wrapper that
+     * contains the item container ([data-feed-items]) and a sentinel element.
+     * Auto-loads the next page when the sentinel becomes visible; also exposes
+     * a manual "load more" button as fallback.
+     */
+    Alpine.data('infiniteFeed', ({ nextPageUrl = null, lastPage = 1 } = {}) => ({
+        nextUrl: nextPageUrl,
+        lastPage,
+        loading: false,
+        done: false,
+        observer: null,
+
+        init() {
+            this.done = ! this.nextUrl;
+            if (this.done) return;
+
+            const sentinel = this.$refs.sentinel;
+            if (sentinel && 'IntersectionObserver' in window) {
+                this.observer = new IntersectionObserver((entries) => {
+                    if (entries.some((e) => e.isIntersecting)) this.loadMore();
+                }, { rootMargin: '400px 0px' });
+                this.observer.observe(sentinel);
+            }
+        },
+
+        async loadMore() {
+            if (this.loading || this.done || ! this.nextUrl) return;
+            this.loading = true;
+            try {
+                const res = await fetch(this.nextUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                if (! res.ok) throw new Error('failed');
+
+                const page = parseInt(res.headers.get('X-Page') || '1', 10);
+                const last = parseInt(res.headers.get('X-Last-Page') || String(this.lastPage), 10);
+                const html = await res.text();
+
+                const container = this.$refs.items;
+                if (container) {
+                    const temp = document.createElement('div');
+                    temp.innerHTML = html.trim();
+                    // Execute nothing; cards are Alpine-initialized by Alpine automatically.
+                    while (temp.firstChild) container.appendChild(temp.firstChild);
+                }
+
+                if (page >= last) {
+                    this.done = true;
+                    if (this.observer) this.observer.disconnect();
+                } else {
+                    // Build the next URL by replacing the page param.
+                    const url = new URL(this.nextUrl, window.location.origin);
+                    url.searchParams.set('page', String(page + 1));
+                    this.nextUrl = url.toString();
+                }
+            } catch (e) {
+                // On error, keep the manual button available.
+            } finally {
+                this.loading = false;
+            }
+        },
+    }));
+
     Alpine.store('theme', {
         dark: document.documentElement.classList.contains('dark'),
         toggle() {

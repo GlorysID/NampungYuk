@@ -41,19 +41,27 @@
                 <input type="text" name="q" value="{{ $search }}" placeholder="Cari postingan komunitas..." class="ny-input text-sm !pl-10">
             </form>
 
-            <div class="space-y-3">
-                @forelse($posts as $post)
-                    <x-community-post :post="$post" :initial-vote="$userVotes[$post->id] ?? null" :can-comment="false" :can-moderate="false" :show-community="true" />
-                @empty
-                    <x-empty-state
-                        title="{{ $tab === 'diikuti' ? 'Belum ada postingan dari komunitas yang kamu ikuti' : 'Belum ada postingan' }}"
-                        description="Gabung komunitas untuk mulai melihat & membagikan ilmu." />
-                @endforelse
-            </div>
+            <div x-data="infiniteFeed({
+                    nextPageUrl: {{ $posts->hasMorePages() ? Illuminate\Support\Js::from($posts->nextPageUrl()) : 'null' }},
+                    lastPage: {{ $posts->lastPage() }}
+                 })">
+                <div class="space-y-3" x-ref="items" data-feed-items>
+                    @forelse($posts as $post)
+                        <x-community-post :post="$post" :initial-vote="$userVotes[$post->id] ?? null" :can-comment="false" :can-moderate="false" :show-community="true" />
+                    @empty
+                        <x-empty-state
+                            title="{{ $tab === 'diikuti' ? 'Belum ada postingan dari komunitas yang kamu ikuti' : 'Belum ada postingan' }}"
+                            description="Gabung komunitas untuk mulai melihat & membagikan ilmu." />
+                    @endforelse
+                </div>
 
-            @if($posts->hasPages())
-                <div>{{ $posts->links() }}</div>
-            @endif
+                <div x-ref="sentinel" class="pt-4 flex justify-center">
+                    <button type="button" x-show="!done" @click="loadMore()" :disabled="loading" class="btn-secondary text-xs py-2.5 px-5 disabled:opacity-60">
+                        <span x-show="!loading">Muat lebih banyak</span>
+                        <span x-show="loading" x-cloak>Memuat...</span>
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- RIGHT SIDEBAR: communities -->

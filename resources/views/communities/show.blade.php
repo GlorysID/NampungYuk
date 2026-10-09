@@ -101,17 +101,25 @@
         @endif
     @endauth
 
-    <!-- Community feed -->
-    <div class="space-y-3">
-        @forelse($posts as $post)
-            <x-community-post :post="$post" :initial-vote="$userVotes[$post->id] ?? null" :can-comment="$isMember" :can-moderate="$isModerator" />
-        @empty
-            <x-empty-state title="Belum ada postingan" description="Jadilah yang pertama memulai diskusi di komunitas ini." />
-        @endforelse
+    <!-- Community feed (infinite scroll) -->
+    <div x-data="infiniteFeed({
+            nextPageUrl: {{ $posts->hasMorePages() ? Illuminate\Support\Js::from($posts->nextPageUrl()) : 'null' }},
+            lastPage: {{ $posts->lastPage() }}
+         })">
+        <div class="space-y-3" x-ref="items" data-feed-items>
+            @forelse($posts as $post)
+                <x-community-post :post="$post" :initial-vote="$userVotes[$post->id] ?? null" :can-comment="$isMember" :can-moderate="$isModerator" />
+            @empty
+                <x-empty-state title="Belum ada postingan" description="Jadilah yang pertama memulai diskusi di komunitas ini." />
+            @endforelse
+        </div>
 
-        @if($posts->hasPages())
-            <div>{{ $posts->links() }}</div>
-        @endif
+        <div x-ref="sentinel" class="pt-4 flex justify-center">
+            <button type="button" x-show="!done" @click="loadMore()" :disabled="loading" class="btn-secondary text-xs py-2.5 px-5 disabled:opacity-60">
+                <span x-show="!loading">Muat lebih banyak</span>
+                <span x-show="loading" x-cloak>Memuat...</span>
+            </button>
+        </div>
     </div>
 
 </div>

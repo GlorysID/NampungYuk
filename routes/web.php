@@ -26,6 +26,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/obrolan/{user:username}', [\App\Http\Controllers\ChatController::class, 'show'])->name('chat.show');
 });
 
+// Infinite-scroll feed fragments (HTML partials)
+Route::get('/feed-fragment/projects', [\App\Http\Controllers\InfiniteFeedController::class, 'projectFeed'])->name('feeds.projects');
+Route::get('/feed-fragment/communities', [\App\Http\Controllers\InfiniteFeedController::class, 'communityFeed'])->name('feeds.communities');
+Route::get('/feed-fragment/community/{community:slug}', [\App\Http\Controllers\InfiniteFeedController::class, 'communityShowFeed'])->name('feeds.community');
+Route::get('/feed-fragment/bookmarks', [\App\Http\Controllers\InfiniteFeedController::class, 'bookmarkFeed'])->name('feeds.bookmarks');
+
 Route::middleware('auth')->group(function () {
     Route::get('/unggah', [ProjectController::class, 'create'])->name('projects.create');
     Route::post('/unggah', [ProjectController::class, 'store'])->name('projects.store');

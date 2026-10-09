@@ -56,30 +56,39 @@
                 </div>
             @endif
 
-            <!-- MAIN PROJECT FEED -->
-            <div class="space-y-4">
-                @forelse($projects as $project)
-                    @php
-                        $isBookmarked = in_array($project->id, $userBookmarkedIds ?? []);
-                        $initialVote = $userVotes[$project->id] ?? null;
-                    @endphp
-                    
-                    <x-project-card :project="$project" :initial-vote="$initialVote" :is-bookmarked="$isBookmarked" :is-reposted="in_array($project->id, $userRepostedIds ?? [])" />
-                @empty
-                    <x-empty-state 
-                        title="Tidak ada project ditemukan" 
-                        description="Belum ada karya kodingan yang cocok dengan kriteria pencarian atau filter yang dipilih."
-                        action-label="Kembali ke Semua Project"
-                        :action-url="route('projects.index')" />
-                @endforelse
-            </div>
-
-            <!-- PAGINATION -->
-            @if($projects->hasPages())
-                <div class="pt-4">
-                    {{ $projects->links() }}
+            <!-- MAIN PROJECT FEED (infinite scroll) -->
+            <div x-data="infiniteFeed({
+                    nextPageUrl: {{ $projects->hasMorePages() ? Illuminate\Support\Js::from($projects->nextPageUrl()) : 'null' }},
+                    lastPage: {{ $projects->lastPage() }}
+                 })">
+                <div class="space-y-4" x-ref="items" data-feed-items>
+                    @forelse($projects as $project)
+                        @php
+                            $isBookmarked = in_array($project->id, $userBookmarkedIds ?? []);
+                            $initialVote = $userVotes[$project->id] ?? null;
+                        @endphp
+                        <x-project-card :project="$project" :initial-vote="$initialVote" :is-bookmarked="$isBookmarked" :is-reposted="in_array($project->id, $userRepostedIds ?? [])" />
+                    @empty
+                        <x-empty-state 
+                            title="Tidak ada project ditemukan" 
+                            description="Belum ada karya kodingan yang cocok dengan kriteria pencarian atau filter yang dipilih."
+                            action-label="Kembali ke Semua Project"
+                            :action-url="route('projects.index')" />
+                    @endforelse
                 </div>
-            @endif
+
+                <!-- Infinite scroll sentinel + fallback button -->
+                <div x-ref="sentinel" class="pt-4 flex justify-center">
+                    <button type="button" x-show="!done" @click="loadMore()" :disabled="loading"
+                            class="btn-secondary text-xs py-2.5 px-5 disabled:opacity-60">
+                        <span x-show="!loading">Muat lebih banyak</span>
+                        <span x-show="loading" x-cloak>Memuat...</span>
+                    </button>
+                    <p x-show="done && {{ $projects->total() > 0 ? 'true' : 'false' }}" x-cloak class="text-[11px] text-[#63636b] dark:text-[#a0a0a0] py-2">
+                        Kamu sudah di akhir — {{ $projects->total() }} project.
+                    </p>
+                </div>
+            </div>
 
         </div>
 
