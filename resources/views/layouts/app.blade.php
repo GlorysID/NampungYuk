@@ -175,12 +175,15 @@
                     <x-logo size="sm" class="lg:hidden" />
                 </div>
 
-                <!-- Center in Header: Universal Search -->
+                <!-- Center in Header: contextual search -->
+                @php $onCommunity = request()->routeIs('communities.*'); @endphp
                 <div class="flex-1 max-w-lg mx-1 sm:mx-4">
-                    <form action="{{ route('projects.index') }}" method="GET" class="relative">
-                        @if(request('tab')) <input type="hidden" name="tab" value="{{ request('tab') }}"> @endif
-                        @if(request('kategori')) <input type="hidden" name="kategori" value="{{ request('kategori') }}"> @endif
-                        @if(request('tech')) <input type="hidden" name="tech" value="{{ request('tech') }}"> @endif
+                    <form action="{{ $onCommunity ? route('communities.index') : route('projects.index') }}" method="GET" class="relative">
+                        @unless($onCommunity)
+                            @if(request('tab')) <input type="hidden" name="tab" value="{{ request('tab') }}"> @endif
+                            @if(request('kategori')) <input type="hidden" name="kategori" value="{{ request('kategori') }}"> @endif
+                            @if(request('tech')) <input type="hidden" name="tech" value="{{ request('tech') }}"> @endif
+                        @endunless
                         
                         <div class="relative flex items-center">
                             <svg class="w-4 h-4 text-[#63636b] dark:text-[#a0a0a0] absolute left-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,8 +193,8 @@
                                    id="nav-search"
                                    name="q" 
                                    value="{{ request('q') }}"
-                                   placeholder="Cari project, teknologi, atau creator..." 
-                                   aria-label="Cari project, teknologi, atau creator"
+                                   placeholder="{{ $onCommunity ? 'Cari komunitas...' : 'Cari project, teknologi, atau creator...' }}" 
+                                   aria-label="{{ $onCommunity ? 'Cari komunitas' : 'Cari project, teknologi, atau creator' }}"
                                    class="w-full pl-9 sm:pl-10 pr-12 sm:pr-14 py-1.5 text-xs sm:text-sm bg-[#ffffff] dark:bg-[#000000] border border-[#e4e4e7] dark:border-[#1f1f1f] rounded-md text-[#18181b] dark:text-[#fafafa] placeholder-[#666666]/60 transition">
                             
                             <div class="absolute right-2.5 hidden sm:flex items-center gap-1 pointer-events-none">
@@ -199,7 +202,7 @@
                             </div>
 
                             @if(request('q'))
-                                <a href="{{ route('projects.index') }}" class="absolute right-8 text-[#63636b] hover:text-[#18181b] p-0.5" title="Hapus pencarian">
+                                <a href="{{ $onCommunity ? route('communities.index') : route('projects.index') }}" class="absolute right-8 text-[#63636b] hover:text-[#18181b] p-0.5" title="Hapus pencarian">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                     </svg>

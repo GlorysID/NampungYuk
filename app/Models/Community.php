@@ -12,8 +12,10 @@ class Community extends Model
     protected $fillable = [
         'owner_id',
         'name',
+        'topic',
         'slug',
         'description',
+        'rules',
         'visibility',
         'icon',
         'cover',

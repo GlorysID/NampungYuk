@@ -17,12 +17,48 @@ class CommunitySeeder extends Seeder
     public function run(): void
     {
         $communities = [
-            ['name' => 'Web Dev Indonesia', 'desc' => 'Wadah developer web Indonesia: Laravel, Vue, React, dan ekosistem frontend-backend.', 'icon' => 'https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?auto=format&fit=crop&w=200&q=80'],
-            ['name' => 'AI & Machine Learning', 'desc' => 'Diskusi seputar AI, LLM, computer vision, dan machine learning untuk developer lokal.', 'icon' => 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=200&q=80'],
-            ['name' => 'Mobile Developer ID', 'desc' => 'Komunitas Flutter, React Native, Kotlin, dan Swift developer Indonesia.', 'icon' => 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=200&q=80'],
-            ['name' => 'Open Source Nusantara', 'desc' => 'Berkontribusi ke open-source & membangun library yang berguna bagi komunitas.', 'icon' => 'https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?auto=format&fit=crop&w=200&q=80'],
-            ['name' => 'DevOps & Cloud', 'desc' => 'Docker, Kubernetes, CI/CD, dan arsitektur cloud untuk tim engineering.', 'icon' => 'https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?auto=format&fit=crop&w=200&q=80'],
-            ['name' => 'Game Dev Indonesia', 'desc' => 'Indie game developer: Godot, Unity, Phaser, dan pixel art nusantara.', 'icon' => 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=200&q=80'],
+            [
+                'name' => 'Web Dev Indonesia',
+                'topic' => 'Web Development',
+                'desc' => "Komunitas developer web Indonesia tempat berkumpulnya para pembuat website, mulai dari pemula hingga senior.\n\nDi sini kita berbagi seputar Laravel, Vue, React, Node, Tailwind CSS, dan seluruh ekosistem frontend-backend. Cocok untuk kamu yang sedang belajar web development, mencari solusi bug, atau ingin berkolaborasi membangun project bersama.",
+                'rules' => "1. Saling menghormati, dilarang toxic.\n2. Postingan harus relevan dengan web development.\n3. Dilarang promosi berlebihan tanpa izin.",
+                'icon' => 'https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?auto=format&fit=crop&w=200&q=80',
+            ],
+            [
+                'name' => 'AI & Machine Learning',
+                'topic' => 'AI',
+                'desc' => "Ruang belajar dan diskusi seputar Artificial Intelligence dan Machine Learning untuk developer Indonesia.\n\nTopik yang sering dibahas: LLM, prompt engineering, computer vision, RAG, fine-tuning model, dan penerapan AI di produk nyata. Bagus untuk kamu yang ingin mulai atau mendalami dunia AI.",
+                'rules' => "1. Sertakan sumber referensi bila berbagi klaim teknis.\n2. Dilarang share model/prompt ilegal.\n3. Bantu pemula, jangan merendahkan.",
+                'icon' => 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=200&q=80',
+            ],
+            [
+                'name' => 'Mobile Developer ID',
+                'topic' => 'Mobile',
+                'desc' => "Komunitas pengembang aplikasi mobile Indonesia: Flutter, React Native, Kotlin, dan Swift.\n\nBerbagi tips performa, arsitektur app, state management, hingga proses rilis ke Play Store & App Store. Cocok untuk yang serius membangun aplikasi mobile.",
+                'rules' => "1. Relevan dengan mobile development.\n2. Jangan spam link.\n3. Saling bantu debug.",
+                'icon' => 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=200&q=80',
+            ],
+            [
+                'name' => 'Open Source Nusantara',
+                'topic' => 'Open Source',
+                'desc' => "Tempat para kontributor open-source Indonesia berkumpul.\n\nBerbagi project open-source, cara kontribusi (pull request), dokumentasi, hingga membangun library yang berguna untuk komunitas luas. Mari bikin karya yang dipakai banyak orang.",
+                'rules' => "1. Sebutkan lisensi project.\n2. Sertakan link repo bila memperkenalkan project.\n3. Hormati kontributor lain.",
+                'icon' => 'https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?auto=format&fit=crop&w=200&q=80',
+            ],
+            [
+                'name' => 'DevOps & Cloud',
+                'topic' => 'DevOps',
+                'desc' => "Diskusi Docker, Kubernetes, CI/CD, dan arsitektur cloud untuk tim engineering.\n\nTopik: deployment otomatis, scaling, monitoring, infrastructure as code, dan pengalaman nyata menangani sistem produksi. Bagus untuk backend/infra engineer.",
+                'rules' => "1. Bahas dalam konteks yang bisa diverifikasi.\n2. Jangan sebar kredensial/secret.\n3. Bantu jawab pertanyaan pemula.",
+                'icon' => 'https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?auto=format&fit=crop&w=200&q=80',
+            ],
+            [
+                'name' => 'Game Dev Indonesia',
+                'topic' => 'Game Development',
+                'desc' => "Komunitas indie game developer Indonesia.\n\nBerbagi seputar Godot, Unity, Phaser, pixel art, game design, dan proses membuat game yang menyenangkan. Cocok untuk solo dev maupun tim kecil yang mau bikin game karya sendiri.",
+                'rules' => "1. Relevan dengan game development.\n2. Boleh promosi game sendiri (secukupnya).\n3. Kritik yang membangun.",
+                'icon' => 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=200&q=80',
+            ],
         ];
 
         $postPool = [
@@ -69,7 +105,9 @@ class CommunitySeeder extends Seeder
                 [
                     'owner_id' => $owner->id,
                     'name' => $data['name'],
+                    'topic' => $data['topic'] ?? null,
                     'description' => $data['desc'],
+                    'rules' => $data['rules'] ?? null,
                     'icon' => $data['icon'],
                     'visibility' => 'public',
                     'members_count' => 0,

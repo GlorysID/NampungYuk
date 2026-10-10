@@ -22,63 +22,43 @@ class CommunityController extends Controller
     {
         $search = $request->query('q');
         $tab = $request->query('tab', 'untukmu');
-        $filterCommunity = $request->query('komunitas');
         $userId = Auth::id();
-
-        // Communities the viewer may see.
-        $visibleCommunityIds = Community::visibleTo($userId)->pluck('id')->toArray();
 
         $joinedIds = $userId
             ? CommunityMember::where('user_id', $userId)->pluck('community_id')->toArray()
             : [];
 
-        // Feed of posts across visible communities (X-style timeline).
-        $postsQuery = CommunityPost::with(['user', 'community'])
-            ->whereIn('community_id', $visibleCommunityIds);
+        $query = Community::with('owner')
+            ->visibleTo($userId)
+            ->withCount('members');
 
-        // Optional: filter by a single community slug.
-        $filterCommunityId = null;
-        if ($filterCommunity) {
-            $filterCommunityId = Community::where('slug', $filterCommunity)->value('id');
-            if ($filterCommunityId) {
-                $postsQuery->where('community_id', $filterCommunityId);
-            }
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('topic', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
         }
 
         switch ($tab) {
             case 'diikuti':
-                $postsQuery->whereIn('community_id', $joinedIds);
+                $query->whereIn('id', $joinedIds)->orderByDesc('members_count');
                 break;
             case 'populer':
-                $postsQuery->orderByDesc('is_pinned')->orderByDesc('score');
+                $query->orderByDesc('members_count');
                 break;
             case 'baru':
-                $postsQuery->orderByDesc('is_pinned')->orderByDesc('created_at');
+                $query->latest();
                 break;
             case 'untukmu':
             default:
-                $postsQuery->orderByDesc('is_pinned')->orderByDesc('created_at');
+                $query->orderByDesc('is_featured')->orderByDesc('members_count');
                 break;
         }
 
-        if ($search) {
-            $postsQuery->where('content', 'like', "%{$search}%");
-        }
+        $communities = $query->paginate(12)->withQueryString();
 
-        $posts = $postsQuery->paginate(12)->withQueryString();
-
-        // For the community filter dropdown.
-        $allCommunities = Community::visibleTo($userId)
-            ->orderByDesc('members_count')
-            ->get(['id', 'name', 'slug']);
-
-        $userVotes = $userId
-            ? \App\Models\CommunityPostVote::where('user_id', $userId)
-                ->whereIn('community_post_id', $posts->pluck('id'))
-                ->pluck('type', 'community_post_id')->toArray()
-            : [];
-
-        // Right sidebar: top communities + followed communities.
+        // Right sidebar: top + followed communities.
         $topCommunities = Community::visibleTo($userId)
             ->orderByDesc('members_count')
             ->take(5)
@@ -88,7 +68,7 @@ class CommunityController extends Controller
             ? Community::whereIn('id', $joinedIds)->orderByDesc('members_count')->take(5)->get()
             : collect();
 
-        return view('communities.index', compact('posts', 'userVotes', 'joinedIds', 'search', 'tab', 'topCommunities', 'followedCommunities', 'userId', 'allCommunities', 'filterCommunity'));
+        return view('communities.index', compact('communities', 'joinedIds', 'search', 'tab', 'topCommunities', 'followedCommunities', 'userId'));
     }
 
     /**
@@ -151,7 +131,9 @@ class CommunityController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:60'],
-            'description' => ['nullable', 'string', 'max:280'],
+            'topic' => ['nullable', 'string', 'max:60'],
+            'description' => ['nullable', 'string', 'max:500'],
+            'rules' => ['nullable', 'string', 'max:1000'],
             'visibility' => ['nullable', 'in:public,private'],
             'icon' => ['nullable', 'url', 'max:255'],
         ]);
@@ -167,8 +149,10 @@ class CommunityController extends Controller
         $community = Community::create([
             'owner_id' => $user->id,
             'name' => $data['name'],
+            'topic' => $data['topic'] ?? null,
             'slug' => $slug,
             'description' => $data['description'] ?? null,
+            'rules' => $data['rules'] ?? null,
             'visibility' => $data['visibility'] ?? 'public',
             'icon' => $data['icon'] ?? null,
             'members_count' => 1,

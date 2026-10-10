@@ -21,8 +21,14 @@
                     <div class="w-16 h-16 rounded-2xl ny-gradient-bg text-white flex items-center justify-center text-2xl font-bold ring-4 ring-white dark:ring-[#0a0a0a]">{{ mb_substr($community->name, 0, 1) }}</div>
                 @endif
                 <div class="flex-1 min-w-0 pb-1">
-                    <h1 class="text-lg font-bold text-[#18181b] dark:text-[#fafafa] truncate">{{ $community->name }}</h1>
-                    <p class="text-[11px] text-[#63636b] dark:text-[#a0a0a0]">{{ number_format($community->members_count) }} anggota · {{ $community->posts_count }} postingan</p>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <h1 class="text-lg font-bold text-[#18181b] dark:text-[#fafafa] truncate">{{ $community->name }}</h1>
+                        @if($community->topic)
+                            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#e6f0ff] dark:bg-[#3291ff]/12 text-[#0070f3] dark:text-[#47a8ff] border border-[#3291ff]/25">{{ $community->topic }}</span>
+                        @endif
+                        <span class="text-[10px] font-bold uppercase {{ $community->isPrivate() ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400' }}">{{ $community->isPrivate() ? 'Private' : 'Publik' }}</span>
+                    </div>
+                    <p class="text-[11px] text-[#63636b] dark:text-[#a0a0a0]">{{ number_format($community->members_count) }} anggota · {{ $community->posts_count }} postingan · dibuat oleh {{ $community->owner?->name }}</p>
                 </div>
                 @auth
                     <button type="button" x-data="communityJoin({ joined: {{ $isMember ? 'true' : 'false' }}, url: '{{ route('communities.join', $community) }}' })"
@@ -34,7 +40,14 @@
             </div>
 
             @if($community->description)
-                <p class="text-xs sm:text-sm text-[#18181b] dark:text-[#fafafa] leading-relaxed mt-3">{{ $community->description }}</p>
+                <div class="mt-4 p-3.5 rounded-xl bg-[#f7f7f8] dark:bg-[#111111] border border-[#e4e4e7] dark:border-[#1f1f1f]">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-[#63636b] dark:text-[#a0a0a0] mb-1.5">Tentang komunitas ini</p>
+                    <p class="text-xs sm:text-sm text-[#18181b] dark:text-[#fafafa] leading-relaxed whitespace-pre-line">{{ $community->description }}</p>
+                    @if($community->rules)
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-[#63636b] dark:text-[#a0a0a0] mt-3 mb-1.5">Aturan komunitas</p>
+                        <p class="text-xs text-[#63636b] dark:text-[#a0a0a0] leading-relaxed whitespace-pre-line">{{ $community->rules }}</p>
+                    @endif
+                </div>
             @endif
 
             @if($members->count())
