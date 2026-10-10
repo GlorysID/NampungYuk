@@ -22,6 +22,7 @@ class CommunityController extends Controller
     {
         $search = $request->query('q');
         $tab = $request->query('tab', 'untukmu');
+        $filterCommunity = $request->query('komunitas');
         $userId = Auth::id();
 
         // Communities the viewer may see.
@@ -34,6 +35,15 @@ class CommunityController extends Controller
         // Feed of posts across visible communities (X-style timeline).
         $postsQuery = CommunityPost::with(['user', 'community'])
             ->whereIn('community_id', $visibleCommunityIds);
+
+        // Optional: filter by a single community slug.
+        $filterCommunityId = null;
+        if ($filterCommunity) {
+            $filterCommunityId = Community::where('slug', $filterCommunity)->value('id');
+            if ($filterCommunityId) {
+                $postsQuery->where('community_id', $filterCommunityId);
+            }
+        }
 
         switch ($tab) {
             case 'diikuti':
@@ -57,6 +67,11 @@ class CommunityController extends Controller
 
         $posts = $postsQuery->paginate(12)->withQueryString();
 
+        // For the community filter dropdown.
+        $allCommunities = Community::visibleTo($userId)
+            ->orderByDesc('members_count')
+            ->get(['id', 'name', 'slug']);
+
         $userVotes = $userId
             ? \App\Models\CommunityPostVote::where('user_id', $userId)
                 ->whereIn('community_post_id', $posts->pluck('id'))
@@ -73,7 +88,7 @@ class CommunityController extends Controller
             ? Community::whereIn('id', $joinedIds)->orderByDesc('members_count')->take(5)->get()
             : collect();
 
-        return view('communities.index', compact('posts', 'userVotes', 'joinedIds', 'search', 'tab', 'topCommunities', 'followedCommunities', 'userId'));
+        return view('communities.index', compact('posts', 'userVotes', 'joinedIds', 'search', 'tab', 'topCommunities', 'followedCommunities', 'userId', 'allCommunities', 'filterCommunity'));
     }
 
     /**

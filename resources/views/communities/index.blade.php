@@ -23,7 +23,7 @@
     <!-- Pill tabs -->
     <div class="hl-panel p-1.5 inline-flex items-center gap-1.5 overflow-x-auto max-w-full">
         @foreach(['untukmu' => 'Untukmu', 'diikuti' => 'Diikuti', 'populer' => 'Populer', 'baru' => 'Baru'] as $key => $label)
-            <a href="{{ route('communities.index', array_filter(['tab' => $key, 'q' => $search])) }}"
+            <a href="{{ route('communities.index', array_filter(['tab' => $key, 'q' => $search, 'komunitas' => $filterCommunity])) }}"
                class="shrink-0 inline-flex items-center px-3.5 py-2 rounded-md text-xs font-medium transition {{ $tab === $key ? 'bg-[#0070f3] text-white dark:bg-[#3291ff] dark:text-[#000000] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
                 {{ $label }}
             </a>
@@ -35,10 +35,26 @@
 
         <!-- MAIN FEED -->
         <div class="xl:col-span-8 space-y-4">
-            <form method="GET" action="{{ route('communities.index') }}" class="relative max-w-md">
+            <form method="GET" action="{{ route('communities.index') }}" class="flex flex-col sm:flex-row gap-2">
                 @if($tab) <input type="hidden" name="tab" value="{{ $tab }}"> @endif
-                <svg class="w-4 h-4 text-[#63636b] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                <input type="text" name="q" value="{{ $search }}" placeholder="Cari postingan komunitas..." class="ny-input text-sm !pl-10">
+
+                <!-- Community filter dropdown -->
+                <div class="relative shrink-0">
+                    <select name="komunitas" onchange="this.form.submit()"
+                            class="ny-input text-sm !pr-9 appearance-none cursor-pointer sm:w-52">
+                        <option value="">Semua Komunitas</option>
+                        @foreach($allCommunities as $c)
+                            <option value="{{ $c->slug }}" {{ $filterCommunity === $c->slug ? 'selected' : '' }}>{{ $c->name }}</option>
+                        @endforeach
+                    </select>
+                    <svg class="w-4 h-4 text-[#63636b] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+
+                <!-- Search posts -->
+                <div class="relative flex-1">
+                    <svg class="w-4 h-4 text-[#63636b] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input type="text" name="q" value="{{ $search }}" placeholder="Cari postingan..." class="ny-input text-sm !pl-10">
+                </div>
             </form>
 
             <div x-data="infiniteFeed({

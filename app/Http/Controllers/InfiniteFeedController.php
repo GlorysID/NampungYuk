@@ -73,12 +73,20 @@ class InfiniteFeedController extends Controller
     {
         $tab = $request->query('tab', 'untukmu');
         $search = $request->query('q');
+        $filterCommunity = $request->query('komunitas');
         $userId = Auth::id();
 
         $visibleIds = Community::visibleTo($userId)->pluck('id')->toArray();
         $joinedIds = $userId ? \App\Models\CommunityMember::where('user_id', $userId)->pluck('community_id')->toArray() : [];
 
         $q = CommunityPost::with(['user', 'community'])->whereIn('community_id', $visibleIds);
+
+        if ($filterCommunity) {
+            $cid = Community::where('slug', $filterCommunity)->value('id');
+            if ($cid) {
+                $q->where('community_id', $cid);
+            }
+        }
 
         if ($tab === 'diikuti') {
             $q->whereIn('community_id', $joinedIds);
