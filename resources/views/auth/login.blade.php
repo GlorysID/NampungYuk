@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Masuk — NampungYuk</title>
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
     <meta name="description" content="Masuk ke akun NampungYuk untuk membagikan project codingan dan berdiskusi dengan sesama developer.">
 
     <script>
@@ -152,14 +153,11 @@
             <!-- Glow effect -->
             <div class="absolute w-96 h-96 rounded-full bg-[#0070f3]/10 blur-[120px] pointer-events-none"></div>
 
-            <!-- Giant Geometric Motif Icon of NampungYuk (Tray & Drop Arrow) -->
-            <svg class="w-full max-w-[500px] h-auto text-[#27272a] hover:text-[#3291ff]/30 transition duration-700 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round">
-                {{-- Open Tray Container --}}
-                <path d="M3 10.5 4.6 5.4A1.5 1.5 0 0 1 6 4.35h12a1.5 1.5 0 0 1 1.4 1.05L21 10.5" />
-                <path d="M3 10.5h4.5l1.2 2.1h6.6l1.2-2.1H21v6.9a1.6 1.6 0 0 1-1.6 1.6H4.6A1.6 1.6 0 0 1 3 17.4z" />
-                {{-- Drop-in Arrow --}}
-                <path d="M12 1.8v4.2" stroke-width="1.2" />
-                <path d="M10.4 4.4 12 6l1.6-1.6" stroke-width="1.2" />
+            <!-- Giant NampungYuk code motif (</>) -->
+            <svg class="w-full max-w-[460px] h-auto text-[#27272a] hover:text-[#3291ff]/30 transition duration-700 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8.5 8 5 12l3.5 4" />
+                <path d="M15.5 8 19 12l-3.5 4" />
+                <path d="M13.2 6.5 10.8 17.5" />
             </svg>
 
             <!-- Floating X-Style QR Code Card in Bottom Right -->
