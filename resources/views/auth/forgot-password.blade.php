@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-[#f4f4f5] dark:bg-[#000000] text-[#18181b] dark:text-[#fafafa] h-dvh overflow-hidden grid grid-rows-[auto_1fr_auto] gap-2 p-4 sm:p-5 antialiased selection:bg-[#3291ff]/25" x-data>
+<body class="bg-[#e9e9ec] dark:bg-[#000000] text-[#18181b] dark:text-[#fafafa] h-dvh overflow-hidden grid grid-rows-[auto_1fr_auto] gap-2 p-4 sm:p-5 antialiased selection:bg-[#3291ff]/25" x-data>
 
     <div class="w-full max-w-md mx-auto flex items-center justify-between text-xs">
         <a href="{{ route('login') }}" class="inline-flex items-center gap-1.5 text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3] transition font-medium">

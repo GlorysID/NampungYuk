@@ -36,7 +36,7 @@
    ========================================================================== */
 :root {
     /* ---- LIGHT theme (layered elevation: gray canvas → white cards) ---- */
-    --bg-app: #f4f4f5;          /* page canvas — clearly gray, not white */
+    --bg-app: #e9e9ec;          /* page canvas — darker gray so white cards separate clearly */
     --bg-elevated: #ffffff;
     --surface: #ffffff;         /* cards/panels lift above the gray canvas */
     --surface-hover: #f7f7f8;
