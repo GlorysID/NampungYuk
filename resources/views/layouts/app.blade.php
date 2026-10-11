@@ -4,7 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link rel="icon" href="{{ asset('images/icon-dark.png') }}" type="image/png">
+    <link rel="apple-touch-icon" href="{{ asset('images/icon-dark.png') }}">
 
     <script>
         (function() {
@@ -37,6 +38,7 @@
 <body class="bg-[#ffffff] dark:bg-[#000000] text-[#18181b] dark:text-[#fafafa] min-h-screen transition-colors duration-150 antialiased selection:bg-[#e8f2ff] selection:text-[#0070f3] relative overflow-x-hidden pb-16 lg:pb-0"
       x-data="{
           mobileSidebarOpen: false,
+          mobileSearchOpen: false,
           activeCardIndex: -1,
           showHelpModal: false,
           toast: { show: false, message: '' },
@@ -50,12 +52,20 @@
           },
           handleKeydown(e) {
               if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
-                  if (e.key === 'Escape') document.activeElement.blur();
+                  if (e.key === 'Escape') {
+                      document.activeElement.blur();
+                      this.mobileSearchOpen = false;
+                  }
                   return;
               }
               if (e.key === '/' || (e.metaKey && e.key === 'k') || (e.ctrlKey && e.key === 'k')) {
                   e.preventDefault();
-                  document.getElementById('nav-search')?.focus();
+                  if (window.innerWidth < 768) {
+                      this.mobileSearchOpen = true;
+                      this.$nextTick(() => document.getElementById('nav-search-mobile')?.focus());
+                  } else {
+                      document.getElementById('nav-search')?.focus();
+                  }
                   return;
               }
               if (e.key === '?') {
@@ -66,6 +76,7 @@
               if (e.key === 'Escape') {
                   this.showHelpModal = false;
                   this.mobileSidebarOpen = false;
+                  this.mobileSearchOpen = false;
                   return;
               }
               const cards = Array.from(document.querySelectorAll('.project-nav-card'));
@@ -158,11 +169,52 @@
         <!-- RIGHT WORKSPACE AREA -->
         <div class="flex-1 flex flex-col min-w-0">
             
+            @php $onCommunity = request()->routeIs('communities.*'); @endphp
+
             <!-- TOP HEADER (glass) -->
-            <header class="sticky top-0 lg:top-4 z-20 h-14 sm:h-16 ny-glass rounded-none lg:rounded-2xl px-4 sm:px-6 flex items-center justify-between gap-3">
+            <header class="sticky top-0 lg:top-4 z-20 h-14 sm:h-16 ny-glass rounded-none lg:rounded-2xl px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-3 relative">
                 
+                <!-- MOBILE SEARCH OVERLAY (Full-width on Mobile when opened) -->
+                <div x-show="mobileSearchOpen" 
+                     x-cloak 
+                     @keydown.escape.window="mobileSearchOpen = false"
+                     x-transition:enter="transition ease-out duration-150"
+                     x-transition:enter-start="opacity-0 scale-[0.99]"
+                     x-transition:enter-end="opacity-100 scale-100"
+                     x-transition:leave="transition ease-in duration-100"
+                     x-transition:leave-start="opacity-100 scale-100"
+                     x-transition:leave-end="opacity-0 scale-[0.99]"
+                     class="absolute inset-0 z-30 px-3 flex items-center bg-white/95 dark:bg-[#000000]/95 backdrop-blur-md rounded-none lg:rounded-2xl gap-2 border-b lg:border border-[#e4e4e7] dark:border-[#1f1f1f]">
+                    <form action="{{ $onCommunity ? route('communities.index') : route('projects.index') }}" method="GET" class="flex-1 relative flex items-center">
+                        @unless($onCommunity)
+                            @if(request('tab')) <input type="hidden" name="tab" value="{{ request('tab') }}"> @endif
+                            @if(request('kategori')) <input type="hidden" name="kategori" value="{{ request('kategori') }}"> @endif
+                            @if(request('tech')) <input type="hidden" name="tech" value="{{ request('tech') }}"> @endif
+                        @endunless
+                        <svg class="w-4 h-4 text-[#63636b] dark:text-[#a0a0a0] absolute left-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        <input type="text" 
+                               id="nav-search-mobile"
+                               name="q" 
+                               value="{{ request('q') }}"
+                               placeholder="{{ $onCommunity ? 'Cari komunitas...' : 'Cari project, teknologi, creator...' }}" 
+                               class="w-full pl-9 pr-8 py-1.5 text-xs bg-[#f4f4f5] dark:bg-[#111111] border border-[#e4e4e7] dark:border-[#27272a] rounded-lg text-[#18181b] dark:text-[#fafafa] placeholder-[#71717a] outline-none focus:border-[#0070f3] dark:focus:border-[#3291ff]">
+                        @if(request('q'))
+                            <a href="{{ $onCommunity ? route('communities.index') : route('projects.index') }}" class="absolute right-2.5 text-[#71717a] hover:text-[#18181b]">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </a>
+                        @endif
+                    </form>
+                    <button type="button" 
+                            @click="mobileSearchOpen = false" 
+                            class="px-2 py-1 text-xs font-semibold text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white shrink-0">
+                        Batal
+                    </button>
+                </div>
+
                 <!-- Left in Header: Mobile Hamburger Toggle + Brand for small screens -->
-                <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+                <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
                     <button @click="mobileSidebarOpen = true" 
                             type="button"
                             class="lg:hidden p-1.5 rounded-md border border-[#e4e4e7] dark:border-[#1f1f1f] text-[#63636b] dark:text-[#a0a0a0] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition"
@@ -172,13 +224,13 @@
                         </svg>
                     </button>
 
-                    <!-- Mobile Brand Icon -->
-                    <x-logo size="sm" class="lg:hidden" />
+                    <!-- Mobile Brand Icon: Mark-only on very narrow mobile (< sm), Mark+Text on sm..lg, Hidden on desktop (lg+) -->
+                    <x-logo size="sm" :show-text="false" class="sm:hidden lg:hidden" />
+                    <x-logo size="sm" :show-text="true" class="hidden sm:inline-flex lg:hidden" />
                 </div>
 
-                <!-- Center in Header: contextual search -->
-                @php $onCommunity = request()->routeIs('communities.*'); @endphp
-                <div class="flex-1 max-w-lg mx-1 sm:mx-4">
+                <!-- Center in Header: contextual search (Desktop & Tablet: md+) -->
+                <div class="hidden md:block flex-1 max-w-lg mx-2 lg:mx-4">
                     <form action="{{ $onCommunity ? route('communities.index') : route('projects.index') }}" method="GET" class="relative">
                         @unless($onCommunity)
                             @if(request('tab')) <input type="hidden" name="tab" value="{{ request('tab') }}"> @endif
@@ -214,7 +266,17 @@
                 </div>
 
                 <!-- Right in Header: Auth/User Actions -->
-                <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+                    
+                    <!-- Mobile Search Trigger Button (< md) -->
+                    <button type="button" 
+                            @click="mobileSearchOpen = true; $nextTick(() => document.getElementById('nav-search-mobile')?.focus())"
+                            class="md:hidden w-8 h-8 rounded-md flex items-center justify-center text-[#63636b] hover:text-[#18181b] dark:text-[#a0a0a0] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition shrink-0"
+                            aria-label="Cari">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </button>
 
                     <!-- User Session Menu -->
                     @auth
@@ -342,9 +404,9 @@
                         </div>
                     @else
                         <!-- Guest Actions -->
-                        <div class="flex items-center gap-2 text-xs">
+                        <div class="flex items-center gap-1 sm:gap-2 text-xs shrink-0">
                             <button type="button" @click="$store.theme.toggle()"
-                                    class="w-8 h-8 rounded-md flex items-center justify-center text-[#63636b] hover:text-[#18181b] dark:text-[#a0a0a0] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition"
+                                    class="w-8 h-8 rounded-md flex items-center justify-center text-[#63636b] hover:text-[#18181b] dark:text-[#a0a0a0] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition shrink-0"
                                     aria-label="Ganti mode gelap atau terang">
                                 <svg x-show="!$store.theme.dark" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
@@ -353,10 +415,10 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9h-1m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
                                 </svg>
                             </button>
-                            <button type="button" @click="window.openAuthModal('login')" class="px-3 py-1.5 text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3] dark:hover:text-[#3291ff] font-medium transition cursor-pointer">
+                            <button type="button" @click="window.openAuthModal('login')" class="px-2 sm:px-3 py-1.5 text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3] dark:hover:text-[#3291ff] font-semibold transition cursor-pointer whitespace-nowrap">
                                 Masuk
                             </button>
-                            <button type="button" @click="window.openAuthModal('register')" class="btn-primary py-1.5 px-3 text-xs cursor-pointer">
+                            <button type="button" @click="window.openAuthModal('register')" class="btn-primary py-1.5 px-2.5 sm:px-3 text-xs font-bold cursor-pointer shrink-0 whitespace-nowrap">
                                 Daftar
                             </button>
                         </div>

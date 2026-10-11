@@ -31,11 +31,12 @@
             @endif
         </div>
 
-        <div class="relative z-10 px-5 sm:px-6 pb-5 -mt-10 sm:-mt-12">
-            <div class="flex flex-col sm:flex-row sm:items-end gap-4">
+        <div class="relative z-10 px-5 sm:px-6 pb-5">
+            <!-- Row 1: Avatar (overlapping banner) + Action Buttons (comfortable spacing below banner) -->
+            <div class="flex items-end justify-between gap-4 -mt-12 sm:-mt-14 mb-3">
                 <!-- Avatar -->
                 <div class="relative shrink-0">
-                    <x-user-avatar :user="$user" size="xl" class="ring-4 ring-white dark:ring-[#0a0a0a]!" />
+                    <x-user-avatar :user="$user" size="xl" class="ring-4 ring-white dark:ring-[#0a0a0a]! shadow-md" />
                     @if($isOwner)
                         <span class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#0070f3] dark:bg-[#3291ff] text-[#ffffff] flex items-center justify-center ring-2 ring-white dark:ring-[#0a0a0a] z-10">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
@@ -43,34 +44,36 @@
                     @endif
                 </div>
 
-                <!-- Name + bio -->
-                <div class="flex-1 min-w-0 pb-1">
-                    <div class="flex items-center gap-2 min-w-0">
-                        <h1 class="text-xl sm:text-2xl font-bold leading-snug text-[#18181b] dark:text-[#fafafa] tracking-tight truncate min-w-0">
-                            {{ $user->name }}
-                        </h1>
-                        @if($user->is_admin ?? false)
-                            <x-badge variant="teal" size="xs" class="shrink-0">Admin</x-badge>
-                        @endif
-                    </div>
-                    <p class="text-xs sm:text-sm text-[#63636b] dark:text-[#a0a0a0] font-mono truncate">&#64;{{ $user->username }}</p>
-                </div>
-
-                <!-- Actions -->
-                <div class="flex items-center gap-2 shrink-0 pb-1">
+                <!-- Actions: Button Ikuti / Edit Profil diberi jarak yang lega agar tidak mepet banner -->
+                <div class="flex items-center gap-2 shrink-0 pt-3 sm:pt-4">
                     @if($isOwner)
-                        <button type="button" @click="editOpen = true" class="btn-secondary text-xs py-2 px-3">
+                        <button type="button" @click="editOpen = true" class="btn-secondary text-xs py-2 px-3.5 shadow-sm">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                             <span>Edit Profil</span>
                         </button>
                     @else
-                        <x-follow-button :user="$user" />
+                        <div class="pt-1">
+                            <x-follow-button :user="$user" />
+                        </div>
                     @endif
                 </div>
             </div>
 
+            <!-- Row 2: Name & Username (Sepenuhnya di bawah banner pada background halaman) -->
+            <div class="space-y-0.5 mt-2">
+                <div class="flex items-center gap-2 min-w-0 flex-wrap">
+                    <h1 class="text-xl sm:text-2xl font-bold leading-tight text-[#18181b] dark:text-[#fafafa] tracking-tight">
+                        {{ $user->name }}
+                    </h1>
+                    @if($user->is_admin ?? false)
+                        <x-badge variant="teal" size="xs" class="shrink-0">Admin</x-badge>
+                    @endif
+                </div>
+                <p class="text-xs sm:text-sm text-[#63636b] dark:text-[#a0a0a0] font-mono">&#64;{{ $user->username }}</p>
+            </div>
+
             @if($user->bio)
-                <p class="text-xs sm:text-sm text-[#18181b] dark:text-[#fafafa] leading-relaxed mt-4 max-w-2xl">{{ $user->bio }}</p>
+                <p class="text-xs sm:text-sm text-[#18181b] dark:text-[#fafafa] leading-relaxed mt-3.5 max-w-2xl">{{ $user->bio }}</p>
             @endif
 
             <!-- ===== PROFILE LINKS (link-in-bio list) ===== -->

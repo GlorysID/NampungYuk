@@ -2,49 +2,47 @@
 
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityPostController;
 use App\Http\Controllers\FollowController;
+use App\Http\Controllers\InfiniteFeedController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\SpaceController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [ProjectController::class, 'index'])->name('projects.index');
-Route::get('/project/{slug}', [ProjectController::class, 'show'])->name('projects.show');
-Route::get('/u/{username}', [ProfileController::class, 'show'])->name('profile.show');
 Route::get('/feed/latest', [ProjectController::class, 'latest'])->name('projects.latest');
-
-// Communities (public view)
-Route::get('/komunitas', [CommunityController::class, 'index'])->name('communities.index');
-Route::get('/komunitas/{slug}', [CommunityController::class, 'show'])->name('communities.show');
 
 // Chat / Obrolan (auth required)
 Route::middleware('auth')->group(function () {
-    Route::get('/obrolan', [\App\Http\Controllers\ChatController::class, 'index'])->name('chat.index');
-    Route::get('/obrolan/{user:username}', [\App\Http\Controllers\ChatController::class, 'show'])->name('chat.show');
-    Route::post('/obrolan/{user:username}/kirim', [\App\Http\Controllers\ChatController::class, 'send'])->name('chat.send');
+    Route::get('/obrolan', [ChatController::class, 'index'])->name('chat.index');
+    Route::get('/obrolan/{user:username}', [ChatController::class, 'show'])->name('chat.show');
+    Route::post('/obrolan/{user:username}/kirim', [ChatController::class, 'send'])->name('chat.send');
 });
 
 // Spaces (live audio/video)
-Route::get('/spaces', [\App\Http\Controllers\SpaceController::class, 'index'])->name('spaces.index');
+Route::get('/spaces', [SpaceController::class, 'index'])->name('spaces.index');
 Route::middleware('auth')->group(function () {
-    Route::post('/spaces', [\App\Http\Controllers\SpaceController::class, 'store'])->name('spaces.store');
-    Route::get('/spaces/{slug}', [\App\Http\Controllers\SpaceController::class, 'show'])->name('spaces.show');
-    Route::post('/spaces/{space:slug}/join', [\App\Http\Controllers\SpaceController::class, 'join'])->name('spaces.join');
-    Route::post('/spaces/{space:slug}/leave', [\App\Http\Controllers\SpaceController::class, 'leave'])->name('spaces.leave');
-    Route::post('/spaces/{space:slug}/end', [\App\Http\Controllers\SpaceController::class, 'end'])->name('spaces.end');
-    Route::post('/spaces/{space:slug}/signal', [\App\Http\Controllers\SpaceController::class, 'signal'])->name('spaces.signal');
+    Route::post('/spaces', [SpaceController::class, 'store'])->name('spaces.store');
+    Route::get('/spaces/{slug}', [SpaceController::class, 'show'])->name('spaces.show');
+    Route::post('/spaces/{space:slug}/join', [SpaceController::class, 'join'])->name('spaces.join');
+    Route::post('/spaces/{space:slug}/leave', [SpaceController::class, 'leave'])->name('spaces.leave');
+    Route::post('/spaces/{space:slug}/end', [SpaceController::class, 'end'])->name('spaces.end');
+    Route::post('/spaces/{space:slug}/signal', [SpaceController::class, 'signal'])->name('spaces.signal');
 });
 
 // Infinite-scroll feed fragments (HTML partials)
-Route::get('/feed-fragment/projects', [\App\Http\Controllers\InfiniteFeedController::class, 'projectFeed'])->name('feeds.projects');
-Route::get('/feed-fragment/communities', [\App\Http\Controllers\InfiniteFeedController::class, 'communityFeed'])->name('feeds.communities');
-Route::get('/feed-fragment/community/{community:slug}', [\App\Http\Controllers\InfiniteFeedController::class, 'communityShowFeed'])->name('feeds.community');
-Route::get('/feed-fragment/bookmarks', [\App\Http\Controllers\InfiniteFeedController::class, 'bookmarkFeed'])->name('feeds.bookmarks');
+Route::get('/feed-fragment/projects', [InfiniteFeedController::class, 'projectFeed'])->name('feeds.projects');
+Route::get('/feed-fragment/bookmarks', [InfiniteFeedController::class, 'bookmarkFeed'])->name('feeds.bookmarks');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/project/{slug}', [ProjectController::class, 'show'])->name('projects.show');
+    Route::get('/u/{username}', [ProfileController::class, 'show'])->name('profile.show');
     Route::get('/unggah', [ProjectController::class, 'create'])->name('projects.create');
     Route::post('/unggah', [ProjectController::class, 'store'])->name('projects.store');
     Route::post('/project/{project}/vote', [ProjectController::class, 'vote'])->name('projects.vote');
@@ -68,6 +66,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/notifikasi/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifikasi/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
 
+    // Communities (auth required)
+    Route::get('/komunitas', [CommunityController::class, 'index'])->name('communities.index');
+    Route::get('/komunitas/{slug}', [CommunityController::class, 'show'])->name('communities.show');
+    Route::get('/feed-fragment/communities', [InfiniteFeedController::class, 'communityFeed'])->name('feeds.communities');
+    Route::get('/feed-fragment/community/{community:slug}', [InfiniteFeedController::class, 'communityShowFeed'])->name('feeds.community');
+
     // Communities (member actions)
     Route::post('/komunitas', [CommunityController::class, 'store'])->name('communities.store');
     Route::post('/komunitas/{community:slug}/join', [CommunityController::class, 'toggleJoin'])->name('communities.join');
@@ -90,10 +94,10 @@ Route::middleware('guest')->group(function () {
     Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
 
     // Password reset
-    Route::get('/lupa-password', [\App\Http\Controllers\Auth\PasswordResetController::class, 'request'])->name('password.request');
-    Route::post('/lupa-password', [\App\Http\Controllers\Auth\PasswordResetController::class, 'email'])->name('password.email');
-    Route::get('/reset-password/{token}', [\App\Http\Controllers\Auth\PasswordResetController::class, 'reset'])->name('password.reset');
-    Route::post('/reset-password', [\App\Http\Controllers\Auth\PasswordResetController::class, 'update'])->name('password.update');
+    Route::get('/lupa-password', [PasswordResetController::class, 'request'])->name('password.request');
+    Route::post('/lupa-password', [PasswordResetController::class, 'email'])->name('password.email');
+    Route::get('/reset-password/{token}', [PasswordResetController::class, 'reset'])->name('password.reset');
+    Route::post('/reset-password', [PasswordResetController::class, 'update'])->name('password.update');
 });
 
 Route::post('/login', [LoginController::class, 'store'])->name('login.store');

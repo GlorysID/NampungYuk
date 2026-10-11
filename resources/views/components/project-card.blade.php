@@ -8,7 +8,11 @@
 ])
 
 <article class="project-nav-card ny-card p-4 sm:p-5 space-y-4 group cursor-pointer"
-         @click="if (! $event.target.closest('a, button, input, textarea, select, [data-no-card-nav]')) { window.location.href = '{{ route('projects.show', $project->slug) }}'; }"
+         @guest
+             @click="if (! $event.target.closest('button, input, textarea, select')) { $event.preventDefault(); if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; } }"
+         @else
+             @click="if (! $event.target.closest('a, button, input, textarea, select, [data-no-card-nav]')) { window.location.href = '{{ route('projects.show', $project->slug) }}'; }"
+         @endguest
          x-data="{
              score: {{ $project->score }},
              userVote: '{{ $initialVote }}',
@@ -135,9 +139,15 @@
         <div class="flex items-start justify-between gap-2">
             <div class="flex items-center gap-2 flex-wrap min-w-0">
                 <h2 class="text-base sm:text-lg font-bold text-[#18181b] dark:text-[#fafafa] leading-snug transition">
-                    <a href="{{ route('projects.show', $project->slug) }}" class="card-detail-link focus-visible:rounded">
-                        {{ $project->title }}
-                    </a>
+                    @guest
+                        <a href="javascript:void(0)" @click.prevent="window.openAuthModal ? window.openAuthModal('login') : window.location.href = '{{ route('login') }}'" class="card-detail-link focus-visible:rounded">
+                            {{ $project->title }}
+                        </a>
+                    @else
+                        <a href="{{ route('projects.show', $project->slug) }}" class="card-detail-link focus-visible:rounded">
+                            {{ $project->title }}
+                        </a>
+                    @endguest
                 </h2>
                 @if(! $project->thumbnail && $project->created_at->diffInHours(now()) < 24)
                     <span class="hl-new-badge">New</span>
@@ -321,11 +331,19 @@
                     <span class="inline-flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>{{ $project->views_count }}</span>
                 </div>
 
-                <a href="{{ route('projects.show', $project->slug) }}"
-                   class="btn-primary w-full mt-5 text-xs py-2.5">
-                    <span>Lihat Project Lengkap</span>
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-                </a>
+                @guest
+                    <button type="button" @click="lightboxOpen = false; if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
+                            class="btn-primary w-full mt-5 text-xs py-2.5 cursor-pointer">
+                        <span>Lihat Project Lengkap</span>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </button>
+                @else
+                    <a href="{{ route('projects.show', $project->slug) }}"
+                       class="btn-primary w-full mt-5 text-xs py-2.5">
+                        <span>Lihat Project Lengkap</span>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </a>
+                @endguest
             </aside>
         </div>
     </div>

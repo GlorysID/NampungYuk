@@ -5,16 +5,29 @@
 <div class="flex items-center justify-between gap-3 text-xs">
     <div class="flex items-center gap-2.5 min-w-0">
         @if($project->user)
-            <a href="{{ route('profile.show', $project->user->username) }}" class="shrink-0 hover:opacity-85 transition" title="{{ $project->user->name }}">
-                <x-user-avatar :user="$project->user" size="sm" />
-            </a>
-            <div class="min-w-0 flex items-center gap-1.5 min-w-0">
-                <a href="{{ route('profile.show', $project->user->username) }}" class="font-bold text-[#18181b] dark:text-[#fafafa] hover:underline transition truncate">
-                    {{ $project->user->name }}
+            @guest
+                <button type="button" @click.stop="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }" class="shrink-0 hover:opacity-85 transition cursor-pointer" title="{{ $project->user->name }}">
+                    <x-user-avatar :user="$project->user" size="sm" />
+                </button>
+                <div class="min-w-0 flex items-center gap-1.5 min-w-0">
+                    <button type="button" @click.stop="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }" class="font-bold text-[#18181b] dark:text-[#fafafa] hover:underline transition truncate text-left cursor-pointer">
+                        {{ $project->user->name }}
+                    </button>
+                    <span class="text-[#9096a2] dark:text-[#63636b] text-[11px] shrink-0">&middot;</span>
+                    <span class="text-[#9096a2] dark:text-[#63636b] text-[11px] shrink-0">{{ $project->created_at->diffForHumans() }}</span>
+                </div>
+            @else
+                <a href="{{ route('profile.show', $project->user->username) }}" class="shrink-0 hover:opacity-85 transition" title="{{ $project->user->name }}">
+                    <x-user-avatar :user="$project->user" size="sm" />
                 </a>
-                <span class="text-[#9096a2] dark:text-[#63636b] text-[11px] shrink-0">&middot;</span>
-                <span class="text-[#9096a2] dark:text-[#63636b] text-[11px] shrink-0">{{ $project->created_at->diffForHumans() }}</span>
-            </div>
+                <div class="min-w-0 flex items-center gap-1.5 min-w-0">
+                    <a href="{{ route('profile.show', $project->user->username) }}" class="font-bold text-[#18181b] dark:text-[#fafafa] hover:underline transition truncate">
+                        {{ $project->user->name }}
+                    </a>
+                    <span class="text-[#9096a2] dark:text-[#63636b] text-[11px] shrink-0">&middot;</span>
+                    <span class="text-[#9096a2] dark:text-[#63636b] text-[11px] shrink-0">{{ $project->created_at->diffForHumans() }}</span>
+                </div>
+            @endguest
         @else
             <x-user-avatar name="Anon" size="sm" />
             <span class="font-semibold text-[#63636b] dark:text-[#a0a0a0]">Developer Anonim</span>
