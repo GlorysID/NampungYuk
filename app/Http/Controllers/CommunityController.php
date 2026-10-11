@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Community;
 use App\Models\CommunityMember;
 use App\Models\CommunityPost;
+use App\Models\CommunityPostVote;
+use App\Models\Space;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -16,24 +18,54 @@ use Illuminate\View\View;
 class CommunityController extends Controller
 {
     /**
-     * Browse / explore communities.
+     * Browse / explore communities (Hybrid 3B: discussions feed + directory).
      */
     public function index(Request $request): View
     {
         $search = $request->query('q');
         $tab = $request->query('tab', 'untukmu');
+        $view = $request->query('view', 'feed'); // 'feed' (Linimasa Diskusi) or 'direktori' (Katalog Komunitas)
         $userId = Auth::id();
 
         $joinedIds = $userId
             ? CommunityMember::where('user_id', $userId)->pluck('community_id')->toArray()
             : [];
 
-        $query = Community::with('owner')
+        $visibleIds = Community::visibleTo($userId)->pluck('id')->toArray();
+
+        // 1. Discussions Feed Query (CommunityPost)
+        $postQuery = CommunityPost::with(['user', 'community', 'comments.user'])
+            ->whereIn('community_id', $visibleIds);
+
+        if ($search) {
+            $postQuery->where('content', 'like', "%{$search}%");
+        }
+
+        switch ($tab) {
+            case 'diikuti':
+                $postQuery->whereIn('community_id', $joinedIds)->latest();
+                break;
+            case 'populer':
+                $postQuery->orderByDesc('is_pinned')->orderByDesc('score')->latest();
+                break;
+            case 'baru':
+                $postQuery->orderByDesc('is_pinned')->latest();
+                break;
+            case 'untukmu':
+            default:
+                $postQuery->orderByDesc('is_pinned')->latest();
+                break;
+        }
+
+        $posts = $postQuery->paginate(12)->withQueryString();
+
+        // 2. Directory Query (Community Cards)
+        $communityQuery = Community::with('owner')
             ->visibleTo($userId)
             ->withCount('members');
 
         if ($search) {
-            $query->where(function ($q) use ($search) {
+            $communityQuery->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('topic', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%");
@@ -42,23 +74,23 @@ class CommunityController extends Controller
 
         switch ($tab) {
             case 'diikuti':
-                $query->whereIn('id', $joinedIds)->orderByDesc('members_count');
+                $communityQuery->whereIn('id', $joinedIds)->orderByDesc('members_count');
                 break;
             case 'populer':
-                $query->orderByDesc('members_count');
+                $communityQuery->orderByDesc('members_count');
                 break;
             case 'baru':
-                $query->latest();
+                $communityQuery->latest();
                 break;
             case 'untukmu':
             default:
-                $query->orderByDesc('is_featured')->orderByDesc('members_count');
+                $communityQuery->orderByDesc('is_featured')->orderByDesc('members_count');
                 break;
         }
 
-        $communities = $query->paginate(12)->withQueryString();
+        $communities = $communityQuery->paginate(12)->withQueryString();
 
-        // Right sidebar: top + followed communities.
+        // 3. Right sidebar: top + followed communities
         $topCommunities = Community::visibleTo($userId)
             ->orderByDesc('members_count')
             ->take(5)
@@ -68,7 +100,30 @@ class CommunityController extends Controller
             ? Community::whereIn('id', $joinedIds)->orderByDesc('members_count')->take(5)->get()
             : collect();
 
-        return view('communities.index', compact('communities', 'joinedIds', 'search', 'tab', 'topCommunities', 'followedCommunities', 'userId'));
+        // 4. User votes on community posts
+        $userVotes = $userId
+            ? CommunityPostVote::where('user_id', $userId)
+                ->whereIn('community_post_id', $posts->pluck('id'))
+                ->pluck('type', 'community_post_id')
+                ->toArray()
+            : [];
+
+        // 5. Active Live Stage / Space
+        $liveSpace = Space::with('host')->where('status', 'live')->first();
+
+        return view('communities.index', compact(
+            'posts',
+            'communities',
+            'joinedIds',
+            'search',
+            'tab',
+            'view',
+            'topCommunities',
+            'followedCommunities',
+            'userId',
+            'userVotes',
+            'liveSpace'
+        ));
     }
 
     /**
@@ -111,7 +166,7 @@ class CommunityController extends Controller
 
         // Which posts the user has voted on.
         $userVotes = $userId
-            ? \App\Models\CommunityPostVote::where('user_id', $userId)
+            ? CommunityPostVote::where('user_id', $userId)
                 ->whereIn('community_post_id', $posts->pluck('id'))
                 ->pluck('type', 'community_post_id')->toArray()
             : [];

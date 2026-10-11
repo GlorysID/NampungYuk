@@ -14,13 +14,24 @@
 
         <!-- Primary Action CTA -->
         <div class="pt-1">
-            <a href="{{ route('projects.create') }}" 
-               class="btn-primary w-full py-2.5 px-3">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
-                <span>Pamerkan Project</span>
-            </a>
+            @auth
+                <a href="{{ route('projects.create') }}" 
+                   class="btn-primary w-full py-2.5 px-3">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    <span>Pamerkan Project</span>
+                </a>
+            @else
+                <button type="button" 
+                        @click="window.openAuthModal('login')"
+                        class="btn-primary w-full py-2.5 px-3 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    <span>Pamerkan Project</span>
+                </button>
+            @endauth
         </div>
 
         <!-- Section 1: Discover -->
@@ -140,31 +151,33 @@
                 @endif
             </a>
 
-            <a href="{{ route('chat.index') }}"
-               class="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium transition {{ request()->routeIs('chat.*') ? 'bg-[#e8f2ff] dark:bg-[#3291ff]/12 text-[#0070f3] dark:text-[#3291ff] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
-                <div class="flex items-center gap-2.5">
-                    <svg class="w-4 h-4 {{ request()->routeIs('chat.*') ? 'text-[#0070f3] dark:text-[#3291ff]' : 'opacity-70' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
-                    </svg>
-                    <span>Obrolan</span>
-                </div>
-                @if(request()->routeIs('chat.*'))
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#0070f3] dark:text-[#3291ff]"></span>
-                @endif
-            </a>
+            @auth
+                <a href="{{ route('chat.index') }}"
+                   class="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium transition {{ request()->routeIs('chat.*') ? 'bg-[#e8f2ff] dark:bg-[#3291ff]/12 text-[#0070f3] dark:text-[#3291ff] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
+                    <div class="flex items-center gap-2.5">
+                        <svg class="w-4 h-4 {{ request()->routeIs('chat.*') ? 'text-[#0070f3] dark:text-[#3291ff]' : 'opacity-70' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                        </svg>
+                        <span>Obrolan</span>
+                    </div>
+                    @if(request()->routeIs('chat.*'))
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#0070f3] dark:text-[#3291ff]"></span>
+                    @endif
+                </a>
+            @else
+                <button type="button" 
+                        @click="window.openAuthModal('login')"
+                        class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition cursor-pointer">
+                    <div class="flex items-center gap-2.5">
+                        <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                        </svg>
+                        <span>Obrolan</span>
+                    </div>
+                </button>
+            @endauth
 
-            <a href="{{ route('spaces.index') }}"
-               class="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium transition {{ request()->routeIs('spaces.*') ? 'bg-[#e8f2ff] dark:bg-[#3291ff]/12 text-[#0070f3] dark:text-[#3291ff] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
-                <div class="flex items-center gap-2.5">
-                    <svg class="w-4 h-4 {{ request()->routeIs('spaces.*') ? 'text-[#0070f3] dark:text-[#3291ff]' : 'opacity-70' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-14 0m7 7v3m0-3a7 7 0 01-7-7m7 7a7 7 0 007-7M12 4a3 3 0 00-3 3v4a3 3 0 006 0V7a3 3 0 00-3-3z"/>
-                    </svg>
-                    <span>Spaces</span>
-                </div>
-                @if(request()->routeIs('spaces.*'))
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#0070f3] dark:text-[#3291ff]"></span>
-                @endif
-            </a>
+
         </div>
 
         <!-- Section: Kategori (contextual — kodingan di feed, komunitas di halaman komunitas) -->

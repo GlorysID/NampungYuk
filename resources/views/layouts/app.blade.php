@@ -352,12 +352,12 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9h-1m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
                                 </svg>
                             </button>
-                            <a href="{{ route('login') }}" class="px-3 py-1.5 text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3] font-medium transition">
+                            <button type="button" @click="window.openAuthModal('login')" class="px-3 py-1.5 text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3] dark:hover:text-[#3291ff] font-medium transition cursor-pointer">
                                 Masuk
-                            </a>
-                            <a href="{{ route('register') }}" class="btn-primary py-1.5 px-3 text-xs">
+                            </button>
+                            <button type="button" @click="window.openAuthModal('register')" class="btn-primary py-1.5 px-3 text-xs cursor-pointer">
                                 Daftar
-                            </a>
+                            </button>
                         </div>
                     @endauth
                 </div>
@@ -434,24 +434,48 @@
         </a>
 
         <!-- Upload CTA (Special Emphasis) -->
-        <a href="{{ route('projects.create') }}" 
-           class="flex flex-col items-center gap-0.5 px-3 py-1 -mt-3 text-white">
-            <div class="w-10 h-10 rounded-full bg-[#0070f3] hover:bg-[#0761d1] dark:hover:bg-[#47a8ff] flex items-center justify-center active:scale-95 transition">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
-                </svg>
-            </div>
-            <span class="text-[9px] font-semibold text-[#0070f3] dark:text-[#3291ff]">Pamerkan</span>
-        </a>
+        @auth
+            <a href="{{ route('projects.create') }}" 
+               class="flex flex-col items-center gap-0.5 px-3 py-1 -mt-3 text-white">
+                <div class="w-10 h-10 rounded-full bg-[#0070f3] hover:bg-[#0761d1] dark:hover:bg-[#47a8ff] flex items-center justify-center active:scale-95 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                    </svg>
+                </div>
+                <span class="text-[9px] font-semibold text-[#0070f3] dark:text-[#3291ff]">Pamerkan</span>
+            </a>
+        @else
+            <button type="button" 
+                    @click="window.openAuthModal('login')"
+                    class="flex flex-col items-center gap-0.5 px-3 py-1 -mt-3 text-white cursor-pointer">
+                <div class="w-10 h-10 rounded-full bg-[#0070f3] hover:bg-[#0761d1] dark:hover:bg-[#47a8ff] flex items-center justify-center active:scale-95 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                    </svg>
+                </div>
+                <span class="text-[9px] font-semibold text-[#0070f3] dark:text-[#3291ff]">Pamerkan</span>
+            </button>
+        @endauth
 
         <!-- Koleksi -->
-        <a href="{{ route('projects.bookmarks') }}" 
-           class="hidden sm:flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition {{ request()->routeIs('projects.bookmarks') ? 'text-[#0070f3] dark:text-[#3291ff] font-bold' : 'text-[#63636b] dark:text-[#a0a0a0]' }}">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
-            </svg>
-            <span>Koleksi</span>
-        </a>
+        @auth
+            <a href="{{ route('projects.bookmarks') }}" 
+               class="hidden sm:flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition {{ request()->routeIs('projects.bookmarks') ? 'text-[#0070f3] dark:text-[#3291ff] font-bold' : 'text-[#63636b] dark:text-[#a0a0a0]' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                </svg>
+                <span>Koleksi</span>
+            </a>
+        @else
+            <button type="button" 
+                    @click="window.openAuthModal('login')"
+                    class="hidden sm:flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition text-[#63636b] dark:text-[#a0a0a0] cursor-pointer">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                </svg>
+                <span>Koleksi</span>
+            </button>
+        @endauth
 
         <!-- Notifikasi (Mobile Bell) -->
         @auth
@@ -476,13 +500,14 @@
                 <span class="truncate max-w-[48px]">Profil</span>
             </a>
         @else
-            <a href="{{ route('login') }}" 
-               class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition text-[#63636b] dark:text-[#a0a0a0]">
+            <button type="button" 
+                    @click="window.openAuthModal('login')"
+                    class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition text-[#63636b] dark:text-[#a0a0a0] cursor-pointer">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                 </svg>
                 <span>Masuk</span>
-            </a>
+            </button>
         @endauth
 
     </nav>
@@ -571,6 +596,29 @@
         </svg>
         <span x-text="toast.message"></span>
     </div>
+
+    <!-- GLOBAL X-STYLE AUTH MODAL -->
+    <x-auth-modal />
+
+    <script>
+        // Global auth modal opener helper
+        window.openAuthModal = function(tab = 'login') {
+            window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { tab } }));
+        };
+
+        // Auto trigger modal on load if query param ?auth=login or errors exist
+        document.addEventListener('DOMContentLoaded', function() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('auth') === 'login') {
+                window.openAuthModal('login');
+            } else if (params.get('auth') === 'register') {
+                window.openAuthModal('register');
+            }
+            @if($errors->has('login') || $errors->has('email') || $errors->has('password') || session('auth_required'))
+                window.openAuthModal('{{ $errors->has('name') || $errors->has('username') ? 'register' : 'login' }}');
+            @endif
+        });
+    </script>
 
     @stack('scripts')
 </body>

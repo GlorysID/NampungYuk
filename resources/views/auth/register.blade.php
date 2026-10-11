@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Daftar Akun — NampungYuk</title>
+    <title>Daftar — NampungYuk</title>
     <meta name="description" content="Bergabunglah dengan komunitas developer NampungYuk. Publikasikan karya codinganmu dan dapatkan feedback nyata.">
 
     <script>
@@ -20,334 +20,188 @@
     <!-- Fonts: Plus Jakarta Sans + JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-[#ffffff] dark:bg-[#000000] text-[#18181b] dark:text-[#fafafa] h-dvh overflow-hidden grid grid-rows-[auto_1fr_auto] gap-2 p-4 sm:p-5 transition-colors duration-150 antialiased selection:bg-[#3291ff]/25 selection:text-[#0070f3]"
-      x-data="registerForm({
-          hasNameError: {{ $errors->has('name') || $errors->has('username') ? 'true' : 'false' }},
-          hasEmailError: {{ $errors->has('email') ? 'true' : 'false' }},
-          hasPasswordError: {{ $errors->has('password') || $errors->has('password_confirmation') ? 'true' : 'false' }}
-      })">
+<body class="bg-[#000000] text-[#fafafa] min-h-screen flex flex-col justify-between selection:bg-[#3291ff]/25 selection:text-[#0070f3] antialiased">
 
-    <!-- Top Navigation Header (Back Link & Theme Toggle) -->
-    <div class="w-full max-w-md mx-auto flex items-center justify-between text-xs">
-        <a href="{{ url('/') }}" 
-           class="inline-flex items-center gap-1.5 text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3] dark:hover:text-[#3291ff] transition font-medium">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-            </svg>
+    <!-- Top mini header for return link -->
+    <header class="w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between text-xs relative z-20">
+        <a href="{{ url('/') }}" class="inline-flex items-center gap-2 text-[#a1a1aa] hover:text-white transition font-medium">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
             <span>Kembali ke Beranda</span>
         </a>
 
-        <!-- Quick Theme Toggle -->
-        <button @click="$store.theme.toggle()" 
-                type="button"
-                class="w-8 h-8 rounded-lg flex items-center justify-center text-[#63636b] hover:text-[#18181b] dark:text-[#a0a0a0] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition border border-[#e4e4e7] dark:border-[#1f1f1f]"
-                aria-label="Ganti mode tema">
-            <svg x-show="!$store.theme.dark" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
-            </svg>
-            <svg x-show="$store.theme.dark" x-cloak class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9h-1m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-            </svg>
-        </button>
-    </div>
-
-    <!-- Main Register Card (centered, fills remaining viewport height) -->
-    <div class="w-full max-w-md mx-auto min-h-0 flex items-center justify-center">
-        <div class="w-full ny-card px-6 py-5 sm:px-7 sm:py-6 space-y-4 bg-white dark:bg-[#0a0a0a] border border-[#e4e4e7] dark:border-[#1f1f1f] max-h-full overflow-y-auto">
-        
-        <!-- Brand Header with Official Logo -->
-        <div class="text-center space-y-2">
-            <x-logo size="lg" :show-tagline="true" class="justify-center" />
-            
-            <div class="space-y-0.5">
-                <h1 class="text-base font-bold text-[#18181b] dark:text-[#fafafa]">Daftar Akun Baru</h1>
-                <p class="text-[11px] text-[#63636b] dark:text-[#a0a0a0]">Bergabung dengan komunitas software engineer & showcase karyamu.</p>
-            </div>
-        </div>
-
-        @if (session('status'))
-            <div class="p-3 rounded-lg bg-[#e8f2ff] dark:bg-[#3291ff]/12 border border-[#3291ff]/30 dark:border-[#3291ff]/30 text-[#0070f3] dark:text-[#47a8ff] text-xs flex items-center gap-2">
-                <svg class="w-4 h-4 text-[#0070f3] dark:text-[#3291ff] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <span>{{ session('status') }}</span>
-            </div>
-        @endif
-
-        {{-- ============ STEP 1: INTRO + SOCIAL ============ --}}
-        <div x-show="step === 1" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-x-2" x-transition:enter-end="opacity-100 translate-x-0" class="space-y-4">
-
-            <!-- Google OAuth Button -->
-            <a href="{{ route('auth.google') }}" 
-               class="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-white dark:bg-[#0a0a0a] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] text-[#18181b] dark:text-[#fafafa] border border-[#e4e4e7] dark:border-[#1f1f1f] rounded-lg font-semibold text-xs transition active:scale-[0.99]">
-                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                    <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"/>
-                    <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"/>
-                    <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15.2c0 2.8.7 5.5 1.9 7.9l3.7-2.9c-.2-.7-.4-1.5-.4-2.3z"/>
-                    <path fill="#34A853" d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16.5C3.7 20.2 7.5 23.5 12 23.5z"/>
-                </svg>
-                <span>Daftar Cepat dengan Google</span>
+        <div class="flex items-center gap-2">
+            <span class="text-[#71717a] hidden sm:inline">Sudah punya akun?</span>
+            <a href="{{ route('login') }}" class="px-3.5 py-1.5 rounded-full border border-[#27272a] text-white hover:bg-white/5 font-semibold transition">
+                Masuk
             </a>
-
-            <!-- Divider -->
-            <div class="relative flex items-center justify-center">
-                <div class="border-t border-[#e4e4e7] dark:border-[#1f1f1f] w-full"></div>
-                <span class="bg-white dark:bg-[#0a0a0a] px-3 text-[11px] font-mono uppercase text-[#63636b] dark:text-[#a0a0a0]">atau manual</span>
-            </div>
-
-            <!-- What you get -->
-            <ul class="space-y-2 text-[11px] text-[#63636b] dark:text-[#a0a0a0]">
-                <li class="flex items-start gap-2">
-                    <svg class="w-3.5 h-3.5 text-[#0070f3] dark:text-[#3291ff] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                    <span>Pamerkan project codingan & dapatkan feedback komunitas.</span>
-                </li>
-                <li class="flex items-start gap-2">
-                    <svg class="w-3.5 h-3.5 text-[#0070f3] dark:text-[#3291ff] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                    <span>Ikuti developer favorit & simpan karya ke koleksi.</span>
-                </li>
-                <li class="flex items-start gap-2">
-                    <svg class="w-3.5 h-3.5 text-[#0070f3] dark:text-[#3291ff] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                    <span>Bangun reputasi sebagai software engineer.</span>
-                </li>
-            </ul>
-
-            <button type="button" @click="step = 2"
-                    class="btn-primary w-full py-2.5 text-xs sm:text-sm font-bold gap-2">
-                <span>Mulai Daftar Manual</span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
-                </svg>
-            </button>
         </div>
+    </header>
 
-        <!-- Registration Form (single form wrapping all steps for correct submit) -->
-        <form method="POST" action="{{ route('register.store') }}" x-show="step >= 2" class="space-y-3 text-xs">
-            @csrf
-            <input type="hidden" name="_step" :value="step">
-
-            <!-- ============ STEP 2: IDENTITY (Name + Username) ============ -->
-            <div x-show="step === 2" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-x-2" x-transition:enter-end="opacity-100 translate-x-0" class="space-y-3">
-                <p class="hl-label !text-[#0070f3] dark:!text-[#3291ff]">Langkah 1 dari 3 · Identitas</p>
-
-                <!-- Name -->
-                <div class="space-y-1">
-                    <label for="name" class="flex items-center gap-1.5 font-semibold text-[#18181b] dark:text-[#fafafa]">
-                        <svg class="w-3.5 h-3.5 text-[#63636b] dark:text-[#a0a0a0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                        </svg>
-                        <span>Nama Lengkap</span>
-                    </label>
-                    <input type="text" 
-                           id="name" 
-                           name="name" 
-                           value="{{ old('name') }}" 
-                           placeholder="Budi Santoso"
-                           x-ref="name"
-                           class="ny-input text-xs sm:text-sm">
-                    @error('name')
-                        <p class="text-rose-500 font-medium text-[11px] mt-1">{{ $message }}</p>
-                    @enderror
+    <!-- MAIN REGISTER GRID (X-STYLE SPLIT) -->
+    <main class="w-full max-w-7xl mx-auto px-6 py-6 sm:py-12 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative">
+        
+        <!-- LEFT COLUMN: Headline & Register Form -->
+        <div class="lg:col-span-6 xl:col-span-6 space-y-6 max-w-md lg:max-w-lg z-10">
+            
+            <!-- Mobile Brand Badge -->
+            <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-2xl ny-gradient-bg text-white flex items-center justify-center font-bold text-base shadow-lg shadow-[#0070f3]/20">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 10.5 4.6 5.4A1.5 1.5 0 0 1 6 4.35h12a1.5 1.5 0 0 1 1.4 1.05L21 10.5" />
+                        <path d="M3 10.5h4.5l1.2 2.1h6.6l1.2-2.1H21v6.9a1.6 1.6 0 0 1-1.6 1.6H4.6A1.6 1.6 0 0 1 3 17.4z" />
+                        <path d="M12 1.8v4.2" />
+                        <path d="M10.4 4.4 12 6l1.6-1.6" />
+                    </svg>
                 </div>
+                <span class="text-xl font-black tracking-tight text-white">Nampung<span class="ny-gradient-text">Yuk</span></span>
+            </div>
 
-                <!-- Username -->
-                <div class="space-y-1">
-                    <label for="username" class="flex items-center gap-1.5 font-semibold text-[#18181b] dark:text-[#fafafa]">
-                        <span class="font-mono text-xs text-[#0070f3] dark:text-[#3291ff]">@</span>
-                        <span>Username</span>
-                    </label>
-                    <input type="text" 
-                           id="username" 
-                           name="username" 
-                           value="{{ old('username') }}" 
-                           placeholder="budi_santoso"
-                           x-ref="username"
-                           class="ny-input text-xs sm:text-sm font-mono">
-                    @error('username')
-                        <p class="text-rose-500 font-medium text-[11px] mt-1">{{ $message }}</p>
-                    @enderror
+            <!-- Big bold headline -->
+            <div class="space-y-1.5">
+                <h1 class="text-3xl sm:text-4xl font-black tracking-tight text-white leading-tight">
+                    Bergabunglah <br>hari ini.
+                </h1>
+                <p class="text-xs sm:text-sm text-[#a1a1aa] leading-relaxed">
+                    Buat akun dan bagikan project pertamamu ke ribuan developer hari ini.
+                </p>
+            </div>
+
+            <!-- Social OAuth Buttons (White pill button like X) -->
+            <div class="space-y-3 pt-1">
+                <a href="{{ route('auth.google') }}" 
+                   class="w-full flex items-center justify-center gap-3 py-2.5 px-5 bg-white hover:bg-[#e4e4e7] text-black rounded-full font-bold text-xs sm:text-sm transition duration-150 active:scale-[0.99] shadow-lg">
+                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                        <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"/>
+                        <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"/>
+                        <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15.2c0 2.8.7 5.5 1.9 7.9l3.7-2.9c-.2-.7-.4-1.5-.4-2.3z"/>
+                        <path fill="#34A853" d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16.5C3.7 20.2 7.5 23.5 12 23.5z"/>
+                    </svg>
+                    <span>Daftar dengan Google</span>
+                </a>
+
+                <!-- Divider -->
+                <div class="relative flex items-center justify-center my-3">
+                    <div class="border-t border-[#27272a] w-full"></div>
+                    <span class="bg-[#000000] px-3 text-[10px] font-mono uppercase text-[#71717a] tracking-wider">atau</span>
                 </div>
             </div>
 
-            <!-- ============ STEP 3: EMAIL ============ -->
-            <div x-show="step === 3" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-x-2" x-transition:enter-end="opacity-100 translate-x-0" class="space-y-3">
-                <p class="hl-label !text-[#0070f3] dark:!text-[#3291ff]">Langkah 2 dari 3 · Kontak</p>
+            <!-- Form Register -->
+            <form method="POST" action="{{ route('register') }}" class="space-y-3 text-xs">
+                @csrf
 
-                <!-- Email -->
-                <div class="space-y-1">
-                    <label for="email" class="flex items-center gap-1.5 font-semibold text-[#18181b] dark:text-[#fafafa]">
-                        <svg class="w-3.5 h-3.5 text-[#63636b] dark:text-[#a0a0a0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                        </svg>
-                        <span>Alamat Email</span>
-                    </label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <input type="text" 
+                               name="name" 
+                               value="{{ old('name') }}" 
+                               required 
+                               placeholder="Nama Lengkap" 
+                               class="w-full px-3.5 py-2.5 rounded-xl bg-[#09090b] border border-[#27272a] text-white text-xs placeholder-[#52525b] focus:border-[#3291ff] outline-none transition">
+                        @error('name')
+                            <p class="text-rose-400 font-medium text-[10px] mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div>
+                        <input type="text" 
+                               name="username" 
+                               value="{{ old('username') }}" 
+                               required 
+                               placeholder="Username" 
+                               class="w-full px-3.5 py-2.5 rounded-xl bg-[#09090b] border border-[#27272a] text-white text-xs placeholder-[#52525b] focus:border-[#3291ff] outline-none transition">
+                        @error('username')
+                            <p class="text-rose-400 font-medium text-[10px] mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+                <div>
                     <input type="email" 
-                           id="email" 
                            name="email" 
                            value="{{ old('email') }}" 
-                           placeholder="nama@email.com"
-                           x-ref="email"
-                           class="ny-input text-xs sm:text-sm">
+                           required 
+                           placeholder="Alamat Email" 
+                           class="w-full px-3.5 py-2.5 rounded-xl bg-[#09090b] border border-[#27272a] text-white text-xs placeholder-[#52525b] focus:border-[#3291ff] outline-none transition">
                     @error('email')
-                        <p class="text-rose-500 font-medium text-[11px] mt-1">{{ $message }}</p>
-                    @enderror
-                    <p class="text-[10px] text-[#63636b] dark:text-[#a0a0a0]">Kami tidak akan pernah membagikan emailmu ke pihak lain.</p>
-                </div>
-            </div>
-
-            <!-- ============ STEP 4: PASSWORD ============ -->
-            <div x-show="step === 4" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-x-2" x-transition:enter-end="opacity-100 translate-x-0" class="space-y-3">
-                <p class="hl-label !text-[#0070f3] dark:!text-[#3291ff]">Langkah 3 dari 3 · Keamanan</p>
-
-                <!-- Password -->
-                <div class="space-y-1">
-                    <label for="password" class="flex items-center gap-1.5 font-semibold text-[#18181b] dark:text-[#fafafa]">
-                        <svg class="w-3.5 h-3.5 text-[#63636b] dark:text-[#a0a0a0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                        </svg>
-                        <span>Password (Minimal 8 karakter)</span>
-                    </label>
-                    <input type="password" 
-                           id="password" 
-                           name="password" 
-                           placeholder="••••••••"
-                           x-ref="password"
-                           class="ny-input text-xs sm:text-sm">
-                    @error('password')
-                        <p class="text-rose-500 font-medium text-[11px] mt-1">{{ $message }}</p>
+                        <p class="text-rose-400 font-medium text-[10px] mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
-                <!-- Confirm Password -->
-                <div class="space-y-1">
-                    <label for="password_confirmation" class="flex items-center gap-1.5 font-semibold text-[#18181b] dark:text-[#fafafa]">
-                        <svg class="w-3.5 h-3.5 text-[#63636b] dark:text-[#a0a0a0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                        </svg>
-                        <span>Konfirmasi Password</span>
-                    </label>
-                    <input type="password" 
-                           id="password_confirmation" 
-                           name="password_confirmation" 
-                           placeholder="••••••••"
-                           class="ny-input text-xs sm:text-sm">
-                    @error('password_confirmation')
-                        <p class="text-rose-500 font-medium text-[11px] mt-1">{{ $message }}</p>
-                    @enderror
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <input type="password" 
+                               name="password" 
+                               required 
+                               placeholder="Password (min. 8)" 
+                               class="w-full px-3.5 py-2.5 rounded-xl bg-[#09090b] border border-[#27272a] text-white text-xs placeholder-[#52525b] focus:border-[#3291ff] outline-none transition">
+                        @error('password')
+                            <p class="text-rose-400 font-medium text-[10px] mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div>
+                        <input type="password" 
+                               name="password_confirmation" 
+                               required 
+                               placeholder="Ulangi Password" 
+                               class="w-full px-3.5 py-2.5 rounded-xl bg-[#09090b] border border-[#27272a] text-white text-xs placeholder-[#52525b] focus:border-[#3291ff] outline-none transition">
+                    </div>
+                </div>
+
+                <button type="submit" 
+                        class="w-full py-2.5 rounded-full bg-white hover:bg-[#e4e4e7] text-black font-bold text-xs sm:text-sm transition duration-150 active:scale-[0.99] shadow-md mt-1">
+                    Buat Akun Sekarang
+                </button>
+            </form>
+
+            <p class="text-[10px] text-[#52525b] leading-tight">
+                Dengan mendaftar, Anda menyetujui Ketentuan Layanan dan Kebijakan Privasi NampungYuk.
+            </p>
+
+        </div>
+
+        <!-- RIGHT COLUMN: Giant NampungYuk Outline Watermark -->
+        <div class="hidden lg:flex lg:col-span-6 xl:col-span-6 relative h-[540px] items-center justify-center select-none overflow-hidden">
+            
+            <div class="absolute w-96 h-96 rounded-full bg-[#0070f3]/10 blur-[120px] pointer-events-none"></div>
+
+            <svg class="w-full max-w-[500px] h-auto text-[#27272a] hover:text-[#3291ff]/30 transition duration-700 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 10.5 4.6 5.4A1.5 1.5 0 0 1 6 4.35h12a1.5 1.5 0 0 1 1.4 1.05L21 10.5" />
+                <path d="M3 10.5h4.5l1.2 2.1h6.6l1.2-2.1H21v6.9a1.6 1.6 0 0 1-1.6 1.6H4.6A1.6 1.6 0 0 1 3 17.4z" />
+                <path d="M12 1.8v4.2" stroke-width="1.2" />
+                <path d="M10.4 4.4 12 6l1.6-1.6" stroke-width="1.2" />
+            </svg>
+
+            <!-- Floating X-Style QR Code Card in Bottom Right -->
+            <div class="absolute bottom-4 right-4 p-3.5 rounded-2xl bg-[#09090b]/90 border border-[#27272a] backdrop-blur-xl flex items-center gap-3 shadow-2xl">
+                <div class="w-12 h-12 rounded-xl bg-white p-1 shrink-0 flex items-center justify-center">
+                    <svg class="w-full h-full text-black" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M2 2h8v8H2V2zm2 2v4h4V4H4zm10-2h8v8h-8V2zm2 2v4h4V4h-4zM2 14h8v8H2v-8zm2 2v4h4v-4H4zm14 0h4v4h-4v-4zm-4 4h4v4h-4v-4zm4-4h4v-4h-4v4z"/>
+                    </svg>
+                </div>
+                <div class="min-w-0 pr-1">
+                    <p class="text-xs font-bold text-white leading-tight">Pindai untuk membuka di HP</p>
+                    <p class="text-[10px] text-[#71717a] mt-0.5 leading-tight">Akses NampungYuk kapan saja.</p>
                 </div>
             </div>
 
-            <!-- STEP NAVIGATION -->
-            <div class="flex items-center gap-2 pt-1">
-                <button type="button" @click="prev()"
-                        x-show="step > 1"
-                        class="btn-secondary py-2.5 px-3 text-xs shrink-0">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                </button>
-
-                <button type="button" @click="next()"
-                        x-show="step < 4"
-                        class="btn-primary flex-1 py-2.5 text-xs sm:text-sm font-bold gap-2">
-                    <span>Lanjut</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
-                    </svg>
-                </button>
-
-                <button type="submit"
-                        x-show="step === 4"
-                        class="btn-primary flex-1 py-2.5 text-xs sm:text-sm font-bold gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
-                    </svg>
-                    <span>Daftar Akun Sekarang</span>
-                </button>
-            </div>
-        </form>
-
-        <!-- STEP PROGRESS DOTS (visible during manual flow) -->
-        <div x-show="step >= 2" class="flex items-center justify-center gap-1.5">
-            <template x-for="s in 4" :key="s">
-                <button type="button" @click="jump(s)"
-                        :class="s === step ? 'w-5 bg-[#0070f3] dark:bg-[#3291ff]' : (s < step ? 'w-1.5 bg-[#0070f3]/50 dark:bg-[#3291ff]/50' : 'w-1.5 bg-[#eaeaea] dark:bg-[#1f1f1f]')"
-                        class="h-1.5 rounded-full transition-all duration-200"
-                        :aria-label="'Ke langkah ' + s"></button>
-            </template>
         </div>
 
-        <div class="text-center text-xs text-[#63636b] dark:text-[#a0a0a0] space-y-2 border-t border-[#e4e4e7] dark:border-[#1f1f1f] pt-3">
-            <p>Sudah punya akun? <a href="{{ route('login') }}" class="font-bold text-[#0070f3] dark:text-[#3291ff] hover:underline">Masuk di sini</a></p>
-        </div>
+    </main>
 
-        </div>
-    </div>
+    <!-- FOOTER LINKS ALA X -->
+    <footer class="w-full max-w-7xl mx-auto px-6 py-6 border-t border-[#18181b] text-[11px] text-[#71717a] flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+        <a href="{{ url('/') }}" class="hover:underline">Tentang</a>
+        <a href="{{ route('communities.index') }}" class="hover:underline">Komunitas</a>
+        <a href="{{ route('projects.index') }}" class="hover:underline">Showcase</a>
+        <a href="#" class="hover:underline">Persyaratan</a>
+        <a href="#" class="hover:underline">Privasi</a>
+        <a href="#" class="hover:underline">Pengembang</a>
+        <a href="https://github.com/GlorysID/NampungYuk" target="_blank" class="hover:underline">GitHub</a>
+        <span>&copy; {{ date('Y') }} NampungYuk Corp.</span>
+    </footer>
 
-    <!-- Auth Footer -->
-    <div class="w-full max-w-md mx-auto text-center text-[11px] text-[#63636b] dark:text-[#a0a0a0]">
-        <span>NampungYuk &copy; {{ date('Y') }} &bull; Platform Komunitas Developer</span>
-    </div>
-
-    <script>
-        window.registerForm = function ({ hasNameError, hasEmailError, hasPasswordError }) {
-            // If the server returned validation errors, jump straight to the offending step.
-            let step = 1;
-            if (hasPasswordError) step = 4;
-            else if (hasEmailError) step = 3;
-            else if (hasNameError) step = 2;
-
-            return {
-                step,
-                init() {
-                    if (this.step > 1) this.focusCurrent();
-                },
-                next() {
-                    if (this.step === 2 && ! this.validateIdentity()) return;
-                    if (this.step === 3 && ! this.validateEmail()) return;
-                    this.step = Math.min(this.step + 1, 4);
-                    this.focusCurrent();
-                },
-                prev() {
-                    this.step = Math.max(this.step - 1, 1);
-                    this.focusCurrent();
-                },
-                jump(target) {
-                    if (target <= this.step) {
-                        this.step = target;
-                        this.focusCurrent();
-                        return;
-                    }
-                    if (this.step === 2 && ! this.validateIdentity()) return;
-                    if (this.step === 3 && ! this.validateEmail()) return;
-                    this.step = Math.min(target, 4);
-                    this.focusCurrent();
-                },
-                validateIdentity() {
-                    const name = this.$refs.name?.value.trim();
-                    const username = this.$refs.username?.value.trim();
-                    if (! name) { this.$refs.name?.focus(); window.notify?.('Nama lengkap wajib diisi.'); return false; }
-                    if (! username) { this.$refs.username?.focus(); window.notify?.('Username wajib diisi.'); return false; }
-                    return true;
-                },
-                validateEmail() {
-                    const email = this.$refs.email?.value.trim();
-                    if (! email || ! /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-                        this.$refs.email?.focus();
-                        window.notify?.('Masukkan alamat email yang valid.');
-                        return false;
-                    }
-                    return true;
-                },
-                focusCurrent() {
-                    const refs = { 2: 'name', 3: 'email', 4: 'password' };
-                    const ref = this.$refs[refs[this.step]];
-                    setTimeout(() => ref?.focus?.(), 60);
-                },
-            };
-        };
-    </script>
 </body>
 </html>

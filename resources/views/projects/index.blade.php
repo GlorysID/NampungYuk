@@ -56,9 +56,9 @@
                 </div>
             @endif
 
-            <!-- MAIN PROJECT FEED (infinite scroll) -->
+            <!-- MAIN PROJECT FEED (infinite scroll for auth, gated preview for guest) -->
             <div x-data="infiniteFeed({
-                    nextPageUrl: {{ $projects->hasMorePages() ? Illuminate\Support\Js::from(route('feeds.projects', request()->query() + ['page' => $projects->currentPage() + 1])) : 'null' }},
+                    nextPageUrl: {{ (Auth::check() && $projects->hasMorePages()) ? Illuminate\Support\Js::from(route('feeds.projects', request()->query() + ['page' => $projects->currentPage() + 1])) : 'null' }},
                     lastPage: {{ $projects->lastPage() }}
                  })">
                 <div class="space-y-4" x-ref="items" data-feed-items>
@@ -77,17 +77,49 @@
                     @endforelse
                 </div>
 
-                <!-- Infinite scroll sentinel + fallback button -->
-                <div x-ref="sentinel" class="pt-4 flex justify-center">
-                    <button type="button" x-show="!done" @click="loadMore()" :disabled="loading"
-                            class="btn-secondary text-xs py-2.5 px-5 disabled:opacity-60">
-                        <span x-show="!loading">Muat lebih banyak</span>
-                        <span x-show="loading" x-cloak>Memuat...</span>
-                    </button>
-                    <p x-show="done && {{ $projects->total() > 0 ? 'true' : 'false' }}" x-cloak class="text-[11px] text-[#63636b] dark:text-[#a0a0a0] py-2">
-                        Kamu sudah di akhir — {{ $projects->total() }} project.
-                    </p>
-                </div>
+                @auth
+                    <!-- Infinite scroll sentinel + fallback button for authenticated users -->
+                    <div x-ref="sentinel" class="pt-4 flex justify-center">
+                        <button type="button" x-show="!done" @click="loadMore()" :disabled="loading"
+                                class="btn-secondary text-xs py-2.5 px-5 disabled:opacity-60 cursor-pointer">
+                            <span x-show="!loading">Muat lebih banyak</span>
+                            <span x-show="loading" x-cloak>Memuat...</span>
+                        </button>
+                        <p x-show="done && {{ $projects->total() > 0 ? 'true' : 'false' }}" x-cloak class="text-[11px] text-[#63636b] dark:text-[#a0a0a0] py-2">
+                            Kamu sudah di akhir — {{ $projects->total() }} project.
+                        </p>
+                    </div>
+                @else
+                    <!-- X-STYLE GATED SCROLL WALL FOR GUESTS -->
+                    <div class="mt-6 pt-6 pb-2 border-t border-[#e4e4e7] dark:border-[#1f1f1f] relative">
+                        <div class="ny-card p-6 sm:p-8 bg-gradient-to-b from-[#ffffff] to-[#f8f9fa] dark:from-[#0a0a0a] dark:to-[#000000] border border-[#e4e4e7] dark:border-[#27272a] text-center space-y-4 shadow-xl relative overflow-hidden">
+                            <!-- Background glow -->
+                            <div class="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full bg-[#0070f3]/15 blur-3xl pointer-events-none"></div>
+
+                            <div class="w-12 h-12 mx-auto rounded-2xl ny-gradient-bg text-white flex items-center justify-center font-bold text-xl shadow-lg relative z-10">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                </svg>
+                            </div>
+
+                            <div class="space-y-1 relative z-10 max-w-md mx-auto">
+                                <h3 class="text-base sm:text-lg font-bold text-[#18181b] dark:text-white">Ingin menjelajahi lebih banyak karya?</h3>
+                                <p class="text-xs text-[#63636b] dark:text-[#a1a1aa] leading-relaxed">
+                                    Akses penuh ke seluruh karya developer, fitur bookmark, apresiasi upvote, dan ruang diskusi tersedia gratis dengan membuat akun.
+                                </p>
+                            </div>
+
+                            <div class="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-2 relative z-10">
+                                <button type="button" @click="window.openAuthModal('register')" class="w-full sm:w-auto px-6 py-2.5 rounded-full bg-white text-black font-bold text-xs hover:bg-[#e4e4e7] transition shadow-md cursor-pointer">
+                                    Buat Akun Gratis
+                                </button>
+                                <button type="button" @click="window.openAuthModal('login')" class="w-full sm:w-auto px-6 py-2.5 rounded-full border border-[#e4e4e7] dark:border-[#3f3f46] text-xs font-semibold text-[#18181b] dark:text-white hover:bg-black/5 dark:hover:bg-white/5 transition cursor-pointer">
+                                    Masuk ke Akun
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                @endauth
             </div>
 
         </div>

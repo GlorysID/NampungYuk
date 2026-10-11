@@ -23,6 +23,9 @@
              gallery: {{ Illuminate\Support\Js::from($project->galleryImages()) }},
              openLightbox(i) { this.lightboxIndex = i; this.lightboxOpen = true; },
              async repost() {
+                 @guest
+                     if (window.openAuthModal) { window.openAuthModal('login'); return; }
+                 @endguest
                  if (this.isReposting) return;
                  this.isReposting = true;
                  try {
@@ -34,7 +37,10 @@
                              'Accept': 'application/json'
                          }
                      });
-                     if (res.status === 401) { window.location.href = '{{ route('login') }}'; return; }
+                     if (res.status === 401) {
+                         if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }
+                         return;
+                     }
                      const data = await res.json();
                      if (data.success) {
                          this.isReposted = data.reposted;
@@ -50,6 +56,9 @@
                  }
              },
              async vote(type) {
+                 @guest
+                     if (window.openAuthModal) { window.openAuthModal('login'); return; }
+                 @endguest
                  if (this.isVoting) return;
                  this.isVoting = true;
                  try {
@@ -63,7 +72,7 @@
                          body: JSON.stringify({ type })
                      });
                      if (res.status === 401) {
-                         window.location.href = '{{ route('login') }}';
+                         if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }
                          return;
                      }
                      const data = await res.json();
@@ -81,6 +90,9 @@
                  }
              },
              async toggleBookmark() {
+                 @guest
+                     if (window.openAuthModal) { window.openAuthModal('login'); return; }
+                 @endguest
                  if (this.isBookmarking) return;
                  this.isBookmarking = true;
                  try {
@@ -93,7 +105,7 @@
                          }
                      });
                      if (res.status === 401) {
-                         window.location.href = '{{ route('login') }}';
+                         if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }
                          return;
                      }
                      const data = await res.json();
