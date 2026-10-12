@@ -34,15 +34,15 @@ class RegistrationTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertViewIs('auth.register');
-        $response->assertSee('Daftar Akun');
+        $response->assertSee('Daftar');
     }
 
     public function test_valid_registration_creates_user_and_redirects(): void
     {
         $response = $this->post(route('register.store'), $this->registrationData());
 
-        $response->assertRedirect(route('register'));
-        $response->assertSessionHas('status', 'Registrasi berhasil! Akun Anda telah dibuat.');
+        $response->assertRedirect(route('login'));
+        $response->assertSessionHas('status', 'Registrasi berhasil! Silakan masuk dengan akun barumu.');
 
         $this->assertDatabaseHas('users', [
             'name' => 'Budi Santoso',

@@ -133,6 +133,72 @@
         @endif
     </div>
 
+    <!-- WARNING BANNER IF PROJECT IS FLAGGED / WARNED -->
+    @if($project->warning_notes)
+        <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 flex items-start gap-3">
+            <svg class="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            <div class="space-y-0.5 text-xs">
+                <span class="font-bold block uppercase tracking-wider text-[10px] text-amber-600 dark:text-amber-400">Peringatan Resmi Moderator:</span>
+                <p class="leading-relaxed">{{ $project->warning_notes }}</p>
+            </div>
+        </div>
+    @endif
+
+    <!-- ADMIN MODERATION CONTROL BAR -->
+    @if(auth()->check() && auth()->user()->is_admin)
+        <div class="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex flex-wrap items-center justify-between gap-3 text-xs" x-data="{ openWarnModal: false, warnNotes: '{{ addslashes($project->warning_notes ?: 'Proyek ini sedang dalam peninjauan karena terindikasi melanggar pedoman komunitas NampungYuk.') }}' }">
+            <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded-md bg-rose-500 text-white font-bold text-[10px] uppercase">Admin Mode</span>
+                <span class="text-[#71717a] font-medium">Tindakan Moderasi:</span>
+            </div>
+            <div class="flex items-center gap-2">
+                @if(!$project->warning_notes)
+                    <button type="button" @click="openWarnModal = true" class="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/30 transition">
+                        Pasang Peringatan
+                    </button>
+                @else
+                    <form method="POST" action="{{ route('admin.projects.warn', $project->id) }}">
+                        @csrf
+                        <input type="hidden" name="action" value="remove">
+                        <button type="submit" class="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/30 transition">
+                            Cabut Peringatan
+                        </button>
+                    </form>
+                @endif
+
+                <form method="POST" action="{{ route('admin.projects.destroy', $project->id) }}" onsubmit="return confirm('Apakah Anda yakin ingin MENGHAPUS PROYEK ini secara permanen sebagai Admin?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold transition shadow-sm">
+                        Hapus Proyek
+                    </button>
+                </form>
+            </div>
+
+            <!-- Modal Pasang Peringatan -->
+            <div x-show="openWarnModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+                <div class="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-md" @click="openWarnModal = false"></div>
+                <div class="min-h-full flex items-center justify-center p-4">
+                    <div class="relative w-full max-w-md bg-white dark:bg-[#0c0d12] border border-[#e4e4e7] dark:border-[#27272a] rounded-3xl p-6 shadow-2xl space-y-4 text-[#18181b] dark:text-[#fafafa]">
+                        <h3 class="text-base font-bold">Pasang Peringatan Resmi pada Proyek</h3>
+                        <form method="POST" action="{{ route('admin.projects.warn', $project->id) }}" class="space-y-4">
+                            @csrf
+                            <input type="hidden" name="action" value="set">
+                            <div>
+                                <label class="block text-xs font-semibold mb-1">Catatan Peringatan Publik:</label>
+                                <textarea name="warning_notes" x-model="warnNotes" rows="3" required class="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#16171d] border border-[#e4e4e7] dark:border-[#27272a] text-xs outline-none focus:border-amber-500 transition resize-none"></textarea>
+                            </div>
+                            <div class="flex items-center justify-end gap-2">
+                                <button type="button" @click="openWarnModal = false" class="px-4 py-2 rounded-full border border-[#e4e4e7] dark:border-[#27272a] text-xs font-semibold text-[#71717a]">Batal</button>
+                                <button type="submit" class="px-5 py-2 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm">Pasang Peringatan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- MAIN PROJECT ARTICLE CONTAINER -->
     <article class="ny-card bg-white dark:bg-[#0a0a0a] overflow-hidden border border-[#e4e4e7] dark:border-[#1f1f1f]">
         
@@ -170,10 +236,18 @@
 
                 <!-- Category Pill -->
                 @if($project->category)
-                    <a href="{{ route('projects.index', ['kategori' => $project->category->slug]) }}" 
-                       class="text-xs font-mono font-medium px-3 py-1 rounded-lg bg-[#eeeeef] dark:bg-[#171717] text-[#18181b] dark:text-[#fafafa] hover:text-[#0070f3] dark:hover:text-[#3291ff] border border-[#e4e4e7] dark:border-[#1f1f1f] transition">
-                        {{ $project->category->name }}
-                    </a>
+                    @auth
+                        <a href="{{ route('projects.index', ['kategori' => $project->category->slug]) }}" 
+                           class="text-xs font-mono font-medium px-3 py-1 rounded-lg bg-[#eeeeef] dark:bg-[#171717] text-[#18181b] dark:text-[#fafafa] hover:text-[#0070f3] dark:hover:text-[#3291ff] border border-[#e4e4e7] dark:border-[#1f1f1f] transition">
+                            {{ $project->category->name }}
+                        </a>
+                    @else
+                        <button type="button"
+                                @click="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
+                                class="text-xs font-mono font-medium px-3 py-1 rounded-lg bg-[#eeeeef] dark:bg-[#171717] text-[#18181b] dark:text-[#fafafa] hover:text-[#0070f3] dark:hover:text-[#3291ff] border border-[#e4e4e7] dark:border-[#1f1f1f] transition cursor-pointer">
+                            {{ $project->category->name }}
+                        </button>
+                    @endauth
                 @endif
             </div>
 
@@ -299,6 +373,19 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
                     </svg>
                 </button>
+
+                <!-- Report Button -->
+                @if(!auth()->check() || auth()->id() !== $project->user_id)
+                <button type="button"
+                        onclick="window.openReportModal({ type: 'project', id: {{ $project->id }}, title: '{{ addslashes($project->title) }}' })"
+                        aria-label="Laporkan project"
+                        class="p-2 rounded-lg border border-[#e4e4e7] dark:border-[#1f1f1f] bg-white dark:bg-[#0a0a0a] text-[#63636b] dark:text-[#a0a0a0] hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/40 transition active:scale-95"
+                        title="Laporkan Project Ini">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </button>
+                @endif
             </div>
 
         </div>

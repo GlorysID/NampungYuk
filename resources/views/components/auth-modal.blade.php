@@ -1,18 +1,92 @@
 <div x-data="{
         open: false,
         tab: 'login', // 'login' or 'register'
+        regStep: {{ $errors->has('password') && (old('name') || old('username')) ? 2 : 1 }},
         showPassword: false,
+        showRegPassword: false,
+        showRegPasswordConfirm: false,
+
+        // Step 1 Form Models
+        regName: '{{ old('name', '') }}',
+        regUsername: '{{ old('username', '') }}',
+        regEmail: '{{ old('email', '') }}',
+        regPassword: '',
+        regPasswordConfirmation: '',
+        regError: '',
+        regPasswordError: '',
+
         init() {
             window.addEventListener('open-auth-modal', (e) => {
-                this.tab = e.detail?.tab || 'login';
+                this.setTab(e.detail?.tab || 'login');
                 this.open = true;
-                this.showPassword = false;
             });
             window.openAuthModal = (tab = 'login') => {
-                this.tab = tab;
+                this.setTab(tab);
                 this.open = true;
-                this.showPassword = false;
             };
+        },
+
+        setTab(tab = 'login') {
+            this.tab = tab;
+            this.regStep = 1;
+            this.showPassword = false;
+            this.showRegPassword = false;
+            this.showRegPasswordConfirm = false;
+            this.regError = '';
+            this.regPasswordError = '';
+        },
+
+        getTitle() {
+            if (this.tab === 'login') return 'Sedang tren saat ini.';
+            return this.regStep === 1 ? 'Bergabunglah hari ini.' : 'Buat password akun.';
+        },
+
+        getSubtitle() {
+            if (this.tab === 'login') return 'Masuk untuk memamerkan karya, bookmark project, dan berdiskusi dengan sesama developer.';
+            return this.regStep === 1 ? 'Langkah 1 dari 2: Isi identitas profil dan alamat email akunmu.' : 'Langkah 2 dari 2: Buat kata sandi aman untuk masuk ke akunmu.';
+        },
+
+        nextRegStep() {
+            this.regError = '';
+            if (!this.regName.trim()) {
+                this.regError = 'Nama lengkap wajib diisi.';
+                return;
+            }
+            if (!this.regUsername.trim()) {
+                this.regError = 'Username wajib diisi.';
+                return;
+            }
+            if (this.regUsername.length < 3) {
+                this.regError = 'Username minimal 3 karakter.';
+                return;
+            }
+            if (!/^[a-zA-Z0-9_]+$/.test(this.regUsername)) {
+                this.regError = 'Username hanya huruf, angka, & underscore.';
+                return;
+            }
+            if (!this.regEmail.trim()) {
+                this.regError = 'Email wajib diisi.';
+                return;
+            }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.regEmail)) {
+                this.regError = 'Format email tidak valid.';
+                return;
+            }
+            this.regStep = 2;
+        },
+
+        submitRegister(e) {
+            this.regPasswordError = '';
+            if (!this.regPassword || this.regPassword.length < 8) {
+                e.preventDefault();
+                this.regPasswordError = 'Password minimal 8 karakter.';
+                return;
+            }
+            if (this.regPassword !== this.regPasswordConfirmation) {
+                e.preventDefault();
+                this.regPasswordError = 'Konfirmasi password tidak cocok.';
+                return;
+            }
         }
      }"
      x-show="open"
@@ -43,7 +117,7 @@
              x-transition:leave="transition ease-in duration-150 transform"
              x-transition:leave-start="opacity-100 scale-100 translate-y-0"
              x-transition:leave-end="opacity-0 scale-95 translate-y-2"
-             class="relative w-full max-w-4xl bg-white dark:bg-[#000000] border border-[#e4e4e7] dark:border-[#27272a] rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.25)] dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] grid grid-cols-1 lg:grid-cols-12 text-[#18181b] dark:text-[#fafafa]">
+             class="relative w-full max-w-md lg:max-w-3xl bg-white dark:bg-[#000000] border border-[#e4e4e7] dark:border-[#27272a] rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.25)] dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] grid grid-cols-1 lg:grid-cols-2 text-[#18181b] dark:text-[#fafafa]">
 
             <!-- Close Button (X-style rounded button) -->
             <button @click="open = false" 
@@ -53,25 +127,25 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
 
-            <!-- LEFT COLUMN: Forms & Auth Actions (7 cols) -->
-            <div class="lg:col-span-7 p-6 sm:p-9 sm:py-10 flex flex-col justify-between space-y-6">
+            <!-- LEFT COLUMN: Forms & Auth Actions -->
+            <div class="p-6 sm:p-8 flex flex-col justify-between space-y-4 min-h-[510px]">
                 
                 <div>
                     <!-- Brand header badge -->
-                    <div class="mb-4">
+                    <div class="mb-3.5">
                         <x-logo size="sm" :href="null" />
                     </div>
 
                     <!-- Headlines (Inspired by X) -->
-                    <div class="space-y-1 mb-6">
+                    <div class="space-y-1 mb-4">
                         <h2 class="text-2xl sm:text-3xl font-black tracking-tight text-[#18181b] dark:text-white" 
-                            x-text="tab === 'login' ? 'Sedang tren saat ini.' : 'Bergabunglah hari ini.'"></h2>
-                        <p class="text-xs text-[#63636b] dark:text-[#a1a1aa] leading-relaxed"
-                           x-text="tab === 'login' ? 'Masuk untuk memamerkan karya, bookmark project, dan berdiskusi dengan sesama developer.' : 'Daftar akun gratis dan pamerkan portofolio codinganmu ke ribuan developer Indonesia.'"></p>
+                            x-text="getTitle()"></h2>
+                        <p class="text-xs text-[#63636b] dark:text-[#a1a1aa] leading-relaxed line-clamp-2"
+                           x-text="getSubtitle()"></p>
                     </div>
 
-                    <!-- Social Login: Google OAuth Button (Pill style X) -->
-                    <div class="space-y-3">
+                    <!-- Social Login: Google OAuth Button (Pill style X) - Tampil di Login & Register Langkah 1 -->
+                    <div x-show="tab === 'login' || (tab === 'register' && regStep === 1)" class="space-y-3">
                         <a href="{{ route('auth.google') }}" 
                            class="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-white hover:bg-[#f4f4f5] dark:hover:bg-[#e4e4e7] text-[#18181b] dark:text-[#09090b] rounded-full font-bold text-xs transition duration-150 active:scale-[0.99] border border-[#e4e4e7] dark:border-transparent shadow-xs dark:shadow-sm">
                             <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
@@ -84,14 +158,37 @@
                         </a>
 
                         <!-- Divider -->
-                        <div class="relative flex items-center justify-center my-4">
+                        <div class="relative flex items-center justify-center my-3.5">
                             <div class="border-t border-[#e4e4e7] dark:border-[#27272a] w-full"></div>
-                            <span class="bg-white dark:bg-[#000000] px-3 text-[10px] font-mono uppercase text-[#71717a] tracking-wider">atau</span>
+                            <span class="bg-white dark:bg-[#000000] px-3 text-[10px] font-mono uppercase text-[#71717a] tracking-wider"
+                                  x-text="tab === 'login' ? 'atau masuk manual' : 'atau daftar manual'"></span>
+                        </div>
+                    </div>
+
+                    <!-- Register Langkah 2: Bar Status & Tombol Kembali (Pengganti Google Button & Divider) -->
+                    <div x-show="tab === 'register' && regStep === 2" x-cloak class="space-y-3">
+                        <div class="flex items-center justify-between py-2 px-3.5 rounded-2xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-xs">
+                            <button type="button" 
+                                    @click="regStep = 1; regError = '';" 
+                                    class="inline-flex items-center gap-1.5 font-bold text-[#0070f3] dark:text-[#3291ff] hover:underline">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                <span>Ubah Data</span>
+                            </button>
+                            <div class="text-[11px] text-[#71717a] flex items-center gap-1.5 max-w-[160px] truncate">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                                <span class="truncate" x-text="regEmail || regUsername"></span>
+                            </div>
+                        </div>
+
+                        <!-- Divider -->
+                        <div class="relative flex items-center justify-center my-3.5">
+                            <div class="border-t border-[#e4e4e7] dark:border-[#27272a] w-full"></div>
+                            <span class="bg-white dark:bg-[#000000] px-3 text-[10px] font-mono uppercase text-[#71717a] tracking-wider">Langkah 2 / 2</span>
                         </div>
                     </div>
 
                     <!-- TAB 1: LOGIN FORM -->
-                    <div x-show="tab === 'login'" x-transition:enter="transition duration-150 ease-out" class="space-y-3.5">
+                    <div x-show="tab === 'login'" x-transition:enter="transition duration-150 ease-out" class="space-y-3">
                         <form method="POST" action="{{ route('login') }}" class="space-y-3">
                             @csrf
                             <div>
@@ -128,79 +225,120 @@
                             </button>
                         </form>
 
-                        <div class="pt-3 border-t border-[#e4e4e7] dark:border-[#18181b] flex items-center justify-between text-xs">
+                        <div class="pt-2.5 border-t border-[#e4e4e7] dark:border-[#18181b] flex items-center justify-between text-xs">
                             <span class="text-[#71717a]">Belum punya akun?</span>
-                            <button type="button" @click="tab = 'register'" class="font-bold text-[#0070f3] dark:text-[#3291ff] hover:underline">
+                            <button type="button" @click="setTab('register')" class="font-bold text-[#0070f3] dark:text-[#3291ff] hover:underline">
                                 Buat Akun Baru &rarr;
                             </button>
                         </div>
                     </div>
 
-                    <!-- TAB 2: REGISTER FORM -->
+                    <!-- TAB 2: REGISTER FORM (BERTAHAP 2 LANGKAH) -->
                     <div x-show="tab === 'register'" x-cloak x-transition:enter="transition duration-150 ease-out" class="space-y-3">
-                        <form method="POST" action="{{ route('register') }}" class="space-y-2.5">
+                        <form method="POST" 
+                              action="{{ route('register') }}" 
+                              @submit="submitRegister($event)" 
+                              @keydown.enter="if(regStep === 1) { $event.preventDefault(); nextRegStep(); }"
+                              class="space-y-3">
                             @csrf
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                <div>
-                                    <label for="modal-reg-name" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Nama Lengkap</label>
-                                    <input type="text" 
-                                           id="modal-reg-name"
-                                           name="name" 
-                                           required 
-                                           placeholder="Rizky Pratama" 
-                                           class="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+
+                            <!-- LANGKAH 1: IDENTITAS PROFIL & EMAIL -->
+                            <div x-show="regStep === 1" class="space-y-3">
+                                <div class="grid grid-cols-2 gap-2.5">
+                                    <div>
+                                        <label for="modal-reg-name" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Nama Lengkap</label>
+                                        <input type="text" 
+                                               id="modal-reg-name"
+                                               name="name" 
+                                               x-model="regName"
+                                               required 
+                                               placeholder="Rizky Pratama" 
+                                               class="w-full px-3 py-2.5 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+                                    </div>
+                                    <div>
+                                        <label for="modal-reg-username" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Username</label>
+                                        <input type="text" 
+                                               id="modal-reg-username"
+                                               name="username" 
+                                               x-model="regUsername"
+                                               required 
+                                               placeholder="rizkydev" 
+                                               class="w-full px-3 py-2.5 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+                                    </div>
                                 </div>
+
                                 <div>
-                                    <label for="modal-reg-username" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Username</label>
-                                    <input type="text" 
-                                           id="modal-reg-username"
-                                           name="username" 
+                                    <label for="modal-reg-email" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Email</label>
+                                    <input type="email" 
+                                           id="modal-reg-email"
+                                           name="email" 
+                                           x-model="regEmail"
                                            required 
-                                           placeholder="rizkydev" 
-                                           class="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+                                           placeholder="rizky@example.com" 
+                                           class="w-full px-3.5 py-2.5 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
                                 </div>
+
+                                <!-- Error inline Langkah 1 -->
+                                <p x-show="regError" x-text="regError" class="text-rose-500 dark:text-rose-400 text-[11px] font-medium leading-tight"></p>
+
+                                <button type="button" 
+                                        @click="nextRegStep()" 
+                                        class="w-full mt-2 py-2.5 rounded-full bg-[#18181b] hover:bg-[#27272a] text-white dark:bg-white dark:hover:bg-[#e4e4e7] dark:text-black font-bold text-xs transition duration-150 active:scale-[0.99] shadow-sm flex items-center justify-center gap-1.5">
+                                    <span>Lanjut ke Password</span>
+                                    <span>&rarr;</span>
+                                </button>
                             </div>
 
-                            <div>
-                                <label for="modal-reg-email" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Email</label>
-                                <input type="email" 
-                                       id="modal-reg-email"
-                                       name="email" 
-                                       required 
-                                       placeholder="rizky@example.com" 
-                                       class="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
-                            </div>
-
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <!-- LANGKAH 2: PASSWORD & KONFIRMASI -->
+                            <div x-show="regStep === 2" x-cloak class="space-y-3">
                                 <div>
-                                    <label for="modal-reg-pwd" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Password</label>
-                                    <input type="password" 
-                                           id="modal-reg-pwd"
-                                           name="password" 
-                                           required 
-                                           placeholder="Min. 8 karakter" 
-                                           class="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label for="modal-reg-pwd" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa]">Password</label>
+                                        <span class="text-[10px] text-[#71717a]">Min. 8 karakter</span>
+                                    </div>
+                                    <div class="relative">
+                                        <input :type="showRegPassword ? 'text' : 'password'" 
+                                               id="modal-reg-pwd"
+                                               name="password" 
+                                               x-model="regPassword"
+                                               placeholder="••••••••" 
+                                               class="w-full px-3.5 py-2.5 pr-10 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+                                        <button type="button" @click="showRegPassword = !showRegPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#71717a] hover:text-[#18181b] dark:hover:text-white text-xs">
+                                            <svg x-show="!showRegPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                            <svg x-show="showRegPassword" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
+                                        </button>
+                                    </div>
                                 </div>
+
                                 <div>
                                     <label for="modal-reg-pwd-conf" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Konfirmasi Password</label>
-                                    <input type="password" 
-                                           id="modal-reg-pwd-conf"
-                                           name="password_confirmation" 
-                                           required 
-                                           placeholder="Ulangi password" 
-                                           class="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+                                    <div class="relative">
+                                        <input :type="showRegPasswordConfirm ? 'text' : 'password'" 
+                                               id="modal-reg-pwd-conf"
+                                               name="password_confirmation" 
+                                               x-model="regPasswordConfirmation"
+                                               placeholder="••••••••" 
+                                               class="w-full px-3.5 py-2.5 pr-10 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+                                        <button type="button" @click="showRegPasswordConfirm = !showRegPasswordConfirm" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#71717a] hover:text-[#18181b] dark:hover:text-white text-xs">
+                                            <svg x-show="!showRegPasswordConfirm" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                            <svg x-show="showRegPasswordConfirm" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <button type="submit" 
-                                    class="w-full mt-2 py-2.5 rounded-full bg-[#18181b] hover:bg-[#27272a] text-white dark:bg-white dark:hover:bg-[#e4e4e7] dark:text-black font-bold text-xs transition duration-150 active:scale-[0.99] shadow-sm">
-                                Buat Akun & Bergabung
-                            </button>
+                                <!-- Error inline Langkah 2 -->
+                                <p x-show="regPasswordError" x-text="regPasswordError" class="text-rose-500 dark:text-rose-400 text-[11px] font-medium leading-tight"></p>
+
+                                <button type="submit" 
+                                        class="w-full mt-2 py-2.5 rounded-full bg-[#18181b] hover:bg-[#27272a] text-white dark:bg-white dark:hover:bg-[#e4e4e7] dark:text-black font-bold text-xs transition duration-150 active:scale-[0.99] shadow-sm">
+                                    Buat Akun & Bergabung
+                                </button>
+                            </div>
                         </form>
 
                         <div class="pt-2.5 border-t border-[#e4e4e7] dark:border-[#18181b] flex items-center justify-between text-xs">
                             <span class="text-[#71717a]">Sudah punya akun?</span>
-                            <button type="button" @click="tab = 'login'" class="font-bold text-[#0070f3] dark:text-[#3291ff] hover:underline">
+                            <button type="button" @click="setTab('login')" class="font-bold text-[#0070f3] dark:text-[#3291ff] hover:underline">
                                 Masuk ke Akun &rarr;
                             </button>
                         </div>
@@ -215,15 +353,15 @@
 
             </div>
 
-            <!-- RIGHT COLUMN: Elevated Brand Identity Stage (5 cols) -->
-            <div class="hidden lg:flex lg:col-span-5 relative bg-gradient-to-br from-[#f8f9fa] via-[#f1f3f5] to-[#e9ecef] dark:from-[#0c0d14] dark:via-[#07080c] dark:to-[#030305] border-l border-[#e4e4e7] dark:border-[#1f1f23] p-8 flex-col justify-center items-center text-center overflow-hidden select-none">
+            <!-- RIGHT COLUMN: Elevated Brand Identity Stage -->
+            <div class="hidden lg:flex relative bg-gradient-to-br from-[#f8f9fa] via-[#f1f3f5] to-[#e9ecef] dark:from-[#0c0d14] dark:via-[#07080c] dark:to-[#030305] border-l border-[#e4e4e7] dark:border-[#1f1f23] p-6 sm:p-8 flex-col justify-center items-center text-center overflow-hidden select-none">
                 
                 <!-- Background Subtle Tech Grid & Radial Glows -->
                 <div class="absolute inset-0 bg-[radial-gradient(#0070f3_1px,transparent_1px)] [background-size:20px_20px] opacity-[0.07] dark:opacity-10 pointer-events-none"></div>
                 <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-[#0070f3]/10 dark:bg-[#0070f3]/20 blur-[110px] pointer-events-none"></div>
                 <div class="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-[#00c2cb]/10 dark:bg-[#00c2cb]/15 blur-[80px] pointer-events-none"></div>
 
-                <div class="relative z-10 w-full max-w-sm mx-auto space-y-7 flex flex-col items-center">
+                <div class="relative z-10 w-full max-w-sm mx-auto space-y-6 flex flex-col items-center">
                     
                     <!-- Top: Brand Eyebrow & Value Statement -->
                     <div class="space-y-2">
@@ -239,7 +377,7 @@
                     <!-- Center: Floating Brand Pedestal & Hero Emblem -->
                     <div class="flex flex-col items-center text-center space-y-3.5">
                         <!-- Frosted Glass Pedestal with Ambient Neon Core -->
-                        <div class="relative w-36 h-36 sm:w-40 sm:h-40 rounded-3xl bg-white/80 dark:bg-gradient-to-b dark:from-white/[0.08] dark:to-white/[0.02] border border-[#e4e4e7] dark:border-white/10 shadow-[0_20px_50px_rgba(0,112,243,0.12)] dark:shadow-[0_20px_50px_rgba(0,112,243,0.3)] backdrop-blur-xl flex items-center justify-center p-5 group hover:border-[#00c2cb]/40 transition-all duration-500">
+                        <div class="relative w-36 h-36 rounded-3xl bg-white/80 dark:bg-gradient-to-b dark:from-white/[0.08] dark:to-white/[0.02] border border-[#e4e4e7] dark:border-white/10 shadow-[0_20px_50px_rgba(0,112,243,0.12)] dark:shadow-[0_20px_50px_rgba(0,112,243,0.3)] backdrop-blur-xl flex items-center justify-center p-5 group hover:border-[#00c2cb]/40 transition-all duration-500">
                             <!-- Neon radial flare inside pedestal -->
                             <div class="absolute inset-2 rounded-2xl bg-radial from-[#0070f3]/15 dark:from-[#0070f3]/25 via-[#00c2cb]/10 to-transparent pointer-events-none"></div>
 

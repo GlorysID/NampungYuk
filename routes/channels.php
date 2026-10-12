@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Conversation;
+use App\Models\SpaceParticipant;
 use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
@@ -20,7 +21,7 @@ Broadcast::channel('conversation.{conversationId}', function ($user, $conversati
 
 // Only participants of a space may listen to its signaling channel.
 Broadcast::channel('space.{spaceId}', function ($user, $spaceId) {
-    return \App\Models\SpaceParticipant::where('space_id', $spaceId)
+    return SpaceParticipant::where('space_id', $spaceId)
         ->where('user_id', $user->id)
         ->exists();
 });

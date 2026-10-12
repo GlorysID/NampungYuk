@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
 use App\Models\Community;
+use App\Models\CommunityMember;
 use App\Models\CommunityPost;
+use App\Models\CommunityPostVote;
 use App\Models\Project;
 use App\Models\ProjectBookmark;
+use App\Models\ProjectRepost;
 use App\Models\ProjectVote;
-use App\Models\CommunityPostVote;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -58,7 +59,7 @@ class InfiniteFeedController extends Controller
         $userId = Auth::id();
         $userBookmarkedIds = $userId ? ProjectBookmark::where('user_id', $userId)->pluck('project_id')->toArray() : [];
         $userVotes = $userId ? ProjectVote::where('user_id', $userId)->pluck('type', 'project_id')->toArray() : [];
-        $userRepostedIds = $userId ? \App\Models\ProjectRepost::where('user_id', $userId)->pluck('project_id')->toArray() : [];
+        $userRepostedIds = $userId ? ProjectRepost::where('user_id', $userId)->pluck('project_id')->toArray() : [];
 
         return response()
             ->view('feeds._project-items', compact('projects', 'userBookmarkedIds', 'userVotes', 'userRepostedIds'))
@@ -77,7 +78,7 @@ class InfiniteFeedController extends Controller
         $userId = Auth::id();
 
         $visibleIds = Community::visibleTo($userId)->pluck('id')->toArray();
-        $joinedIds = $userId ? \App\Models\CommunityMember::where('user_id', $userId)->pluck('community_id')->toArray() : [];
+        $joinedIds = $userId ? CommunityMember::where('user_id', $userId)->pluck('community_id')->toArray() : [];
 
         $q = CommunityPost::with(['user', 'community'])->whereIn('community_id', $visibleIds);
 

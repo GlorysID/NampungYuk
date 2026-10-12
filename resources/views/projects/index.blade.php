@@ -173,25 +173,48 @@
 
                 <div class="space-y-2.5">
                     @forelse($trendingToday as $i => $tp)
-                        <a href="{{ route('projects.show', $tp->slug) }}"
-                           class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#f7f7f8] dark:hover:bg-[#111111] transition group">
-                            <span class="text-xs font-mono font-bold text-[#63636b] dark:text-[#a0a0a0] w-4 shrink-0">{{ $i + 1 }}</span>
-                            <span class="w-8 h-8 rounded-lg overflow-hidden bg-[#eeeeef] dark:bg-[#171717] shrink-0">
-                                @if($tp->thumbnail)
-                                    <img src="{{ $tp->thumbnail }}" alt="" class="w-full h-full object-cover">
-                                @endif
-                            </span>
-                            <div class="min-w-0 flex-1">
-                                <p class="font-semibold text-xs text-[#18181b] dark:text-[#fafafa] group-hover:text-[#0070f3] dark:group-hover:text-[#3291ff] transition truncate">
-                                    {{ $tp->title }}
-                                </p>
-                                <p class="text-[10px] text-[#63636b] dark:text-[#a0a0a0] truncate">&#64;{{ $tp->user?->username ?? 'anon' }}</p>
-                            </div>
-                            <span class="text-[11px] font-mono font-semibold text-[#0070f3] dark:text-[#3291ff] px-2 py-0.5 rounded bg-[#e6f0ff] dark:bg-[#3291ff]/12 border border-[#3291ff]/30 shrink-0 inline-flex items-center gap-1">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
-                                {{ $tp->score }}
-                            </span>
-                        </a>
+                        @guest
+                            <button type="button"
+                                    @click="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
+                                    class="w-full text-left flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#f7f7f8] dark:hover:bg-[#111111] transition group cursor-pointer">
+                                <span class="text-xs font-mono font-bold text-[#63636b] dark:text-[#a0a0a0] w-4 shrink-0">{{ $i + 1 }}</span>
+                                <span class="w-8 h-8 rounded-lg overflow-hidden bg-[#eeeeef] dark:bg-[#171717] shrink-0">
+                                    @if($tp->thumbnail)
+                                        <img src="{{ $tp->thumbnail }}" alt="" class="w-full h-full object-cover">
+                                    @endif
+                                </span>
+                                <div class="min-w-0 flex-1">
+                                    <p class="font-semibold text-xs text-[#18181b] dark:text-[#fafafa] group-hover:text-[#0070f3] dark:group-hover:text-[#3291ff] transition truncate">
+                                        {{ $tp->title }}
+                                    </p>
+                                    <p class="text-[10px] text-[#63636b] dark:text-[#a0a0a0] truncate">&#64;{{ $tp->user?->username ?? 'anon' }}</p>
+                                </div>
+                                <span class="text-[11px] font-mono font-semibold text-[#0070f3] dark:text-[#3291ff] px-2 py-0.5 rounded bg-[#e6f0ff] dark:bg-[#3291ff]/12 border border-[#3291ff]/30 shrink-0 inline-flex items-center gap-1">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
+                                    {{ $tp->score }}
+                                </span>
+                            </button>
+                        @else
+                            <a href="{{ route('projects.show', $tp->slug) }}"
+                               class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-[#f7f7f8] dark:hover:bg-[#111111] transition group">
+                                <span class="text-xs font-mono font-bold text-[#63636b] dark:text-[#a0a0a0] w-4 shrink-0">{{ $i + 1 }}</span>
+                                <span class="w-8 h-8 rounded-lg overflow-hidden bg-[#eeeeef] dark:bg-[#171717] shrink-0">
+                                    @if($tp->thumbnail)
+                                        <img src="{{ $tp->thumbnail }}" alt="" class="w-full h-full object-cover">
+                                    @endif
+                                </span>
+                                <div class="min-w-0 flex-1">
+                                    <p class="font-semibold text-xs text-[#18181b] dark:text-[#fafafa] group-hover:text-[#0070f3] dark:group-hover:text-[#3291ff] transition truncate">
+                                        {{ $tp->title }}
+                                    </p>
+                                    <p class="text-[10px] text-[#63636b] dark:text-[#a0a0a0] truncate">&#64;{{ $tp->user?->username ?? 'anon' }}</p>
+                                </div>
+                                <span class="text-[11px] font-mono font-semibold text-[#0070f3] dark:text-[#3291ff] px-2 py-0.5 rounded bg-[#e6f0ff] dark:bg-[#3291ff]/12 border border-[#3291ff]/30 shrink-0 inline-flex items-center gap-1">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
+                                    {{ $tp->score }}
+                                </span>
+                            </a>
+                        @endguest
                     @empty
                         <p class="text-xs text-[#63636b] py-2 text-center">Belum ada project trending.</p>
                     @endforelse

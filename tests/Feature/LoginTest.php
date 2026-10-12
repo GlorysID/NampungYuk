@@ -178,4 +178,28 @@ class LoginTest extends TestCase
 
         $this->assertGuest();
     }
+
+    public function test_user_can_login_case_insensitively(): void
+    {
+        $user = $this->createUser();
+
+        $response = $this->post(route('login.store'), $this->loginData([
+            'login' => 'BUDI_SANTOSO',
+        ]));
+
+        $response->assertRedirect(url('/'));
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_user_can_login_with_budi_alias(): void
+    {
+        $user = $this->createUser();
+
+        $response = $this->post(route('login.store'), $this->loginData([
+            'login' => 'budi',
+        ]));
+
+        $response->assertRedirect(url('/'));
+        $this->assertAuthenticatedAs($user);
+    }
 }

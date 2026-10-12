@@ -26,12 +26,17 @@ class ProjectController extends Controller
     /**
      * Display project showcase feed.
      */
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
         $tab = $request->query('tab', 'trend'); // 'trend', 'terbaru', 'populer', 'prototype'
         $categorySlug = $request->query('kategori');
         $techFilter = $request->query('tech');
         $search = $request->query('q') ?? $request->query('search');
+
+        // Memerlukan login untuk melihat feed berdasarkan kategori kodingan
+        if ($categorySlug && ! Auth::check()) {
+            return redirect()->route('login')->with('info', 'Silakan masuk terlebih dahulu untuk melihat project berdasarkan kategori kodingan.');
+        }
 
         $query = Project::with(['user', 'category'])
             ->visibleTo(Auth::id())
@@ -216,8 +221,15 @@ class ProjectController extends Controller
             ->where('slug', $slug)
             ->firstOrFail();
 
-        // Private projects are only visible to their owner.
-        if ($project->isPrivate() && $project->user_id !== Auth::id()) {
+        $isAdmin = Auth::user()?->is_admin ?? false;
+
+        // Private projects are only visible to their owner or admin.
+        if ($project->isPrivate() && $project->user_id !== Auth::id() && ! $isAdmin) {
+            abort(404);
+        }
+
+        // Warned projects are only visible to their owner or admin.
+        if ($project->hasWarning() && $project->user_id !== Auth::id() && ! $isAdmin) {
             abort(404);
         }
 

@@ -81,9 +81,10 @@ class ProfileController extends Controller
 
         $currentUserId = auth()->id();
         $isOwner = $currentUserId === $user->id;
+        $isAdmin = auth()->user()?->is_admin ?? false;
 
-        // Only the owner sees their own private projects.
-        $viewerId = $isOwner ? $currentUserId : null;
+        // Only the owner or admin sees private and warned projects.
+        $viewerId = ($isOwner || $isAdmin) ? $currentUserId : null;
 
         $allProjects = $user->projects()
             ->with(['category', 'user', 'repostedFrom'])

@@ -189,9 +189,36 @@
                     </div>
                 </button>
             @endauth
-
-
         </div>
+
+        @if(auth()->check() && auth()->user()->is_admin)
+            @php $pendingReportsCount = \App\Models\Report::pending()->count(); @endphp
+            <div class="space-y-1 pt-2 border-t border-rose-500/20">
+                <p class="px-2 pt-1 text-[11px] font-bold uppercase tracking-wider text-rose-500 flex items-center justify-between">
+                    <span>Admin Control</span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                </p>
+                <a href="{{ route('admin.reports.index', ['tab' => 'all_users']) }}" 
+                   class="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium transition {{ request()->get('tab') === 'all_users' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold border border-purple-500/30' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
+                    <div class="flex items-center gap-2.5">
+                        <svg class="w-4 h-4 text-purple-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                        <span>Kelola Pengguna</span>
+                    </div>
+                </a>
+                <a href="{{ route('admin.reports.index') }}" 
+                   class="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium transition {{ request()->routeIs('admin.*') && request()->get('tab') !== 'all_users' ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold border border-rose-500/30' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
+                    <div class="flex items-center gap-2.5">
+                        <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        <span>Laporan Pengaduan</span>
+                    </div>
+                    @if($pendingReportsCount > 0)
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500 text-white animate-pulse">
+                            {{ $pendingReportsCount }}
+                        </span>
+                    @endif
+                </a>
+            </div>
+        @endif
 
         <!-- Section: Kategori (contextual — kodingan di feed, komunitas di halaman komunitas) -->
         @if(request()->routeIs('communities.*'))
@@ -227,22 +254,40 @@
                 <div class="space-y-0.5" x-data="{ showAllCats: {{ $activeInRest ? 'true' : 'false' }} }">
                     @foreach($topCategories as $category)
                         @php $isCatActive = ($activeCatSlug === $category->slug); @endphp
-                        <a href="{{ route('projects.index', ['kategori' => $category->slug]) }}"
-                           class="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs transition {{ $isCatActive ? 'bg-[#e8f2ff] dark:bg-[#3291ff]/12 text-[#0070f3] dark:text-[#3291ff] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
-                            <span class="truncate">{{ $category->name }}</span>
-                            <span class="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded {{ $isCatActive ? 'bg-[#3291ff]/20 text-[#0070f3] dark:text-[#47a8ff]' : 'bg-[#eeeeef] dark:bg-[#171717] text-[#63636b]' }}">{{ $category->projects_count }}</span>
-                        </a>
+                        @auth
+                            <a href="{{ route('projects.index', ['kategori' => $category->slug]) }}"
+                               class="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs transition {{ $isCatActive ? 'bg-[#e8f2ff] dark:bg-[#3291ff]/12 text-[#0070f3] dark:text-[#3291ff] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
+                                <span class="truncate">{{ $category->name }}</span>
+                                <span class="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded {{ $isCatActive ? 'bg-[#3291ff]/20 text-[#0070f3] dark:text-[#47a8ff]' : 'bg-[#eeeeef] dark:bg-[#171717] text-[#63636b]' }}">{{ $category->projects_count }}</span>
+                            </a>
+                        @else
+                            <button type="button" 
+                                    @click="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
+                                    class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs transition text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111] cursor-pointer">
+                                <span class="truncate">{{ $category->name }}</span>
+                                <span class="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded bg-[#eeeeef] dark:bg-[#171717] text-[#63636b]">{{ $category->projects_count }}</span>
+                            </button>
+                        @endauth
                     @endforeach
 
                     @if($restCategories->count() > 0)
                         <div x-show="showAllCats" x-cloak class="space-y-0.5">
                             @foreach($restCategories as $category)
                                 @php $isCatActive = ($activeCatSlug === $category->slug); @endphp
-                                <a href="{{ route('projects.index', ['kategori' => $category->slug]) }}"
-                                   class="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs transition {{ $isCatActive ? 'bg-[#e8f2ff] dark:bg-[#3291ff]/12 text-[#0070f3] dark:text-[#3291ff] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
-                                    <span class="truncate">{{ $category->name }}</span>
-                                    <span class="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded {{ $isCatActive ? 'bg-[#3291ff]/20 text-[#0070f3] dark:text-[#47a8ff]' : 'bg-[#eeeeef] dark:bg-[#171717] text-[#63636b]' }}">{{ $category->projects_count }}</span>
-                                </a>
+                                @auth
+                                    <a href="{{ route('projects.index', ['kategori' => $category->slug]) }}"
+                                       class="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs transition {{ $isCatActive ? 'bg-[#e8f2ff] dark:bg-[#3291ff]/12 text-[#0070f3] dark:text-[#3291ff] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
+                                        <span class="truncate">{{ $category->name }}</span>
+                                        <span class="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded {{ $isCatActive ? 'bg-[#3291ff]/20 text-[#0070f3] dark:text-[#47a8ff]' : 'bg-[#eeeeef] dark:bg-[#171717] text-[#63636b]' }}">{{ $category->projects_count }}</span>
+                                    </a>
+                                @else
+                                    <button type="button" 
+                                            @click="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
+                                            class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs transition text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111] cursor-pointer">
+                                        <span class="truncate">{{ $category->name }}</span>
+                                        <span class="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded bg-[#eeeeef] dark:bg-[#171717] text-[#63636b]">{{ $category->projects_count }}</span>
+                                    </button>
+                                @endauth
                             @endforeach
                         </div>
                         <button type="button" @click="showAllCats = !showAllCats"

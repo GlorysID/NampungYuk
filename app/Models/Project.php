@@ -41,6 +41,8 @@ class Project extends Model
         'reposts_count',
         'is_featured',
         'is_pinned',
+        'warning_notes',
+        'is_flagged',
     ];
 
     protected function casts(): array
@@ -50,7 +52,16 @@ class Project extends Model
             'images' => 'array',
             'is_featured' => 'boolean',
             'is_pinned' => 'boolean',
+            'is_flagged' => 'boolean',
         ];
+    }
+
+    /**
+     * Reports filed against this project.
+     */
+    public function reports()
+    {
+        return $this->morphMany(Report::class, 'reportable');
     }
 
     /**
@@ -108,17 +119,39 @@ class Project extends Model
 
     /**
      * Scope: only projects visible to the given viewer.
-     * Public projects are always visible; private ones only to their owner.
+     * Public unwarned projects are visible; warned projects only to their owner or admin.
+     * Private projects only to their owner or admin.
      */
     public function scopeVisibleTo(Builder $query, ?int $viewerId): Builder
     {
+        $isAdmin = false;
+        if ($viewerId) {
+            $isAdmin = (bool) User::where('id', $viewerId)->value('is_admin');
+        }
+
+        if ($isAdmin) {
+            return $query;
+        }
+
         return $query->where(function (Builder $q) use ($viewerId) {
-            $q->where('projects.visibility', 'public');
+            $q->where(function (Builder $pub) {
+                $pub->where('projects.visibility', 'public')
+                    ->where(function (Builder $flag) {
+                        $flag->where('projects.is_flagged', false)
+                            ->orWhereNull('projects.is_flagged');
+                    })
+                    ->whereNull('projects.warning_notes');
+            });
 
             if ($viewerId) {
                 $q->orWhere('projects.user_id', $viewerId);
             }
         });
+    }
+
+    public function hasWarning(): bool
+    {
+        return (bool) $this->is_flagged || ! empty($this->warning_notes);
     }
 
     public function isPrivate(): bool

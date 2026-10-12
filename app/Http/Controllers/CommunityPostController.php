@@ -6,6 +6,8 @@ use App\Models\Community;
 use App\Models\CommunityPost;
 use App\Models\CommunityPostComment;
 use App\Models\CommunityPostVote;
+use App\Notifications\CommunityCommentNotification;
+use App\Notifications\CommunityPostNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -63,7 +65,7 @@ class CommunityPostController extends Controller
         $community->memberUsers()
             ->where('users.id', '!=', $user->id)
             ->get()
-            ->each(fn ($member) => $member->notify(new \App\Notifications\CommunityPostNotification($post)));
+            ->each(fn ($member) => $member->notify(new CommunityPostNotification($post)));
 
         return back()->with('success', 'Postingan terkirim!');
     }
@@ -137,7 +139,7 @@ class CommunityPostController extends Controller
         // Notify the post author (if not commenting on own post).
         $comment->load('user');
         if ($post->user && $post->user_id !== $user->id) {
-            $post->user->notify(new \App\Notifications\CommunityCommentNotification($comment));
+            $post->user->notify(new CommunityCommentNotification($comment));
         }
 
         if ($request->wantsJson()) {

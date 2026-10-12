@@ -11,6 +11,43 @@
 
 <div class="space-y-5" x-data="{ activeTab: '{{ $initialTab }}', editOpen: {{ $errors->any() && $isOwner ? 'true' : 'false' }} }">
 
+    <!-- Banned Alert Banner (if user is banned) -->
+    @if($user->is_banned)
+        <div class="p-4 rounded-xl border border-red-300 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 flex items-start gap-3">
+            <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+            </svg>
+            <div>
+                <p class="font-bold text-sm">Akun Ini Sedang Dibekukan / Diblokir</p>
+                <p class="text-xs mt-1 text-red-600 dark:text-red-300/80">
+                    Alasan: {{ $user->ban_reason ?: 'Pelanggaran syarat dan ketentuan komunitas.' }}
+                    @if($user->banned_at)
+                        <span class="opacity-75">({{ $user->banned_at->diffForHumans() }})</span>
+                    @endif
+                </p>
+            </div>
+        </div>
+    @endif
+
+    <!-- Warning Alert Banner (if user has active warning and is viewed by owner or admin) -->
+    @if($user->hasWarning() && ($isOwner || (auth()->check() && auth()->user()->is_admin)))
+        <div class="p-4 rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 flex items-start gap-3">
+            <svg class="w-5 h-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <div class="space-y-0.5">
+                <div class="flex items-center gap-2">
+                    <p class="font-bold text-sm text-amber-950 dark:text-amber-100">Status Peringatan Akun dari Admin</p>
+                    @if($user->warned_at)
+                        <span class="text-[11px] opacity-75 font-mono">({{ $user->warned_at->format('d M Y, H:i') }})</span>
+                    @endif
+                </div>
+                <p class="text-xs leading-relaxed">{{ $user->warning_notes }}</p>
+                <p class="text-[11px] opacity-75">Catatan: Harap periksa karya dan aktivitas Anda agar mematuhi aturan pedoman komunitas NampungYuk.</p>
+            </div>
+        </div>
+    @endif
+
     <!-- ===================== PROFILE HERO ===================== -->
     <div class="hl-panel overflow-hidden">
 
@@ -44,16 +81,123 @@
                     @endif
                 </div>
 
-                <!-- Actions: Button Ikuti / Edit Profil diberi jarak yang lega agar tidak mepet banner -->
-                <div class="flex items-center gap-2 shrink-0 pt-3 sm:pt-4">
+                <!-- Actions: Button Ikuti / Edit Profil / Laporkan / Admin Menu -->
+                <div class="flex items-center gap-2 shrink-0 pt-3 sm:pt-4 flex-wrap justify-end">
                     @if($isOwner)
                         <button type="button" @click="editOpen = true" class="btn-secondary text-xs py-2 px-3.5 shadow-sm">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                             <span>Edit Profil</span>
                         </button>
                     @else
-                        <div class="pt-1">
+                        <div class="pt-0.5">
                             <x-follow-button :user="$user" />
+                        </div>
+
+                        <!-- Report User Button -->
+                        <button type="button"
+                                onclick="window.openReportModal({ type: 'user', id: {{ $user->id }}, title: '{{ addslashes($user->name) }} (@{{ $user->username }})' })"
+                                class="btn-secondary text-xs py-2 px-3 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/40"
+                                title="Laporkan Akun Ini">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            <span class="hidden sm:inline">Laporkan</span>
+                        </button>
+                    @endif
+
+                    <!-- Admin Moderator Controls on User -->
+                    @if(auth()->check() && auth()->user()->is_admin && auth()->id() !== $user->id)
+                        <div x-data="{ adminMenuOpen: false, banModalOpen: false, warnModalOpen: false, warnNotes: '{{ addslashes($user->warning_notes ?? '') }}' }" class="relative">
+                            <button @click="adminMenuOpen = !adminMenuOpen" type="button" class="px-2.5 py-2 rounded-lg border border-purple-300 dark:border-purple-800/60 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-xs font-semibold hover:bg-purple-100 dark:hover:bg-purple-900/40 flex items-center gap-1.5 shadow-sm">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                </svg>
+                                <span>Admin</span>
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+
+                            <div x-show="adminMenuOpen" @click.outside="adminMenuOpen = false" x-cloak class="absolute right-0 mt-2 w-48 rounded-xl bg-white dark:bg-[#121212] border border-[#e4e4e7] dark:border-[#222] shadow-xl p-1 z-30 text-xs">
+                                <!-- Warning Action -->
+                                @if($user->hasWarning())
+                                    <form action="{{ route('admin.users.warn', $user) }}" method="POST">
+                                        @csrf
+                                        <input type="hidden" name="action" value="remove">
+                                        <button type="submit" class="w-full text-left px-3 py-2 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex items-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            Cabut Peringatan
+                                        </button>
+                                    </form>
+                                @else
+                                    <button @click="warnModalOpen = true; adminMenuOpen = false" type="button" class="w-full text-left px-3 py-2 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                        Beri Peringatan Akun
+                                    </button>
+                                @endif
+
+                                <!-- Ban / Unban Action -->
+                                @if($user->is_banned)
+                                    <form action="{{ route('admin.users.unban', $user) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="w-full text-left px-3 py-2 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            Buka Blokir (Unban)
+                                        </button>
+                                    </form>
+                                @else
+                                    <button @click="banModalOpen = true; adminMenuOpen = false" type="button" class="w-full text-left px-3 py-2 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                        Blokir Akun (Ban)
+                                    </button>
+                                @endif
+
+                                <form action="{{ route('admin.users.destroy', $user) }}" method="POST" onsubmit="return confirm('PERINGATAN ADMIN: Hapus permanen akun ini beserta semua karyanya?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="w-full text-left px-3 py-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        Hapus Total Akun
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- User Warning Modal -->
+                            <div x-show="warnModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                                <div @click.outside="warnModalOpen = false" class="bg-white dark:bg-[#121212] border border-[#e4e4e7] dark:border-[#222] rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-4">
+                                    <h3 class="text-base font-bold text-amber-600 dark:text-amber-400">Beri Peringatan ke Akun {{ $user->name }}</h3>
+                                    <p class="text-xs text-[#63636b] dark:text-[#a0a0a0]">Catatan peringatan ini akan ditampilkan secara khusus pada akun yang bersangkutan.</p>
+                                    <form action="{{ route('admin.users.warn', $user) }}" method="POST" class="space-y-3">
+                                        @csrf
+                                        <input type="hidden" name="action" value="set">
+                                        <div>
+                                            <label class="block text-xs font-semibold mb-1 text-[#18181b] dark:text-[#fafafa]">Catatan Peringatan:</label>
+                                            <textarea name="warning_notes" x-model="warnNotes" rows="3" required placeholder="Contoh: Aktivitas akun melanggar pedoman komunitas NampungYuk." class="w-full text-xs p-2.5 rounded-lg border border-[#e4e4e7] dark:border-[#222] bg-[#f9f9f9] dark:bg-[#0a0a0a] text-[#18181b] dark:text-[#fafafa] focus:ring-1 focus:ring-amber-500"></textarea>
+                                        </div>
+                                        <div class="flex justify-end gap-2 pt-2">
+                                            <button @click="warnModalOpen = false" type="button" class="btn-secondary text-xs py-2 px-3">Batal</button>
+                                            <button type="submit" class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs shadow">Kirim Peringatan</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- Ban Modal -->
+                            <div x-show="banModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                                <div @click.outside="banModalOpen = false" class="bg-white dark:bg-[#121212] border border-[#e4e4e7] dark:border-[#222] rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-4">
+                                    <h3 class="text-base font-bold text-[#18181b] dark:text-[#fafafa]">Blokir Akun {{ $user->name }}</h3>
+                                    <p class="text-xs text-[#63636b] dark:text-[#a0a0a0]">Pengguna ini tidak akan bisa login lagi ke sistem sampai admin membuka blokirnya.</p>
+                                    <form action="{{ route('admin.users.ban', $user) }}" method="POST" class="space-y-3">
+                                        @csrf
+                                        <div>
+                                            <label class="block text-xs font-semibold mb-1 text-[#18181b] dark:text-[#fafafa]">Alasan Pemblokiran:</label>
+                                            <textarea name="reason" rows="3" required placeholder="Contoh: Terdeteksi spam berulang / bot." class="w-full text-xs p-2.5 rounded-lg border border-[#e4e4e7] dark:border-[#222] bg-[#f9f9f9] dark:bg-[#0a0a0a] text-[#18181b] dark:text-[#fafafa] focus:ring-1 focus:ring-red-500"></textarea>
+                                        </div>
+                                        <div class="flex justify-end gap-2 pt-2">
+                                            <button @click="banModalOpen = false" type="button" class="btn-secondary text-xs py-2 px-3">Batal</button>
+                                            <button type="submit" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold text-xs shadow">Blokir Akun</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                     @endif
                 </div>
@@ -98,6 +242,7 @@
                     <p class="hl-stat text-lg font-bold text-[#0070f3] dark:text-[#3291ff] mt-0.5 flex items-center gap-1">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
                         {{ number_format($user->reputation_points) }}
+                        <span class="sr-only">{{ number_format($user->reputation_points) }} Poin Reputasi</span>
                     </p>
                 </div>
                 <div class="bg-white dark:bg-[#0a0a0a] px-4 py-3">

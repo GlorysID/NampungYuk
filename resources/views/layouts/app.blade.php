@@ -663,6 +663,9 @@
     <!-- GLOBAL X-STYLE AUTH MODAL -->
     <x-auth-modal />
 
+    <!-- GLOBAL REPORT MODAL -->
+    <x-report-modal />
+
     <script>
         // Global auth modal opener helper
         window.openAuthModal = function(tab = 'login') {

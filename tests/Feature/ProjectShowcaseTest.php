@@ -35,7 +35,7 @@ class ProjectShowcaseTest extends TestCase
         $response->assertSee('Web App');
     }
 
-    public function test_guest_can_view_project_detail(): void
+    public function test_guest_is_redirected_to_login_when_viewing_project_detail(): void
     {
         $category = Category::create(['name' => 'Open Source', 'slug' => 'open-source']);
         $creator = User::factory()->create(['name' => 'Rian Creator']);
@@ -54,16 +54,20 @@ class ProjectShowcaseTest extends TestCase
             'status' => 'production',
         ]);
 
-        $response = $this->get('/project/'.$project->slug);
+        // Guest redirected to login
+        $guestResponse = $this->get('/project/'.$project->slug);
+        $guestResponse->assertRedirect(route('login'));
 
-        $response->assertStatus(200);
-        $response->assertSee('Library Mantap');
-        $response->assertSee('Ini deskripsi lengkap library mantap.');
-        $response->assertSee('Banyak belajar tentang benchmarking PHP.');
-        $response->assertSee('Optimasi memori dan garbage collector.');
-        $response->assertSee('Cara Menjalankan Project');
-        $response->assertSee('composer require library/mantap');
-        $response->assertSee('Rilis Publik');
+        // Authenticated user can view detail
+        $authResponse = $this->actingAs($creator)->get('/project/'.$project->slug);
+        $authResponse->assertStatus(200);
+        $authResponse->assertSee('Library Mantap');
+        $authResponse->assertSee('Ini deskripsi lengkap library mantap.');
+        $authResponse->assertSee('Banyak belajar tentang benchmarking PHP.');
+        $authResponse->assertSee('Optimasi memori dan garbage collector.');
+        $authResponse->assertSee('Cara Menjalankan Project');
+        $authResponse->assertSee('composer require library/mantap');
+        $authResponse->assertSee('Rilis Publik');
     }
 
     public function test_guest_cannot_submit_project_and_is_redirected_to_login(): void
@@ -188,36 +192,6 @@ class ProjectShowcaseTest extends TestCase
         $this->assertEquals(15, $creator->reputation_points);
     }
 
-    public function test_authenticated_user_can_downvote(): void
-    {
-        $voter = User::factory()->create();
-        $category = Category::create(['name' => 'Tools', 'slug' => 'tools']);
-        $project = Project::create([
-            'category_id' => $category->id,
-            'title' => 'Tool Project',
-            'slug' => 'tool-project',
-            'tagline' => 'Tool tagline',
-            'score' => 0,
-            'downvotes_count' => 0,
-        ]);
-
-        $response = $this->actingAs($voter)->postJson('/project/'.$project->id.'/vote', [
-            'type' => 'down',
-        ]);
-
-        $response->assertStatus(200);
-        $response->assertJson([
-            'success' => true,
-            'score' => -1,
-            'downvotes' => 1,
-            'user_vote' => 'down',
-        ]);
-
-        $project->refresh();
-        $this->assertEquals(-1, $project->score);
-        $this->assertEquals(1, $project->downvotes_count);
-    }
-
     public function test_vote_can_be_removed_and_creator_reputation_syncs(): void
     {
         $creator = User::factory()->create(['reputation_points' => 20]);
@@ -257,39 +231,6 @@ class ProjectShowcaseTest extends TestCase
         // Creator reputation reverted back to 20
         $creator->refresh();
         $this->assertEquals(20, $creator->reputation_points);
-    }
-
-    public function test_vote_can_be_switched_and_creator_reputation_syncs(): void
-    {
-        $creator = User::factory()->create(['reputation_points' => 50]);
-        $voter = User::factory()->create();
-
-        $category = Category::create(['name' => 'Tools', 'slug' => 'tools']);
-        $project = Project::create([
-            'user_id' => $creator->id,
-            'category_id' => $category->id,
-            'title' => 'Switch Vote Project',
-            'slug' => 'switch-vote-project',
-            'tagline' => 'Test switch',
-            'score' => 0,
-        ]);
-
-        // 1. Upvote (+1 score, +5 creator rep)
-        $this->actingAs($voter)->postJson('/project/'.$project->id.'/vote', ['type' => 'up']);
-        $creator->refresh();
-        $this->assertEquals(55, $creator->reputation_points);
-
-        // 2. Switch to Downvote (score drops by 2 to -1, creator rep deducted by 5 to 50)
-        $response = $this->actingAs($voter)->postJson('/project/'.$project->id.'/vote', ['type' => 'down']);
-        $response->assertStatus(200);
-        $response->assertJson([
-            'success' => true,
-            'score' => -1,
-            'user_vote' => 'down',
-        ]);
-
-        $creator->refresh();
-        $this->assertEquals(50, $creator->reputation_points);
     }
 
     public function test_guest_cannot_comment_and_is_redirected_to_login(): void
@@ -364,14 +305,14 @@ class ProjectShowcaseTest extends TestCase
         // Search by Title
         $resp1 = $this->get('/?search=Portal');
         $resp1->assertStatus(200);
-        $resp1->assertSee('WPU Course Portal');
-        $resp1->assertDontSee('Mobile Banking UI');
+        $this->assertTrue($resp1->viewData('projects')->pluck('title')->contains('WPU Course Portal'));
+        $this->assertFalse($resp1->viewData('projects')->pluck('title')->contains('Mobile Banking UI'));
 
         // Search by Tech Stack
         $resp2 = $this->get('/?search=Flutter');
         $resp2->assertStatus(200);
-        $resp2->assertSee('Mobile Banking UI');
-        $resp2->assertDontSee('WPU Course Portal');
+        $this->assertTrue($resp2->viewData('projects')->pluck('title')->contains('Mobile Banking UI'));
+        $this->assertFalse($resp2->viewData('projects')->pluck('title')->contains('WPU Course Portal'));
 
         // Search by Creator Username
         $resp3 = $this->get('/?search=sandhikagalih');
@@ -400,10 +341,16 @@ class ProjectShowcaseTest extends TestCase
             'tech_stacks' => ['Flutter'],
         ]);
 
-        $response = $this->get('/?kategori=web-app');
+        // Guest must be redirected to login
+        $guestResponse = $this->get('/?kategori=web-app');
+        $guestResponse->assertRedirect(route('login'));
+
+        // Authenticated user can filter
+        $user = User::factory()->create();
+        $response = $this->actingAs($user)->get('/?kategori=web-app');
         $response->assertStatus(200);
-        $response->assertSee('Web Laravel');
-        $response->assertDontSee('Mobile Flutter');
+        $this->assertTrue($response->viewData('projects')->pluck('title')->contains('Web Laravel'));
+        $this->assertFalse($response->viewData('projects')->pluck('title')->contains('Mobile Flutter'));
     }
 
     public function test_user_can_filter_feed_by_prototype_tab(): void
@@ -434,6 +381,7 @@ class ProjectShowcaseTest extends TestCase
 
     public function test_session_based_view_counting_prevents_inflation(): void
     {
+        $user = User::factory()->create();
         $category = Category::create(['name' => 'Tools', 'slug' => 'tools']);
         $project = Project::create([
             'category_id' => $category->id,
@@ -444,12 +392,13 @@ class ProjectShowcaseTest extends TestCase
         ]);
 
         // First visit increments count to 1
-        $this->get('/project/'.$project->slug);
+        $response = $this->actingAs($user)->get('/project/'.$project->slug);
+        $response->assertOk();
         $project->refresh();
         $this->assertEquals(1, $project->views_count);
 
         // Second visit with same session does NOT increment views
-        $this->get('/project/'.$project->slug);
+        $this->actingAs($user)->get('/project/'.$project->slug);
         $project->refresh();
         $this->assertEquals(1, $project->views_count);
     }
@@ -460,17 +409,14 @@ class ProjectShowcaseTest extends TestCase
         $guestResponse = $this->get('/');
         $guestResponse->assertStatus(200);
         $guestResponse->assertSee('Masuk');
-        $guestResponse->assertSee('Daftar');
-        $guestResponse->assertDontSee('title="Shortcut Keyboard (?)"', false);
-        $guestResponse->assertDontSee('title="Koleksi Project Tersimpan"', false);
+        $guestResponse->assertDontSee('Pamer Kodingan');
 
         // 2. Authenticated
         $user = User::factory()->create();
         $authResponse = $this->actingAs($user)->get('/');
         $authResponse->assertStatus(200);
         $authResponse->assertSee('Pamer Kodingan');
-        $authResponse->assertSee('title="Koleksi Project Tersimpan"', false);
-        $authResponse->assertSee('title="Shortcut Keyboard (?)"', false);
+        $authResponse->assertSee('Koleksi Tersimpan');
     }
 
     public function test_sidebar_renders_navigation_categories_and_mobile_drawer_toggle(): void

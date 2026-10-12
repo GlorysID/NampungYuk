@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Community;
 use App\Models\CommunityMember;
 use App\Models\CommunityPost;
+use App\Models\CommunityPostComment;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
@@ -176,7 +177,7 @@ class CommunitySeeder extends Seeder
             $take = rand(1, 4);
             for ($c = 0; $c < $take; $c++) {
                 $commenter = $users->random();
-                \App\Models\CommunityPostComment::create([
+                CommunityPostComment::create([
                     'community_post_id' => $post->id,
                     'user_id' => $commenter->id,
                     'content' => $commentPool[array_rand($commentPool)],

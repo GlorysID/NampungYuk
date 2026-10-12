@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminModerationController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\InfiniteFeedController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SpaceController;
 use Illuminate\Support\Facades\Route;
 
@@ -40,9 +42,11 @@ Route::middleware('auth')->group(function () {
 Route::get('/feed-fragment/projects', [InfiniteFeedController::class, 'projectFeed'])->name('feeds.projects');
 Route::get('/feed-fragment/bookmarks', [InfiniteFeedController::class, 'bookmarkFeed'])->name('feeds.bookmarks');
 
+// Developer profile (public)
+Route::get('/u/{username}', [ProfileController::class, 'show'])->name('profile.show');
+
 Route::middleware('auth')->group(function () {
     Route::get('/project/{slug}', [ProjectController::class, 'show'])->name('projects.show');
-    Route::get('/u/{username}', [ProfileController::class, 'show'])->name('profile.show');
     Route::get('/unggah', [ProjectController::class, 'create'])->name('projects.create');
     Route::post('/unggah', [ProjectController::class, 'store'])->name('projects.store');
     Route::post('/project/{project}/vote', [ProjectController::class, 'vote'])->name('projects.vote');
@@ -84,6 +88,25 @@ Route::middleware('auth')->group(function () {
     Route::post('/community-post/{post}/pin', [CommunityPostController::class, 'togglePin'])->name('communities.post.pin');
     Route::post('/community-post/{post}/answered', [CommunityPostController::class, 'markAnswered'])->name('communities.post.answered');
     Route::delete('/community-post/{post}', [CommunityPostController::class, 'destroy'])->name('communities.post.destroy');
+
+    // User reporting
+    Route::post('/laporan', [ReportController::class, 'store'])->name('reports.store');
+});
+
+// Admin Moderation routes
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/laporan', [AdminModerationController::class, 'index'])->name('reports.index');
+    Route::get('/pengguna', [AdminModerationController::class, 'index'])->name('users.index');
+    Route::post('/laporan/{report}/resolve', [AdminModerationController::class, 'resolveReport'])->name('reports.resolve');
+    Route::post('/laporan/{report}/dismiss', [AdminModerationController::class, 'dismissReport'])->name('reports.dismiss');
+
+    Route::post('/project/{project}/warning', [AdminModerationController::class, 'warnProject'])->name('projects.warn');
+    Route::delete('/project/{project}', [AdminModerationController::class, 'destroyProject'])->name('projects.destroy');
+
+    Route::post('/user/{user}/warning', [AdminModerationController::class, 'warnUser'])->name('users.warn');
+    Route::post('/user/{user}/ban', [AdminModerationController::class, 'banUser'])->name('users.ban');
+    Route::post('/user/{user}/unban', [AdminModerationController::class, 'unbanUser'])->name('users.unban');
+    Route::delete('/user/{user}', [AdminModerationController::class, 'destroyUser'])->name('users.destroy');
 });
 
 Route::middleware('guest')->group(function () {
