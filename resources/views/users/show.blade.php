@@ -94,15 +94,27 @@
                         </div>
 
                         <!-- Report User Button -->
-                        <button type="button"
-                                onclick="window.openReportModal({ type: 'user', id: {{ $user->id }}, title: '{{ addslashes($user->name) }} (@{{ $user->username }})' })"
-                                class="btn-secondary text-xs py-2 px-3 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/40"
-                                title="Laporkan Akun Ini">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                            </svg>
-                            <span class="hidden sm:inline">Laporkan</span>
-                        </button>
+                        @guest
+                            <button type="button"
+                                    @click="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
+                                    class="btn-secondary text-xs py-2 px-3 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/40 cursor-pointer"
+                                    title="Laporkan Akun Ini">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                </svg>
+                                <span class="hidden sm:inline">Laporkan</span>
+                            </button>
+                        @else
+                            <button type="button"
+                                    onclick="window.openReportModal({ type: 'user', id: {{ $user->id }}, title: '{{ addslashes($user->name) }} (@{{ $user->username }})' })"
+                                    class="btn-secondary text-xs py-2 px-3 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/40"
+                                    title="Laporkan Akun Ini">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                </svg>
+                                <span class="hidden sm:inline">Laporkan</span>
+                            </button>
+                        @endguest
                     @endif
 
                     <!-- Admin Moderator Controls on User -->

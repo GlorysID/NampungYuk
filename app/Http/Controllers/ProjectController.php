@@ -33,9 +33,9 @@ class ProjectController extends Controller
         $techFilter = $request->query('tech');
         $search = $request->query('q') ?? $request->query('search');
 
-        // Memerlukan login untuk melihat feed berdasarkan kategori kodingan
-        if ($categorySlug && ! Auth::check()) {
-            return redirect()->route('login')->with('info', 'Silakan masuk terlebih dahulu untuk melihat project berdasarkan kategori kodingan.');
+        // Memerlukan login untuk melihat feed berdasarkan kategori kodingan atau filter teknologi
+        if (($categorySlug || $techFilter) && ! Auth::check()) {
+            return redirect()->route('login')->with('info', 'Silakan masuk terlebih dahulu untuk melihat project berdasarkan kategori kodingan atau teknologi.');
         }
 
         $query = Project::with(['user', 'category'])

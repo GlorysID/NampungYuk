@@ -15,6 +15,10 @@
                 this.open = true;
             });
             window.openReportModal = (detail) => {
+                @guest
+                    if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }
+                    return;
+                @endguest
                 window.dispatchEvent(new CustomEvent('open-report-modal', { detail }));
             };
         }

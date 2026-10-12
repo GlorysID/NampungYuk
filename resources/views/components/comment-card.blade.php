@@ -8,9 +8,15 @@
             <x-user-avatar :user="$comment->user" :name="$comment->guest_name" size="sm" />
             <div class="flex items-center gap-2 flex-wrap text-xs">
                 @if($comment->user)
-                    <a href="{{ route('profile.show', $comment->user->username) }}" class="font-bold text-[#18181b] dark:text-[#fafafa] hover:text-[#0070f3] dark:hover:text-[#3291ff] transition">
-                        {{ $comment->user->name }}
-                    </a>
+                    @guest
+                        <button type="button" @click="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }" class="font-bold text-[#18181b] dark:text-[#fafafa] hover:text-[#0070f3] dark:hover:text-[#3291ff] transition cursor-pointer">
+                            {{ $comment->user->name }}
+                        </button>
+                    @else
+                        <a href="{{ route('profile.show', $comment->user->username) }}" class="font-bold text-[#18181b] dark:text-[#fafafa] hover:text-[#0070f3] dark:hover:text-[#3291ff] transition">
+                            {{ $comment->user->name }}
+                        </a>
+                    @endguest
                     <span class="text-[11px] font-mono text-[#63636b] dark:text-[#a0a0a0]">&#64;{{ $comment->user->username }}</span>
                 @else
                     <span class="font-semibold text-[#18181b] dark:text-[#fafafa]">

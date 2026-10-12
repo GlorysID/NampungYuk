@@ -345,6 +345,9 @@ class ProjectShowcaseTest extends TestCase
         $guestResponse = $this->get('/?kategori=web-app');
         $guestResponse->assertRedirect(route('login'));
 
+        $guestTechResponse = $this->get('/?tech=Flutter');
+        $guestTechResponse->assertRedirect(route('login'));
+
         // Authenticated user can filter
         $user = User::factory()->create();
         $response = $this->actingAs($user)->get('/?kategori=web-app');

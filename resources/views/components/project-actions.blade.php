@@ -9,21 +9,33 @@
     <!-- Left: Like + Comments Count -->
     <div class="flex items-center gap-1.5 sm:gap-2">
         <!-- Like Button -->
-        <button @click="vote('up')"
-                type="button"
-                :disabled="isVoting"
-                :aria-pressed="userVote === 'up'"
-                aria-label="Sukai project {{ $project->title }}"
-                :class="{
-                    'bg-[#0070f3] text-white dark:bg-[#3291ff] dark:text-[#000000]': userVote === 'up',
-                    'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3] dark:hover:text-[#3291ff]': userVote !== 'up'
-                }"
-                class="btn-upvote inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold transition active:scale-95 disabled:opacity-60">
-            <svg class="w-3.5 h-3.5" :fill="userVote === 'up' ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-            </svg>
-            <span class="font-mono text-xs" x-text="score">{{ $project->score }}</span>
-        </button>
+        @guest
+            <button type="button"
+                    @click.stop="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
+                    aria-label="Sukai project {{ $project->title }}"
+                    class="btn-upvote inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3] dark:hover:text-[#3291ff] hover:bg-black/5 dark:hover:bg-white/5 transition active:scale-95 cursor-pointer">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                </svg>
+                <span class="font-mono text-xs" x-text="score">{{ $project->score }}</span>
+            </button>
+        @else
+            <button @click="vote('up')"
+                    type="button"
+                    :disabled="isVoting"
+                    :aria-pressed="userVote === 'up'"
+                    aria-label="Sukai project {{ $project->title }}"
+                    :class="{
+                        'bg-[#0070f3] text-white dark:bg-[#3291ff] dark:text-[#000000]': userVote === 'up',
+                        'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3] dark:hover:text-[#3291ff]': userVote !== 'up'
+                    }"
+                    class="btn-upvote inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold transition active:scale-95 disabled:opacity-60">
+                <svg class="w-3.5 h-3.5" :fill="userVote === 'up' ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                </svg>
+                <span class="font-mono text-xs" x-text="score">{{ $project->score }}</span>
+            </button>
+        @endguest
 
         <!-- Comments Count Link -->
         @guest
@@ -80,21 +92,33 @@
         @endauth
 
         <!-- Bookmark Toggle -->
-        <button @click="toggleBookmark()"
-                type="button"
-                :disabled="isBookmarking"
-                :aria-pressed="isBookmarked"
-                aria-label="Simpan project ke koleksi"
-                :class="{
-                    'text-[#0070f3] dark:text-[#3291ff] bg-[#e8f2ff] dark:bg-[#3291ff]/12 border-[#3291ff]/30 dark:border-[#3291ff]/30': isBookmarked,
-                    'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white border-transparent hover:bg-[#f5f5f5] dark:hover:bg-[#111111]': !isBookmarked
-                }"
-                class="btn-bookmark p-1.5 rounded-lg border transition active:scale-95 disabled:opacity-60"
-                title="Simpan ke Koleksi">
-            <svg class="w-4 h-4" :fill="isBookmarked ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
-            </svg>
-        </button>
+        @guest
+            <button type="button"
+                    @click.stop="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
+                    aria-label="Simpan project ke koleksi"
+                    class="btn-bookmark p-1.5 rounded-lg border border-transparent text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition active:scale-95 cursor-pointer"
+                    title="Simpan ke Koleksi">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                </svg>
+            </button>
+        @else
+            <button @click="toggleBookmark()"
+                    type="button"
+                    :disabled="isBookmarking"
+                    :aria-pressed="isBookmarked"
+                    aria-label="Simpan project ke koleksi"
+                    :class="{
+                        'text-[#0070f3] dark:text-[#3291ff] bg-[#e8f2ff] dark:bg-[#3291ff]/12 border-[#3291ff]/30 dark:border-[#3291ff]/30': isBookmarked,
+                        'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white border-transparent hover:bg-[#f5f5f5] dark:hover:bg-[#111111]': !isBookmarked
+                    }"
+                    class="btn-bookmark p-1.5 rounded-lg border transition active:scale-95 disabled:opacity-60"
+                    title="Simpan ke Koleksi">
+                <svg class="w-4 h-4" :fill="isBookmarked ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                </svg>
+            </button>
+        @endguest
 
         <!-- Share / Copy Link Button -->
         <button @click="copyLink()"
@@ -108,16 +132,28 @@
         </button>
 
         <!-- Report Button -->
-        @if(!auth()->check() || auth()->id() !== $project->user_id)
-            <button @click.stop="window.openReportModal ? window.openReportModal({ type: 'project', id: {{ $project->id }}, title: '{{ addslashes($project->title) }}' }) : null"
+        @guest
+            <button @click.stop="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
                     type="button"
                     aria-label="Laporkan project"
-                    class="p-1.5 rounded-lg text-[#63636b] dark:text-[#a0a0a0] hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition active:scale-95"
+                    class="p-1.5 rounded-lg text-[#63636b] dark:text-[#a0a0a0] hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition active:scale-95 cursor-pointer"
                     title="Laporkan Project">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                 </svg>
             </button>
-        @endif
+        @else
+            @if(auth()->id() !== $project->user_id)
+                <button @click.stop="window.openReportModal ? window.openReportModal({ type: 'project', id: {{ $project->id }}, title: '{{ addslashes($project->title) }}' }) : null"
+                        type="button"
+                        aria-label="Laporkan project"
+                        class="p-1.5 rounded-lg text-[#63636b] dark:text-[#a0a0a0] hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition active:scale-95"
+                        title="Laporkan Project">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </button>
+            @endif
+        @endguest
     </div>
 </div>

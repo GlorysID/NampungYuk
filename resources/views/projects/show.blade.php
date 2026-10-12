@@ -312,56 +312,91 @@
 
                 <!-- Voting controls in header -->
                 <div class="inline-flex items-center rounded-lg bg-[#eeeeef] dark:bg-[#171717] p-0.5 border border-[#e4e4e7] dark:border-[#1f1f1f]">
-                    <button @click="vote('up')"
-                            type="button"
-                            :disabled="isVoting"
-                            :aria-pressed="userVote === 'up'"
-                            aria-label="Upvote project ini"
-                            :class="{
-                                'bg-[#0070f3] text-white ': userVote === 'up',
-                                'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3] dark:hover:text-[#3291ff]': userVote !== 'up'
-                            }"
-                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition active:scale-95 disabled:opacity-60">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/>
-                        </svg>
-                        <span class="font-mono text-xs" x-text="score">{{ $project->score }}</span>
-                    </button>
+                    @guest
+                        <button type="button"
+                                @click="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
+                                aria-label="Upvote project ini"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3] dark:hover:text-[#3291ff] hover:bg-black/5 dark:hover:bg-white/5 transition active:scale-95 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/>
+                            </svg>
+                            <span class="font-mono text-xs" x-text="score">{{ $project->score }}</span>
+                        </button>
 
-                    <span class="h-3.5 w-px bg-[#eaeaea] dark:bg-[#1f1f1f] mx-0.5" aria-hidden="true"></span>
+                        <span class="h-3.5 w-px bg-[#eaeaea] dark:bg-[#1f1f1f] mx-0.5" aria-hidden="true"></span>
 
-                    <button @click="vote('down')"
-                            type="button"
-                            :disabled="isVoting"
-                            :aria-pressed="userVote === 'down'"
-                            aria-label="Downvote project ini"
-                            :class="{
-                                'bg-rose-600 text-white ': userVote === 'down',
-                                'text-[#63636b] dark:text-[#a0a0a0] hover:text-rose-600': userVote !== 'down'
-                            }"
-                            class="p-1.5 rounded-md transition active:scale-95 disabled:opacity-60">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
-                        </svg>
-                    </button>
+                        <button type="button"
+                                @click="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
+                                aria-label="Downvote project ini"
+                                class="p-1.5 rounded-md text-[#63636b] dark:text-[#a0a0a0] hover:text-rose-600 hover:bg-black/5 dark:hover:bg-white/5 transition active:scale-95 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                    @else
+                        <button @click="vote('up')"
+                                type="button"
+                                :disabled="isVoting"
+                                :aria-pressed="userVote === 'up'"
+                                aria-label="Upvote project ini"
+                                :class="{
+                                    'bg-[#0070f3] text-white ': userVote === 'up',
+                                    'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3] dark:hover:text-[#3291ff]': userVote !== 'up'
+                                }"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition active:scale-95 disabled:opacity-60">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/>
+                            </svg>
+                            <span class="font-mono text-xs" x-text="score">{{ $project->score }}</span>
+                        </button>
+
+                        <span class="h-3.5 w-px bg-[#eaeaea] dark:bg-[#1f1f1f] mx-0.5" aria-hidden="true"></span>
+
+                        <button @click="vote('down')"
+                                type="button"
+                                :disabled="isVoting"
+                                :aria-pressed="userVote === 'down'"
+                                aria-label="Downvote project ini"
+                                :class="{
+                                    'bg-rose-600 text-white ': userVote === 'down',
+                                    'text-[#63636b] dark:text-[#a0a0a0] hover:text-rose-600': userVote !== 'down'
+                                }"
+                                class="p-1.5 rounded-md transition active:scale-95 disabled:opacity-60">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                    @endguest
                 </div>
 
                 <!-- Bookmark Button -->
-                <button @click="toggleBookmark()"
-                        type="button"
-                        :disabled="isBookmarking"
-                        :aria-pressed="isBookmarked"
-                        aria-label="Simpan project ke koleksi"
-                        :class="{
-                            'text-[#0070f3] dark:text-[#3291ff] bg-[#e8f2ff] dark:bg-[#3291ff]/12 border-[#3291ff]/30 dark:border-[#3291ff]/30': isBookmarked,
-                            'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white border-[#e4e4e7] dark:border-[#1f1f1f] bg-white dark:bg-[#0a0a0a]': !isBookmarked
-                        }"
-                        class="p-2 rounded-lg border transition active:scale-95 disabled:opacity-60"
-                        title="Simpan ke Koleksi">
-                    <svg class="w-4 h-4" :fill="isBookmarked ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
-                    </svg>
-                </button>
+                @guest
+                    <button type="button"
+                            @click="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
+                            aria-label="Simpan project ke koleksi"
+                            class="p-2 rounded-lg border border-[#e4e4e7] dark:border-[#1f1f1f] bg-white dark:bg-[#0a0a0a] text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white transition active:scale-95 cursor-pointer"
+                            title="Simpan ke Koleksi">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                        </svg>
+                    </button>
+                @else
+                    <button @click="toggleBookmark()"
+                            type="button"
+                            :disabled="isBookmarking"
+                            :aria-pressed="isBookmarked"
+                            aria-label="Simpan project ke koleksi"
+                            :class="{
+                                'text-[#0070f3] dark:text-[#3291ff] bg-[#e8f2ff] dark:bg-[#3291ff]/12 border-[#3291ff]/30 dark:border-[#3291ff]/30': isBookmarked,
+                                'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white border-[#e4e4e7] dark:border-[#1f1f1f] bg-white dark:bg-[#0a0a0a]': !isBookmarked
+                            }"
+                            class="p-2 rounded-lg border transition active:scale-95 disabled:opacity-60"
+                            title="Simpan ke Koleksi">
+                        <svg class="w-4 h-4" :fill="isBookmarked ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                        </svg>
+                    </button>
+                @endguest
 
                 <!-- Share Button -->
                 <button @click="copyLink()"
@@ -375,17 +410,29 @@
                 </button>
 
                 <!-- Report Button -->
-                @if(!auth()->check() || auth()->id() !== $project->user_id)
-                <button type="button"
-                        onclick="window.openReportModal({ type: 'project', id: {{ $project->id }}, title: '{{ addslashes($project->title) }}' })"
-                        aria-label="Laporkan project"
-                        class="p-2 rounded-lg border border-[#e4e4e7] dark:border-[#1f1f1f] bg-white dark:bg-[#0a0a0a] text-[#63636b] dark:text-[#a0a0a0] hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/40 transition active:scale-95"
-                        title="Laporkan Project Ini">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                    </svg>
-                </button>
-                @endif
+                @guest
+                    <button type="button"
+                            @click="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
+                            aria-label="Laporkan project"
+                            class="p-2 rounded-lg border border-[#e4e4e7] dark:border-[#1f1f1f] bg-white dark:bg-[#0a0a0a] text-[#63636b] dark:text-[#a0a0a0] hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/40 transition active:scale-95 cursor-pointer"
+                            title="Laporkan Project Ini">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </button>
+                @else
+                    @if(auth()->id() !== $project->user_id)
+                        <button type="button"
+                                onclick="window.openReportModal({ type: 'project', id: {{ $project->id }}, title: '{{ addslashes($project->title) }}' })"
+                                aria-label="Laporkan project"
+                                class="p-2 rounded-lg border border-[#e4e4e7] dark:border-[#1f1f1f] bg-white dark:bg-[#0a0a0a] text-[#63636b] dark:text-[#a0a0a0] hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/40 transition active:scale-95"
+                                title="Laporkan Project Ini">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                        </button>
+                    @endif
+                @endguest
             </div>
 
         </div>
@@ -557,9 +604,11 @@
                     <p class="font-semibold text-[#18181b] dark:text-[#fafafa]">Ingin memberikan masukan atau pertanyaan?</p>
                     <p class="text-[#63636b] dark:text-[#a0a0a0]">Silakan masuk dengan akun kamu untuk bergabung dalam diskusi teknis ini.</p>
                 </div>
-                <x-button :href="route('login')" variant="primary" size="sm" class="shrink-0">
+                <button type="button"
+                        @click="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
+                        class="btn-primary text-xs py-2 px-3.5 shrink-0 cursor-pointer">
                     Masuk untuk Berkomentar
-                </x-button>
+                </button>
             </div>
         @endauth
 
@@ -586,13 +635,29 @@
                 @foreach($relatedProjects as $rel)
                     <div class="ny-card p-4 space-y-2 bg-white dark:bg-[#0a0a0a] flex flex-col justify-between">
                         <div class="space-y-1.5">
-                            <span class="text-[11px] font-mono text-[#0070f3] dark:text-[#3291ff] font-semibold">
-                                {{ $rel->category->name }}
-                            </span>
-                            <h3 class="font-bold text-sm text-[#18181b] dark:text-[#fafafa] hover:text-[#0070f3] transition">
-                                <a href="{{ route('projects.show', $rel->slug) }}">
-                                    {{ $rel->title }}
+                            @guest
+                                <button type="button"
+                                        @click="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
+                                        class="text-[11px] font-mono text-[#0070f3] dark:text-[#3291ff] font-semibold hover:underline cursor-pointer">
+                                    {{ $rel->category->name }}
+                                </button>
+                            @else
+                                <a href="{{ route('projects.index', ['kategori' => $rel->category->slug]) }}" class="text-[11px] font-mono text-[#0070f3] dark:text-[#3291ff] font-semibold hover:underline">
+                                    {{ $rel->category->name }}
                                 </a>
+                            @endguest
+                            <h3 class="font-bold text-sm text-[#18181b] dark:text-[#fafafa] hover:text-[#0070f3] transition">
+                                @guest
+                                    <button type="button"
+                                            @click="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
+                                            class="text-left font-bold text-sm text-[#18181b] dark:text-[#fafafa] hover:text-[#0070f3] transition cursor-pointer">
+                                        {{ $rel->title }}
+                                    </button>
+                                @else
+                                    <a href="{{ route('projects.show', $rel->slug) }}">
+                                        {{ $rel->title }}
+                                    </a>
+                                @endguest
                             </h3>
                             <p class="text-xs text-[#63636b] dark:text-[#a0a0a0] line-clamp-2">
                                 {{ $rel->tagline }}
