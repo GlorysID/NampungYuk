@@ -70,9 +70,9 @@
 
         <div class="relative z-10 px-5 sm:px-6 pb-5">
             <!-- Row 1: Avatar (overlapping banner) + Action Buttons (comfortable spacing below banner) -->
-            <div class="flex items-end justify-between gap-4 -mt-12 sm:-mt-14 mb-3">
+            <div class="flex items-start justify-between gap-4 mb-3">
                 <!-- Avatar -->
-                <div class="relative shrink-0">
+                <div class="relative shrink-0 -mt-12 sm:-mt-14">
                     <x-user-avatar :user="$user" size="xl" class="ring-4 ring-white dark:ring-[#0a0a0a]! shadow-md" />
                     @if($isOwner)
                         <span class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#0070f3] dark:bg-[#3291ff] text-[#ffffff] flex items-center justify-center ring-2 ring-white dark:ring-[#0a0a0a] z-10">
@@ -540,8 +540,22 @@
                             <label for="username" class="text-xs font-semibold text-[#18181b] dark:text-[#fafafa]">Username</label>
                             <div class="relative">
                                 <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#63636b] dark:text-[#a0a0a0] font-mono text-sm pointer-events-none select-none">@</span>
-                                <input type="text" id="username" name="username" value="{{ old('username', $user->username) }}" placeholder="username" class="ny-input text-sm font-mono !pl-9">
+                                <input type="text"
+                                       id="username"
+                                       name="username"
+                                       value="{{ old('username', $user->username) }}"
+                                       placeholder="username"
+                                       @if (! $user->canChangeUsername()) readonly @endif
+                                       class="ny-input text-sm font-mono !pl-9 @if (! $user->canChangeUsername()) !bg-[#f4f4f5] dark:!bg-[#141414] !text-[#71717a] dark:!text-[#a1a1aa] cursor-not-allowed select-none @endif">
                             </div>
+                            @if (! $user->canChangeUsername())
+                                <p class="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5 mt-1 leading-snug">
+                                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <span>Hanya bisa diubah 7 hari sekali. Tersedia lagi dalam <strong>{{ $user->daysUntilNextUsernameChange() }} hari</strong> ({{ $user->nextAllowedUsernameChangeDate()?->translatedFormat('d F Y') }}).</span>
+                                </p>
+                            @else
+                                <p class="text-[10px] text-[#63636b] dark:text-[#a0a0a0]">Catatan: Username hanya dapat diubah 1 kali setiap 7 hari.</p>
+                            @endif
                             @error('username') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
                         </div>
                     </div>

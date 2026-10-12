@@ -27,87 +27,50 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-[#f4f4f5] dark:bg-[#060709] text-[#18181b] dark:text-[#fafafa] min-h-screen flex items-center justify-center p-3 sm:p-5 relative antialiased selection:bg-[#3291ff]/25 selection:text-[#0070f3]"
-      x-data="{
-          step: {{ $errors->has('password') && (old('name') || old('username')) ? 2 : 1 }},
-          showPassword: false,
-          showPasswordConfirm: false,
-          regName: '{{ old('name', '') }}',
-          regUsername: '{{ old('username', '') }}',
-          regEmail: '{{ old('email', '') }}',
-          regPassword: '',
-          regPasswordConfirmation: '',
-          step1Error: '',
-          step2Error: '',
-          nextStep() {
-              this.step1Error = '';
-              if (!this.regName.trim()) { this.step1Error = 'Nama lengkap wajib diisi.'; return; }
-              if (!this.regUsername.trim()) { this.step1Error = 'Username wajib diisi.'; return; }
-              if (this.regUsername.length < 3) { this.step1Error = 'Username minimal 3 karakter.'; return; }
-              if (!/^[a-zA-Z0-9_]+$/.test(this.regUsername)) { this.step1Error = 'Username hanya boleh huruf, angka, dan underscore.'; return; }
-              if (!this.regEmail.trim()) { this.step1Error = 'Email wajib diisi.'; return; }
-              if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.regEmail)) { this.step1Error = 'Format email tidak valid.'; return; }
-              this.step = 2;
-          },
-          submitForm(e) {
-              this.step2Error = '';
-              if (!this.regPassword || this.regPassword.length < 8) {
-                  e.preventDefault();
-                  this.step2Error = 'Password minimal 8 karakter.';
-                  return;
-              }
-              if (this.regPassword !== this.regPasswordConfirmation) {
-                  e.preventDefault();
-                  this.step2Error = 'Konfirmasi password tidak cocok.';
-                  return;
-              }
-          }
-      }">
+<body class="bg-[#f4f4f5] dark:bg-[#060709] text-[#18181b] dark:text-[#fafafa] min-h-screen flex items-center justify-center p-3 sm:p-6 relative antialiased selection:bg-[#3291ff]/25 selection:text-[#0070f3]"
+      x-data="{ showPassword: false }">
 
     <!-- Ambient Glow Backdrop -->
     <div class="fixed inset-0 bg-black/60 dark:bg-black/85 backdrop-blur-md pointer-events-none"></div>
     <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-[#0070f3]/10 dark:bg-[#0070f3]/15 blur-[120px] pointer-events-none"></div>
 
-    <!-- Centered Modal Box (Identical size & layout to Auth Modal) -->
-    <div class="relative w-full max-w-md lg:max-w-3xl bg-white dark:bg-[#000000] border border-[#e4e4e7] dark:border-[#27272a] rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.25)] dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] grid grid-cols-1 lg:grid-cols-2 text-[#18181b] dark:text-[#fafafa] z-10">
+    <!-- Centered Modal Box (Persegi panjang kesamping: 2 Kolom) -->
+    <div class="relative w-full max-w-md md:max-w-3xl lg:max-w-4xl bg-white dark:bg-[#000000] border border-[#e4e4e7] dark:border-[#27272a] rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] flex flex-col md:flex-row text-[#18181b] dark:text-[#fafafa] z-10">
 
-        <!-- Close Button (X-style rounded button returning to Home) -->
+        <!-- Close Button (Kembali ke Beranda) -->
         <a href="{{ url('/') }}" 
-           class="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 text-[#63636b] hover:text-[#18181b] dark:text-[#a1a1aa] dark:hover:text-white flex items-center justify-center transition border border-black/10 dark:border-white/10 cursor-pointer"
+           class="absolute top-4 right-4 z-30 w-8 h-8 rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 text-[#71717a] hover:text-[#18181b] dark:text-[#a1a1aa] dark:hover:text-white flex items-center justify-center transition border border-black/5 dark:border-white/10 cursor-pointer"
            title="Kembali ke Beranda"
            aria-label="Tutup modal">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </a>
 
-        <!-- LEFT COLUMN: Register Form -->
-        <div class="p-6 sm:p-8 flex flex-col justify-between space-y-4 min-h-[510px]">
+        <!-- LEFT COLUMN: Register Form (50% on md+) -->
+        <div class="w-full md:w-1/2 p-6 sm:p-8 flex flex-col justify-between space-y-4">
             
             <div>
                 <!-- Brand header badge -->
                 <div class="mb-3.5 flex items-center justify-between">
                     <x-logo size="sm" :href="url('/')" />
-                    <!-- Tab Link to Login -->
-                    <a href="{{ route('login') }}" class="mr-10 lg:mr-0 text-xs font-semibold text-[#0070f3] dark:text-[#3291ff] hover:underline">
+                    <a href="{{ route('login') }}" class="mr-10 md:mr-0 text-xs font-semibold text-[#0070f3] dark:text-[#3291ff] hover:underline">
                         Masuk &rarr;
                     </a>
                 </div>
 
                 <!-- Headline -->
                 <div class="space-y-1 mb-4">
-                    <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-[#18181b] dark:text-white"
-                        x-text="step === 1 ? 'Bergabunglah hari ini.' : 'Buat kata sandi.'">
+                    <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-[#18181b] dark:text-white">
                         Bergabunglah hari ini.
                     </h1>
-                    <p class="text-xs text-[#63636b] dark:text-[#a1a1aa] leading-relaxed line-clamp-2"
-                       x-text="step === 1 ? 'Langkah 1 dari 2: Isi identitas profil dan alamat email akunmu.' : 'Langkah 2 dari 2: Buat kata sandi aman untuk masuk ke akunmu.'">
-                        Buat akun dan bagikan project pertamamu ke ribuan developer.
+                    <p class="text-xs text-[#71717a] dark:text-[#a1a1aa] leading-relaxed line-clamp-2">
+                        Buat akun untuk memamerkan karya codingmu dan terhubung dengan sesama developer.
                     </p>
                 </div>
 
-                <!-- Step 1: Google OAuth Button -->
-                <div x-show="step === 1" class="space-y-3">
+                <!-- Social OAuth Button: Google -->
+                <div>
                     <a href="{{ route('auth.google') }}" 
-                       class="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-white hover:bg-[#f4f4f5] dark:hover:bg-[#e4e4e7] text-[#18181b] dark:text-[#09090b] rounded-full font-bold text-xs transition duration-150 active:scale-[0.99] border border-[#e4e4e7] dark:border-transparent shadow-xs dark:shadow-sm">
+                       class="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-[#f4f4f5] hover:bg-[#e4e4e7] dark:bg-[#18181b] dark:hover:bg-[#27272a] text-[#18181b] dark:text-white rounded-xl font-bold text-xs transition duration-150 border border-[#e4e4e7] dark:border-[#27272a] shadow-xs cursor-pointer">
                         <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -126,184 +89,163 @@
                     </div>
                 </div>
 
-                <!-- Step 2 Navigation Summary Bar -->
-                <div x-show="step === 2" x-cloak class="space-y-3">
-                    <div class="flex items-center justify-between py-2 px-3.5 rounded-2xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-xs">
-                        <button type="button" 
-                                @click="step = 1; step2Error = '';" 
-                                class="inline-flex items-center gap-1.5 font-bold text-[#0070f3] dark:text-[#3291ff] hover:underline cursor-pointer">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                            <span>Ubah Data</span>
-                        </button>
-                        <div class="text-[11px] text-[#71717a] flex items-center gap-1.5 max-w-[160px] truncate">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-                            <span class="truncate" x-text="regEmail || regUsername"></span>
-                        </div>
-                    </div>
-
-                    <div class="relative flex items-center justify-center my-3.5">
-                        <div class="border-t border-[#e4e4e7] dark:border-[#27272a] w-full"></div>
-                        <span class="bg-white dark:bg-[#000000] px-3 text-[10px] font-mono uppercase text-[#71717a] tracking-wider">
-                            Langkah 2 / 2
-                        </span>
-                    </div>
-                </div>
-
                 <!-- Registration Form -->
-                <form method="POST" action="{{ route('register') }}" @submit="submitForm($event)" class="space-y-3">
+                <form method="POST" action="{{ route('register') }}" class="space-y-3">
                     @csrf
 
-                    <!-- STEP 1 FIELDS -->
-                    <div x-show="step === 1" class="space-y-3">
+                    <div class="grid grid-cols-2 gap-2.5">
                         <div>
-                            <label class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Nama Lengkap</label>
+                            <label for="name" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Nama Lengkap</label>
                             <input type="text" 
+                                   id="name"
                                    name="name" 
-                                   x-model="regName"
+                                   value="{{ old('name') }}"
                                    required 
-                                   placeholder="Contoh: Budi Santoso" 
-                                   class="w-full px-3.5 py-2.5 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
-                            @error('name')
-                                <p class="text-rose-500 dark:text-rose-400 font-medium text-[11px] mt-1">{{ $message }}</p>
-                            @enderror
+                                   autofocus
+                                   placeholder="Budi Santoso" 
+                                   class="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+                            @error('name') <p class="text-rose-500 text-[10px] mt-1">{{ $message }}</p> @enderror
                         </div>
-
                         <div>
-                            <label class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Username Unik</label>
+                            <label for="username" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Username</label>
                             <div class="relative">
-                                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-mono text-[#71717a]">@</span>
+                                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-[#71717a]">@</span>
                                 <input type="text" 
+                                       id="username"
                                        name="username" 
-                                       x-model="regUsername"
+                                       value="{{ old('username') }}"
                                        required 
                                        placeholder="budisantoso" 
-                                       class="w-full pl-8 pr-3.5 py-2.5 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs font-mono placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+                                       class="w-full pl-6 pr-3 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs font-mono placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
                             </div>
-                            @error('username')
-                                <p class="text-rose-500 dark:text-rose-400 font-medium text-[11px] mt-1">{{ $message }}</p>
-                            @enderror
+                            @error('username') <p class="text-rose-500 text-[10px] mt-1">{{ $message }}</p> @enderror
                         </div>
+                    </div>
 
+                    <div>
+                        <label for="email" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Email Aktif</label>
+                        <input type="email" 
+                               id="email"
+                               name="email" 
+                               value="{{ old('email') }}"
+                               required 
+                               placeholder="nama@email.com" 
+                               class="w-full px-3.5 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+                        @error('email') <p class="text-rose-500 text-[10px] mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2.5">
                         <div>
-                            <label class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Alamat Email Aktif</label>
-                            <input type="email" 
-                                   name="email" 
-                                   x-model="regEmail"
+                            <label for="password" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Password</label>
+                            <input :type="showPassword ? 'text' : 'password'" 
+                                   id="password"
+                                   name="password" 
                                    required 
-                                   placeholder="nama@email.com" 
-                                   class="w-full px-3.5 py-2.5 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
-                            @error('email')
-                                <p class="text-rose-500 dark:text-rose-400 font-medium text-[11px] mt-1">{{ $message }}</p>
-                            @enderror
+                                   placeholder="Min. 8 karakter" 
+                                   class="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+                            @error('password') <p class="text-rose-500 text-[10px] mt-1">{{ $message }}</p> @enderror
                         </div>
-
-                        <template x-if="step1Error">
-                            <p class="text-rose-500 dark:text-rose-400 font-semibold text-[11px]" x-text="step1Error"></p>
-                        </template>
-
-                        <button type="button" 
-                                @click="nextStep()" 
-                                class="w-full py-2.5 px-4 bg-[#18181b] hover:bg-[#27272a] text-white dark:bg-white dark:hover:bg-[#e4e4e7] dark:text-black rounded-full font-bold text-xs transition duration-150 active:scale-[0.99] shadow-sm cursor-pointer">
-                            Lanjut: Buat Kata Sandi &rarr;
-                        </button>
+                        <div>
+                            <label for="password_confirmation" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Konfirmasi</label>
+                            <input :type="showPassword ? 'text' : 'password'" 
+                                   id="password_confirmation"
+                                   name="password_confirmation" 
+                                   required 
+                                   placeholder="Ulangi sandi" 
+                                   class="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+                        </div>
                     </div>
 
-                    <!-- STEP 2 FIELDS -->
-                    <div x-show="step === 2" x-cloak class="space-y-3">
-                        <div>
-                            <label class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Kata Sandi (Min. 8 Karakter)</label>
-                            <div class="relative">
-                                <input :type="showPassword ? 'text' : 'password'" 
-                                       name="password" 
-                                       x-model="regPassword"
-                                       required 
-                                       placeholder="••••••••" 
-                                       class="w-full px-3.5 py-2.5 pr-10 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
-                                <button type="button" @click="showPassword = !showPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#71717a] hover:text-[#18181b] dark:hover:text-white text-xs cursor-pointer">
-                                    <svg x-show="!showPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                    <svg x-show="showPassword" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
-                                </button>
-                            </div>
-                            @error('password')
-                                <p class="text-rose-500 dark:text-rose-400 font-medium text-[11px] mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Konfirmasi Kata Sandi</label>
-                            <div class="relative">
-                                <input :type="showPasswordConfirm ? 'text' : 'password'" 
-                                       name="password_confirmation" 
-                                       x-model="regPasswordConfirmation"
-                                       required 
-                                       placeholder="••••••••" 
-                                       class="w-full px-3.5 py-2.5 pr-10 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
-                                <button type="button" @click="showPasswordConfirm = !showPasswordConfirm" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#71717a] hover:text-[#18181b] dark:hover:text-white text-xs cursor-pointer">
-                                    <svg x-show="!showPasswordConfirm" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                    <svg x-show="showPasswordConfirm" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
-                                </button>
-                            </div>
-                        </div>
-
-                        <template x-if="step2Error">
-                            <p class="text-rose-500 dark:text-rose-400 font-semibold text-[11px]" x-text="step2Error"></p>
-                        </template>
-
-                        <button type="submit" 
-                                class="w-full py-2.5 px-4 bg-[#18181b] hover:bg-[#27272a] text-white dark:bg-white dark:hover:bg-[#e4e4e7] dark:text-black rounded-full font-bold text-xs transition duration-150 active:scale-[0.99] shadow-sm cursor-pointer">
-                            Selesaikan & Daftar Akun
-                        </button>
+                    <div class="flex items-center justify-between pt-0.5">
+                        <label class="flex items-center gap-1.5 text-[11px] text-[#71717a] cursor-pointer select-none">
+                            <input type="checkbox" @change="showPassword = $event.target.checked" class="rounded border-[#e4e4e7] dark:border-[#27272a] text-[#0070f3]">
+                            <span>Lihat password</span>
+                        </label>
                     </div>
 
+                    <button type="submit" 
+                            class="w-full mt-2 py-2.5 rounded-full bg-[#18181b] hover:bg-[#27272a] text-white dark:bg-white dark:hover:bg-[#e4e4e7] dark:text-black font-bold text-xs transition duration-150 active:scale-[0.99] shadow-sm cursor-pointer">
+                        Buat Akun & Bergabung
+                    </button>
                 </form>
             </div>
 
-            <!-- Footer Switcher -->
-            <div class="pt-3 border-t border-[#e4e4e7] dark:border-[#27272a] flex items-center justify-between text-xs">
-                <span class="text-[#71717a]">Sudah punya akun?</span>
-                <a href="{{ route('login') }}" 
-                   class="font-bold text-[#0070f3] dark:text-[#3291ff] hover:underline cursor-pointer">
-                    Masuk Sekarang
-                </a>
+            <!-- Switcher Footer & Terms -->
+            <div class="space-y-2">
+                <p class="text-[10px] text-[#71717a] dark:text-[#52525b] leading-tight">
+                    Dengan mendaftar, Anda menyetujui Ketentuan Layanan dan Kebijakan Privasi NampungYuk.
+                </p>
+                <div class="pt-2.5 border-t border-[#e4e4e7] dark:border-[#18181b] flex items-center justify-between text-xs">
+                    <span class="text-[#71717a]">Sudah punya akun?</span>
+                    <a href="{{ route('login') }}" class="font-bold text-[#0070f3] dark:text-[#3291ff] hover:underline cursor-pointer">
+                        Masuk ke Akun &rarr;
+                    </a>
+                </div>
             </div>
 
         </div>
 
-        <!-- RIGHT COLUMN: Brand Showcase Stage (ala X modal) -->
-        <div class="hidden lg:flex relative flex-col justify-center items-center select-none overflow-hidden p-8 bg-gradient-to-br from-[#f8f9fa] via-[#f1f3f5] to-[#e9ecef] dark:from-[#0c0d14] dark:via-[#08090d] dark:to-[#040406] border-l border-[#e4e4e7] dark:border-[#1f1f23]">
-            <!-- Ambient Glow & Tech Grid -->
-            <div class="absolute inset-0 bg-[radial-gradient(#0070f3_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.08] dark:opacity-10 pointer-events-none"></div>
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-[#0070f3]/10 dark:bg-[#0070f3]/25 blur-[90px] pointer-events-none"></div>
+        <!-- RIGHT COLUMN: Elevated Brand Identity Stage (Side-by-side kesamping pada md+) -->
+        <div class="hidden md:flex md:w-1/2 relative bg-gradient-to-br from-[#f8f9fa] via-[#f1f3f5] to-[#e9ecef] dark:from-[#0c0d14] dark:via-[#07080c] dark:to-[#030305] border-t md:border-t-0 md:border-l border-[#e4e4e7] dark:border-[#1f1f23] p-7 lg:p-8 flex-col justify-center items-center text-center overflow-hidden select-none">
+            
+            <!-- Background Subtle Tech Grid & Radial Glows -->
+            <div class="absolute inset-0 bg-[radial-gradient(#0070f3_1px,transparent_1px)] [background-size:20px_20px] opacity-[0.07] dark:opacity-10 pointer-events-none"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-[#0070f3]/10 dark:bg-[#0070f3]/20 blur-[110px] pointer-events-none"></div>
+            <div class="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-[#00c2cb]/10 dark:bg-[#00c2cb]/15 blur-[80px] pointer-events-none"></div>
 
-            <div class="relative z-10 w-full max-w-xs mx-auto space-y-6 flex flex-col items-center text-center">
-                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-[10px] text-[#63636b] dark:text-[#a1a1aa] font-medium backdrop-blur-sm">
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#00c2cb] animate-pulse"></span>
-                    <span>Showroom Developer Indonesia</span>
-                </div>
-
-                <!-- Pedestal with Logo -->
-                <div class="relative w-36 h-36 rounded-3xl bg-white/80 dark:bg-gradient-to-b dark:from-white/[0.08] dark:to-white/[0.02] border border-[#e4e4e7] dark:border-white/10 shadow-[0_20px_50px_rgba(0,112,243,0.12)] dark:shadow-[0_20px_50px_rgba(0,112,243,0.3)] backdrop-blur-xl flex items-center justify-center p-5 group hover:border-[#00c2cb]/40 transition-all duration-500">
-                    <img src="{{ asset('images/lightmode-icon.png') }}" alt="NampungYuk Logo" class="w-full h-full object-contain block dark:hidden drop-shadow-md">
-                    <img src="{{ asset('images/darkmode-icon.png') }}" alt="NampungYuk Logo" class="w-full h-full object-contain hidden dark:block filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.9)]">
-
-                    <!-- Floating Micro Pills -->
-                    <div class="absolute -top-2 -right-2 px-2 py-0.5 rounded-full bg-white dark:bg-[#090a0f] border border-[#00c2cb]/40 text-[#008f97] dark:text-[#00c2cb] text-[9px] font-mono font-bold shadow-xs">
-                        &lt;/&gt; Code
+            <div class="relative z-10 w-full max-w-sm mx-auto space-y-6 flex flex-col items-center">
+                
+                <!-- Top: Brand Eyebrow & Value Statement -->
+                <div class="space-y-2">
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-[11px] text-[#63636b] dark:text-[#a1a1aa] font-medium backdrop-blur-sm">
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#00c2cb] animate-pulse"></span>
+                        <span>Showroom Developer Indonesia</span>
                     </div>
-                    <div class="absolute -bottom-2 -left-2 px-2 py-0.5 rounded-full bg-white dark:bg-[#090a0f] border border-[#3291ff]/40 text-[#0070f3] dark:text-[#3291ff] text-[9px] font-mono font-bold shadow-xs">
-                        💬 Komunitas
+                    <h3 class="text-lg sm:text-xl font-bold text-[#18181b] dark:text-white tracking-tight leading-snug">
+                        Tempat karya codinganmu <br><span class="ny-gradient-text">mendapatkan panggung.</span>
+                    </h3>
+                </div>
+
+                <!-- Center: Floating Brand Pedestal & Hero Emblem -->
+                <div class="flex flex-col items-center text-center space-y-3.5">
+                    <!-- Frosted Glass Pedestal with Ambient Neon Core -->
+                    <div class="relative w-36 h-36 rounded-3xl bg-white/80 dark:bg-gradient-to-b dark:from-white/[0.08] dark:to-white/[0.02] border border-[#e4e4e7] dark:border-white/10 shadow-[0_20px_50px_rgba(0,112,243,0.12)] dark:shadow-[0_20px_50px_rgba(0,112,243,0.3)] backdrop-blur-xl flex items-center justify-center p-5 group hover:border-[#00c2cb]/40 transition-all duration-500">
+                        <div class="absolute inset-2 rounded-2xl bg-radial from-[#0070f3]/15 dark:from-[#0070f3]/25 via-[#00c2cb]/10 to-transparent pointer-events-none"></div>
+
+                        <!-- Hero Brand Logo Icon -->
+                        <img src="{{ asset('images/lightmode-icon.png') }}" 
+                             alt="NampungYuk Logo" 
+                             class="w-full h-full object-contain block dark:hidden drop-shadow-md transform group-hover:scale-105 transition-transform duration-500">
+                        <img src="{{ asset('images/darkmode-icon.png') }}" 
+                             alt="NampungYuk Logo" 
+                             class="w-full h-full object-contain hidden dark:block filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.9)] transform group-hover:scale-105 transition-transform duration-500">
+
+                        <!-- Floating Micro Pill 1: Code -->
+                        <div class="absolute -top-2.5 -right-2.5 px-2.5 py-0.5 rounded-full bg-white dark:bg-[#090a0f] border border-[#00c2cb]/40 text-[#008f97] dark:text-[#00c2cb] text-[10px] font-mono font-bold shadow-md flex items-center gap-1">
+                            <span>&lt;/&gt;</span>
+                            <span>Code</span>
+                        </div>
+
+                        <!-- Floating Micro Pill 2: Community -->
+                        <div class="absolute -bottom-2.5 -left-2.5 px-2.5 py-0.5 rounded-full bg-white dark:bg-[#090a0f] border border-[#3291ff]/40 text-[#0070f3] dark:text-[#3291ff] text-[10px] font-mono font-bold shadow-md flex items-center gap-1">
+                            <span>💬</span>
+                            <span>Komunitas</span>
+                        </div>
+                    </div>
+
+                    <!-- Brand Name & Description -->
+                    <div class="space-y-1 max-w-[260px]">
+                        <p class="text-sm font-extrabold tracking-tight text-[#18181b] dark:text-white">
+                            Nampung<span class="text-[#0070f3] dark:text-[#00c2cb]">Yuk</span>
+                        </p>
+                        <p class="text-[11px] text-[#63636b] dark:text-[#71717a] leading-relaxed">
+                            Satu wadah untuk memamerkan karya kodingan, live demo interaktif, dan apresiasi sesama programmer.
+                        </p>
                     </div>
                 </div>
 
-                <div class="space-y-1">
-                    <p class="text-sm font-extrabold tracking-tight text-[#18181b] dark:text-white">
-                        Nampung<span class="text-[#0070f3] dark:text-[#00c2cb]">Yuk</span>
-                    </p>
-                    <p class="text-[11px] text-[#63636b] dark:text-[#71717a] leading-relaxed">
-                        Satu wadah untuk memamerkan karya kodingan, live demo interaktif, dan apresiasi sesama programmer.
-                    </p>
-                </div>
             </div>
+
         </div>
 
     </div>

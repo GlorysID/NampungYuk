@@ -42,13 +42,21 @@ class ProfileController extends Controller
             $data['banner'] = '/storage/'.$bannerPath;
         }
 
-        $user->update([
+        $usernameChanged = $user->username !== $data['username'];
+
+        $updateData = [
             'name' => $data['name'],
             'username' => $data['username'],
             'bio' => $data['bio'] ?? null,
             ...(isset($data['avatar']) ? ['avatar' => $data['avatar']] : []),
             ...(isset($data['banner']) ? ['banner' => $data['banner']] : []),
-        ]);
+        ];
+
+        if ($usernameChanged) {
+            $updateData['username_changed_at'] = now();
+        }
+
+        $user->update($updateData);
 
         // Sync dynamic profile links (max 6, ordered).
         if ($request->has('links')) {

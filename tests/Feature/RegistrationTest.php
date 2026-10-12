@@ -76,6 +76,19 @@ class RegistrationTest extends TestCase
         $this->assertDatabaseCount('users', 1);
     }
 
+    public function test_duplicate_username_with_different_casing_is_rejected(): void
+    {
+        User::factory()->create(['username' => 'budi_santoso']);
+
+        $response = $this->from(route('register'))->post(route('register.store'), $this->registrationData([
+            'username' => 'BUDI_SANTOSO',
+            'email' => 'different@example.com',
+        ]));
+
+        $response->assertSessionHasErrors('username');
+        $this->assertDatabaseCount('users', 1);
+    }
+
     public function test_short_password_is_rejected(): void
     {
         $response = $this->from(route('register'))->post(route('register.store'), $this->registrationData([

@@ -27,33 +27,32 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-[#f4f4f5] dark:bg-[#060709] text-[#18181b] dark:text-[#fafafa] min-h-screen flex items-center justify-center p-3 sm:p-5 relative antialiased selection:bg-[#3291ff]/25 selection:text-[#0070f3]"
+<body class="bg-[#f4f4f5] dark:bg-[#060709] text-[#18181b] dark:text-[#fafafa] min-h-screen flex items-center justify-center p-3 sm:p-6 relative antialiased selection:bg-[#3291ff]/25 selection:text-[#0070f3]"
       x-data="{ showPassword: false }">
 
     <!-- Ambient Glow Backdrop -->
     <div class="fixed inset-0 bg-black/60 dark:bg-black/85 backdrop-blur-md pointer-events-none"></div>
     <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-[#0070f3]/10 dark:bg-[#0070f3]/15 blur-[120px] pointer-events-none"></div>
 
-    <!-- Centered Modal Box (Identical size & layout to Auth Modal) -->
-    <div class="relative w-full max-w-md lg:max-w-3xl bg-white dark:bg-[#000000] border border-[#e4e4e7] dark:border-[#27272a] rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.25)] dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] grid grid-cols-1 lg:grid-cols-2 text-[#18181b] dark:text-[#fafafa] z-10">
+    <!-- Centered Modal Box (Persegi panjang kesamping: 2 Kolom) -->
+    <div class="relative w-full max-w-md md:max-w-3xl lg:max-w-4xl bg-white dark:bg-[#000000] border border-[#e4e4e7] dark:border-[#27272a] rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] flex flex-col md:flex-row text-[#18181b] dark:text-[#fafafa] z-10">
 
-        <!-- Close Button (X-style rounded button returning to Home) -->
+        <!-- Close Button (Kembali ke Beranda) -->
         <a href="{{ url('/') }}" 
-           class="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 text-[#63636b] hover:text-[#18181b] dark:text-[#a1a1aa] dark:hover:text-white flex items-center justify-center transition border border-black/10 dark:border-white/10 cursor-pointer"
+           class="absolute top-4 right-4 z-30 w-8 h-8 rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 text-[#71717a] hover:text-[#18181b] dark:text-[#a1a1aa] dark:hover:text-white flex items-center justify-center transition border border-black/5 dark:border-white/10 cursor-pointer"
            title="Kembali ke Beranda"
            aria-label="Tutup modal">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </a>
 
-        <!-- LEFT COLUMN: Login Form -->
-        <div class="p-6 sm:p-8 flex flex-col justify-between space-y-4 min-h-[510px]">
+        <!-- LEFT COLUMN: Login Form (50% on md+) -->
+        <div class="w-full md:w-1/2 p-6 sm:p-8 flex flex-col justify-between space-y-4">
             
             <div>
                 <!-- Brand header badge -->
                 <div class="mb-3.5 flex items-center justify-between">
                     <x-logo size="sm" :href="url('/')" />
-                    <!-- Tab Link to Register -->
-                    <a href="{{ route('register') }}" class="mr-10 lg:mr-0 text-xs font-semibold text-[#0070f3] dark:text-[#3291ff] hover:underline">
+                    <a href="{{ route('register') }}" class="mr-10 md:mr-0 text-xs font-semibold text-[#0070f3] dark:text-[#3291ff] hover:underline">
                         Daftar Akun &rarr;
                     </a>
                 </div>
@@ -63,23 +62,23 @@
                     <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-[#18181b] dark:text-white">
                         Sedang tren saat ini.
                     </h1>
-                    <p class="text-xs text-[#63636b] dark:text-[#a1a1aa] leading-relaxed line-clamp-2">
+                    <p class="text-xs text-[#71717a] dark:text-[#a1a1aa] leading-relaxed line-clamp-2">
                         Masuk untuk memamerkan karya, bookmark project, dan berdiskusi dengan sesama developer.
                     </p>
                 </div>
 
                 <!-- Status alert if redirected (e.g., after registration) -->
                 @if (session('status'))
-                    <div class="mb-3 p-3 rounded-2xl bg-[#0070f3]/10 dark:bg-[#0070f3]/15 border border-[#0070f3]/25 dark:border-[#3291ff]/30 text-[#0070f3] dark:text-[#47a8ff] text-xs flex items-center gap-2.5">
+                    <div class="mb-3 p-3 rounded-xl bg-[#0070f3]/10 dark:bg-[#0070f3]/15 border border-[#0070f3]/25 dark:border-[#3291ff]/30 text-[#0070f3] dark:text-[#47a8ff] text-xs flex items-center gap-2.5">
                         <svg class="w-4 h-4 text-[#0070f3] dark:text-[#3291ff] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         <span>{{ session('status') }}</span>
                     </div>
                 @endif
 
                 <!-- Social OAuth Button: Google -->
-                <div class="space-y-3">
+                <div>
                     <a href="{{ route('auth.google') }}" 
-                       class="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-white hover:bg-[#f4f4f5] dark:hover:bg-[#e4e4e7] text-[#18181b] dark:text-[#09090b] rounded-full font-bold text-xs transition duration-150 active:scale-[0.99] border border-[#e4e4e7] dark:border-transparent shadow-xs dark:shadow-sm">
+                       class="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-[#f4f4f5] hover:bg-[#e4e4e7] dark:bg-[#18181b] dark:hover:bg-[#27272a] text-[#18181b] dark:text-white rounded-xl font-bold text-xs transition duration-150 border border-[#e4e4e7] dark:border-[#27272a] shadow-xs cursor-pointer">
                         <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -109,7 +108,7 @@
                                value="{{ old('login') }}" 
                                required 
                                autofocus
-                               placeholder="dev@nampungyuk.id atau username" 
+                               placeholder="nama@email.com atau username" 
                                class="w-full px-3.5 py-2.5 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] focus:ring-1 focus:ring-[#0070f3] dark:focus:ring-[#3291ff] outline-none transition">
                         @error('login')
                             <p class="text-rose-500 dark:text-rose-400 font-medium text-[11px] mt-1">{{ $message }}</p>
@@ -117,10 +116,7 @@
                     </div>
 
                     <div>
-                        <div class="flex items-center justify-between mb-1">
-                            <label for="password" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa]">Password</label>
-                            <a href="{{ route('password.request') }}" class="text-[11px] font-semibold text-[#0070f3] dark:text-[#3291ff] hover:underline">Lupa password?</a>
-                        </div>
+                        <label for="password" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Password</label>
                         <div class="relative">
                             <input :type="showPassword ? 'text' : 'password'" 
                                    id="password" 
@@ -138,66 +134,92 @@
                         @enderror
                     </div>
 
-                    <div class="flex items-center text-[#63636b] dark:text-[#a1a1aa] text-xs pt-0.5">
+                    <div class="flex items-center justify-between text-[#63636b] dark:text-[#a1a1aa] text-xs pt-0.5">
                         <label class="flex items-center gap-2 cursor-pointer select-none">
-                            <input type="checkbox" name="remember" value="1" class="rounded border-[#e4e4e7] dark:border-[#27272a] bg-[#f8f9fa] dark:bg-[#09090b] text-[#0070f3] focus:ring-[#0070f3]">
+                            <input type="checkbox" name="remember" value="1" checked class="rounded border-[#e4e4e7] dark:border-[#27272a] bg-[#f8f9fa] dark:bg-[#09090b] text-[#0070f3] focus:ring-[#0070f3]">
                             <span>Ingat saya</span>
                         </label>
+                        <a href="{{ route('password.request') }}" class="text-[11px] font-semibold text-[#0070f3] dark:text-[#3291ff] hover:underline">Lupa password?</a>
                     </div>
 
                     <button type="submit" 
-                            class="w-full py-2.5 px-4 bg-[#18181b] hover:bg-[#27272a] text-white dark:bg-white dark:hover:bg-[#e4e4e7] dark:text-black rounded-full font-bold text-xs transition duration-150 active:scale-[0.99] shadow-sm cursor-pointer">
-                        Masuk
+                            class="w-full mt-2 py-2.5 rounded-full bg-[#18181b] hover:bg-[#27272a] text-white dark:bg-white dark:hover:bg-[#e4e4e7] dark:text-black font-bold text-xs transition duration-150 active:scale-[0.99] shadow-sm cursor-pointer">
+                        Masuk ke Akun
                     </button>
                 </form>
             </div>
 
-            <!-- Footer Switcher -->
-            <div class="pt-3 border-t border-[#e4e4e7] dark:border-[#27272a] flex items-center justify-between text-xs">
+            <!-- Switcher Footer -->
+            <div class="pt-2.5 border-t border-[#e4e4e7] dark:border-[#18181b] flex items-center justify-between text-xs">
                 <span class="text-[#71717a]">Belum punya akun?</span>
-                <a href="{{ route('register') }}" 
-                   class="font-bold text-[#0070f3] dark:text-[#3291ff] hover:underline cursor-pointer">
-                    Daftar Akun Baru
+                <a href="{{ route('register') }}" class="font-bold text-[#0070f3] dark:text-[#3291ff] hover:underline cursor-pointer">
+                    Daftar Sekarang &rarr;
                 </a>
             </div>
 
         </div>
 
-        <!-- RIGHT COLUMN: Brand Showcase Stage (ala X modal) -->
-        <div class="hidden lg:flex relative flex-col justify-center items-center select-none overflow-hidden p-8 bg-gradient-to-br from-[#f8f9fa] via-[#f1f3f5] to-[#e9ecef] dark:from-[#0c0d14] dark:via-[#08090d] dark:to-[#040406] border-l border-[#e4e4e7] dark:border-[#1f1f23]">
-            <!-- Ambient Glow & Tech Grid -->
-            <div class="absolute inset-0 bg-[radial-gradient(#0070f3_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.08] dark:opacity-10 pointer-events-none"></div>
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-[#0070f3]/10 dark:bg-[#0070f3]/25 blur-[90px] pointer-events-none"></div>
+        <!-- RIGHT COLUMN: Elevated Brand Identity Stage (Side-by-side kesamping pada md+) -->
+        <div class="hidden md:flex md:w-1/2 relative bg-gradient-to-br from-[#f8f9fa] via-[#f1f3f5] to-[#e9ecef] dark:from-[#0c0d14] dark:via-[#07080c] dark:to-[#030305] border-t md:border-t-0 md:border-l border-[#e4e4e7] dark:border-[#1f1f23] p-7 lg:p-8 flex-col justify-center items-center text-center overflow-hidden select-none">
+            
+            <!-- Background Subtle Tech Grid & Radial Glows -->
+            <div class="absolute inset-0 bg-[radial-gradient(#0070f3_1px,transparent_1px)] [background-size:20px_20px] opacity-[0.07] dark:opacity-10 pointer-events-none"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-[#0070f3]/10 dark:bg-[#0070f3]/20 blur-[110px] pointer-events-none"></div>
+            <div class="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-[#00c2cb]/10 dark:bg-[#00c2cb]/15 blur-[80px] pointer-events-none"></div>
 
-            <div class="relative z-10 w-full max-w-xs mx-auto space-y-6 flex flex-col items-center text-center">
-                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-[10px] text-[#63636b] dark:text-[#a1a1aa] font-medium backdrop-blur-sm">
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#00c2cb] animate-pulse"></span>
-                    <span>Showroom Developer Indonesia</span>
-                </div>
-
-                <!-- Pedestal with Logo -->
-                <div class="relative w-36 h-36 rounded-3xl bg-white/80 dark:bg-gradient-to-b dark:from-white/[0.08] dark:to-white/[0.02] border border-[#e4e4e7] dark:border-white/10 shadow-[0_20px_50px_rgba(0,112,243,0.12)] dark:shadow-[0_20px_50px_rgba(0,112,243,0.3)] backdrop-blur-xl flex items-center justify-center p-5 group hover:border-[#00c2cb]/40 transition-all duration-500">
-                    <img src="{{ asset('images/lightmode-icon.png') }}" alt="NampungYuk Logo" class="w-full h-full object-contain block dark:hidden drop-shadow-md">
-                    <img src="{{ asset('images/darkmode-icon.png') }}" alt="NampungYuk Logo" class="w-full h-full object-contain hidden dark:block filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.9)]">
-
-                    <!-- Floating Micro Pills -->
-                    <div class="absolute -top-2 -right-2 px-2 py-0.5 rounded-full bg-white dark:bg-[#090a0f] border border-[#00c2cb]/40 text-[#008f97] dark:text-[#00c2cb] text-[9px] font-mono font-bold shadow-xs">
-                        &lt;/&gt; Code
+            <div class="relative z-10 w-full max-w-sm mx-auto space-y-6 flex flex-col items-center">
+                
+                <!-- Top: Brand Eyebrow & Value Statement -->
+                <div class="space-y-2">
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-[11px] text-[#63636b] dark:text-[#a1a1aa] font-medium backdrop-blur-sm">
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#00c2cb] animate-pulse"></span>
+                        <span>Showroom Developer Indonesia</span>
                     </div>
-                    <div class="absolute -bottom-2 -left-2 px-2 py-0.5 rounded-full bg-white dark:bg-[#090a0f] border border-[#3291ff]/40 text-[#0070f3] dark:text-[#3291ff] text-[9px] font-mono font-bold shadow-xs">
-                        💬 Komunitas
+                    <h3 class="text-lg sm:text-xl font-bold text-[#18181b] dark:text-white tracking-tight leading-snug">
+                        Tempat karya codinganmu <br><span class="ny-gradient-text">mendapatkan panggung.</span>
+                    </h3>
+                </div>
+
+                <!-- Center: Floating Brand Pedestal & Hero Emblem -->
+                <div class="flex flex-col items-center text-center space-y-3.5">
+                    <!-- Frosted Glass Pedestal with Ambient Neon Core -->
+                    <div class="relative w-36 h-36 rounded-3xl bg-white/80 dark:bg-gradient-to-b dark:from-white/[0.08] dark:to-white/[0.02] border border-[#e4e4e7] dark:border-white/10 shadow-[0_20px_50px_rgba(0,112,243,0.12)] dark:shadow-[0_20px_50px_rgba(0,112,243,0.3)] backdrop-blur-xl flex items-center justify-center p-5 group hover:border-[#00c2cb]/40 transition-all duration-500">
+                        <div class="absolute inset-2 rounded-2xl bg-radial from-[#0070f3]/15 dark:from-[#0070f3]/25 via-[#00c2cb]/10 to-transparent pointer-events-none"></div>
+
+                        <!-- Hero Brand Logo Icon -->
+                        <img src="{{ asset('images/lightmode-icon.png') }}" 
+                             alt="NampungYuk Logo" 
+                             class="w-full h-full object-contain block dark:hidden drop-shadow-md transform group-hover:scale-105 transition-transform duration-500">
+                        <img src="{{ asset('images/darkmode-icon.png') }}" 
+                             alt="NampungYuk Logo" 
+                             class="w-full h-full object-contain hidden dark:block filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.9)] transform group-hover:scale-105 transition-transform duration-500">
+
+                        <!-- Floating Micro Pill 1: Code -->
+                        <div class="absolute -top-2.5 -right-2.5 px-2.5 py-0.5 rounded-full bg-white dark:bg-[#090a0f] border border-[#00c2cb]/40 text-[#008f97] dark:text-[#00c2cb] text-[10px] font-mono font-bold shadow-md flex items-center gap-1">
+                            <span>&lt;/&gt;</span>
+                            <span>Code</span>
+                        </div>
+
+                        <!-- Floating Micro Pill 2: Community -->
+                        <div class="absolute -bottom-2.5 -left-2.5 px-2.5 py-0.5 rounded-full bg-white dark:bg-[#090a0f] border border-[#3291ff]/40 text-[#0070f3] dark:text-[#3291ff] text-[10px] font-mono font-bold shadow-md flex items-center gap-1">
+                            <span>💬</span>
+                            <span>Komunitas</span>
+                        </div>
+                    </div>
+
+                    <!-- Brand Name & Description -->
+                    <div class="space-y-1 max-w-[260px]">
+                        <p class="text-sm font-extrabold tracking-tight text-[#18181b] dark:text-white">
+                            Nampung<span class="text-[#0070f3] dark:text-[#00c2cb]">Yuk</span>
+                        </p>
+                        <p class="text-[11px] text-[#63636b] dark:text-[#71717a] leading-relaxed">
+                            Satu wadah untuk memamerkan karya kodingan, live demo interaktif, dan apresiasi sesama programmer.
+                        </p>
                     </div>
                 </div>
 
-                <div class="space-y-1">
-                    <p class="text-sm font-extrabold tracking-tight text-[#18181b] dark:text-white">
-                        Nampung<span class="text-[#0070f3] dark:text-[#00c2cb]">Yuk</span>
-                    </p>
-                    <p class="text-[11px] text-[#63636b] dark:text-[#71717a] leading-relaxed">
-                        Satu wadah untuk memamerkan karya kodingan, live demo interaktif, dan apresiasi sesama programmer.
-                    </p>
-                </div>
             </div>
+
         </div>
 
     </div>

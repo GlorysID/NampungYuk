@@ -10,8 +10,9 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 
-#[Fillable(['name', 'username', 'email', 'password', 'avatar', 'banner', 'bio', 'github_url', 'website_url', 'reputation_points', 'google_id', 'is_admin', 'is_banned', 'ban_reason', 'banned_at', 'warning_notes', 'warned_at'])]
+#[Fillable(['name', 'username', 'email', 'password', 'avatar', 'banner', 'bio', 'github_url', 'website_url', 'reputation_points', 'google_id', 'is_admin', 'is_banned', 'ban_reason', 'banned_at', 'warning_notes', 'warned_at', 'username_changed_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -32,6 +33,7 @@ class User extends Authenticatable
             'is_banned' => 'boolean',
             'banned_at' => 'datetime',
             'warned_at' => 'datetime',
+            'username_changed_at' => 'datetime',
         ];
     }
 
@@ -57,6 +59,44 @@ class User extends Authenticatable
     public function hasWarning(): bool
     {
         return ! empty($this->warning_notes);
+    }
+
+    /**
+     * Check if user can change their username (allowed only once every 7 days).
+     */
+    public function canChangeUsername(): bool
+    {
+        if (! $this->username_changed_at) {
+            return true;
+        }
+
+        return $this->username_changed_at->copy()->addDays(7)->isPast();
+    }
+
+    /**
+     * Calculate days remaining until next username change is allowed.
+     */
+    public function daysUntilNextUsernameChange(): int
+    {
+        if ($this->canChangeUsername()) {
+            return 0;
+        }
+
+        $nextAllowed = $this->username_changed_at->copy()->addDays(7);
+
+        return (int) max(1, ceil(now()->diffInSeconds($nextAllowed, false) / 86400));
+    }
+
+    /**
+     * Get the next date when username change is allowed.
+     */
+    public function nextAllowedUsernameChangeDate(): ?Carbon
+    {
+        if (! $this->username_changed_at) {
+            return null;
+        }
+
+        return $this->username_changed_at->copy()->addDays(7);
     }
 
     /**
