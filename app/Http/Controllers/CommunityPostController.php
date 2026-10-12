@@ -136,9 +136,15 @@ class CommunityPostController extends Controller
 
         $post->increment('comments_count');
 
-        // Notify the post author (if not commenting on own post).
+        // Notifications: reply -> parent comment author; top-level -> post author.
         $comment->load('user');
-        if ($post->user && $post->user_id !== $user->id) {
+        $parentId = $data['parent_id'] ?? null;
+        if ($parentId) {
+            $parent = CommunityPostComment::find($parentId);
+            if ($parent && $parent->user_id && $parent->user_id !== $user->id) {
+                $parent->user->notify(new CommunityCommentNotification($comment));
+            }
+        } elseif ($post->user && $post->user_id !== $user->id) {
             $post->user->notify(new CommunityCommentNotification($comment));
         }
 

@@ -217,7 +217,7 @@ class ProjectController extends Controller
      */
     public function show(string $slug, Request $request): View
     {
-        $project = Project::with(['user', 'category', 'comments.user', 'repostedFrom.user'])
+        $project = Project::with(['user', 'category', 'comments.user', 'comments.replies.user', 'repostedFrom.user'])
             ->where('slug', $slug)
             ->firstOrFail();
 
@@ -458,6 +458,7 @@ class ProjectController extends Controller
     {
         $validated = $request->validate([
             'content' => ['required', 'string', 'max:1000'],
+            'parent_id' => ['nullable', 'exists:project_comments,id'],
         ]);
 
         $user = Auth::user();
@@ -469,9 +470,12 @@ class ProjectController extends Controller
             return redirect()->route('login');
         }
 
+        $parentId = $validated['parent_id'] ?? null;
+
         $comment = ProjectComment::create([
             'project_id' => $project->id,
             'user_id' => $user->id,
+            'parent_id' => $parentId,
             'content' => $validated['content'],
             'upvotes_count' => 0,
         ]);
@@ -480,6 +484,18 @@ class ProjectController extends Controller
 
         $comment->load('user');
         CommentPosted::dispatch($comment);
+
+        // Notifications: reply -> parent author; top-level -> project owner.
+        if ($parentId) {
+            $parent = ProjectComment::find($parentId);
+            if ($parent && $parent->user_id && $parent->user_id !== $user->id) {
+                $parent->user->notify(new \App\Notifications\ProjectCommentNotification($comment, true));
+            }
+        } else {
+            if ($project->user && $project->user_id !== $user->id) {
+                $project->user->notify(new \App\Notifications\ProjectCommentNotification($comment, false));
+            }
+        }
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -490,6 +506,7 @@ class ProjectController extends Controller
                     'username' => $user->username,
                     'avatar' => $user->avatar,
                     'content' => $comment->content,
+                    'parent_id' => $comment->parent_id,
                     'created_at' => $comment->created_at->diffForHumans(),
                 ],
                 'comments_count' => $project->comments_count,

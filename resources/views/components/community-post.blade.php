@@ -128,6 +128,46 @@
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
             <span class="hl-stat">{{ $post->comments_count }}</span>
         </span>
+
+        <!-- Overflow menu (⋯): Share + Report -->
+        <div class="relative ml-auto" x-data="{ menuOpen: false }" @click.outside="menuOpen = false">
+            <button @click.stop="menuOpen = !menuOpen" type="button" aria-label="Menu lainnya"
+                    :aria-expanded="menuOpen" aria-haspopup="true"
+                    class="p-1.5 rounded-lg text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition active:scale-95">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+            </button>
+            <div x-show="menuOpen" x-cloak
+                 x-transition:enter="transition ease-out duration-120"
+                 x-transition:enter-start="opacity-0 -translate-y-1"
+                 x-transition:enter-end="opacity-100 translate-y-0"
+                 class="absolute right-0 bottom-full mb-1.5 z-40 min-w-[180px] rounded-xl bg-white dark:bg-[#0a0a0a] border border-[#e4e4e7] dark:border-[#1f1f1f] shadow-lg overflow-hidden text-xs">
+                <button type="button"
+                        @click.stop="navigator.clipboard.writeText('{{ route('communities.show', $post->community?->slug) }}'); if (window.notify) notify('Tautan disalin!'); menuOpen = false"
+                        class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-[#18181b] dark:text-[#fafafa] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition">
+                    <svg class="w-4 h-4 text-[#63636b] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                    <span>Bagikan / Salin Tautan</span>
+                </button>
+                @auth
+                    @if(auth()->id() !== $post->user_id)
+                        <div class="border-t border-[#e4e4e7] dark:border-[#1f1f1f]"></div>
+                        <button type="button"
+                                @click.stop="window.openReportModal ? window.openReportModal({ type: 'community_post', id: {{ $post->id }}, title: 'Postingan komunitas' }) : null; menuOpen = false"
+                                class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            <span>Laporkan Postingan</span>
+                        </button>
+                    @endif
+                @else
+                    <div class="border-t border-[#e4e4e7] dark:border-[#1f1f1f]"></div>
+                    <button type="button"
+                            @click.stop="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
+                            class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition">
+                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        <span>Laporkan Postingan</span>
+                    </button>
+                @endauth
+            </div>
+        </div>
     </div>
 
     <!-- Comments -->
