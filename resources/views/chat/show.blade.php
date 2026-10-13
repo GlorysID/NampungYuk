@@ -11,6 +11,7 @@
         'time' => $m->created_at->format('H:i'),
         'created_at' => $m->created_at->toIso8601String(),
         'read_at' => $m->read_at?->toIso8601String(),
+        'edited_at' => $m->edited_at?->toIso8601String(),
     ])->values();
 @endphp
 
@@ -78,6 +79,7 @@
                      typingUrl: '{{ route('chat.typing', $other) }}',
                      olderUrl: '{{ route('chat.older', $other) }}',
                      deleteUrl: '{{ url('obrolan/pesan') }}/__ID__',
+                     editUrl: '{{ url('obrolan/pesan') }}/__ID__',
                      otherName: '{{ addslashes($other->name) }}'
                  })">
                 <!-- Header -->
@@ -92,6 +94,34 @@
                            x-text="'{{ addslashes($other->name) }} sedang mengetik…'"></p>
                     </div>
                     <a href="{{ route('profile.show', $other->username) }}" class="btn-secondary text-xs py-1.5 px-3 shrink-0">Profil</a>
+
+                    <!-- Conversation actions -->
+                    <div class="relative shrink-0" x-data="{ menuOpen: false }" @click.outside="menuOpen = false">
+                        <button @click="menuOpen = !menuOpen" type="button" aria-label="Aksi percakapan"
+                                :aria-expanded="menuOpen" aria-haspopup="true"
+                                class="p-2 rounded-lg border border-[#e4e4e7] dark:border-[#1f1f1f] bg-white dark:bg-[#0a0a0a] text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white transition">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+                        </button>
+                        <div x-show="menuOpen" x-cloak
+                             x-transition:enter="transition ease-out duration-120"
+                             x-transition:enter-start="opacity-0 -translate-y-1"
+                             x-transition:enter-end="opacity-100 translate-y-0"
+                             class="absolute right-0 top-full mt-1.5 z-40 min-w-[200px] rounded-xl bg-white dark:bg-[#0a0a0a] border border-[#e4e4e7] dark:border-[#1f1f1f] shadow-lg overflow-hidden text-xs">
+                            <button type="button"
+                                    @click="menuOpen = false; if (confirm('Bersihkan SEMUA pesan di percakapan ini? Tindakan ini tidak bisa dibatalkan.')) { fetch('{{ route('chat.clear', $other) }}', { method: 'DELETE', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' } }).then(r => r.ok && window.location.reload()) }"
+                                    class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-[#18181b] dark:text-[#fafafa] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition">
+                                <svg class="w-4 h-4 text-[#63636b] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                <span>Bersihkan Semua Pesan</span>
+                            </button>
+                            <div class="border-t border-[#e4e4e7] dark:border-[#1f1f1f]"></div>
+                            <button type="button"
+                                    @click="menuOpen = false; if (confirm('Hapus percakapan ini beserta semua pesannya?')) { fetch('{{ route('chat.destroy', $other) }}', { method: 'DELETE', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' } }).then(r => r.ok && (window.location.href = '{{ route('chat.index') }}')) }"
+                                    class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                <span>Hapus Percakapan</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Messages -->
@@ -121,13 +151,35 @@
                             </template>
 
                             <div class="flex group" :class="m.mine ? 'justify-end' : 'justify-start'">
-                                <button type="button" x-show="m.mine" x-cloak @click="removeMessage(m.id)"
-                                        class="self-center mr-1.5 opacity-0 group-hover:opacity-100 text-[#63636b] dark:text-[#a0a0a0] hover:text-rose-500 transition shrink-0"
-                                        title="Hapus pesan" aria-label="Hapus pesan">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                </button>
+                                <!-- Hover actions (own messages only) -->
+                                <div x-show="m.mine && editingId !== m.id" x-cloak
+                                     class="self-center mr-1.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition shrink-0">
+                                    <button type="button" @click="startEdit(m)"
+                                            class="text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3] dark:hover:text-[#3291ff]"
+                                            title="Ubah pesan" aria-label="Ubah pesan">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                    </button>
+                                    <button type="button" @click="removeMessage(m.id)"
+                                            class="text-[#63636b] dark:text-[#a0a0a0] hover:text-rose-500"
+                                            title="Hapus pesan" aria-label="Hapus pesan">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
+                                </div>
 
-                                <div class="max-w-[75%] px-3.5 py-2 rounded-2xl text-sm leading-relaxed shadow-sm"
+                                <!-- Inline edit box -->
+                                <div x-show="editingId === m.id" x-cloak class="w-full max-w-[75%] flex flex-col items-end gap-1.5">
+                                    <textarea x-ref="editInput" x-model="editDraft" rows="2" maxlength="2000"
+                                              @keydown.enter.prevent="saveEdit(m.id)"
+                                              @keydown.escape="cancelEdit()"
+                                              class="ny-input text-sm w-full resize-none"></textarea>
+                                    <div class="flex items-center gap-2">
+                                        <button type="button" @click="cancelEdit()" class="text-[11px] font-semibold text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white transition">Batal</button>
+                                        <button type="button" @click="saveEdit(m.id)" :disabled="savingEdit || !editDraft.trim()"
+                                                class="text-[11px] font-semibold text-[#0070f3] dark:text-[#3291ff] hover:underline disabled:opacity-50">Simpan</button>
+                                    </div>
+                                </div>
+
+                                <div x-show="editingId !== m.id" class="max-w-[75%] px-3.5 py-2 rounded-2xl text-sm leading-relaxed shadow-sm"
                                      :class="m.mine
                                         ? 'bg-[#0070f3] dark:bg-[#3291ff] text-white dark:text-[#000000] rounded-br-md'
                                         : 'bg-white dark:bg-[#171717] text-[#18181b] dark:text-[#fafafa] rounded-bl-md border border-[#eaeaea] dark:border-[#1f1f1f]'">
@@ -135,7 +187,7 @@
                                     <div class="flex items-center justify-end gap-1 mt-1">
                                         <span class="text-[10px] font-mono"
                                               :class="m.mine ? 'text-white/70 dark:text-black/60' : 'text-[#8f8f8f] dark:text-[#666666]'"
-                                              x-text="m.time"></span>
+                                              x-text="m.edited_at ? 'diubah · ' + m.time : m.time"></span>
                                         <template x-if="m.mine">
                                             <span class="text-[10px] leading-none" :title="m.read_at ? 'Dibaca' : 'Terkirim'">
                                                 <template x-if="!m.read_at">

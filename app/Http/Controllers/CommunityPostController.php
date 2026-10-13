@@ -15,6 +15,10 @@ use Illuminate\Support\Facades\Auth;
 
 class CommunityPostController extends Controller
 {
+    public function __construct(private \App\Services\MediaOptimizer $media)
+    {
+    }
+
     /**
      * Create a post inside a community (members only).
      */
@@ -46,7 +50,7 @@ class CommunityPostController extends Controller
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $img) {
                 if ($img && $img->isValid()) {
-                    $images[] = '/storage/'.$img->store('community-posts', 'public');
+                    $images[] = '/storage/'.$this->media->storeImage($img, 'community-posts', 'gallery');
                 }
             }
         }

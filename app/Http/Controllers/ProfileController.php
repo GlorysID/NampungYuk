@@ -13,6 +13,10 @@ use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
+    public function __construct(private \App\Services\MediaOptimizer $media)
+    {
+    }
+
     /**
      * Update the authenticated user's profile.
      */
@@ -28,7 +32,8 @@ class ProfileController extends Controller
                 Storage::disk('public')->delete($old);
             }
 
-            $path = $request->file('avatar')->store('avatars', 'public');
+            // Avatars are shown small (max ~256px) — shrink aggressively.
+            $path = $this->media->storeImage($request->file('avatar'), 'avatars', 'avatar');
             $data['avatar'] = '/storage/'.$path;
         }
 
@@ -38,7 +43,7 @@ class ProfileController extends Controller
                 Storage::disk('public')->delete($oldBanner);
             }
 
-            $bannerPath = $request->file('banner')->store('banners', 'public');
+            $bannerPath = $this->media->storeImage($request->file('banner'), 'banners', 'thumb');
             $data['banner'] = '/storage/'.$bannerPath;
         }
 

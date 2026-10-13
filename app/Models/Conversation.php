@@ -13,6 +13,7 @@ class Conversation extends Model
         'user_two_id',
         'last_message_at',
         'status',
+        'accepted_at',
         'initiator_id',
     ];
 
@@ -28,6 +29,7 @@ class Conversation extends Model
     {
         return [
             'last_message_at' => 'datetime',
+            'accepted_at' => 'datetime',
         ];
     }
 
@@ -85,29 +87,49 @@ class Conversation extends Model
 
     /**
      * Resolve the conversation used when $from actively sends a message to $to.
-     * Creates it with the correct gate: 'accepted' when the two users follow
-     * each other, otherwise 'pending' (a message request).
+     *
+     * Gate follows the Instagram/X model: a message lands directly (status
+     * 'accepted') when the RECIPIENT already follows the SENDER. Otherwise the
+     * message becomes a pending "message request" the recipient must accept.
+     *
+     * Status is re-evaluated on every send so a stale 'accepted' that no longer
+     * meets the rule falls back to 'pending' — BUT an explicit acceptance by the
+     * recipient (accepted_at set) is sticky and never downgraded.
      */
     public static function forMessage(int $from, int $to): self
     {
-        $existing = static::findBetween($from, $to);
-        if ($existing) {
-            return $existing;
+        $conversation = static::findBetween($from, $to) ?? new static([
+            'user_one_id' => min($from, $to),
+            'user_two_id' => max($from, $to),
+        ]);
+
+        // New conversation → the sender is the initiator.
+        if (! $conversation->exists) {
+            $conversation->initiator_id = $from;
         }
 
+        // Only (re)compute the gate when the recipient hasn't explicitly accepted.
+        if (! $conversation->accepted_at) {
+            $conversation->status = static::gateStatusFor($from, $to);
+        }
+
+        $conversation->save();
+
+        return $conversation;
+    }
+
+    /**
+     * Whether a message from $from to $to may land directly (true) or must
+     * become a pending request (false). Rule: the recipient follows the sender.
+     */
+    public static function gateStatusFor(int $from, int $to): string
+    {
         $sender = User::find($from);
         $recipient = User::find($to);
 
-        $mutual = $sender && $recipient
-            && $sender->isFollowing($recipient)
-            && $recipient->isFollowing($sender);
+        $allowed = $recipient && $sender && $recipient->isFollowing($sender);
 
-        return static::create([
-            'user_one_id' => min($from, $to),
-            'user_two_id' => max($from, $to),
-            'status' => $mutual ? 'accepted' : 'pending',
-            'initiator_id' => $from,
-        ]);
+        return $allowed ? 'accepted' : 'pending';
     }
 
     /**

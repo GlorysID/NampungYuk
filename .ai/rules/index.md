@@ -6,3 +6,4 @@ Before planning or editing, find the row whose globs match the file's path and r
 | --- | --- |
 | app/Http/Controllers/ChatController.php | .ai/rules/controllers.md |
 | resources/views/layouts/app.blade.php | .ai/rules/layouts.md |
+| app/Services/MediaOptimizer.php | .ai/rules/services.md |

@@ -23,6 +23,10 @@ use Illuminate\View\View;
 
 class ProjectController extends Controller
 {
+    public function __construct(private \App\Services\MediaOptimizer $media)
+    {
+    }
+
     /**
      * Display project showcase feed.
      */
@@ -363,10 +367,10 @@ class ProjectController extends Controller
         // Process tech stacks tags into array
         $techArray = array_values(array_filter(array_map('trim', explode(',', $validated['tech_stacks']))));
 
-        // Handle thumbnail: file upload OR external image URL OR default
+        // Handle thumbnail: file upload (optimized) OR external image URL OR default
         $thumbnailPath = null;
         if ($request->hasFile('thumbnail')) {
-            $path = $request->file('thumbnail')->store('thumbnails', 'public');
+            $path = $this->media->storeImage($request->file('thumbnail'), 'thumbnails', 'thumb');
             $thumbnailPath = '/storage/'.$path;
         } elseif (! empty($validated['thumbnail_url'])) {
             $thumbnailPath = $validated['thumbnail_url'];
@@ -374,30 +378,34 @@ class ProjectController extends Controller
             $thumbnailPath = 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80';
         }
 
-        // Handle additional gallery images (multiple uploads).
+        // Handle additional gallery images (multiple uploads, optimized to WebP).
         $galleryPaths = [];
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
                 if ($image && $image->isValid()) {
-                    $galleryPaths[] = '/storage/'.$image->store('project-images', 'public');
+                    $galleryPaths[] = '/storage/'.$this->media->storeImage($image, 'project-images', 'gallery');
                 }
             }
         }
 
-        // Handle primary video: uploaded file OR external URL.
+        // Handle primary video: uploaded file (compressed + poster) OR external URL.
         $videoPath = null;
+        $videoPosterPath = null;
         if ($request->hasFile('video')) {
-            $videoPath = '/storage/'.$request->file('video')->store('project-videos', 'public');
+            $optimized = $this->media->storeVideo($request->file('video'), 'project-videos');
+            $videoPath = '/storage/'.$optimized['path'];
+            $videoPosterPath = $optimized['poster'] ? '/storage/'.$optimized['poster'] : null;
         } elseif (! empty($validated['video_url'])) {
             $videoPath = $validated['video_url'];
         }
 
-        // Handle additional gallery videos (multiple uploads).
+        // Handle additional gallery videos (multiple uploads, compressed).
         $galleryVideoPaths = [];
         if ($request->hasFile('videos')) {
             foreach ($request->file('videos') as $video) {
                 if ($video && $video->isValid()) {
-                    $galleryVideoPaths[] = '/storage/'.$video->store('project-videos', 'public');
+                    $optimized = $this->media->storeVideo($video, 'project-videos');
+                    $galleryVideoPaths[] = '/storage/'.$optimized['path'];
                 }
             }
         }
@@ -426,6 +434,7 @@ class ProjectController extends Controller
             'thumbnail' => $thumbnailPath,
             'images' => ! empty($galleryPaths) ? $galleryPaths : null,
             'video' => $videoPath,
+            'video_poster' => $videoPosterPath,
             'videos' => ! empty($galleryVideoPaths) ? $galleryVideoPaths : null,
             'demo_url' => $validated['demo_url'] ?? null,
             'github_url' => $validated['github_url'] ?? null,

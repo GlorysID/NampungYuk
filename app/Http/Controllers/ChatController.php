@@ -274,6 +274,7 @@ class ChatController extends Controller
                 'time' => $message->created_at->format('H:i'),
                 'created_at' => $message->created_at->toIso8601String(),
                 'read_at' => null,
+                'edited_at' => null,
             ],
         ]);
     }
@@ -346,6 +347,7 @@ class ChatController extends Controller
             'time' => $m->created_at->format('H:i'),
             'created_at' => $m->created_at->toIso8601String(),
             'read_at' => $m->read_at?->toIso8601String(),
+            'edited_at' => $m->edited_at?->toIso8601String(),
         ]);
 
         return response()->json([
@@ -379,6 +381,85 @@ class ChatController extends Controller
         $message->delete();
 
         return response()->json(['success' => true, 'id' => $message->id]);
+    }
+
+    /**
+     * Edit a message (sender only, within a short window).
+     */
+    public function editMessage(Request $request, Message $message): JsonResponse
+    {
+        $auth = Auth::user();
+        if (! $auth) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $conversation = $message->conversation;
+
+        if (! $conversation || ! $conversation->isParticipant($auth->id)) {
+            return response()->json(['message' => 'Tidak diizinkan.'], 403);
+        }
+
+        if ((int) $message->sender_id !== (int) $auth->id) {
+            return response()->json(['message' => 'Hanya pengirim yang dapat mengubah pesan ini.'], 403);
+        }
+
+        // Editing window: 15 minutes.
+        if ($message->created_at->lt(now()->subMinutes(15))) {
+            return response()->json(['message' => 'Pesan sudah terlalu lama untuk diubah.'], 403);
+        }
+
+        $data = $request->validate([
+            'body' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $message->update([
+            'body' => trim($data['body']),
+            'edited_at' => now(),
+        ]);
+
+        $message->load('sender');
+        broadcast(new MessageSent($message))->toOthers();
+
+        return response()->json([
+            'success' => true,
+            'message' => [
+                'id' => $message->id,
+                'sender_id' => $message->sender_id,
+                'body' => $message->body,
+                'time' => $message->created_at->format('H:i'),
+                'created_at' => $message->created_at->toIso8601String(),
+                'read_at' => $message->read_at?->toIso8601String(),
+                'edited_at' => $message->edited_at?->toIso8601String(),
+            ],
+        ]);
+    }
+
+    /**
+     * Clear every message in a conversation (participant only). Keeps the
+     * conversation row so the gate/initiator state is preserved.
+     */
+    public function clearConversation(Request $request, string $username): JsonResponse
+    {
+        $auth = Auth::user();
+        if (! $auth) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $other = User::where('username', $username)->firstOrFail();
+        $conversation = Conversation::findBetween($auth->id, $other->id);
+
+        if (! $conversation) {
+            return response()->json(['success' => true]);
+        }
+
+        if (! $conversation->isParticipant($auth->id)) {
+            return response()->json(['message' => 'Tidak diizinkan.'], 403);
+        }
+
+        $conversation->messages()->forceDelete();
+        $conversation->update(['last_message_at' => null]);
+
+        return response()->json(['success' => true]);
     }
 
     /**
@@ -426,7 +507,10 @@ class ChatController extends Controller
             return response()->json(['message' => 'Tidak ada permintaan untuk diterima.'], 403);
         }
 
-        $conversation->update(['status' => 'accepted']);
+        $conversation->update([
+            'status' => 'accepted',
+            'accepted_at' => now(),
+        ]);
 
         return response()->json(['success' => true]);
     }

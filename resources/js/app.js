@@ -6,9 +6,17 @@ import Alpine from 'alpinejs';
  * (marked "pending"), then restore it when the browser returns to that path
  * (e.g. pressing back from a project detail page). This keeps the feed at the
  * same position instead of jumping to the top.
+ *
+ * IMPORTANT: filter/search navigation (q, tab, kategori, tech, view) must NOT
+ * restore an old scroll offset — a fresh result set should start from the top.
+ * Otherwise, typing in the search bar while scrolled down would snap the page
+ * back to a stale offset.
  */
 (function () {
     const KEY = 'nyScrollPositions';
+
+    // Query params that indicate a fresh result/navigation context.
+    const FILTER_KEYS = ['q', 'search', 'tab', 'kategori', 'tech', 'view', 'page'];
 
     function readStore() {
         try {
@@ -28,6 +36,11 @@ import Alpine from 'alpinejs';
 
     const path = () => window.location.pathname + window.location.search;
 
+    // A path is "filterable" when it carries any filter/search query param.
+    function isFilterable(url) {
+        return FILTER_KEYS.some((k) => url.searchParams.has(k));
+    }
+
     // Take manual control so the browser doesn't fight our restore.
     if ('scrollRestoration' in history) {
         history.scrollRestoration = 'manual';
@@ -45,13 +58,23 @@ import Alpine from 'alpinejs';
         // Only remember when leaving the current page for a different path.
         if (url.pathname + url.search === path()) return;
 
+        // Never remember a filtered/search context — those should open at the top.
+        if (isFilterable(url)) return;
+
         const store = readStore();
         store[path()] = { y: window.scrollY, pending: true };
         writeStore(store);
     });
 
-    // Restore on load if we came back to a page we saved.
+    // Restore on load only for the *same* non-filtered context we left.
     window.addEventListener('load', () => {
+        const currentUrl = new URL(window.location.href);
+
+        // Fresh filter/search navigation → always start from the top.
+        if (isFilterable(currentUrl)) {
+            return;
+        }
+
         const store = readStore();
         const entry = store[path()];
         if (entry && entry.pending && typeof entry.y === 'number') {
@@ -297,7 +320,7 @@ document.addEventListener('alpine:init', () => {
     /**
      * Chat room: send messages and receive them live via Echo (Reverb).
      */
-    Alpine.data('chatRoom', ({ conversationId, me, sendUrl, typingUrl, olderUrl, deleteUrl, otherName }) => ({
+    Alpine.data('chatRoom', ({ conversationId, me, sendUrl, typingUrl, olderUrl, deleteUrl, editUrl, otherName }) => ({
         draft: '',
         sending: false,
         // Unified, chronologically-ordered message list (server + live, deduped by id).
@@ -308,6 +331,10 @@ document.addEventListener('alpine:init', () => {
         loadingOlder: false,
         hasMore: Boolean(window.__chatHasMore),
         echo: null,
+        // Inline edit state.
+        editingId: null,
+        editDraft: '',
+        savingEdit: false,
 
         init() {
             // Seed the list from the server-rendered payload.
@@ -352,6 +379,7 @@ document.addEventListener('alpine:init', () => {
                 time: m.time,
                 created_at: m.created_at,
                 read_at: m.read_at ?? null,
+                edited_at: m.edited_at ?? null,
                 mine: m.sender_id === me,
             };
         },
@@ -499,6 +527,46 @@ document.addEventListener('alpine:init', () => {
                 }
             } catch (e) {
                 if (window.notify) notify('Gagal menghapus pesan.');
+            }
+        },
+
+        startEdit(m) {
+            this.editingId = m.id;
+            this.editDraft = m.body;
+            this.$nextTick(() => this.$refs.editInput?.focus());
+        },
+
+        cancelEdit() {
+            this.editingId = null;
+            this.editDraft = '';
+        },
+
+        async saveEdit(id) {
+            const body = this.editDraft.trim();
+            if (!body || this.savingEdit) return;
+            this.savingEdit = true;
+            try {
+                const res = await fetch(editUrl.replace('__ID__', id), {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content,
+                    },
+                    body: JSON.stringify({ body }),
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.upsert(data.message);
+                    this.cancelEdit();
+                    if (window.notify) notify('Pesan diubah.');
+                } else if (window.notify) {
+                    notify(data.message || 'Gagal mengubah pesan.');
+                }
+            } catch (e) {
+                if (window.notify) notify('Gagal mengubah pesan.');
+            } finally {
+                this.savingEdit = false;
             }
         },
 

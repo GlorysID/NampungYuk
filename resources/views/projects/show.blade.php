@@ -435,7 +435,7 @@
                                 <template x-if="active === i">
                                     <span class="w-full h-full flex items-center justify-center">
                                         <template x-if="item.type === 'video'">
-                                            <video :src="item.url" controls playsinline preload="metadata"
+                                            <video :src="item.url" :poster="item.poster || null" controls playsinline preload="metadata"
                                                    class="w-full h-full object-contain"></video>
                                         </template>
                                         <template x-if="item.type === 'image'">
@@ -458,12 +458,16 @@
                                             :class="active === {{ $i }} ? 'ring-2 ring-[#0070f3] dark:ring-[#3291ff]' : 'opacity-60 hover:opacity-100'"
                                             class="relative shrink-0 w-20 h-14 rounded-lg overflow-hidden border border-[#e4e4e7] dark:border-[#1f1f1f] transition bg-[#000000]">
                                         @if($item['type'] === 'video')
-                                            <video src="{{ $item['url'] }}" preload="metadata" muted class="w-full h-full object-cover pointer-events-none"></video>
+                                            @if(!empty($item['poster']))
+                                                <img src="{{ $item['poster'] }}" alt="" loading="lazy" decoding="async" class="w-full h-full object-cover">
+                                            @else
+                                                <video src="{{ $item['url'] }}" preload="metadata" muted class="w-full h-full object-cover pointer-events-none"></video>
+                                            @endif
                                             <span class="absolute inset-0 flex items-center justify-center bg-black/30">
                                                 <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                                             </span>
                                         @else
-                                            <img src="{{ $item['url'] }}" alt="" loading="lazy" class="w-full h-full object-cover">
+                                            <img src="{{ $item['url'] }}" alt="" loading="lazy" decoding="async" class="w-full h-full object-cover">
                                         @endif
                                     </button>
                                 @endforeach

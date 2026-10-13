@@ -41,4 +41,9 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI', env('APP_URL', 'http://127.0.0.1:8000').'/auth/google/callback'),
     ],
 
+    'ffmpeg' => [
+        // Absolute path to the ffmpeg binary. Leave null to resolve from PATH.
+        'path' => env('FFMPEG_PATH'),
+    ],
+
 ];

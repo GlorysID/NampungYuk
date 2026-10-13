@@ -158,4 +158,53 @@ class ChatTest extends TestCase
         $other = User::factory()->create();
         $this->get('/obrolan/'.$other->username)->assertRedirect('/login');
     }
+
+    public function test_sender_can_edit_own_recent_message(): void
+    {
+        [$me, $other] = $this->pair();
+        $conv = Conversation::between($me->id, $other->id);
+        $msg = $conv->messages()->create(['sender_id' => $me->id, 'body' => 'asli']);
+
+        $response = $this->actingAs($me)->patchJson('/obrolan/pesan/'.$msg->id, ['body' => 'diubah']);
+
+        $response->assertStatus(200)->assertJson(['success' => true]);
+        $msg->refresh();
+        $this->assertEquals('diubah', $msg->body);
+        $this->assertNotNull($msg->edited_at);
+    }
+
+    public function test_cannot_edit_other_users_message(): void
+    {
+        [$me, $other] = $this->pair();
+        $conv = Conversation::between($me->id, $other->id);
+        $msg = $conv->messages()->create(['sender_id' => $other->id, 'body' => 'punya other']);
+
+        $this->actingAs($me)->patchJson('/obrolan/pesan/'.$msg->id, ['body' => 'hack'])->assertStatus(403);
+        $this->assertEquals('punya other', $msg->fresh()->body);
+    }
+
+    public function test_cannot_edit_message_after_window(): void
+    {
+        [$me, $other] = $this->pair();
+        $conv = Conversation::between($me->id, $other->id);
+        $msg = $conv->messages()->create(['sender_id' => $me->id, 'body' => 'lama']);
+        $msg->forceFill(['created_at' => now()->subHour()])->save();
+
+        $this->actingAs($me)->patchJson('/obrolan/pesan/'.$msg->id, ['body' => 'terlambat'])->assertStatus(403);
+    }
+
+    public function test_can_clear_all_messages_but_keep_conversation(): void
+    {
+        [$me, $other] = $this->pair();
+        $conv = Conversation::between($me->id, $other->id);
+        $conv->messages()->create(['sender_id' => $me->id, 'body' => 'a']);
+        $conv->messages()->create(['sender_id' => $me->id, 'body' => 'b']);
+
+        $response = $this->actingAs($me)->deleteJson('/obrolan/'.$other->username.'/bersihkan');
+
+        $response->assertStatus(200)->assertJson(['success' => true]);
+        $this->assertEquals(0, $conv->messages()->count());
+        // Conversation row is preserved.
+        $this->assertNotNull(Conversation::find($conv->id));
+    }
 }

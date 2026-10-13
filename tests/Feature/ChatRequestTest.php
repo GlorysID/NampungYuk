@@ -23,16 +23,31 @@ class ChatRequestTest extends TestCase
         $this->assertEquals($a->id, $conv->initiator_id);
     }
 
-    public function test_mutual_follow_message_starts_as_accepted(): void
+    public function test_message_is_accepted_when_recipient_follows_sender(): void
     {
-        $a = User::factory()->create();
-        $b = User::factory()->create();
-        $a->following()->attach($b->id);
+        $a = User::factory()->create(); // sender
+        $b = User::factory()->create(); // recipient
+
+        // Recipient follows sender → direct delivery (IG rule).
         $b->following()->attach($a->id);
 
         $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
 
         $this->assertEquals('accepted', Conversation::first()->status);
+    }
+
+    public function test_message_is_pending_when_only_sender_follows_recipient(): void
+    {
+        $a = User::factory()->create(); // sender
+        $b = User::factory()->create(); // recipient
+
+        // Sender follows recipient, but recipient does NOT follow back.
+        $a->following()->attach($b->id);
+
+        $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
+
+        // Must still be a request — a one-way follow does not grant direct DM.
+        $this->assertEquals('pending', Conversation::first()->status);
     }
 
     public function test_initiator_cannot_send_second_message_while_pending(): void
@@ -206,5 +221,40 @@ class ChatRequestTest extends TestCase
 
         $this->actingAs($a)->get('/obrolan/'.$b->username)->assertSee('Tulis pesan');
         $this->actingAs($b)->get('/obrolan/'.$a->username)->assertSee('Tulis pesan');
+    }
+
+    public function test_stale_accepted_conversation_is_demoted_when_rule_no_longer_met(): void
+    {
+        $a = User::factory()->create(); // sender
+        $b = User::factory()->create(); // recipient
+
+        // Simulate a legacy conversation wrongly marked accepted without acceptance.
+        $conv = Conversation::create([
+            'user_one_id' => min($a->id, $b->id),
+            'user_two_id' => max($a->id, $b->id),
+            'status' => 'accepted',
+            'initiator_id' => $a->id,
+        ]);
+
+        // No follow relationship → next send must re-evaluate to pending.
+        $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
+
+        $this->assertEquals('pending', $conv->fresh()->status);
+    }
+
+    public function test_explicit_acceptance_is_sticky_across_resends(): void
+    {
+        $a = User::factory()->create();
+        $b = User::factory()->create();
+
+        // Start pending, then recipient accepts.
+        $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
+        $this->actingAs($b)->postJson('/obrolan/'.$a->username.'/terima');
+        $conv = Conversation::first();
+        $this->assertNotNull($conv->accepted_at);
+
+        // Sender sends again (still no follows) — must remain accepted (sticky).
+        $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Lagi'])->assertStatus(200);
+        $this->assertEquals('accepted', $conv->fresh()->status);
     }
 }

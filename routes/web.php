@@ -24,12 +24,14 @@ Route::get('/feed/latest', [ProjectController::class, 'latest'])->name('projects
 Route::middleware('auth')->group(function () {
     Route::get('/obrolan', [ChatController::class, 'index'])->name('chat.index');
     Route::delete('/obrolan/pesan/{message}', [ChatController::class, 'destroyMessage'])->name('chat.message.destroy');
+    Route::patch('/obrolan/pesan/{message}', [ChatController::class, 'editMessage'])->name('chat.message.edit');
     Route::get('/obrolan/{user:username}', [ChatController::class, 'show'])->name('chat.show');
     Route::post('/obrolan/{user:username}/kirim', [ChatController::class, 'send'])->name('chat.send');
     Route::post('/obrolan/{user:username}/mengetik', [ChatController::class, 'typing'])->name('chat.typing');
     Route::get('/obrolan/{user:username}/lama', [ChatController::class, 'older'])->name('chat.older');
     Route::post('/obrolan/{user:username}/terima', [ChatController::class, 'accept'])->name('chat.accept');
     Route::post('/obrolan/{user:username}/tolak', [ChatController::class, 'decline'])->name('chat.decline');
+    Route::delete('/obrolan/{user:username}/bersihkan', [ChatController::class, 'clearConversation'])->name('chat.clear');
     Route::delete('/obrolan/{user:username}/hapus', [ChatController::class, 'destroyConversation'])->name('chat.destroy');
 });
 

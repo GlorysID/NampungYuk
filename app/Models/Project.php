@@ -29,6 +29,7 @@ class Project extends Model
         'thumbnail',
         'images',
         'video',
+        'video_poster',
         'videos',
         'demo_url',
         'github_url',
@@ -250,21 +251,31 @@ class Project extends Model
     }
 
     /**
+     * Normalized URL of the primary video's poster frame (if any).
+     */
+    public function videoPosterUrl(): ?string
+    {
+        return $this->video_poster ? $this->normalizeImageUrl($this->video_poster) : null;
+    }
+
+    /**
      * Unified gallery of images and videos in display order.
-     * Each item: ['type' => 'image'|'video', 'url' => string].
+     * Each item: ['type' => 'image'|'video', 'url' => string, 'poster' => ?string].
      *
-     * @return array<int, array{type: string, url: string}>
+     * @return array<int, array{type: string, url: string, poster: ?string}>
      */
     public function galleryMedia(): array
     {
         $media = [];
 
         foreach ($this->galleryImages() as $url) {
-            $media[] = ['type' => 'image', 'url' => $url];
+            $media[] = ['type' => 'image', 'url' => $url, 'poster' => null];
         }
 
-        foreach ($this->galleryVideos() as $url) {
-            $media[] = ['type' => 'video', 'url' => $url];
+        $poster = $this->videoPosterUrl();
+        foreach ($this->galleryVideos() as $i => $url) {
+            // Only the primary video has an auto-generated poster.
+            $media[] = ['type' => 'video', 'url' => $url, 'poster' => $i === 0 ? $poster : null];
         }
 
         return $media;
