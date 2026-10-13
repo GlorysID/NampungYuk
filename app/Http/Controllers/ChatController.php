@@ -130,10 +130,22 @@ class ChatController extends Controller
 
         if ($conversation) {
             $isPending = $conversation->isPending();
-            // The recipient (not the initiator) is the one who may accept.
-            $canRespond = $isPending && $conversation->initiator_id !== $userId;
-            // The initiator cannot send additional messages until accepted.
-            $canSend = ! $isPending || $conversation->initiator_id !== $userId;
+            $isInitiator = $conversation->initiator_id === $userId;
+
+            // Only the recipient (non-initiator) may accept a pending request.
+            $canRespond = $isPending && ! $isInitiator;
+
+            // Mirror the send() gate exactly:
+            //  - accepted chat  → anyone may send.
+            //  - pending chat   → only the initiator, and only their single opener
+            //                     (so if the opener already exists, even they are locked).
+            if (! $isPending) {
+                $canSend = true;
+            } elseif ($isInitiator) {
+                $canSend = ! $conversation->messages()->exists();
+            } else {
+                $canSend = false;
+            }
 
             // Mark incoming messages as read, then notify the sender live.
             // (Only for accepted chats — a pending request stays "unread" until accepted.)
@@ -157,7 +169,7 @@ class ChatController extends Controller
                 ->take(self::MESSAGES_PER_PAGE + 1)
                 ->get();
         } else {
-            // No conversation yet — a brand-new, not-yet-gated chat.
+            // No conversation yet — a brand-new chat; anyone may send the first message.
             $isPending = false;
             $canRespond = false;
             $canSend = true;

@@ -165,4 +165,46 @@ class ChatRequestTest extends TestCase
         $response->assertStatus(200)->assertJson(['success' => true, 'has_more' => false]);
         $this->assertEquals(0, Conversation::count());
     }
+
+    public function test_recipient_composer_is_locked_while_request_pending(): void
+    {
+        $a = User::factory()->create(); // initiator
+        $b = User::factory()->create(); // recipient
+
+        $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
+
+        // Recipient sees accept/decline AND no composer.
+        $recipient = $this->actingAs($b)->get('/obrolan/'.$a->username);
+        $recipient->assertStatus(200);
+        $recipient->assertSee('Terima');
+        $recipient->assertDontSee('Tulis pesan');
+
+        // Initiator (who already sent the opener) also has no composer.
+        $initiator = $this->actingAs($a)->get('/obrolan/'.$b->username);
+        $initiator->assertStatus(200);
+        $initiator->assertDontSee('Tulis pesan');
+    }
+
+    public function test_initiator_composer_is_open_before_sending_opener(): void
+    {
+        $a = User::factory()->create();
+        $b = User::factory()->create();
+
+        // No conversation yet — first message is allowed, so composer is present.
+        $response = $this->actingAs($a)->get('/obrolan/'.$b->username);
+        $response->assertStatus(200);
+        $response->assertSee('Tulis pesan');
+    }
+
+    public function test_composer_reopens_for_both_after_accept(): void
+    {
+        $a = User::factory()->create();
+        $b = User::factory()->create();
+
+        $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
+        $this->actingAs($b)->postJson('/obrolan/'.$a->username.'/terima');
+
+        $this->actingAs($a)->get('/obrolan/'.$b->username)->assertSee('Tulis pesan');
+        $this->actingAs($b)->get('/obrolan/'.$a->username)->assertSee('Tulis pesan');
+    }
 }

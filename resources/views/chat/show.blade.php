@@ -166,7 +166,11 @@
                     </form>
                 @else
                     <div class="p-3 border-t border-[#e4e4e7] dark:border-[#1f1f1f] shrink-0 text-center text-xs text-[#63636b] dark:text-[#a0a0a0] bg-[#fafafa] dark:bg-[#060606]">
-                        Menunggu {{ $other->name }} menerima permintaan pesanmu.
+                        @if($canRespond)
+                            Terima permintaan pesan di atas untuk mulai membalas.
+                        @else
+                            Menunggu {{ $other->name }} menerima permintaan pesanmu.
+                        @endif
                     </div>
                 @endif
             </div>
