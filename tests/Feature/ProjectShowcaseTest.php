@@ -441,4 +441,50 @@ class ProjectShowcaseTest extends TestCase
         // Mobile Drawer Toggle
         $response->assertSee('aria-label="Buka Menu Sidebar"', false);
     }
+
+    public function test_people_search_view_lists_matching_accounts(): void
+    {
+        $viewer = User::factory()->create();
+        User::factory()->create(['name' => 'Budi Santoso', 'username' => 'budi_laravel']);
+        User::factory()->create(['name' => 'Siti Rahma', 'username' => 'siti_ui']);
+
+        $response = $this->actingAs($viewer)->get('/?view=people&q=budi');
+
+        $response->assertStatus(200);
+        $response->assertSee('Akun');
+        $response->assertSee('budi_laravel');
+        $response->assertDontSee('siti_ui');
+    }
+
+    public function test_people_search_matches_by_username_fragment(): void
+    {
+        $viewer = User::factory()->create();
+        User::factory()->create(['name' => 'Arif Wibowo', 'username' => 'arya_gamedev']);
+
+        $response = $this->actingAs($viewer)->get('/?view=people&q=gamedev');
+
+        $response->assertStatus(200);
+        $response->assertSee('arya_gamedev');
+    }
+
+    public function test_people_view_without_query_browses_all_accounts(): void
+    {
+        $viewer = User::factory()->create(['name' => 'Viewer One', 'username' => 'viewer_one']);
+        User::factory()->create(['name' => 'Someone Else', 'username' => 'someone_else']);
+
+        $response = $this->actingAs($viewer)->get('/?view=people');
+
+        $response->assertStatus(200);
+        $response->assertSee('someone_else');
+    }
+
+    public function test_people_search_with_no_match_shows_empty_state(): void
+    {
+        $viewer = User::factory()->create();
+
+        $response = $this->actingAs($viewer)->get('/?view=people&q=zzz_no_such_account_zzz');
+
+        $response->assertStatus(200);
+        $response->assertSee('Akun tidak ditemukan');
+    }
 }

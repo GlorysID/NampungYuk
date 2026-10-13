@@ -174,52 +174,53 @@
             
             @php 
                 $onCommunity = request()->routeIs('communities.*'); 
-                $onProfile = request()->routeIs('profile.*') || request()->is('u/*');
+                $profileUser = request()->routeIs('profile.show') ? request()->route('username') : null;
+                $onProfile = $profileUser !== null;
             @endphp
 
             <!-- TOP HEADER (glass) -->
             <header class="sticky top-0 lg:top-4 z-20 h-14 sm:h-16 ny-glass rounded-none lg:rounded-2xl px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-3 relative">
                 
-                @unless($onProfile)
-                    <!-- MOBILE SEARCH OVERLAY (Full-width on Mobile when opened) -->
-                    <div x-show="mobileSearchOpen" 
-                         x-cloak 
-                         @keydown.escape.window="mobileSearchOpen = false"
-                         x-transition:enter="transition ease-out duration-150"
-                         x-transition:enter-start="opacity-0 scale-[0.99]"
-                         x-transition:enter-end="opacity-100 scale-100"
-                         x-transition:leave="transition ease-in duration-100"
-                         x-transition:leave-start="opacity-100 scale-100"
-                         x-transition:leave-end="opacity-0 scale-[0.99]"
-                         class="absolute inset-0 z-30 px-3 flex items-center bg-white/95 dark:bg-[#000000]/95 backdrop-blur-md rounded-none lg:rounded-2xl gap-2 border-b lg:border border-[#e4e4e7] dark:border-[#1f1f1f]">
-                        <form action="{{ $onCommunity ? route('communities.index') : route('projects.index') }}" method="GET" class="flex-1 relative flex items-center">
-                            @unless($onCommunity)
-                                @if(request('tab')) <input type="hidden" name="tab" value="{{ request('tab') }}"> @endif
-                                @if(request('kategori')) <input type="hidden" name="kategori" value="{{ request('kategori') }}"> @endif
-                                @if(request('tech')) <input type="hidden" name="tech" value="{{ request('tech') }}"> @endif
-                            @endunless
-                            <svg class="w-4 h-4 text-[#63636b] dark:text-[#a0a0a0] absolute left-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                            </svg>
-                            <input type="text" 
-                                   id="nav-search-mobile"
-                                   name="q" 
-                                   value="{{ request('q') }}"
-                                   placeholder="{{ $onCommunity ? 'Cari komunitas...' : 'Cari project, teknologi, creator...' }}" 
-                                   class="w-full pl-9 pr-8 py-1.5 text-xs bg-[#f4f4f5] dark:bg-[#111111] border border-[#e4e4e7] dark:border-[#27272a] rounded-lg text-[#18181b] dark:text-[#fafafa] placeholder-[#71717a] outline-none focus:border-[#0070f3] dark:focus:border-[#3291ff]">
-                            @if(request('q'))
-                                <a href="{{ $onCommunity ? route('communities.index') : route('projects.index') }}" class="absolute right-2.5 text-[#71717a] hover:text-[#18181b]">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                </a>
-                            @endif
-                        </form>
-                        <button type="button" 
-                                @click="mobileSearchOpen = false" 
-                                class="px-2 py-1 text-xs font-semibold text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white shrink-0">
-                            Batal
-                        </button>
-                    </div>
-                @endunless
+                <!-- MOBILE SEARCH OVERLAY (Full-width on Mobile when opened) -->
+                <div x-show="mobileSearchOpen" 
+                     x-cloak 
+                     @keydown.escape.window="mobileSearchOpen = false"
+                     x-transition:enter="transition ease-out duration-150"
+                     x-transition:enter-start="opacity-0 scale-[0.99]"
+                     x-transition:enter-end="opacity-100 scale-100"
+                     x-transition:leave="transition ease-in duration-100"
+                     x-transition:leave-start="opacity-100 scale-100"
+                     x-transition:leave-end="opacity-0 scale-[0.99]"
+                     class="absolute inset-0 z-30 px-3 flex items-center bg-white/95 dark:bg-[#000000]/95 backdrop-blur-md rounded-none lg:rounded-2xl gap-2 border-b lg:border border-[#e4e4e7] dark:border-[#1f1f1f]">
+                    <form action="{{ $onCommunity ? route('communities.index') : route('projects.index') }}" method="GET" class="flex-1 relative flex items-center">
+                        @if($onProfile)
+                            <input type="hidden" name="u" value="{{ $profileUser }}">
+                        @elseif(! $onCommunity)
+                            @if(request('tab')) <input type="hidden" name="tab" value="{{ request('tab') }}"> @endif
+                            @if(request('kategori')) <input type="hidden" name="kategori" value="{{ request('kategori') }}"> @endif
+                            @if(request('tech')) <input type="hidden" name="tech" value="{{ request('tech') }}"> @endif
+                        @endif
+                        <svg class="w-4 h-4 text-[#63636b] dark:text-[#a0a0a0] absolute left-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        <input type="text" 
+                               id="nav-search-mobile"
+                               name="q" 
+                               value="{{ $onProfile ? '' : request('q') }}"
+                               placeholder="{{ $onProfile ? 'Cari karya @'.$profileUser.'...' : ($onCommunity ? 'Cari komunitas...' : 'Cari project, teknologi, creator...') }}" 
+                               class="w-full pl-9 pr-8 py-1.5 text-xs bg-[#f4f4f5] dark:bg-[#111111] border border-[#e4e4e7] dark:border-[#27272a] rounded-lg text-[#18181b] dark:text-[#fafafa] placeholder-[#71717a] outline-none focus:border-[#0070f3] dark:focus:border-[#3291ff]">
+                        @if(request('q') && ! $onProfile)
+                            <a href="{{ $onCommunity ? route('communities.index') : route('projects.index') }}" class="absolute right-2.5 text-[#71717a] hover:text-[#18181b]">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </a>
+                        @endif
+                    </form>
+                    <button type="button" 
+                            @click="mobileSearchOpen = false" 
+                            class="px-2 py-1 text-xs font-semibold text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white shrink-0">
+                        Batal
+                    </button>
+                </div>
 
                 <!-- Left in Header: Mobile Hamburger Toggle + Brand for small screens -->
                 <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
@@ -237,60 +238,56 @@
                     <x-logo size="sm" :show-text="true" class="hidden sm:inline-flex lg:hidden" />
                 </div>
 
-                @if($onProfile)
-                    <div class="flex-1"></div>
-                @else
-                    <!-- Center in Header: contextual search (Desktop & Tablet: md+) -->
-                    <div class="hidden md:block flex-1 max-w-lg mx-2 lg:mx-4">
-                        <form action="{{ $onCommunity ? route('communities.index') : route('projects.index') }}" method="GET" class="relative">
-                            @unless($onCommunity)
-                                @if(request('tab')) <input type="hidden" name="tab" value="{{ request('tab') }}"> @endif
-                                @if(request('kategori')) <input type="hidden" name="kategori" value="{{ request('kategori') }}"> @endif
-                                @if(request('tech')) <input type="hidden" name="tech" value="{{ request('tech') }}"> @endif
-                            @endunless
+                <!-- Center in Header: contextual search (Desktop & Tablet: md+) -->
+                <div class="hidden md:block flex-1 max-w-lg mx-2 lg:mx-4">
+                    <form action="{{ $onCommunity ? route('communities.index') : route('projects.index') }}" method="GET" class="relative">
+                        @if($onProfile)
+                            <input type="hidden" name="u" value="{{ $profileUser }}">
+                        @elseif(! $onCommunity)
+                            @if(request('tab')) <input type="hidden" name="tab" value="{{ request('tab') }}"> @endif
+                            @if(request('kategori')) <input type="hidden" name="kategori" value="{{ request('kategori') }}"> @endif
+                            @if(request('tech')) <input type="hidden" name="tech" value="{{ request('tech') }}"> @endif
+                        @endif
+                        
+                        <div class="relative flex items-center">
+                            <svg class="w-4 h-4 text-[#63636b] dark:text-[#a0a0a0] absolute left-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                            <input type="text" 
+                                   id="nav-search"
+                                   name="q" 
+                                   value="{{ $onProfile ? '' : request('q') }}"
+                                   placeholder="{{ $onProfile ? 'Cari karya @'.$profileUser.'...' : ($onCommunity ? 'Cari komunitas...' : 'Cari karya, teknologi, atau akun...') }}" 
+                                   aria-label="{{ $onProfile ? 'Cari karya '.$profileUser : ($onCommunity ? 'Cari komunitas' : 'Cari karya, teknologi, atau akun') }}"
+                                   class="w-full pl-9 sm:pl-10 pr-12 sm:pr-14 py-1.5 text-xs sm:text-sm bg-[#ffffff] dark:bg-[#000000] border border-[#e4e4e7] dark:border-[#1f1f1f] rounded-md text-[#18181b] dark:text-[#fafafa] placeholder-[#666666]/60 transition">
                             
-                            <div class="relative flex items-center">
-                                <svg class="w-4 h-4 text-[#63636b] dark:text-[#a0a0a0] absolute left-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                                </svg>
-                                <input type="text" 
-                                       id="nav-search"
-                                       name="q" 
-                                       value="{{ request('q') }}"
-                                       placeholder="{{ $onCommunity ? 'Cari komunitas...' : 'Cari project, teknologi, atau creator...' }}" 
-                                       aria-label="{{ $onCommunity ? 'Cari komunitas' : 'Cari project, teknologi, atau creator' }}"
-                                       class="w-full pl-9 sm:pl-10 pr-12 sm:pr-14 py-1.5 text-xs sm:text-sm bg-[#ffffff] dark:bg-[#000000] border border-[#e4e4e7] dark:border-[#1f1f1f] rounded-md text-[#18181b] dark:text-[#fafafa] placeholder-[#666666]/60 transition">
-                                
-                                <div class="absolute right-2.5 hidden sm:flex items-center gap-1 pointer-events-none">
-                                    <kbd class="px-1.5 py-0.5 text-[10px] font-mono font-bold text-[#63636b] dark:text-[#a0a0a0] bg-white dark:bg-[#0a0a0a] border border-[#e4e4e7] dark:border-[#1f1f1f] rounded">⌘K</kbd>
-                                </div>
-
-                                @if(request('q'))
-                                    <a href="{{ $onCommunity ? route('communities.index') : route('projects.index') }}" class="absolute right-8 text-[#63636b] hover:text-[#18181b] p-0.5" title="Hapus pencarian">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                        </svg>
-                                    </a>
-                                @endif
+                            <div class="absolute right-2.5 hidden sm:flex items-center gap-1 pointer-events-none">
+                                <kbd class="px-1.5 py-0.5 text-[10px] font-mono font-bold text-[#63636b] dark:text-[#a0a0a0] bg-white dark:bg-[#0a0a0a] border border-[#e4e4e7] dark:border-[#1f1f1f] rounded">⌘K</kbd>
                             </div>
-                        </form>
-                    </div>
-                @endif
+
+                            @if(request('q') && ! $onProfile)
+                                <a href="{{ $onCommunity ? route('communities.index') : route('projects.index') }}" class="absolute right-8 text-[#63636b] hover:text-[#18181b] p-0.5" title="Hapus pencarian">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </a>
+                            @endif
+                        </div>
+                    </form>
+                </div>
 
                 <!-- Right in Header: Auth/User Actions -->
                 <div class="flex items-center gap-1 sm:gap-2 shrink-0">
                     
-                    @unless($onProfile)
-                        <!-- Mobile Search Trigger Button (< md) -->
-                        <button type="button" 
-                                @click="mobileSearchOpen = true; $nextTick(() => document.getElementById('nav-search-mobile')?.focus())"
-                                class="md:hidden w-8 h-8 rounded-md flex items-center justify-center text-[#63636b] hover:text-[#18181b] dark:text-[#a0a0a0] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition shrink-0"
-                                aria-label="Cari">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                            </svg>
-                        </button>
-                    @endunless
+                    <!-- Mobile Search Trigger Button (< md) -->
+                    <button type="button" 
+                            @click="mobileSearchOpen = true; $nextTick(() => document.getElementById('nav-search-mobile')?.focus())"
+                            class="md:hidden w-8 h-8 rounded-md flex items-center justify-center text-[#63636b] hover:text-[#18181b] dark:text-[#a0a0a0] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition shrink-0"
+                            aria-label="Cari">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </button>
 
                     <!-- User Session Menu -->
                     @auth

@@ -297,22 +297,86 @@ document.addEventListener('alpine:init', () => {
     /**
      * Chat room: send messages and receive them live via Echo (Reverb).
      */
-    Alpine.data('chatRoom', ({ conversationId, me, sendUrl }) => ({
+    Alpine.data('chatRoom', ({ conversationId, me, sendUrl, typingUrl, olderUrl, deleteUrl, otherName }) => ({
         draft: '',
         sending: false,
-        incoming: [],
+        // Unified, chronologically-ordered message list (server + live, deduped by id).
+        messages: window.__chatSeed || [],
+        typing: false,
+        typingTimer: null,
+        lastTypingPing: 0,
+        loadingOlder: false,
+        hasMore: Boolean(window.__chatHasMore),
+        echo: null,
 
         init() {
+            // Seed the list from the server-rendered payload.
+            this.messages = (window.__chatSeed || []).map((m) => this.normalize(m));
+            window.__chatSeed = null;
+
             this.$nextTick(() => this.scrollBottom());
 
-            if (window.Echo) {
-                window.Echo.private('conversation.' + conversationId)
-                    .listen('.message.sent', (e) => {
-                        if (e.sender_id === me) return;
-                        this.incoming.push(e);
-                        this.$nextTick(() => this.scrollBottom());
-                    });
+            // No conversation row yet (first-ever message) — nothing to subscribe to.
+            if (!window.Echo || !conversationId) return;
+
+            this.echo = window.Echo.private('conversation.' + conversationId);
+
+            this.echo.listen('.message.sent', (e) => {
+                if (e.sender_id === me) return;
+                this.upsert(e);
+                this.$nextTick(() => this.scrollBottom());
+            });
+
+            // Read receipts: the other party read our messages up to a given id.
+            this.echo.listen('.message.read', (e) => {
+                if (e.reader_id === me) return;
+                this.markMineRead(e.up_to_message_id);
+            });
+
+            // Typing indicator.
+            this.echo.listen('.user.typing', (e) => {
+                if (e.user_id === me) return;
+                this.typing = e.typing;
+                if (e.typing) {
+                    clearTimeout(this.typingTimer);
+                    this.typingTimer = setTimeout(() => { this.typing = false; }, 4000);
+                }
+            });
+        },
+
+        normalize(m) {
+            return {
+                id: m.id,
+                sender_id: m.sender_id,
+                body: m.body,
+                time: m.time,
+                created_at: m.created_at,
+                read_at: m.read_at ?? null,
+                mine: m.sender_id === me,
+            };
+        },
+
+        upsert(m) {
+            const norm = this.normalize(m);
+            const idx = this.messages.findIndex((x) => x.id === norm.id);
+            if (idx >= 0) {
+                this.messages[idx] = norm;
+            } else {
+                this.messages.push(norm);
+                this.messages.sort((a, b) => a.id - b.id);
             }
+        },
+
+        markMineRead(upToId) {
+            if (!upToId) return;
+            const now = new Date().toISOString();
+            this.messages.forEach((m) => {
+                if (m.mine && m.id <= upToId && !m.read_at) m.read_at = now;
+            });
+        },
+
+        removeLocal(id) {
+            this.messages = this.messages.filter((m) => m.id !== id);
         },
 
         scrollBottom() {
@@ -320,37 +384,137 @@ document.addEventListener('alpine:init', () => {
             if (el) el.scrollTop = el.scrollHeight;
         },
 
+        // Group label: "Hari ini", "Kemarin", or a full date.
+        dayLabel(m) {
+            if (!m.created_at) return '';
+            const d = new Date(m.created_at);
+            if (isNaN(d)) return '';
+            const today = new Date();
+            const startOf = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+            const diff = (startOf(today) - startOf(d)) / 86400000;
+            if (diff === 0) return 'Hari ini';
+            if (diff === 1) return 'Kemarin';
+            return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        },
+
+        // True when a date separator should precede message at index i.
+        showDay(i) {
+            if (i === 0) return true;
+            return this.dayLabel(this.messages[i]) !== this.dayLabel(this.messages[i - 1]);
+        },
+
+        // Show a read receipt row under the last own message that is read.
+        isLastMine(i) {
+            for (let j = this.messages.length - 1; j >= 0; j--) {
+                if (this.messages[j].mine) return j === i;
+            }
+            return false;
+        },
+
+        pingTyping() {
+            const now = Date.now();
+            if (now - this.lastTypingPing < 1500) return;
+            this.lastTypingPing = now;
+            this.post(typingUrl, { typing: true });
+            clearTimeout(this.typingTimer);
+            this.typingTimer = setTimeout(() => this.post(typingUrl, { typing: false }), 2500);
+        },
+
+        async loadOlder() {
+            if (this.loadingOlder || !this.hasMore || this.messages.length === 0) return;
+            this.loadingOlder = true;
+            const el = this.$refs.scroll;
+            const prevHeight = el ? el.scrollHeight : 0;
+            try {
+                const url = new URL(olderUrl, window.location.origin);
+                url.searchParams.set('before', this.messages[0].id);
+                const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                const data = await res.json();
+                if (data.success) {
+                    const older = (data.messages || []).map((m) => this.normalize(m));
+                    const ids = new Set(this.messages.map((m) => m.id));
+                    const merged = [...older.filter((m) => !ids.has(m.id)), ...this.messages];
+                    this.messages = merged.sort((a, b) => a.id - b.id);
+                    this.hasMore = Boolean(data.has_more);
+                    // Preserve scroll anchor after prepending.
+                    this.$nextTick(() => {
+                        if (el) el.scrollTop = el.scrollHeight - prevHeight;
+                    });
+                }
+            } catch (e) {
+                // silent
+            } finally {
+                this.loadingOlder = false;
+            }
+        },
+
         async send() {
             const body = this.draft.trim();
-            if (! body || this.sending) return;
+            if (!body || this.sending) return;
             this.sending = true;
             const prev = this.draft;
             this.draft = '';
             try {
-                const token = document.querySelector('meta[name=csrf-token]')?.content;
                 const res = await fetch(sendUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content,
+                    },
                     body: JSON.stringify({ body }),
                 });
                 if (res.status === 401) { window.location.href = '/login'; return; }
                 const data = await res.json();
                 if (data.success) {
-                    this.incoming.push({
-                        id: data.message.id,
-                        sender_id: data.message.sender_id,
-                        body: data.message.body,
-                        time: data.message.time,
-                        mine: true,
-                    });
+                    this.upsert(data.message);
                     this.$nextTick(() => this.scrollBottom());
                 } else {
                     this.draft = prev;
+                    if (window.notify) notify(data.message || 'Gagal mengirim pesan.');
                 }
             } catch (e) {
                 this.draft = prev;
             } finally {
                 this.sending = false;
+            }
+        },
+
+        async removeMessage(id) {
+            if (!window.confirm('Hapus pesan ini?')) return;
+            try {
+                const res = await fetch(deleteUrl.replace('__ID__', id), {
+                    method: 'DELETE',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content,
+                    },
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.removeLocal(id);
+                    if (window.notify) notify('Pesan dihapus.');
+                } else if (window.notify) {
+                    notify(data.message || 'Gagal menghapus pesan.');
+                }
+            } catch (e) {
+                if (window.notify) notify('Gagal menghapus pesan.');
+            }
+        },
+
+        async post(url, payload) {
+            try {
+                await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content,
+                    },
+                    body: JSON.stringify(payload),
+                });
+            } catch (e) {
+                // silent
             }
         },
     }));
@@ -584,6 +748,42 @@ document.addEventListener('alpine:init', () => {
             // Simple hard refresh keeps server-rendered order intact and
             // guarantees the newest items land on page 1.
             window.location.href = window.location.pathname + '?tab=terbaru';
+        },
+    }));
+
+    /**
+     * Inbox live: listens on the user's private channel and updates the
+     * conversation list (preview, time, unread badge) without a refresh.
+     */
+    Alpine.data('inboxLive', ({ me }) => ({
+        init() {
+            if (!window.Echo) return;
+
+            window.Echo.private('App.Models.User.' + me).listen('.inbox.updated', (e) => {
+                const row = document.querySelector('[data-conv="' + e.conversation_id + '"]');
+                if (!row) {
+                    // New conversation not yet in the list — refresh to create it.
+                    if (window.notify) notify(e.sender_name + ' mengirim pesan.');
+                    return;
+                }
+
+                const preview = row.querySelector('[data-conv-preview]');
+                if (preview) preview.textContent = e.body;
+
+                const time = row.querySelector('[data-conv-time]');
+                if (time) time.textContent = 'baru saja';
+
+                row.classList.add('bg-[#e8f2ff]/40', 'dark:bg-[#3291ff]/[0.06]');
+
+                const badge = row.querySelector('[data-conv-unread]');
+                if (badge) {
+                    const current = parseInt(badge.textContent.trim(), 10) || 0;
+                    badge.textContent = String(current + 1);
+                    badge.classList.remove('hidden');
+                }
+
+                if (window.notify) notify('Pesan baru dari ' + e.sender_name + '.');
+            });
         },
     }));
 

@@ -81,7 +81,7 @@
                     @endif
                 </div>
 
-                <!-- Actions: Button Ikuti / Edit Profil / Laporkan / Admin Menu -->
+                <!-- Actions: Button Ikuti / Edit Profil / Overflow (Bagikan, Laporkan) / Admin Menu -->
                 <div class="flex items-center gap-2 shrink-0 pt-3 sm:pt-4 flex-wrap justify-end">
                     @if($isOwner)
                         <button type="button" @click="editOpen = true" class="btn-secondary text-xs py-2 px-3.5 shadow-sm">
@@ -93,29 +93,93 @@
                             <x-follow-button :user="$user" />
                         </div>
 
-                        <!-- Report User Button -->
-                        @guest
-                            <button type="button"
-                                    @click="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
-                                    class="btn-secondary text-xs py-2 px-3 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/40 cursor-pointer"
-                                    title="Laporkan Akun Ini">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                                </svg>
-                                <span class="hidden sm:inline">Laporkan</span>
-                            </button>
+                        <!-- Message button -->
+                        @auth
+                            <a href="{{ route('chat.show', $user->username) }}"
+                               class="btn-secondary text-xs py-2 px-3.5 shadow-sm"
+                               title="Kirim pesan ke {{ $user->name }}">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                                <span>Pesan</span>
+                            </a>
                         @else
                             <button type="button"
-                                    onclick="window.openReportModal({ type: 'user', id: {{ $user->id }}, title: '{{ addslashes($user->name) }} (@{{ $user->username }})' })"
-                                    class="btn-secondary text-xs py-2 px-3 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/40"
-                                    title="Laporkan Akun Ini">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                                </svg>
-                                <span class="hidden sm:inline">Laporkan</span>
+                                    @click="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
+                                    class="btn-secondary text-xs py-2 px-3.5 shadow-sm cursor-pointer"
+                                    title="Masuk untuk mengirim pesan">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                                <span>Pesan</span>
                             </button>
-                        @endguest
+                        @endauth
                     @endif
+
+                    <!-- Overflow menu (⋯): Bagikan + Laporkan -->
+                    <div class="relative"
+                         x-data="{
+                             menuOpen: false,
+                             async shareProfile() {
+                                 const url = '{{ route('profile.show', $user->username) }}';
+                                 const shareData = { title: '{{ addslashes($user->name) }} (@{{ $user->username }}) di NampungYuk', url };
+                                 try {
+                                     if (navigator.share) {
+                                         await navigator.share(shareData);
+                                     } else {
+                                         await navigator.clipboard.writeText(url);
+                                         if (window.notify) notify('Tautan profil berhasil disalin!');
+                                     }
+                                 } catch (e) {
+                                     if (e && e.name === 'AbortError') return;
+                                     if (window.notify) notify('Gagal membagikan profil.');
+                                 }
+                                 this.menuOpen = false;
+                             }
+                         }"
+                         @click.outside="menuOpen = false">
+                        <button @click="menuOpen = !menuOpen"
+                                type="button"
+                                aria-label="Menu lainnya"
+                                aria-haspopup="true"
+                                :aria-expanded="menuOpen"
+                                class="btn-secondary text-xs py-2 px-2.5 shadow-sm"
+                                title="Aksi lainnya">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+                            </svg>
+                        </button>
+
+                        <div x-show="menuOpen" x-cloak
+                             x-transition:enter="transition ease-out duration-120"
+                             x-transition:enter-start="opacity-0 -translate-y-1"
+                             x-transition:enter-end="opacity-100 translate-y-0"
+                             class="absolute right-0 top-full mt-1.5 z-40 min-w-[190px] rounded-xl bg-white dark:bg-[#0a0a0a] border border-[#e4e4e7] dark:border-[#1f1f1f] shadow-lg overflow-hidden text-xs">
+                            <!-- Share -->
+                            <button @click.stop="shareProfile()"
+                                    type="button"
+                                    class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-[#18181b] dark:text-[#fafafa] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition">
+                                <svg class="w-4 h-4 text-[#63636b] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                                <span>Bagikan Profil</span>
+                            </button>
+
+                            <!-- Report (never for your own profile) -->
+                            @if(! $isOwner)
+                                <div class="border-t border-[#e4e4e7] dark:border-[#1f1f1f]"></div>
+                                @auth
+                                    <button @click.stop="window.openReportModal({ type: 'user', id: {{ $user->id }}, title: '{{ addslashes($user->name) }} (@{{ $user->username }})' }); menuOpen = false"
+                                            type="button"
+                                            class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition">
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                        <span>Laporkan Akun</span>
+                                    </button>
+                                @else
+                                    <button @click.stop="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
+                                            type="button"
+                                            class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition">
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                        <span>Laporkan Akun</span>
+                                    </button>
+                                @endauth
+                            @endif
+                        </div>
+                    </div>
 
                     <!-- Admin Moderator Controls on User -->
                     @if(auth()->check() && auth()->user()->is_admin && auth()->id() !== $user->id)

@@ -310,7 +310,7 @@
                     </a>
                 @endif
 
-                <!-- Voting controls in header -->
+                <!-- Upvote control (likes only) -->
                 <div class="inline-flex items-center rounded-lg bg-[#eeeeef] dark:bg-[#171717] p-0.5 border border-[#e4e4e7] dark:border-[#1f1f1f]">
                     @guest
                         <button type="button"
@@ -321,17 +321,6 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/>
                             </svg>
                             <span class="font-mono text-xs" x-text="score">{{ $project->score }}</span>
-                        </button>
-
-                        <span class="h-3.5 w-px bg-[#eaeaea] dark:bg-[#1f1f1f] mx-0.5" aria-hidden="true"></span>
-
-                        <button type="button"
-                                @click="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
-                                aria-label="Downvote project ini"
-                                class="p-1.5 rounded-md text-[#63636b] dark:text-[#a0a0a0] hover:text-rose-600 hover:bg-black/5 dark:hover:bg-white/5 transition active:scale-95 cursor-pointer">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
-                            </svg>
                         </button>
                     @else
                         <button @click="vote('up')"
@@ -348,23 +337,6 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/>
                             </svg>
                             <span class="font-mono text-xs" x-text="score">{{ $project->score }}</span>
-                        </button>
-
-                        <span class="h-3.5 w-px bg-[#eaeaea] dark:bg-[#1f1f1f] mx-0.5" aria-hidden="true"></span>
-
-                        <button @click="vote('down')"
-                                type="button"
-                                :disabled="isVoting"
-                                :aria-pressed="userVote === 'down'"
-                                aria-label="Downvote project ini"
-                                :class="{
-                                    'bg-rose-600 text-white ': userVote === 'down',
-                                    'text-[#63636b] dark:text-[#a0a0a0] hover:text-rose-600': userVote !== 'down'
-                                }"
-                                class="p-1.5 rounded-md transition active:scale-95 disabled:opacity-60">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
-                            </svg>
                         </button>
                     @endguest
                 </div>
@@ -398,76 +370,108 @@
                     </button>
                 @endguest
 
-                <!-- Share Button -->
-                <button @click="copyLink()"
-                        type="button"
-                        aria-label="Salin tautan project"
-                        class="p-2 rounded-lg border border-[#e4e4e7] dark:border-[#1f1f1f] bg-white dark:bg-[#0a0a0a] text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white transition active:scale-95"
-                        title="Salin Tautan">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
-                    </svg>
-                </button>
-
-                <!-- Report Button -->
-                @guest
-                    <button type="button"
-                            @click="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
-                            aria-label="Laporkan project"
-                            class="p-2 rounded-lg border border-[#e4e4e7] dark:border-[#1f1f1f] bg-white dark:bg-[#0a0a0a] text-[#63636b] dark:text-[#a0a0a0] hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/40 transition active:scale-95 cursor-pointer"
-                            title="Laporkan Project Ini">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                <!-- Overflow menu (⋯): Bagikan + Laporkan -->
+                <div class="relative" x-data="{ menuOpen: false }" @click.outside="menuOpen = false">
+                    <button @click="menuOpen = !menuOpen"
+                            type="button"
+                            aria-label="Menu lainnya"
+                            aria-haspopup="true"
+                            :aria-expanded="menuOpen"
+                            class="p-2 rounded-lg border border-[#e4e4e7] dark:border-[#1f1f1f] bg-white dark:bg-[#0a0a0a] text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white transition active:scale-95"
+                            title="Aksi lainnya">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
                         </svg>
                     </button>
-                @else
-                    @if(auth()->id() !== $project->user_id)
-                        <button type="button"
-                                onclick="window.openReportModal({ type: 'project', id: {{ $project->id }}, title: '{{ addslashes($project->title) }}' })"
-                                aria-label="Laporkan project"
-                                class="p-2 rounded-lg border border-[#e4e4e7] dark:border-[#1f1f1f] bg-white dark:bg-[#0a0a0a] text-[#63636b] dark:text-[#a0a0a0] hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/40 transition active:scale-95"
-                                title="Laporkan Project Ini">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                            </svg>
+
+                    <div x-show="menuOpen" x-cloak
+                         x-transition:enter="transition ease-out duration-120"
+                         x-transition:enter-start="opacity-0 -translate-y-1"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         class="absolute right-0 top-full mt-1.5 z-40 min-w-[190px] rounded-xl bg-white dark:bg-[#0a0a0a] border border-[#e4e4e7] dark:border-[#1f1f1f] shadow-lg overflow-hidden text-xs">
+                        <!-- Share -->
+                        <button @click="copyLink(); menuOpen = false"
+                                type="button"
+                                class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-[#18181b] dark:text-[#fafafa] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition">
+                            <svg class="w-4 h-4 text-[#63636b] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                            <span>Bagikan / Salin Tautan</span>
                         </button>
-                    @endif
-                @endguest
+
+                        <!-- Report (never for your own project) -->
+                        @if($project->user_id !== auth()->id())
+                            <div class="border-t border-[#e4e4e7] dark:border-[#1f1f1f]"></div>
+                            @guest
+                                <button @click="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
+                                        type="button"
+                                        class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition">
+                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                    <span>Laporkan Project</span>
+                                </button>
+                            @else
+                                <button @click="window.openReportModal({ type: 'project', id: {{ $project->id }}, title: '{{ addslashes($project->title) }}' }); menuOpen = false"
+                                        type="button"
+                                        class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition">
+                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                    <span>Laporkan Project</span>
+                                </button>
+                            @endguest
+                        @endif
+                    </div>
+                </div>
             </div>
 
         </div>
 
         <!-- TWO-COLUMN: Gallery (left) + About & Tools (right) -->
-        @php $gallery = $project->galleryImages(); @endphp
+        @php $media = $project->galleryMedia(); @endphp
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-0 border-b border-[#e4e4e7] dark:border-[#1f1f1f]">
 
-            <!-- LEFT: Image gallery -->
+            <!-- LEFT: Media gallery (images + videos) -->
             <div class="border-b lg:border-b-0 lg:border-r border-[#e4e4e7] dark:border-[#1f1f1f] bg-[#000000]">
-                @if(count($gallery) > 0)
+                @if(count($media) > 0)
                     <div x-data="{ active: 0 }">
-                        <div class="overflow-hidden aspect-video flex items-center justify-center">
-                            <img :src="['{{ implode("','", $gallery) }}'][active]"
-                                 alt="{{ $project->title }}"
-                                 loading="lazy"
-                                 decoding="async"
-                                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80';"
-                                 class="w-full h-full object-contain">
+                        <div class="overflow-hidden aspect-video flex items-center justify-center bg-[#000000]">
+                            <template x-for="(item, i) in {{ Illuminate\Support\Js::from($media) }}" :key="i">
+                                <template x-if="active === i">
+                                    <span class="w-full h-full flex items-center justify-center">
+                                        <template x-if="item.type === 'video'">
+                                            <video :src="item.url" controls playsinline preload="metadata"
+                                                   class="w-full h-full object-contain"></video>
+                                        </template>
+                                        <template x-if="item.type === 'image'">
+                                            <img :src="item.url"
+                                                 alt="{{ $project->title }}"
+                                                 loading="lazy"
+                                                 decoding="async"
+                                                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80';"
+                                                 class="w-full h-full object-contain">
+                                        </template>
+                                    </span>
+                                </template>
+                            </template>
                         </div>
 
-                        @if(count($gallery) > 1)
+                        @if(count($media) > 1)
                             <div class="flex gap-2 p-3 overflow-x-auto bg-[#ffffff] dark:bg-[#000000] border-t border-[#e4e4e7] dark:border-[#1f1f1f]">
-                                @foreach($gallery as $i => $img)
+                                @foreach($media as $i => $item)
                                     <button type="button" @click="active = {{ $i }}"
                                             :class="active === {{ $i }} ? 'ring-2 ring-[#0070f3] dark:ring-[#3291ff]' : 'opacity-60 hover:opacity-100'"
-                                            class="shrink-0 w-20 h-14 rounded-lg overflow-hidden border border-[#e4e4e7] dark:border-[#1f1f1f] transition">
-                                        <img src="{{ $img }}" alt="" loading="lazy" class="w-full h-full object-cover">
+                                            class="relative shrink-0 w-20 h-14 rounded-lg overflow-hidden border border-[#e4e4e7] dark:border-[#1f1f1f] transition bg-[#000000]">
+                                        @if($item['type'] === 'video')
+                                            <video src="{{ $item['url'] }}" preload="metadata" muted class="w-full h-full object-cover pointer-events-none"></video>
+                                            <span class="absolute inset-0 flex items-center justify-center bg-black/30">
+                                                <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                            </span>
+                                        @else
+                                            <img src="{{ $item['url'] }}" alt="" loading="lazy" class="w-full h-full object-cover">
+                                        @endif
                                     </button>
                                 @endforeach
                             </div>
                         @endif
                     </div>
                 @else
-                    <div class="aspect-video flex items-center justify-center text-[#63636b] text-xs">Tanpa gambar</div>
+                    <div class="aspect-video flex items-center justify-center text-[#63636b] text-xs">Tanpa media</div>
                 @endif
             </div>
 

@@ -29,18 +29,69 @@ class ProjectController extends Controller
     public function index(Request $request): View|RedirectResponse
     {
         $tab = $request->query('tab', 'trend'); // 'trend', 'terbaru', 'populer', 'prototype'
+        $view = $request->query('view') === 'people' ? 'people' : 'projects';
         $categorySlug = $request->query('kategori');
         $techFilter = $request->query('tech');
         $search = $request->query('q') ?? $request->query('search');
+        $scopedUsername = $request->query('u'); // when searching within a profile page
 
         // Memerlukan login untuk melihat feed berdasarkan kategori kodingan atau filter teknologi
         if (($categorySlug || $techFilter) && ! Auth::check()) {
             return redirect()->route('login')->with('info', 'Silakan masuk terlebih dahulu untuk melihat project berdasarkan kategori kodingan atau teknologi.');
         }
 
+        // People search: same query box, results are accounts instead of projects.
+        if ($view === 'people') {
+            $people = User::query()
+                ->search($search)
+                ->whereNull('ban_reason')
+                ->when($search === null || trim((string) $search) === '', fn ($q) => $q->orderByDesc('reputation_points'))
+                ->when($search !== null && trim((string) $search) !== '', fn ($q) => $q->orderByDesc('reputation_points'))
+                ->paginate(12)
+                ->withQueryString();
+
+            $viewer = Auth::user();
+            $people->getCollection()->transform(function (User $person) {
+                return [
+                    'user' => $person,
+                    'followers' => $person->followers()->count(),
+                    'projects' => $person->projects()->count(),
+                ];
+            });
+
+            $categories = Category::withCount('projects')->get();
+
+            return view('projects.index', [
+                'people' => $people,
+                'view' => $view,
+                'tab' => $tab,
+                'categorySlug' => $categorySlug,
+                'techFilter' => $techFilter,
+                'search' => $search,
+                'searchOwner' => null,
+                'projects' => Project::query()->whereRaw('1 = 0')->paginate(12),
+                'categories' => $categories,
+                'trendingToday' => collect(),
+                'hotHashtags' => [],
+                'trendingTech' => [],
+                'recentReviews' => collect(),
+                'userBookmarkedIds' => [],
+                'userVotes' => [],
+                'userRepostedIds' => [],
+                'suggestedDevelopers' => collect(),
+            ]);
+        }
+
         $query = Project::with(['user', 'category'])
             ->visibleTo(Auth::id())
             ->search($search);
+
+        // Scope results to a single creator when arriving from that profile's search bar.
+        $searchOwner = null;
+        if ($scopedUsername) {
+            $searchOwner = User::where('username', $scopedUsername)->first();
+            $query->where('user_id', $searchOwner?->id ?? 0);
+        }
 
         if ($categorySlug) {
             $query->whereHas('category', function ($q) use ($categorySlug) {
@@ -168,8 +219,10 @@ class ProjectController extends Controller
             'categorySlug',
             'techFilter',
             'search',
-            'suggestedDevelopers'
-        ));
+            'suggestedDevelopers',
+            'searchOwner',
+            'view'
+        ) + ['people' => collect()]);
     }
 
     /**
@@ -296,6 +349,10 @@ class ProjectController extends Controller
             'thumbnail_url' => ['nullable', 'url', 'max:255'],
             'images' => ['nullable', 'array', 'max:8'],
             'images.*' => ['image', 'mimes:jpeg,png,jpg,webp,gif', 'max:4096'],
+            'video' => ['nullable', 'file', 'mimes:mp4,webm,ogg,mov,m4v', 'max:25600'],
+            'video_url' => ['nullable', 'url', 'max:255'],
+            'videos' => ['nullable', 'array', 'max:4'],
+            'videos.*' => ['file', 'mimes:mp4,webm,ogg,mov,m4v', 'max:25600'],
         ]);
 
         $user = Auth::user();
@@ -327,6 +384,24 @@ class ProjectController extends Controller
             }
         }
 
+        // Handle primary video: uploaded file OR external URL.
+        $videoPath = null;
+        if ($request->hasFile('video')) {
+            $videoPath = '/storage/'.$request->file('video')->store('project-videos', 'public');
+        } elseif (! empty($validated['video_url'])) {
+            $videoPath = $validated['video_url'];
+        }
+
+        // Handle additional gallery videos (multiple uploads).
+        $galleryVideoPaths = [];
+        if ($request->hasFile('videos')) {
+            foreach ($request->file('videos') as $video) {
+                if ($video && $video->isValid()) {
+                    $galleryVideoPaths[] = '/storage/'.$video->store('project-videos', 'public');
+                }
+            }
+        }
+
         $baseSlug = Str::slug($validated['title']);
         $slug = $baseSlug;
         $count = 1;
@@ -350,6 +425,8 @@ class ProjectController extends Controller
             'setup_instructions' => $validated['setup_instructions'] ?? null,
             'thumbnail' => $thumbnailPath,
             'images' => ! empty($galleryPaths) ? $galleryPaths : null,
+            'video' => $videoPath,
+            'videos' => ! empty($galleryVideoPaths) ? $galleryVideoPaths : null,
             'demo_url' => $validated['demo_url'] ?? null,
             'github_url' => $validated['github_url'] ?? null,
             'prototype_url' => $validated['prototype_url'] ?? null,

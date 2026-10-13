@@ -28,7 +28,77 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-[#f4f4f5] dark:bg-[#060709] text-[#18181b] dark:text-[#fafafa] min-h-screen flex items-center justify-center p-3 sm:p-6 relative antialiased selection:bg-[#3291ff]/25 selection:text-[#0070f3]"
-      x-data="{ showPassword: false }">
+      x-data="{
+          step: {{ ($errors->has('password') && (old('name') || old('username') || old('email'))) ? 2 : 1 }},
+          showPassword: false,
+          showPasswordConfirm: false,
+          name: '{{ old('name', '') }}',
+          username: '{{ old('username', '') }}',
+          email: '{{ old('email', '') }}',
+          password: '',
+          passwordConfirmation: '',
+          step1Error: '',
+          step2Error: '',
+          nextStep() {
+              this.step1Error = '';
+              if (!this.name.trim()) {
+                  this.step1Error = 'Nama lengkap wajib diisi.';
+                  this.$refs.nameInput?.focus();
+                  return;
+              }
+              if (!this.username.trim()) {
+                  this.step1Error = 'Username wajib diisi.';
+                  this.$refs.usernameInput?.focus();
+                  return;
+              }
+              if (this.username.length < 3) {
+                  this.step1Error = 'Username minimal 3 karakter.';
+                  this.$refs.usernameInput?.focus();
+                  return;
+              }
+              if (!/^[a-zA-Z0-9_]+$/.test(this.username)) {
+                  this.step1Error = 'Username hanya boleh berisi huruf, angka, dan underscore (_).';
+                  this.$refs.usernameInput?.focus();
+                  return;
+              }
+              if (!this.email.trim()) {
+                  this.step1Error = 'Email wajib diisi.';
+                  this.$refs.emailInput?.focus();
+                  return;
+              }
+              if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email)) {
+                  this.step1Error = 'Format email tidak valid.';
+                  this.$refs.emailInput?.focus();
+                  return;
+              }
+              this.step = 2;
+              this.$nextTick(() => {
+                  this.$refs.passwordInput?.focus();
+              });
+          },
+          prevStep() {
+              this.step = 1;
+              this.step2Error = '';
+              this.$nextTick(() => {
+                  this.$refs.nameInput?.focus();
+              });
+          },
+          submitForm(e) {
+              this.step2Error = '';
+              if (!this.password || this.password.length < 8) {
+                  e.preventDefault();
+                  this.step2Error = 'Password minimal 8 karakter.';
+                  this.$refs.passwordInput?.focus();
+                  return;
+              }
+              if (this.password !== this.passwordConfirmation) {
+                  e.preventDefault();
+                  this.step2Error = 'Konfirmasi password tidak cocok.';
+                  this.$refs.passwordConfirmInput?.focus();
+                  return;
+              }
+          }
+      }">
 
     <!-- Ambient Glow Backdrop -->
     <div class="fixed inset-0 bg-black/60 dark:bg-black/85 backdrop-blur-md pointer-events-none"></div>
@@ -59,16 +129,18 @@
 
                 <!-- Headline -->
                 <div class="space-y-1 mb-4">
-                    <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-[#18181b] dark:text-white">
+                    <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-[#18181b] dark:text-white"
+                        x-text="step === 1 ? 'Bergabunglah hari ini.' : 'Buat kata sandi akun.'">
                         Bergabunglah hari ini.
                     </h1>
-                    <p class="text-xs text-[#71717a] dark:text-[#a1a1aa] leading-relaxed line-clamp-2">
+                    <p class="text-xs text-[#71717a] dark:text-[#a1a1aa] leading-relaxed line-clamp-2"
+                       x-text="step === 1 ? 'Langkah 1 dari 2: Isi identitas profil dan alamat email akunmu.' : 'Langkah 2 dari 2: Buat kata sandi aman untuk masuk ke akunmu.'">
                         Buat akun untuk memamerkan karya codingmu dan terhubung dengan sesama developer.
                     </p>
                 </div>
 
-                <!-- Social OAuth Button: Google -->
-                <div>
+                <!-- Step 1: Social OAuth Button: Google -->
+                <div x-show="step === 1" class="space-y-3">
                     <a href="{{ route('auth.google') }}" 
                        class="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-[#f4f4f5] hover:bg-[#e4e4e7] dark:bg-[#18181b] dark:hover:bg-[#27272a] text-[#18181b] dark:text-white rounded-xl font-bold text-xs transition duration-150 border border-[#e4e4e7] dark:border-[#27272a] shadow-xs cursor-pointer">
                         <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
@@ -89,84 +161,147 @@
                     </div>
                 </div>
 
+                <!-- Step 2: Top Summary Bar & Status -->
+                <div x-show="step === 2" x-cloak class="space-y-3">
+                    <div class="flex items-center justify-between py-2 px-3.5 rounded-2xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-xs">
+                        <button type="button" 
+                                @click="prevStep()" 
+                                class="inline-flex items-center gap-1.5 font-bold text-[#0070f3] dark:text-[#3291ff] hover:underline cursor-pointer">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                            <span>Ubah Data</span>
+                        </button>
+                        <div class="text-[11px] text-[#71717a] flex items-center gap-1.5 max-w-[160px] truncate">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                            <span class="truncate" x-text="email || ('@' + username)"></span>
+                        </div>
+                    </div>
+
+                    <div class="relative flex items-center justify-center my-3.5">
+                        <div class="border-t border-[#e4e4e7] dark:border-[#27272a] w-full"></div>
+                        <span class="bg-white dark:bg-[#000000] px-3 text-[10px] font-mono uppercase text-[#71717a] tracking-wider">
+                            Langkah 2 / 2
+                        </span>
+                    </div>
+                </div>
+
                 <!-- Registration Form -->
-                <form method="POST" action="{{ route('register') }}" class="space-y-3">
+                <form method="POST" 
+                      action="{{ route('register') }}" 
+                      @submit="submitForm($event)" 
+                      @keydown.enter="if(step === 1) { $event.preventDefault(); nextStep(); }"
+                      class="space-y-3">
                     @csrf
 
-                    <div class="grid grid-cols-2 gap-2.5">
-                        <div>
-                            <label for="name" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Nama Lengkap</label>
-                            <input type="text" 
-                                   id="name"
-                                   name="name" 
-                                   value="{{ old('name') }}"
-                                   required 
-                                   autofocus
-                                   placeholder="Budi Santoso" 
-                                   class="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
-                            @error('name') <p class="text-rose-500 text-[10px] mt-1">{{ $message }}</p> @enderror
-                        </div>
-                        <div>
-                            <label for="username" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Username</label>
-                            <div class="relative">
-                                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-[#71717a]">@</span>
+                    <!-- LANGKAH 1: DATA IDENTITAS & EMAIL -->
+                    <div x-show="step === 1" class="space-y-3">
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <div>
+                                <label for="name" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Nama Lengkap</label>
                                 <input type="text" 
-                                       id="username"
-                                       name="username" 
-                                       value="{{ old('username') }}"
+                                       id="name"
+                                       name="name" 
+                                       x-model="name"
+                                       x-ref="nameInput"
+                                       value="{{ old('name') }}"
                                        required 
-                                       placeholder="budisantoso" 
-                                       class="w-full pl-6 pr-3 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs font-mono placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+                                       autofocus
+                                       placeholder="Budi Santoso" 
+                                       class="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+                                @error('name') <p class="text-rose-500 text-[10px] mt-1">{{ $message }}</p> @enderror
                             </div>
-                            @error('username') <p class="text-rose-500 text-[10px] mt-1">{{ $message }}</p> @enderror
+                            <div>
+                                <label for="username" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Username</label>
+                                <div class="relative">
+                                    <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-[#71717a]">@</span>
+                                    <input type="text" 
+                                           id="username"
+                                           name="username" 
+                                           x-model="username"
+                                           x-ref="usernameInput"
+                                           value="{{ old('username') }}"
+                                           required 
+                                           placeholder="budisantoso" 
+                                           class="w-full pl-6 pr-3 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs font-mono placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+                                </div>
+                                @error('username') <p class="text-rose-500 text-[10px] mt-1">{{ $message }}</p> @enderror
+                            </div>
                         </div>
-                    </div>
 
-                    <div>
-                        <label for="email" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Email Aktif</label>
-                        <input type="email" 
-                               id="email"
-                               name="email" 
-                               value="{{ old('email') }}"
-                               required 
-                               placeholder="nama@email.com" 
-                               class="w-full px-3.5 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
-                        @error('email') <p class="text-rose-500 text-[10px] mt-1">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2.5">
                         <div>
-                            <label for="password" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Password</label>
-                            <input :type="showPassword ? 'text' : 'password'" 
-                                   id="password"
-                                   name="password" 
+                            <label for="email" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Email Aktif</label>
+                            <input type="email" 
+                                   id="email"
+                                   name="email" 
+                                   x-model="email"
+                                   x-ref="emailInput"
+                                   value="{{ old('email') }}"
                                    required 
-                                   placeholder="Min. 8 karakter" 
-                                   class="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+                                   placeholder="nama@email.com" 
+                                   class="w-full px-3.5 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+                            @error('email') <p class="text-rose-500 text-[10px] mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <!-- Client Error Message Langkah 1 -->
+                        <p x-show="step1Error" x-text="step1Error" class="text-rose-500 text-[11px] font-medium leading-tight"></p>
+
+                        <button type="button" 
+                                @click="nextStep()"
+                                class="w-full mt-2 py-2.5 rounded-full bg-[#18181b] hover:bg-[#27272a] text-white dark:bg-white dark:hover:bg-[#e4e4e7] dark:text-black font-bold text-xs transition duration-150 active:scale-[0.99] shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
+                            <span>Lanjut ke Password</span>
+                            <span>&rarr;</span>
+                        </button>
+                    </div>
+
+                    <!-- LANGKAH 2: PASSWORD & KONFIRMASI -->
+                    <div x-show="step === 2" x-cloak class="space-y-3">
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label for="password" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa]">Password</label>
+                                <span class="text-[10px] text-[#71717a]">Min. 8 karakter</span>
+                            </div>
+                            <div class="relative">
+                                <input :type="showPassword ? 'text' : 'password'" 
+                                       id="password"
+                                       name="password" 
+                                       x-model="password"
+                                       x-ref="passwordInput"
+                                       placeholder="••••••••" 
+                                       class="w-full px-3.5 py-2.5 pr-10 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+                                <button type="button" @click="showPassword = !showPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#71717a] hover:text-[#18181b] dark:hover:text-white text-xs cursor-pointer">
+                                    <svg x-show="!showPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    <svg x-show="showPassword" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
+                                </button>
+                            </div>
                             @error('password') <p class="text-rose-500 text-[10px] mt-1">{{ $message }}</p> @enderror
                         </div>
+
                         <div>
-                            <label for="password_confirmation" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Konfirmasi</label>
-                            <input :type="showPassword ? 'text' : 'password'" 
-                                   id="password_confirmation"
-                                   name="password_confirmation" 
-                                   required 
-                                   placeholder="Ulangi sandi" 
-                                   class="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+                            <label for="password_confirmation" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Konfirmasi Password</label>
+                            <div class="relative">
+                                <input :type="showPasswordConfirm ? 'text' : 'password'" 
+                                       id="password_confirmation"
+                                       name="password_confirmation" 
+                                       x-model="passwordConfirmation"
+                                       x-ref="passwordConfirmInput"
+                                       placeholder="••••••••" 
+                                       class="w-full px-3.5 py-2.5 pr-10 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+                                <button type="button" @click="showPasswordConfirm = !showPasswordConfirm" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#71717a] hover:text-[#18181b] dark:hover:text-white text-xs cursor-pointer">
+                                    <svg x-show="!showPasswordConfirm" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    <svg x-show="showPasswordConfirm" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
+                                </button>
+                            </div>
+                            @error('password_confirmation') <p class="text-rose-500 text-[10px] mt-1">{{ $message }}</p> @enderror
                         </div>
+
+                        <!-- Client Error Message Langkah 2 -->
+                        <p x-show="step2Error" x-text="step2Error" class="text-rose-500 text-[11px] font-medium leading-tight"></p>
+
+                        <button type="submit" 
+                                class="w-full mt-2 py-2.5 rounded-full bg-[#18181b] hover:bg-[#27272a] text-white dark:bg-white dark:hover:bg-[#e4e4e7] dark:text-black font-bold text-xs transition duration-150 active:scale-[0.99] shadow-sm cursor-pointer">
+                            Buat Akun & Bergabung
+                        </button>
                     </div>
 
-                    <div class="flex items-center justify-between pt-0.5">
-                        <label class="flex items-center gap-1.5 text-[11px] text-[#71717a] cursor-pointer select-none">
-                            <input type="checkbox" @change="showPassword = $event.target.checked" class="rounded border-[#e4e4e7] dark:border-[#27272a] text-[#0070f3]">
-                            <span>Lihat password</span>
-                        </label>
-                    </div>
-
-                    <button type="submit" 
-                            class="w-full mt-2 py-2.5 rounded-full bg-[#18181b] hover:bg-[#27272a] text-white dark:bg-white dark:hover:bg-[#e4e4e7] dark:text-black font-bold text-xs transition duration-150 active:scale-[0.99] shadow-sm cursor-pointer">
-                        Buat Akun & Bergabung
-                    </button>
                 </form>
             </div>
 

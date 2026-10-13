@@ -4,7 +4,7 @@
 ])
 
 <div class="ny-card p-3.5 sm:p-4 space-y-2 border border-[#e4e4e7] dark:border-[#1f1f1f]"
-     x-data="{ replying: false, showReplies: true }">
+     x-data="{ replying: false, showReplies: false }">
     <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2.5">
             <x-user-avatar :user="$comment->user" :name="$comment->guest_name" size="sm" />

@@ -385,6 +385,67 @@
                 @error('images.*') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
             </div>
 
+            <!-- Video Showcase (primary video + optional gallery videos) -->
+            <div class="space-y-3 pt-2 border-t border-[#e4e4e7] dark:border-[#1f1f1f]"
+                 x-data="{ videoName: '', galleryVideos: [] }">
+                <label class="text-xs font-semibold text-[#18181b] dark:text-[#fafafa] flex items-center gap-1.5">
+                    <span>Video Demo</span>
+                    <span class="text-[10px] font-normal text-[#63636b] dark:text-[#a0a0a0]">(opsional · MP4/WebM/MOV · maks 25MB per file)</span>
+                </label>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Primary video file upload -->
+                    <div class="p-4 rounded-xl border border-dashed border-[#e4e4e7] dark:border-[#1f1f1f] text-center space-y-2 bg-[#ffffff] dark:bg-[#000000]">
+                        <template x-if="videoName">
+                            <div class="relative w-full aspect-video max-h-[160px] rounded-lg overflow-hidden border border-[#e4e4e7] dark:border-[#1f1f1f] mb-2 mx-auto bg-black flex items-center justify-center">
+                                <video :src="$refs.videoFile?.files[0] ? URL.createObjectURL($refs.videoFile.files[0]) : ''" controls playsinline preload="metadata" class="w-full h-full object-contain"></video>
+                            </div>
+                        </template>
+                        <template x-if="!videoName">
+                            <svg class="w-8 h-8 text-[#63636b] mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                            </svg>
+                        </template>
+                        <p class="text-xs text-[#63636b]" x-text="videoName || 'Unggah file video utama'"></p>
+                        <input type="file" name="video" accept="video/mp4,video/webm,video/ogg,video/quicktime" x-ref="videoFile"
+                               @change="videoName = $event.target.files[0]?.name || ''" class="text-xs text-[#63636b] w-full">
+                    </div>
+
+                    <!-- Video URL alternative -->
+                    <div class="space-y-1.5">
+                        <label for="video_url" class="text-xs text-[#63636b] dark:text-[#a0a0a0]">
+                            Atau gunakan URL Video (mp4/webm):
+                        </label>
+                        <input type="url" name="video_url" id="video_url"
+                               placeholder="https://contoh.com/demo.mp4" class="ny-input text-xs">
+                        <p class="text-[11px] text-[#63636b]">Link video eksternal (.mp4/.webm). Jika file juga diunggah, file yang dipakai.</p>
+                    </div>
+                </div>
+
+                <!-- Additional gallery videos (multiple) -->
+                <div class="space-y-2">
+                    <label class="text-[11px] font-semibold text-[#18181b] dark:text-[#fafafa]">Video Tambahan (opsional · maks 4)</label>
+                    <label class="block p-3 rounded-xl border border-dashed border-[#e4e4e7] dark:border-[#1f1f1f] text-center cursor-pointer hover:border-[#0070f3] dark:hover:border-[#3291ff] transition bg-[#ffffff] dark:bg-[#000000]">
+                        <p class="text-xs text-[#63636b] dark:text-[#a0a0a0]">Klik untuk pilih beberapa video sekaligus</p>
+                        <input type="file" name="videos[]" accept="video/mp4,video/webm,video/ogg,video/quicktime" multiple class="hidden"
+                               @change="galleryVideos = Array.from($event.target.files).map(f => f.name)">
+                    </label>
+                    <template x-if="galleryVideos.length">
+                        <ul class="text-[11px] text-[#63636b] dark:text-[#a0a0a0] space-y-0.5">
+                            <template x-for="(name, i) in galleryVideos" :key="i">
+                                <li class="flex items-center gap-1.5">
+                                    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <span x-text="name" class="truncate"></span>
+                                </li>
+                            </template>
+                        </ul>
+                    </template>
+                    @error('video') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
+                    @error('videos') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
+                    @error('videos.*') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
+                </div>
+            </div>
+
             <!-- External Links: Live Demo, GitHub, Prototype -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
                 

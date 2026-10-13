@@ -12,28 +12,6 @@
             </span>
         </div>
 
-        <!-- Primary Action CTA -->
-        <div class="pt-1">
-            @auth
-                <a href="{{ route('projects.create') }}" 
-                   class="btn-primary w-full py-2.5 px-3">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    <span>Pamerkan Project</span>
-                </a>
-            @else
-                <button type="button" 
-                        @click="window.openAuthModal('login')"
-                        class="btn-primary w-full py-2.5 px-3 cursor-pointer">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    <span>Pamerkan Project</span>
-                </button>
-            @endauth
-        </div>
-
         <!-- Section 1: Discover -->
         <div class="space-y-1">
             <p class="px-2 text-[11px] font-bold uppercase tracking-wider text-[#63636b] dark:text-[#a0a0a0]">

@@ -26,11 +26,78 @@
         <!-- MAIN SHOWCASE FEED (xl:col-span-8) -->
         <div class="xl:col-span-8 space-y-4 w-full">
 
+            <!-- RESULT VIEW SWITCH: Karya (projects) | Akun (people) — only meaningful when searching -->
+            @if($search || $view === 'people')
+                <div class="inline-flex items-center gap-1 p-1 rounded-xl bg-white dark:bg-[#0a0a0a] border border-[#e4e4e7] dark:border-[#1f1f1f]">
+                    <a href="{{ route('projects.index', array_filter(['q' => $search, 'tab' => request('tab')])) }}"
+                       class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition {{ $view !== 'people' ? 'bg-[#0070f3] text-white' : 'text-[#63636b] dark:text-[#a0a0a0] hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                        <span>Karya</span>
+                    </a>
+                    <a href="{{ route('projects.index', array_filter(['q' => $search, 'view' => 'people'])) }}"
+                       class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition {{ $view === 'people' ? 'bg-[#0070f3] text-white' : 'text-[#63636b] dark:text-[#a0a0a0] hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        <span>Akun</span>
+                    </a>
+                </div>
+            @endif
+
+        @if($view === 'people')
+            <!-- PEOPLE (AKUN) RESULTS -->
+            <div class="space-y-3">
+                @forelse($people as $row)
+                    @php $person = $row['user']; @endphp
+                    <div class="ny-card p-4 sm:p-5 bg-white dark:bg-[#0a0a0a] flex items-start justify-between gap-4">
+                        <a href="{{ route('profile.show', $person->username) }}" class="shrink-0">
+                            <x-user-avatar :user="$person" size="lg" />
+                        </a>
+                        <div class="min-w-0 flex-1 space-y-1">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <a href="{{ route('profile.show', $person->username) }}" class="font-bold text-sm text-[#18181b] dark:text-[#fafafa] hover:text-[#0070f3] dark:hover:text-[#3291ff] transition">
+                                    {{ $person->name }}
+                                </a>
+                                @if($person->is_admin ?? false)
+                                    <x-badge variant="teal" size="xs">Admin</x-badge>
+                                @endif
+                            </div>
+                            <p class="text-xs font-mono text-[#63636b] dark:text-[#a0a0a0]">&#64;{{ $person->username }}</p>
+                            @if($person->bio)
+                                <p class="text-xs text-[#63636b] dark:text-[#a0a0a0] leading-relaxed line-clamp-2">{{ $person->bio }}</p>
+                            @endif
+                            <div class="flex items-center gap-3 pt-0.5 text-[11px] font-mono text-[#63636b] dark:text-[#a0a0a0]">
+                                <span><span class="font-bold text-[#18181b] dark:text-[#fafafa]">{{ number_format($row['followers']) }}</span> pengikut</span>
+                                <span>&bull;</span>
+                                <span><span class="font-bold text-[#18181b] dark:text-[#fafafa]">{{ number_format($row['projects']) }}</span> karya</span>
+                            </div>
+                        </div>
+                        <div class="shrink-0 pt-0.5">
+                            <x-follow-button :user="$person" size="sm" />
+                        </div>
+                    </div>
+                @empty
+                    <x-empty-state
+                        title="Akun tidak ditemukan"
+                        description="{{ $search ? 'Tidak ada akun dengan nama atau username \"'.$search.'\".' : 'Belum ada akun untuk ditampilkan.' }}"
+                        action-label="Kembali ke Semua Karya"
+                        :action-url="route('projects.index')" />
+                @endforelse
+
+                @if($people->hasPages())
+                    <div class="pt-2">{{ $people->links() }}</div>
+                @endif
+            </div>
+        @else
+
             <!-- ACTIVE FILTER BAR (Only visible when filter or search is active) -->
-            @if($categorySlug || $techFilter || $search)
+            @if($categorySlug || $techFilter || $search || ($searchOwner ?? null))
                 <div class="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-white dark:bg-[#0a0a0a] border border-[#e4e4e7] dark:border-[#1f1f1f] text-xs">
                     <div class="flex items-center gap-2 flex-wrap">
                         <span class="text-[#63636b] dark:text-[#a0a0a0] font-medium">Filter aktif:</span>
+                        @if($searchOwner ?? null)
+                            <span class="px-2 py-0.5 rounded-md bg-[#e8f2ff] dark:bg-[#3291ff]/12 text-[#0070f3] dark:text-[#3291ff] font-medium text-[11px] border border-[#3291ff]/30 dark:border-[#3291ff]/30">
+                                Karya &#64;{{ $searchOwner->username }}
+                            </span>
+                        @endif
                         @if($categorySlug)
                             <span class="px-2 py-0.5 rounded-md bg-[#eeeeef] dark:bg-[#171717] text-[#18181b] dark:text-[#fafafa] font-medium text-[11px] border border-[#e4e4e7] dark:border-[#1f1f1f]">
                                 Kategori: {{ $categorySlug }}
@@ -71,9 +138,9 @@
                     @empty
                         <x-empty-state 
                             title="Tidak ada project ditemukan" 
-                            description="Belum ada karya kodingan yang cocok dengan kriteria pencarian atau filter yang dipilih."
-                            action-label="Kembali ke Semua Project"
-                            :action-url="route('projects.index')" />
+                            description="{{ ($searchOwner ?? null) ? 'Belum ada karya @'.$searchOwner->username.' yang cocok dengan pencarian.' : 'Belum ada karya kodingan yang cocok dengan kriteria pencarian atau filter yang dipilih.' }}"
+                            action-label="{{ ($searchOwner ?? null) ? 'Lihat Profil @'.$searchOwner->username : 'Kembali ke Semua Project' }}"
+                            :action-url="($searchOwner ?? null) ? route('profile.show', $searchOwner->username) : route('projects.index')" />
                     @endforelse
                 </div>
 
@@ -121,6 +188,7 @@
                     </div>
                 @endauth
             </div>
+        @endif
 
         </div>
 

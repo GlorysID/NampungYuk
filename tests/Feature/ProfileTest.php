@@ -30,8 +30,10 @@ class ProfileTest extends TestCase
         $response->assertSee('@budi_santoso');
         $response->assertSee('Software Engineer pengembang web');
         $response->assertSee('150 Poin Reputasi');
-        $response->assertDontSee('id="nav-search"', false);
-        $response->assertDontSee('id="nav-search-mobile"', false);
+        // The header search is contextual: on a profile it is present and scoped to this user.
+        $response->assertSee('id="nav-search"', false);
+        $response->assertSee('Cari karya @budi_santoso', false);
+        $response->assertSee('name="u" value="budi_santoso"', false);
     }
 
     public function test_profile_displays_projects_and_activity(): void

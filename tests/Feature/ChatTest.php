@@ -1,0 +1,161 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Conversation;
+use App\Models\Message;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class ChatTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private function pair(): array
+    {
+        $me = User::factory()->create();
+        $other = User::factory()->create();
+
+        return [$me, $other];
+    }
+
+    public function test_inbox_lists_conversations(): void
+    {
+        [$me, $other] = $this->pair();
+        $conv = Conversation::between($me->id, $other->id);
+        $conv->messages()->create(['sender_id' => $other->id, 'body' => 'Halo dari other']);
+
+        $response = $this->actingAs($me)->get('/obrolan');
+
+        $response->assertStatus(200);
+        $response->assertSee($other->name);
+        $response->assertSee('Halo dari other');
+    }
+
+    public function test_sending_a_message_persists_and_returns_json(): void
+    {
+        [$me, $other] = $this->pair();
+
+        $response = $this->actingAs($me)->postJson('/obrolan/'.$other->username.'/kirim', [
+            'body' => 'Pesan uji coba',
+        ]);
+
+        $response->assertStatus(200)->assertJson(['success' => true]);
+        $this->assertDatabaseHas('messages', [
+            'sender_id' => $me->id,
+            'body' => 'Pesan uji coba',
+        ]);
+    }
+
+    public function test_cannot_message_self(): void
+    {
+        $me = User::factory()->create();
+
+        $response = $this->actingAs($me)->postJson('/obrolan/'.$me->username.'/kirim', [
+            'body' => 'Halo diri sendiri',
+        ]);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_opening_conversation_marks_incoming_messages_read(): void
+    {
+        [$me, $other] = $this->pair();
+        $conv = Conversation::between($me->id, $other->id);
+        $incoming = $conv->messages()->create(['sender_id' => $other->id, 'body' => 'Belum dibaca']);
+
+        $this->actingAs($me)->get('/obrolan/'.$other->username)->assertStatus(200);
+
+        $this->assertNotNull($incoming->fresh()->read_at);
+    }
+
+    public function test_can_delete_own_message(): void
+    {
+        [$me, $other] = $this->pair();
+        $conv = Conversation::between($me->id, $other->id);
+        $mine = $conv->messages()->create(['sender_id' => $me->id, 'body' => 'Hapus aku']);
+
+        $response = $this->actingAs($me)->deleteJson('/obrolan/pesan/'.$mine->id);
+
+        $response->assertStatus(200)->assertJson(['success' => true]);
+        $this->assertSoftDeleted('messages', ['id' => $mine->id]);
+    }
+
+    public function test_cannot_delete_other_users_message(): void
+    {
+        [$me, $other] = $this->pair();
+        $conv = Conversation::between($me->id, $other->id);
+        $theirs = $conv->messages()->create(['sender_id' => $other->id, 'body' => 'Pesan other']);
+
+        $response = $this->actingAs($me)->deleteJson('/obrolan/pesan/'.$theirs->id);
+
+        $response->assertStatus(403);
+        $this->assertDatabaseHas('messages', ['id' => $theirs->id, 'deleted_at' => null]);
+    }
+
+    public function test_can_load_older_messages(): void
+    {
+        [$me, $other] = $this->pair();
+        $conv = Conversation::between($me->id, $other->id);
+        for ($i = 1; $i <= 60; $i++) {
+            $conv->messages()->create(['sender_id' => $me->id, 'body' => "Pesan {$i}"]);
+        }
+
+        $first = $conv->messages()->oldest()->first();
+
+        $response = $this->actingAs($me)->getJson('/obrolan/'.$other->username.'/lama?before='.($first->id + 50));
+
+        $response->assertStatus(200)->assertJson(['success' => true]);
+        $this->assertNotEmpty($response->json('messages'));
+    }
+
+    public function test_show_loads_the_latest_messages_not_the_oldest(): void
+    {
+        [$me, $other] = $this->pair();
+        $conv = Conversation::between($me->id, $other->id);
+
+        // 50 messages so the page cap (40) actually has to pick the newest.
+        for ($i = 1; $i <= 50; $i++) {
+            $conv->messages()->create(['sender_id' => $me->id, 'body' => "Pesan nomor {$i}"]);
+        }
+
+        $response = $this->actingAs($me)->get('/obrolan/'.$other->username);
+
+        $response->assertStatus(200);
+        // The newest message must be present in the seeded payload...
+        $response->assertSee('Pesan nomor 50', false);
+        // ...and the oldest must NOT (it fell outside the latest-40 window).
+        $response->assertDontSee('Pesan nomor 1"', false);
+    }
+
+    public function test_typing_endpoint_responds(): void
+    {
+        [$me, $other] = $this->pair();
+
+        $response = $this->actingAs($me)->postJson('/obrolan/'.$other->username.'/mengetik', [
+            'typing' => true,
+        ]);
+
+        $response->assertStatus(200)->assertJson(['success' => true]);
+    }
+
+    public function test_can_delete_whole_conversation(): void
+    {
+        [$me, $other] = $this->pair();
+        $conv = Conversation::between($me->id, $other->id);
+        $conv->messages()->create(['sender_id' => $me->id, 'body' => 'X']);
+
+        $response = $this->actingAs($me)->deleteJson('/obrolan/'.$other->username.'/hapus');
+
+        $response->assertStatus(200)->assertJson(['success' => true]);
+        $this->assertEquals(0, Conversation::where('id', $conv->id)->count());
+        $this->assertEquals(0, Message::withTrashed()->where('conversation_id', $conv->id)->count());
+    }
+
+    public function test_guests_cannot_access_chat(): void
+    {
+        $other = User::factory()->create();
+        $this->get('/obrolan/'.$other->username)->assertRedirect('/login');
+    }
+}

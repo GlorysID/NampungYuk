@@ -28,6 +28,8 @@ class Project extends Model
         'learnings',
         'thumbnail',
         'images',
+        'video',
+        'videos',
         'demo_url',
         'github_url',
         'prototype_url',
@@ -50,6 +52,7 @@ class Project extends Model
         return [
             'tech_stacks' => 'array',
             'images' => 'array',
+            'videos' => 'array',
             'is_featured' => 'boolean',
             'is_pinned' => 'boolean',
             'is_flagged' => 'boolean',
@@ -218,6 +221,74 @@ class Project extends Model
     public function imageCount(): int
     {
         return count($this->galleryImages());
+    }
+
+    /**
+     * All gallery videos (normalized), including the primary video first.
+     *
+     * @return array<int, string>
+     */
+    public function galleryVideos(): array
+    {
+        $urls = [];
+
+        if ($this->video) {
+            $normalized = $this->normalizeImageUrl($this->video);
+            if ($normalized) {
+                $urls[] = $normalized;
+            }
+        }
+
+        foreach ((array) ($this->videos ?? []) as $vid) {
+            $normalized = $this->normalizeImageUrl($vid);
+            if ($normalized && ! in_array($normalized, $urls, true)) {
+                $urls[] = $normalized;
+            }
+        }
+
+        return array_values(array_filter($urls));
+    }
+
+    /**
+     * Unified gallery of images and videos in display order.
+     * Each item: ['type' => 'image'|'video', 'url' => string].
+     *
+     * @return array<int, array{type: string, url: string}>
+     */
+    public function galleryMedia(): array
+    {
+        $media = [];
+
+        foreach ($this->galleryImages() as $url) {
+            $media[] = ['type' => 'image', 'url' => $url];
+        }
+
+        foreach ($this->galleryVideos() as $url) {
+            $media[] = ['type' => 'video', 'url' => $url];
+        }
+
+        return $media;
+    }
+
+    public function mediaCount(): int
+    {
+        return count($this->galleryMedia());
+    }
+
+    /**
+     * Whether a given gallery URL points to a video (file extension or known host).
+     */
+    public static function isVideoUrl(string $url): bool
+    {
+        $path = strtolower((string) parse_url($url, PHP_URL_PATH));
+
+        foreach (['.mp4', '.webm', '.ogg', '.ogv', '.mov', '.m4v'] as $ext) {
+            if (str_ends_with($path, $ext)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function category(): BelongsTo

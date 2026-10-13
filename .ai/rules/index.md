@@ -1,8 +1,8 @@
 # Project Rules Index
 
-Rule files are mapped to file globs. Read every rule file whose globs cover the
-paths in scope before planning or editing.
+Before planning or editing, find the row whose globs match the file's path and read that rule file.
 
-| Glob | Rule file | Title |
-|---|---|---|
-| `*` (semua path / all work) | [dev-environment.md](dev-environment.md) | PHP 8.3 path, MySQL, dan test environment |
+| Applies to | Rule file |
+| --- | --- |
+| app/Http/Controllers/ChatController.php | .ai/rules/controllers.md |
+| resources/views/layouts/app.blade.php | .ai/rules/layouts.md |
