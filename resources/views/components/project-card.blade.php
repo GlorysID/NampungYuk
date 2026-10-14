@@ -182,13 +182,16 @@
             {{ $project->tagline }}
         </p>
 
-        @if($project->hasWarning())
+        @if($project->hasWarning() && ($isOwner || auth()->user()?->is_admin))
             <div class="p-3 rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 text-xs flex items-start gap-2.5" data-no-card-nav>
                 <svg class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                 </svg>
                 <div class="min-w-0 space-y-0.5">
-                    <p class="font-bold text-[11px] text-amber-950 dark:text-amber-100 uppercase tracking-wider">Peringatan Moderasi — Hanya Tampil di Akun Anda</p>
+                    <p class="font-bold text-[11px] text-amber-950 dark:text-amber-100 uppercase tracking-wider">
+                        Peringatan Moderasi
+                        {{ $isOwner ? '— Hanya Tampil Untuk Kamu & Admin' : '(hanya terlihat oleh pemilik & admin)' }}
+                    </p>
                     <p class="text-xs">{{ $project->warning_notes ?: 'Proyek ini sedang dalam peninjauan moderasi dan disembunyikan dari publik.' }}</p>
                 </div>
             </div>

@@ -95,9 +95,14 @@
 
                         <!-- Message button -->
                         @auth
+                            @php
+                                // IG rule: a message lands directly only when the recipient
+                                // (this profile owner) already follows the sender (me).
+                                $messageLandsDirectly = $user->isFollowing(auth()->user());
+                            @endphp
                             <a href="{{ route('chat.show', $user->username) }}"
                                class="btn-secondary text-xs py-2 px-3.5 shadow-sm"
-                               title="Kirim pesan ke {{ $user->name }}">
+                               title="{{ $messageLandsDirectly ? 'Kirim pesan ke '.$user->name : $user->name.' belum mengikutimu — pesanmu akan masuk sebagai permintaan pesan.' }}">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
                                 <span>Pesan</span>
                             </a>
@@ -286,7 +291,7 @@
                         {{ $user->name }}
                     </h1>
                     @if($user->is_admin ?? false)
-                        <x-badge variant="teal" size="xs" class="shrink-0">Admin</x-badge>
+                        <x-admin-badge size="sm" class="shrink-0" />
                     @endif
                 </div>
                 <p class="text-xs sm:text-sm text-[#63636b] dark:text-[#a0a0a0] font-mono">&#64;{{ $user->username }}</p>

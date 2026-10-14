@@ -9,6 +9,7 @@ use App\Events\UserTyping;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
+use App\Notifications\NewMessageNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -264,8 +265,20 @@ class ChatController extends Controller
         broadcast(new MessageSent($message))->toOthers();
         broadcast(new InboxUpdated($user->id, $message));
 
+        // Drop a database notification so the bell dropdown shows the message.
+        // Throttle: replace any existing unread "new_message" notification for
+        // this same conversation instead of stacking one per message.
+        $this->pushMessageNotification($user, $message);
+
         return response()->json([
             'success' => true,
+            'conversation' => [
+                'id' => $conversation->id,
+                'status' => $conversation->status,
+                // The sender is the initiator here; after a pending opener they
+                // may not send again until the request is accepted.
+                'can_send' => $conversation->isAccepted(),
+            ],
             'message' => [
                 'id' => $message->id,
                 'sender_id' => $message->sender_id,
@@ -280,11 +293,27 @@ class ChatController extends Controller
     }
 
     /**
+     * Create a database notification for the recipient, replacing any existing
+     * unread message notification for the same conversation (so the bell shows
+     * one fresh entry per conversation instead of one per bubble).
+     */
+    protected function pushMessageNotification(User $recipient, Message $message): void
+    {
+        $recipient->notifications()
+            ->where('type', NewMessageNotification::class)
+            ->whereNull('read_at')
+            ->get()
+            ->filter(fn ($n) => ($n->data['conversation_id'] ?? null) === $message->conversation_id)
+            ->each->delete();
+
+        $recipient->notify(new NewMessageNotification($message));
+    }
+
+    /**
      * Broadcast a typing indicator (no persistence).
      */
     public function typing(Request $request, User $user): JsonResponse
-    {
-        $auth = Auth::user();
+    {        $auth = Auth::user();
         if (! $auth || $user->id === $auth->id) {
             return response()->json(['success' => false], 401);
         }

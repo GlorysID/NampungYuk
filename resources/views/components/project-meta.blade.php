@@ -13,6 +13,9 @@
                     <button type="button" @click.stop="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }" class="font-bold text-[#18181b] dark:text-[#fafafa] hover:underline transition truncate text-left cursor-pointer">
                         {{ $project->user->name }}
                     </button>
+                    @if($project->user->is_admin)
+                        <x-admin-badge size="xs" class="shrink-0" />
+                    @endif
                     <span class="text-[#9096a2] dark:text-[#63636b] text-[11px] shrink-0">&middot;</span>
                     <span class="text-[#9096a2] dark:text-[#63636b] text-[11px] shrink-0">{{ $project->created_at->diffForHumans() }}</span>
                 </div>
@@ -24,6 +27,9 @@
                     <a href="{{ route('profile.show', $project->user->username) }}" class="font-bold text-[#18181b] dark:text-[#fafafa] hover:underline transition truncate">
                         {{ $project->user->name }}
                     </a>
+                    @if($project->user->is_admin)
+                        <x-admin-badge size="xs" class="shrink-0" />
+                    @endif
                     <span class="text-[#9096a2] dark:text-[#63636b] text-[11px] shrink-0">&middot;</span>
                     <span class="text-[#9096a2] dark:text-[#63636b] text-[11px] shrink-0">{{ $project->created_at->diffForHumans() }}</span>
                 </div>

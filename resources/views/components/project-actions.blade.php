@@ -166,6 +166,26 @@
                         <span>Laporkan Project</span>
                     </button>
                 @endauth
+
+                <!-- Admin moderation: warn / un-warn this project -->
+                @if(auth()->check() && auth()->user()->is_admin)
+                    <div class="border-t border-[#e4e4e7] dark:border-[#1f1f1f]"></div>
+                    @if($project->is_flagged || $project->warning_notes)
+                        <button @click.stop="window.openWarnProjectModal({ id: {{ $project->id }}, title: '{{ addslashes($project->title) }}', action: 'remove' }); menuOpen = false"
+                                type="button"
+                                class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span>Cabut Peringatan</span>
+                        </button>
+                    @else
+                        <button @click.stop="window.openWarnProjectModal({ id: {{ $project->id }}, title: '{{ addslashes($project->title) }}', action: 'set' }); menuOpen = false"
+                                type="button"
+                                class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            <span>Beri Peringatan (Admin)</span>
+                        </button>
+                    @endif
+                @endif
             </div>
         </div>
     </div>

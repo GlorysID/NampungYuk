@@ -37,58 +37,63 @@
         </div>
 
         <!-- Conversation pane -->
-        <div class="min-h-0 flex flex-col">
-            {{-- Message request banner --}}
-            @if($isPending)
-                <div class="mb-3 p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs
-                            {{ $canRespond ? 'border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200'
-                                           : 'border-[#e4e4e7] dark:border-[#1f1f1f] bg-[#f7f7f8] dark:bg-[#111111] text-[#63636b] dark:text-[#a0a0a0]' }}"
-                     x-data="{ busy: false }">
-                    <div class="flex items-start gap-2.5">
-                        <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                        <span>
-                            @if($canRespond)
-                                <strong>{{ $other->name }}</strong> ingin mengirim pesan. Kamu belum saling mengikuti, jadi ini masuk sebagai <strong>permintaan pesan</strong>.
-                            @else
-                                Pesanmu menunggu diterima oleh <strong>{{ $other->name }}</strong>. Kamu hanya bisa mengirim satu pesan pembuka sampai permintaan diterima.
-                            @endif
-                        </span>
-                    </div>
-                    @if($canRespond)
-                        <div class="flex items-center gap-2 shrink-0">
-                            <button type="button" :disabled="busy"
-                                    @click="busy = true; fetch('{{ route('chat.accept', $other) }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' } }).then(r => r.ok && window.location.reload())"
-                                    class="px-4 py-2 rounded-lg bg-[#0070f3] hover:bg-[#0761d1] text-white font-semibold disabled:opacity-60">
-                                Terima
-                            </button>
-                            <button type="button" :disabled="busy"
-                                    @click="busy = true; fetch('{{ route('chat.decline', $other) }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' } }).then(r => r.ok && (window.location.href = '{{ route('chat.index') }}'))"
-                                    class="px-4 py-2 rounded-lg border border-rose-300 dark:border-rose-800/60 text-rose-600 dark:text-rose-400 font-semibold hover:bg-rose-50 dark:hover:bg-rose-950/30 disabled:opacity-60">
-                                Hapus
-                            </button>
-                        </div>
-                    @endif
+        <div class="min-h-0 flex flex-col"
+             x-data="chatRoom({
+                 conversationId: {{ $conversationId ?? 'null' }},
+                 me: {{ auth()->id() }},
+                 sendUrl: '{{ route('chat.send', $other) }}',
+                 typingUrl: '{{ route('chat.typing', $other) }}',
+                 olderUrl: '{{ route('chat.older', $other) }}',
+                 deleteUrl: '{{ url('obrolan/pesan') }}/__ID__',
+                 editUrl: '{{ url('obrolan/pesan') }}/__ID__',
+                 otherName: '{{ addslashes($other->name) }}',
+                 isPending: {{ $isPending ? 'true' : 'false' }},
+                 canSend: {{ $canSend ? 'true' : 'false' }},
+                 canRespond: {{ $canRespond ? 'true' : 'false' }}
+             })">
+            {{-- Message request banner (reactive) --}}
+            <div x-show="isPending" x-cloak class="mb-3 p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                 :class="canRespond ? 'border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200'
+                                    : 'border-[#e4e4e7] dark:border-[#1f1f1f] bg-[#f7f7f8] dark:bg-[#111111] text-[#63636b] dark:text-[#a0a0a0]'">
+                <div class="flex items-start gap-2.5">
+                    <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <span x-show="canRespond">
+                        <strong>{{ $other->name }}</strong> mengirim pesan, tetapi kamu belum mengikuti-nya. Terima permintaan ini untuk mulai membalas — setelah itu kalian bisa berkirim pesan bebas.
+                    </span>
+                    <span x-show="!canRespond">
+                        Pesanmu menunggu diterima oleh <strong>{{ $other->name }}</strong>. Kamu hanya bisa mengirim satu pesan pembuka sampai permintaan diterima.
+                    </span>
                 </div>
-            @endif
+                <div x-show="canRespond" x-cloak x-data="{ busy: false }" class="flex items-center gap-2 shrink-0">
+                    <button type="button" :disabled="busy"
+                            @click="busy = true; fetch('{{ route('chat.accept', $other) }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' } }).then(r => r.ok && window.location.reload())"
+                            class="px-4 py-2 rounded-lg bg-[#0070f3] hover:bg-[#0761d1] text-white font-semibold disabled:opacity-60">
+                        Terima
+                    </button>
+                    <button type="button" :disabled="busy"
+                            @click="busy = true; fetch('{{ route('chat.decline', $other) }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' } }).then(r => r.ok && (window.location.href = '{{ route('chat.index') }}'))"
+                            class="px-4 py-2 rounded-lg border border-rose-300 dark:border-rose-800/60 text-rose-600 dark:text-rose-400 font-semibold hover:bg-rose-50 dark:hover:bg-rose-950/30 disabled:opacity-60">
+                        Hapus
+                    </button>
+                </div>
+            </div>
 
-            <div class="ny-card flex flex-col flex-1 min-h-0 overflow-hidden"
-                 x-data="chatRoom({
-                     conversationId: {{ $conversationId ?? 'null' }},
-                     me: {{ auth()->id() }},
-                     sendUrl: '{{ route('chat.send', $other) }}',
-                     typingUrl: '{{ route('chat.typing', $other) }}',
-                     olderUrl: '{{ route('chat.older', $other) }}',
-                     deleteUrl: '{{ url('obrolan/pesan') }}/__ID__',
-                     editUrl: '{{ url('obrolan/pesan') }}/__ID__',
-                     otherName: '{{ addslashes($other->name) }}'
-                 })">
+            <div class="ny-card flex flex-col flex-1 min-h-0 overflow-hidden">
                 <!-- Header -->
                 <div class="flex items-center gap-3 p-3.5 border-b border-[#e4e4e7] dark:border-[#1f1f1f] shrink-0">
                     <a href="{{ route('profile.show', $other->username) }}" class="shrink-0 hover:opacity-85 transition">
                         <x-user-avatar :user="$other" size="md" />
                     </a>
                     <div class="min-w-0 flex-1">
-                        <p class="font-bold text-sm text-[#18181b] dark:text-[#fafafa] truncate">{{ $other->name }}</p>
+                        <div class="flex items-center gap-2">
+                            <p class="font-bold text-sm text-[#18181b] dark:text-[#fafafa] truncate">{{ $other->name }}</p>
+                            @if($other->is_admin)
+                                <x-admin-badge size="xs" class="shrink-0" />
+                            @endif
+                            @if($isPending && ! $canRespond)
+                                <span class="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[#eeeeef] dark:bg-[#171717] text-[#63636b] dark:text-[#a0a0a0]">Menunggu diterima</span>
+                            @endif
+                        </div>
                         <p class="text-[11px] text-[#63636b] dark:text-[#a0a0a0] font-mono truncate" x-show="!typing">&#64;{{ $other->username }}</p>
                         <p class="text-[11px] text-[#0070f3] dark:text-[#3291ff] font-medium truncate" x-show="typing" x-cloak
                            x-text="'{{ addslashes($other->name) }} sedang mengetik…'"></p>
@@ -206,25 +211,19 @@
                 </div>
 
                 <!-- Composer (locked until a pending request is accepted) -->
-                @if($canSend)
-                    <form @submit.prevent="send()" class="flex items-center gap-2 p-3 border-t border-[#e4e4e7] dark:border-[#1f1f1f] shrink-0">
-                        <input type="text" x-model="draft" maxlength="2000" placeholder="Tulis pesan..."
-                               class="ny-input text-sm flex-1" :disabled="sending"
-                               @input="pingTyping()">
-                        <button type="submit" class="btn-primary text-xs py-2.5 px-4 shrink-0" :disabled="sending || !draft.trim()">
-                            <span x-show="!sending">Kirim</span>
-                            <span x-show="sending" x-cloak>…</span>
-                        </button>
-                    </form>
-                @else
-                    <div class="p-3 border-t border-[#e4e4e7] dark:border-[#1f1f1f] shrink-0 text-center text-xs text-[#63636b] dark:text-[#a0a0a0] bg-[#fafafa] dark:bg-[#060606]">
-                        @if($canRespond)
-                            Terima permintaan pesan di atas untuk mulai membalas.
-                        @else
-                            Menunggu {{ $other->name }} menerima permintaan pesanmu.
-                        @endif
-                    </div>
-                @endif
+                <form x-show="canSend" x-cloak @submit.prevent="send()" class="flex items-center gap-2 p-3 border-t border-[#e4e4e7] dark:border-[#1f1f1f] shrink-0">
+                    <input type="text" x-model="draft" maxlength="2000" placeholder="Tulis pesan..."
+                           class="ny-input text-sm flex-1" :disabled="sending"
+                           @input="pingTyping()">
+                    <button type="submit" class="btn-primary text-xs py-2.5 px-4 shrink-0" :disabled="sending || !draft.trim()">
+                        <span x-show="!sending">Kirim</span>
+                        <span x-show="sending" x-cloak>…</span>
+                    </button>
+                </form>
+                <div x-show="!canSend" x-cloak class="p-3 border-t border-[#e4e4e7] dark:border-[#1f1f1f] shrink-0 text-center text-xs text-[#63636b] dark:text-[#a0a0a0] bg-[#fafafa] dark:bg-[#060606]">
+                    <span x-show="canRespond">Terima permintaan pesan di atas untuk mulai membalas.</span>
+                    <span x-show="!canRespond">Menunggu {{ $other->name }} menerima permintaan pesanmu.</span>
+                </div>
             </div>
         </div>
     </div>

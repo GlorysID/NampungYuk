@@ -120,8 +120,12 @@ class ProfileController extends Controller
             ->latest()
             ->paginate(10);
 
+        // Only show comments the viewer may see — i.e. comments on projects
+        // that are still visible (a warned/private project must not leak its
+        // title through the owner's activity feed).
         $comments = $user->comments()
             ->with('project')
+            ->whereHas('project', fn ($q) => $q->visibleTo($viewerId))
             ->latest()
             ->take(20)
             ->get();

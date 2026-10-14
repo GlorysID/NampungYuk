@@ -188,16 +188,19 @@ class ChatRequestTest extends TestCase
 
         $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
 
-        // Recipient sees accept/decline AND no composer.
+        // Recipient sees accept/decline and their composer is locked via the
+        // reactive gate flag (composer stays in the DOM, hidden by Alpine).
         $recipient = $this->actingAs($b)->get('/obrolan/'.$a->username);
         $recipient->assertStatus(200);
         $recipient->assertSee('Terima');
-        $recipient->assertDontSee('Tulis pesan');
+        $recipient->assertSee('canSend: false', false);
+        $recipient->assertSee('canRespond: true', false);
 
-        // Initiator (who already sent the opener) also has no composer.
+        // Initiator (who already sent the opener) also has the composer locked.
         $initiator = $this->actingAs($a)->get('/obrolan/'.$b->username);
         $initiator->assertStatus(200);
-        $initiator->assertDontSee('Tulis pesan');
+        $initiator->assertSee('canSend: false', false);
+        $initiator->assertSee('canRespond: false', false);
     }
 
     public function test_initiator_composer_is_open_before_sending_opener(): void
@@ -205,10 +208,10 @@ class ChatRequestTest extends TestCase
         $a = User::factory()->create();
         $b = User::factory()->create();
 
-        // No conversation yet — first message is allowed, so composer is present.
+        // No conversation yet — the opener is allowed, so canSend is true.
         $response = $this->actingAs($a)->get('/obrolan/'.$b->username);
         $response->assertStatus(200);
-        $response->assertSee('Tulis pesan');
+        $response->assertSee('canSend: true', false);
     }
 
     public function test_composer_reopens_for_both_after_accept(): void
@@ -219,27 +222,46 @@ class ChatRequestTest extends TestCase
         $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
         $this->actingAs($b)->postJson('/obrolan/'.$a->username.'/terima');
 
-        $this->actingAs($a)->get('/obrolan/'.$b->username)->assertSee('Tulis pesan');
-        $this->actingAs($b)->get('/obrolan/'.$a->username)->assertSee('Tulis pesan');
+        $this->actingAs($a)->get('/obrolan/'.$b->username)->assertSee('canSend: true', false);
+        $this->actingAs($b)->get('/obrolan/'.$a->username)->assertSee('canSend: true', false);
     }
 
-    public function test_stale_accepted_conversation_is_demoted_when_rule_no_longer_met(): void
+    public function test_pending_upgrades_to_accepted_once_recipient_follows_sender(): void
+    {
+        $a = User::factory()->create(); // sender / initiator
+        $b = User::factory()->create(); // recipient
+
+        // Start as a request (no follows): A's opener creates a pending conversation.
+        $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
+        $conv = Conversation::first();
+        $this->assertEquals('pending', $conv->status);
+
+        // Recipient now follows the sender. A retries a send → the pending
+        // conversation should upgrade to accepted (rule now satisfied) and the
+        // message should go through instead of being blocked.
+        $b->following()->attach($a->id);
+
+        $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo lagi'])->assertStatus(200);
+
+        $this->assertEquals('accepted', $conv->fresh()->status);
+    }
+
+    public function test_accepted_conversation_is_never_downgraded(): void
     {
         $a = User::factory()->create(); // sender
         $b = User::factory()->create(); // recipient
 
-        // Simulate a legacy conversation wrongly marked accepted without acceptance.
-        $conv = Conversation::create([
-            'user_one_id' => min($a->id, $b->id),
-            'user_two_id' => max($a->id, $b->id),
-            'status' => 'accepted',
-            'initiator_id' => $a->id,
-        ]);
-
-        // No follow relationship → next send must re-evaluate to pending.
+        // Recipient follows sender → direct delivery.
+        $b->following()->attach($a->id);
         $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
+        $conv = Conversation::first();
+        $this->assertEquals('accepted', $conv->status);
 
-        $this->assertEquals('pending', $conv->fresh()->status);
+        // Recipient unfollows AND replies — the thread must stay open.
+        $b->following()->detach($a->id);
+        $this->actingAs($b)->postJson('/obrolan/'.$a->username.'/kirim', ['body' => 'Masih boleh balas'])->assertStatus(200);
+
+        $this->assertEquals('accepted', $conv->fresh()->status);
     }
 
     public function test_explicit_acceptance_is_sticky_across_resends(): void
@@ -256,5 +278,56 @@ class ChatRequestTest extends TestCase
         // Sender sends again (still no follows) — must remain accepted (sticky).
         $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Lagi'])->assertStatus(200);
         $this->assertEquals('accepted', $conv->fresh()->status);
+    }
+
+    public function test_send_response_reports_pending_gate_for_non_follower(): void
+    {
+        $a = User::factory()->create(); // sender
+        $b = User::factory()->create(); // recipient who does NOT follow a
+
+        $response = $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
+
+        // The client relies on this payload to lock the UI without a refresh.
+        $response->assertStatus(200)->assertJson([
+            'success' => true,
+            'conversation' => [
+                'status' => 'pending',
+                'can_send' => false,
+            ],
+        ]);
+    }
+
+    public function test_send_response_reports_accepted_gate_when_recipient_follows(): void
+    {
+        $a = User::factory()->create();
+        $b = User::factory()->create();
+        $b->following()->attach($a->id); // recipient follows sender → direct
+
+        $response = $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
+
+        $response->assertStatus(200)->assertJson([
+            'conversation' => [
+                'status' => 'accepted',
+                'can_send' => true,
+            ],
+        ]);
+    }
+
+    public function test_chat_page_exposes_reactive_gate_state(): void
+    {
+        $a = User::factory()->create();
+        $b = User::factory()->create();
+
+        // First opener creates a pending request.
+        $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
+
+        // The page must carry the gate flags into Alpine so the UI locks
+        // immediately after sending, without a manual refresh.
+        $response = $this->actingAs($a)->get('/obrolan/'.$b->username);
+        $response->assertStatus(200);
+        $response->assertSee('isPending: true', false);
+        $response->assertSee('canSend: false', false);
+        $response->assertSee('x-show="isPending"', false);
+        $response->assertSee('x-show="canSend"', false);
     }
 }

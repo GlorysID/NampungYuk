@@ -92,9 +92,13 @@ class Conversation extends Model
      * 'accepted') when the RECIPIENT already follows the SENDER. Otherwise the
      * message becomes a pending "message request" the recipient must accept.
      *
-     * Status is re-evaluated on every send so a stale 'accepted' that no longer
-     * meets the rule falls back to 'pending' — BUT an explicit acceptance by the
-     * recipient (accepted_at set) is sticky and never downgraded.
+     * Status is re-evaluated on every send, but acceptance is MONOTONIC:
+     *  - a brand-new conversation gets the gate status computed from follows;
+     *  - an existing 'pending' conversation is upgraded to 'accepted' if the
+     *    rule is now satisfied;
+     *  - an existing 'accepted' conversation is NEVER downgraded — once a thread
+     *    is open it stays open, even after the follow direction reverses or the
+     *    messages start flowing the other way.
      */
     public static function forMessage(int $from, int $to): self
     {
@@ -103,17 +107,22 @@ class Conversation extends Model
             'user_two_id' => max($from, $to),
         ]);
 
-        // New conversation → the sender is the initiator.
+        // New conversation → the sender is the initiator and the gate applies.
         if (! $conversation->exists) {
             $conversation->initiator_id = $from;
-        }
-
-        // Only (re)compute the gate when the recipient hasn't explicitly accepted.
-        if (! $conversation->accepted_at) {
             $conversation->status = static::gateStatusFor($from, $to);
+            $conversation->save();
+
+            return $conversation;
         }
 
-        $conversation->save();
+        // Existing conversation: allow pending → accepted upgrades, never the reverse.
+        if ($conversation->isPending()
+            && ! $conversation->accepted_at
+            && static::gateStatusFor($from, $to) === 'accepted') {
+            $conversation->status = 'accepted';
+            $conversation->save();
+        }
 
         return $conversation;
     }

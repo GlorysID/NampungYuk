@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
+use App\Notifications\NewMessageNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -160,8 +161,7 @@ class ChatTest extends TestCase
     }
 
     public function test_sender_can_edit_own_recent_message(): void
-    {
-        [$me, $other] = $this->pair();
+    {        [$me, $other] = $this->pair();
         $conv = Conversation::between($me->id, $other->id);
         $msg = $conv->messages()->create(['sender_id' => $me->id, 'body' => 'asli']);
 
@@ -206,5 +206,46 @@ class ChatTest extends TestCase
         $this->assertEquals(0, $conv->messages()->count());
         // Conversation row is preserved.
         $this->assertNotNull(Conversation::find($conv->id));
+    }
+
+    public function test_sending_a_message_notifies_the_recipient(): void
+    {
+        [$me, $other] = $this->pair();
+
+        $this->actingAs($me)->postJson('/obrolan/'.$other->username.'/kirim', ['body' => 'Halo']);
+
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_id' => $other->id,
+            'type' => NewMessageNotification::class,
+        ]);
+    }
+
+    public function test_repeated_messages_replace_not_stack_the_notification(): void
+    {
+        [$me, $other] = $this->pair();
+
+        $this->actingAs($me)->postJson('/obrolan/'.$other->username.'/kirim', ['body' => 'Pesan 1']);
+        $this->actingAs($me)->postJson('/obrolan/'.$other->username.'/kirim', ['body' => 'Pesan 2']);
+        $this->actingAs($me)->postJson('/obrolan/'.$other->username.'/kirim', ['body' => 'Pesan 3']);
+
+        $count = $other->notifications()
+            ->where('type', NewMessageNotification::class)
+            ->count();
+
+        $this->assertEquals(1, $count);
+    }
+
+    public function test_notification_dropdown_endpoint_returns_message_notification(): void
+    {
+        [$me, $other] = $this->pair();
+        $this->actingAs($me)->postJson('/obrolan/'.$other->username.'/kirim', ['body' => 'Halo dari me']);
+
+        $response = $this->actingAs($other)->getJson('/notifikasi/latest');
+
+        $response->assertStatus(200);
+        $this->assertGreaterThanOrEqual(1, $response->json('unread_count'));
+
+        $types = collect($response->json('notifications'))->pluck('data.type');
+        $this->assertTrue($types->contains('new_message'));
     }
 }

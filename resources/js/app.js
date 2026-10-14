@@ -320,9 +320,14 @@ document.addEventListener('alpine:init', () => {
     /**
      * Chat room: send messages and receive them live via Echo (Reverb).
      */
-    Alpine.data('chatRoom', ({ conversationId, me, sendUrl, typingUrl, olderUrl, deleteUrl, editUrl, otherName }) => ({
+    Alpine.data('chatRoom', ({ conversationId, me, sendUrl, typingUrl, olderUrl, deleteUrl, editUrl, otherName, isPending = false, canSend = true, canRespond = false }) => ({
         draft: '',
         sending: false,
+        // Gate state (mirrors the server-rendered flags; updated live after a send).
+        isPending,
+        canSend,
+        canRespond,
+        otherName,
         // Unified, chronologically-ordered message list (server + live, deduped by id).
         messages: window.__chatSeed || [],
         typing: false,
@@ -496,6 +501,15 @@ document.addEventListener('alpine:init', () => {
                 const data = await res.json();
                 if (data.success) {
                     this.upsert(data.message);
+
+                    // Reflect the gate immediately: the first message to someone
+                    // who doesn't follow us turns the thread into a pending request.
+                    if (data.conversation) {
+                        this.isPending = data.conversation.status === 'pending';
+                        this.canSend = data.conversation.can_send !== false;
+                        if (this.isPending) this.canRespond = false;
+                    }
+
                     this.$nextTick(() => this.scrollBottom());
                 } else {
                     this.draft = prev;
@@ -911,7 +925,7 @@ document.addEventListener('alpine:init', () => {
      * Notification bell: fetches latest notifications + it re-fetches
      * whenever a broadcast event arrives on the live channel.
      */
-    Alpine.data('notificationBell', () => ({
+    Alpine.data('notificationBell', ({ me = null } = {}) => ({
         open: false,
         unreadCount: 0,
         notifications: [],
@@ -920,10 +934,16 @@ document.addEventListener('alpine:init', () => {
         init() {
             this.refresh();
 
-            // Re-fetch when server broadcasts a new project or comment.
             if (window.Echo) {
+                // New project published → some notifications may be fan-out.
                 window.Echo.channel('feed')
                     .listen('.project.published', () => this.refresh());
+
+                // Personal channel: new messages / inbox changes refresh the bell.
+                if (me) {
+                    window.Echo.private('App.Models.User.' + me)
+                        .listen('.inbox.updated', () => this.refresh());
+                }
             }
         },
 

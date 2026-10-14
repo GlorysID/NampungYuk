@@ -292,7 +292,7 @@
                     <!-- User Session Menu -->
                     @auth
                         <!-- Notification Bell + Dropdown -->
-                        <div class="relative" x-data="notificationBell()" x-init="init()">
+                        <div class="relative" x-data="notificationBell({ me: {{ auth()->id() }} })" x-init="init()">
                             <button @click="open = !open; if (open) refresh()"
                                     type="button"
                                     class="relative w-8 h-8 rounded-md flex items-center justify-center text-[#63636b] hover:text-[#18181b] dark:text-[#a0a0a0] dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition"
@@ -554,7 +554,7 @@
         <!-- Notifikasi (Mobile Bell) -->
         @auth
             <a href="{{ route('notifications.index') }}"
-               x-data="notificationBell()" x-init="init()"
+               x-data="notificationBell({ me: {{ auth()->id() }} })" x-init="init()"
                class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition {{ request()->routeIs('notifications.index') ? 'text-[#0070f3] dark:text-[#3291ff] font-bold' : 'text-[#63636b] dark:text-[#a0a0a0]' }}">
                 <span class="relative">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -676,6 +676,9 @@
 
     <!-- GLOBAL REPORT MODAL -->
     <x-report-modal />
+
+    <!-- GLOBAL ADMIN: WARN PROJECT MODAL -->
+    <x-admin-warn-project-modal />
 
     <script>
         // Global auth modal opener helper

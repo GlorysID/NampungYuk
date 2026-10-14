@@ -57,7 +57,7 @@
                                     {{ $person->name }}
                                 </a>
                                 @if($person->is_admin ?? false)
-                                    <x-badge variant="teal" size="xs">Admin</x-badge>
+                                    <x-admin-badge size="xs" />
                                 @endif
                             </div>
                             <p class="text-xs font-mono text-[#63636b] dark:text-[#a0a0a0]">&#64;{{ $person->username }}</p>
