@@ -372,7 +372,7 @@
                                     <p class="font-bold truncate text-[#18181b] dark:text-[#fafafa]">{{ Auth::user()->name }}</p>
                                     <p class="text-[11px] text-[#63636b] dark:text-[#a0a0a0] font-mono truncate">&#64;{{ Auth::user()->username }}</p>
                                 </div>
-                                <a href="{{ route('profile.show', Auth::user()->username) }}" class="flex items-center gap-2 px-4 py-2 text-[#18181b] dark:text-[#fafafa] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition">
+                                <a href="{{ Auth::user()->username ? route('profile.show', Auth::user()->username) : '#' }}" class="flex items-center gap-2 px-4 py-2 text-[#18181b] dark:text-[#fafafa] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition">
                                     <svg class="w-3.5 h-3.5 text-[#63636b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                                     </svg>
@@ -568,7 +568,7 @@
 
         <!-- Profile or Login -->
         @auth
-            <a href="{{ route('profile.show', Auth::user()->username) }}" 
+            <a href="{{ Auth::user()->username ? route('profile.show', Auth::user()->username) : '#' }}"
                class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition {{ request()->routeIs('profile.show') ? 'text-[#0070f3] dark:text-[#3291ff] font-bold' : 'text-[#63636b] dark:text-[#a0a0a0]' }}">
                 <x-user-avatar :user="Auth::user()" size="xs" />
                 <span class="truncate max-w-[48px]">Profil</span>
