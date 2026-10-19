@@ -121,8 +121,6 @@ Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
     Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
     Route::get('/login', [LoginController::class, 'create'])->name('login');
-    Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('auth.google');
-    Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
 
     // Password reset
     Route::get('/lupa-password', [PasswordResetController::class, 'request'])->name('password.request');
@@ -131,7 +129,11 @@ Route::middleware('guest')->group(function () {
     Route::post('/reset-password', [PasswordResetController::class, 'update'])->name('password.update');
 });
 
-Route::post('/login', [LoginController::class, 'store'])->name('login.store');
+// Google OAuth — harus di luar middleware guest agar callback tidak terblokir
+Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('auth.google');
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
+
+Route::post('/login', [LoginController::class, 'store'])->name('auth.store');
 
 Route::post('/logout', [LoginController::class, 'destroy'])
     ->middleware('auth')
@@ -139,3 +141,5 @@ Route::post('/logout', [LoginController::class, 'destroy'])
 
 Route::redirect('/masuk', '/login');
 Route::redirect('/daftar', '/register');
+
+
