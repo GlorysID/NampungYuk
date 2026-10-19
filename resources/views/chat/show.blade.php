@@ -87,9 +87,6 @@
                     <div class="min-w-0 flex-1">
                         <div class="flex items-center gap-2">
                             <p class="font-bold text-sm text-[#18181b] dark:text-[#fafafa] truncate">{{ $other->name }}</p>
-                            @if($other->is_admin)
-                                <x-admin-badge size="xs" class="shrink-0" />
-                            @endif
                             @if($isPending && ! $canRespond)
                                 <span class="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[#eeeeef] dark:bg-[#171717] text-[#63636b] dark:text-[#a0a0a0]">Menunggu diterima</span>
                             @endif

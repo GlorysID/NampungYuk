@@ -19,9 +19,6 @@
                             {{ $comment->user->name }}
                         </a>
                     @endguest
-                    @if($comment->user->is_admin)
-                        <x-admin-badge size="xs" class="shrink-0" />
-                    @endif
                     <span class="text-[11px] font-mono text-[#63636b] dark:text-[#a0a0a0]">&#64;{{ $comment->user->username }}</span>
                 @else
                     <span class="font-semibold text-[#18181b] dark:text-[#fafafa]">

@@ -49,9 +49,6 @@
             </a>
             <div class="min-w-0 flex items-center gap-1.5 flex-wrap">
                 <a href="{{ route('profile.show', $post->user->username) }}" class="font-bold text-xs text-[#18181b] dark:text-[#fafafa] hover:underline truncate">{{ $post->user->name }}</a>
-                @if($post->user->is_admin)
-                    <x-admin-badge size="xs" class="shrink-0" />
-                @endif
                 <span class="text-[11px] text-[#8f8f8f] dark:text-[#666666] shrink-0">·</span>
                 <span class="text-[11px] text-[#8f8f8f] dark:text-[#666666] shrink-0">{{ $post->created_at->diffForHumans() }}</span>
             </div>

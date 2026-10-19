@@ -12,15 +12,13 @@ class AdminBadgeTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_admin_profile_shows_admin_badge(): void
+    public function test_admin_profile_does_not_show_public_admin_badge(): void
     {
         $admin = User::factory()->create(['is_admin' => true, 'name' => 'Admin User']);
 
         $response = $this->get('/u/'.$admin->username);
         $response->assertStatus(200);
-        // The distinct admin badge has a shield + gradient marker.
-        $response->assertSee('from-violet-600', false);
-        $response->assertSee('Administrator NampungYuk', false);
+        $response->assertDontSee('Administrator NampungYuk', false);
     }
 
     public function test_regular_profile_has_no_admin_badge(): void
@@ -32,7 +30,7 @@ class AdminBadgeTest extends TestCase
         $response->assertDontSee('Administrator NampungYuk', false);
     }
 
-    public function test_admin_badge_shows_on_project_card_author(): void
+    public function test_admin_badge_does_not_show_on_project_card_author(): void
     {
         $category = Category::firstOrCreate(['slug' => 'web-app'], ['name' => 'Web App']);
         $admin = User::factory()->create(['is_admin' => true]);
@@ -48,6 +46,6 @@ class AdminBadgeTest extends TestCase
 
         $response = $this->get('/');
         $response->assertStatus(200);
-        $response->assertSee('Administrator NampungYuk', false);
+        $response->assertDontSee('Administrator NampungYuk', false);
     }
 }

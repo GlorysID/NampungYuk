@@ -290,9 +290,6 @@
                     <h1 class="text-xl sm:text-2xl font-bold leading-tight text-[#18181b] dark:text-[#fafafa] tracking-tight">
                         {{ $user->name }}
                     </h1>
-                    @if($user->is_admin ?? false)
-                        <x-admin-badge size="sm" class="shrink-0" />
-                    @endif
                 </div>
                 <p class="text-xs sm:text-sm text-[#63636b] dark:text-[#a0a0a0] font-mono">&#64;{{ $user->username }}</p>
             </div>

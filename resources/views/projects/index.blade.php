@@ -56,9 +56,6 @@
                                 <a href="{{ route('profile.show', $person->username) }}" class="font-bold text-sm text-[#18181b] dark:text-[#fafafa] hover:text-[#0070f3] dark:hover:text-[#3291ff] transition">
                                     {{ $person->name }}
                                 </a>
-                                @if($person->is_admin ?? false)
-                                    <x-admin-badge size="xs" />
-                                @endif
                             </div>
                             <p class="text-xs font-mono text-[#63636b] dark:text-[#a0a0a0]">&#64;{{ $person->username }}</p>
                             @if($person->bio)
