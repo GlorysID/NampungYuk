@@ -3,7 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 class LoginTest extends TestCase
@@ -200,6 +203,65 @@ class LoginTest extends TestCase
         ]));
 
         $response->assertRedirect(url('/'));
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_unverified_user_cannot_login_and_gets_resend_notice(): void
+    {
+        $user = $this->createUser([
+            'username' => 'ahmad_dev',
+            'email' => 'ahmad@example.com',
+            'email_verified_at' => null,
+        ]);
+
+        $response = $this->from(route('login'))->post(route('login.store'), [
+            'login' => 'ahmad@example.com',
+            'password' => 'password123',
+        ]);
+
+        $response->assertRedirect(route('login'));
+        $response->assertSessionHasErrors('login');
+        $response->assertSessionHas('unverified_email', 'ahmad@example.com');
+        $this->assertGuest();
+    }
+
+    public function test_unverified_user_can_request_resend_verification_email(): void
+    {
+        Notification::fake();
+
+        $user = $this->createUser([
+            'email' => 'resend@example.com',
+            'email_verified_at' => null,
+        ]);
+
+        $response = $this->post(route('verification.resend'), [
+            'email' => 'resend@example.com',
+        ]);
+
+        $response->assertSessionHas('status');
+        Notification::assertSentTo($user, VerifyEmail::class);
+    }
+
+    public function test_user_can_verify_email_via_signed_link(): void
+    {
+        $user = $this->createUser([
+            'email' => 'verify_me@example.com',
+            'email_verified_at' => null,
+        ]);
+
+        $signedUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(60),
+            ['id' => $user->id, 'hash' => sha1($user->email)]
+        );
+
+        $response = $this->get($signedUrl);
+
+        $response->assertRedirect(route('projects.index'));
+        $response->assertSessionHas('status');
+
+        $user->refresh();
+        $this->assertNotNull($user->email_verified_at);
         $this->assertAuthenticatedAs($user);
     }
 }

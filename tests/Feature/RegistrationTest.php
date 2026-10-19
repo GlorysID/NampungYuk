@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class RegistrationTest extends TestCase
@@ -39,21 +41,26 @@ class RegistrationTest extends TestCase
 
     public function test_valid_registration_creates_user_and_redirects(): void
     {
+        Notification::fake();
+
         $response = $this->post(route('register.store'), $this->registrationData());
 
         $response->assertRedirect(route('login'));
-        $response->assertSessionHas('status', 'Registrasi berhasil! Silakan masuk dengan akun barumu.');
+        $response->assertSessionHas('status');
 
         $this->assertDatabaseHas('users', [
             'name' => 'Budi Santoso',
             'username' => 'budi_santoso',
             'email' => 'budi@example.com',
+            'email_verified_at' => null,
         ]);
 
         $user = User::where('email', 'budi@example.com')->first();
         $this->assertNotNull($user);
         $this->assertNotEquals('password123', $user->password);
         $this->assertTrue(Hash::check('password123', $user->password));
+
+        Notification::assertSentTo($user, VerifyEmail::class);
     }
 
     public function test_duplicate_email_is_rejected(): void

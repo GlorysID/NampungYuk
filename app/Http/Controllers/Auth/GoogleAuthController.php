@@ -57,6 +57,10 @@ class GoogleAuthController extends Controller
                 if (! $user->avatar && $googleUser->getAvatar()) {
                     $user->avatar = $googleUser->getAvatar();
                 }
+                // Google accounts are pre-verified, so verify the email if not already verified
+                if (! $user->email_verified_at) {
+                    $user->email_verified_at = now();
+                }
                 $user->save();
             } else {
                 // Generate a unique username
@@ -79,6 +83,7 @@ class GoogleAuthController extends Controller
                     'google_id' => $googleUser->getId(),
                     'avatar' => $googleUser->getAvatar(),
                     'password' => null,
+                    'email_verified_at' => now(),
                 ]);
             }
 

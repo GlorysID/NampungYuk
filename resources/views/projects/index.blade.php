@@ -189,8 +189,8 @@
 
         </div>
 
-        <!-- SECONDARY SIDEBAR: COMMUNITY BLOCKS (xl:col-span-4) - FIXED/STICKY -->
-        <aside class="xl:col-span-4 sticky top-20 self-start space-y-4 max-h-[calc(100vh-5.5rem)] overflow-y-auto pr-1">
+        <!-- SECONDARY SIDEBAR: COMMUNITY BLOCKS (xl:col-span-4) - SOLID / NO SCROLL -->
+        <aside class="xl:col-span-4 sticky top-20 self-start space-y-3.5 overflow-hidden">
 
             <!-- BLOCK 0: Who to follow (Social onboarding) -->
             @auth

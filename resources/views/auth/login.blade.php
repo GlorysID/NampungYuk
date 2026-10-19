@@ -113,6 +113,15 @@
                         @error('login')
                             <p class="text-rose-500 dark:text-rose-400 font-medium text-[11px] mt-1">{{ $message }}</p>
                         @enderror
+
+                        @if (session('unverified_email'))
+                            <div class="mt-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/25 flex items-center justify-between gap-2">
+                                <span class="text-[11px] text-amber-600 dark:text-amber-400">Belum terima link aktivasi?</span>
+                                <a href="{{ route('verification.notice', ['email' => session('unverified_email')]) }}" class="text-[11px] font-bold text-[#0070f3] dark:text-[#3291ff] hover:underline">
+                                    Kirim Ulang Email &rarr;
+                                </a>
+                            </div>
+                        @endif
                     </div>
 
                     <div>

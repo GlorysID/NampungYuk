@@ -164,8 +164,8 @@
     <!-- MAIN TWO-PANE LAYOUT -->
     <div class="min-h-screen max-w-screen-2xl mx-auto flex gap-0 lg:gap-6 lg:px-4 xl:px-6 lg:pt-4">
         
-        <!-- DESKTOP FLOATING SIDEBAR -->
-        <aside class="hidden lg:flex lg:flex-col lg:w-64 xl:w-72 shrink-0 sticky top-4 h-[calc(100vh-2rem)] z-30 ny-glass rounded-2xl overflow-hidden">
+        <!-- DESKTOP SOLID SIDEBAR -->
+        <aside class="hidden lg:flex lg:flex-col lg:w-64 xl:w-72 shrink-0 sticky top-4 h-[calc(100vh-2rem)] z-30 bg-white dark:bg-[#0a0a0a] border border-[#e4e4e7] dark:border-[#27272a] rounded-2xl shadow-xs overflow-hidden">
             @include('partials.sidebar')
         </aside>
 

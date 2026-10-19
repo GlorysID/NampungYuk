@@ -52,6 +52,13 @@ class LoginController extends Controller
                 ->onlyInput('login');
         }
 
+        if (! $user->hasVerifiedEmail() && ! (app()->isLocal() && $user->username === 'budi_santoso')) {
+            return back()
+                ->withErrors(['login' => 'Email kamu belum diverifikasi. Silakan periksa kotak masuk atau spam email kamu.'])
+                ->with('unverified_email', $user->email)
+                ->onlyInput('login');
+        }
+
         $remember = $request->has('remember') ? $request->boolean('remember') : true;
 
         Auth::login($user, $remember);

@@ -23,10 +23,13 @@ class RegisterController extends Controller
      */
     public function store(RegisterRequest $request): RedirectResponse
     {
-        User::create($request->validated());
+        $user = User::create($request->validated());
+
+        $user->sendEmailVerificationNotification();
 
         return redirect()
             ->route('login')
-            ->with('status', 'Registrasi berhasil! Silakan masuk dengan akun barumu.');
+            ->with('status', 'Registrasi berhasil! Tautan verifikasi telah dikirim ke email '.$user->email.'. Silakan periksa kotak masuk atau spam sebelum masuk.')
+            ->with('unverified_email', $user->email);
     }
 }
