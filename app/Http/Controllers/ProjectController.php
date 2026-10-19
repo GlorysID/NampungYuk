@@ -11,9 +11,11 @@ use App\Models\ProjectComment;
 use App\Models\ProjectRepost;
 use App\Models\ProjectVote;
 use App\Models\User;
+use App\Notifications\ProjectCommentNotification;
 use App\Notifications\ProjectRepostedNotification;
 use App\Notifications\ProjectTrendingNotification;
 use App\Notifications\ProjectUploadedNotification;
+use App\Services\MediaOptimizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,9 +25,7 @@ use Illuminate\View\View;
 
 class ProjectController extends Controller
 {
-    public function __construct(private \App\Services\MediaOptimizer $media)
-    {
-    }
+    public function __construct(private MediaOptimizer $media) {}
 
     /**
      * Display project showcase feed.
@@ -472,6 +472,193 @@ class ProjectController extends Controller
     }
 
     /**
+     * Show form to edit an existing project.
+     */
+    public function edit(Project $project): View
+    {
+        if ($project->user_id !== Auth::id() && ! (Auth::user()?->is_admin ?? false)) {
+            abort(403, 'Anda tidak memiliki hak untuk mengedit proyek ini.');
+        }
+
+        $categories = Category::all();
+
+        return view('projects.edit', compact('project', 'categories'));
+    }
+
+    /**
+     * Update an existing project.
+     */
+    public function update(Request $request, Project $project): RedirectResponse
+    {
+        if ($project->user_id !== Auth::id() && ! (Auth::user()?->is_admin ?? false)) {
+            abort(403, 'Anda tidak memiliki hak untuk memperbarui proyek ini.');
+        }
+
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:150'],
+            'tagline' => ['required', 'string', 'max:255'],
+            'category_id' => ['required', 'exists:categories,id'],
+            'project_type' => ['nullable', 'string', 'max:50'],
+            'status' => ['nullable', 'string', 'in:idea,prototype,beta,production,archived'],
+            'visibility' => ['nullable', 'in:public,private'],
+            'tech_stacks' => ['required', 'string'],
+            'description' => ['nullable', 'string'],
+            'challenges' => ['nullable', 'string'],
+            'learnings' => ['nullable', 'string'],
+            'setup_instructions' => ['nullable', 'string'],
+            'demo_url' => ['nullable', 'url', 'max:255'],
+            'github_url' => ['nullable', 'url', 'max:255'],
+            'prototype_url' => ['nullable', 'url', 'max:255'],
+            'thumbnail' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:4096'],
+            'thumbnail_url' => ['nullable', 'url', 'max:255'],
+            'images' => ['nullable', 'array', 'max:8'],
+            'images.*' => ['image', 'mimes:jpeg,png,jpg,webp,gif', 'max:4096'],
+            'video' => ['nullable', 'file', 'mimes:mp4,webm,ogg,mov,m4v', 'max:25600'],
+            'video_url' => ['nullable', 'url', 'max:255'],
+            'videos' => ['nullable', 'array', 'max:4'],
+            'videos.*' => ['file', 'mimes:mp4,webm,ogg,mov,m4v', 'max:25600'],
+        ]);
+
+        $techArray = array_values(array_filter(array_map('trim', explode(',', $validated['tech_stacks']))));
+
+        // Handle thumbnail
+        $thumbnailPath = $project->thumbnail;
+        if ($request->hasFile('thumbnail')) {
+            $path = $this->media->storeImage($request->file('thumbnail'), 'thumbnails', 'thumb');
+            $thumbnailPath = '/storage/'.$path;
+        } elseif (! empty($validated['thumbnail_url'])) {
+            $thumbnailPath = $validated['thumbnail_url'];
+        }
+
+        // Handle gallery images
+        $galleryPaths = is_array($project->images) ? $project->images : [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                if ($image && $image->isValid()) {
+                    $galleryPaths[] = '/storage/'.$this->media->storeImage($image, 'project-images', 'gallery');
+                }
+            }
+        }
+
+        // Handle video
+        $videoPath = $project->video;
+        $videoPosterPath = $project->video_poster;
+        if ($request->hasFile('video')) {
+            $optimized = $this->media->storeVideo($request->file('video'), 'project-videos');
+            $videoPath = '/storage/'.$optimized['path'];
+            $videoPosterPath = $optimized['poster'] ? '/storage/'.$optimized['poster'] : null;
+        } elseif (! empty($validated['video_url'])) {
+            $videoPath = $validated['video_url'];
+        }
+
+        // Handle additional videos
+        $galleryVideoPaths = is_array($project->videos) ? $project->videos : [];
+        if ($request->hasFile('videos')) {
+            foreach ($request->file('videos') as $video) {
+                if ($video && $video->isValid()) {
+                    $optimized = $this->media->storeVideo($video, 'project-videos');
+                    $galleryVideoPaths[] = '/storage/'.$optimized['path'];
+                }
+            }
+        }
+
+        $oldCategoryId = $project->category_id;
+        $newCategoryId = (int) $validated['category_id'];
+
+        $project->update([
+            'category_id' => $newCategoryId,
+            'project_type' => $validated['project_type'] ?? $project->project_type,
+            'status' => $validated['status'] ?? $project->status,
+            'visibility' => $validated['visibility'] ?? $project->visibility,
+            'title' => $validated['title'],
+            'tagline' => $validated['tagline'],
+            'description' => $validated['description'] ?? '',
+            'challenges' => $validated['challenges'] ?? null,
+            'learnings' => $validated['learnings'] ?? null,
+            'setup_instructions' => $validated['setup_instructions'] ?? null,
+            'thumbnail' => $thumbnailPath,
+            'images' => ! empty($galleryPaths) ? array_slice($galleryPaths, 0, 8) : null,
+            'video' => $videoPath,
+            'video_poster' => $videoPosterPath,
+            'videos' => ! empty($galleryVideoPaths) ? array_slice($galleryVideoPaths, 0, 4) : null,
+            'demo_url' => $validated['demo_url'] ?? null,
+            'github_url' => $validated['github_url'] ?? null,
+            'prototype_url' => $validated['prototype_url'] ?? null,
+            'tech_stacks' => $techArray,
+        ]);
+
+        if ($oldCategoryId !== $newCategoryId) {
+            Category::where('id', $oldCategoryId)->decrement('projects_count');
+            Category::where('id', $newCategoryId)->increment('projects_count');
+        }
+
+        return redirect()->route('projects.show', $project->slug)
+            ->with('success', 'Project codingan berhasil diperbarui!');
+    }
+
+    /**
+     * Delete an existing project.
+     */
+    public function destroy(Project $project): RedirectResponse
+    {
+        if ($project->user_id !== Auth::id() && ! (Auth::user()?->is_admin ?? false)) {
+            abort(403, 'Anda tidak memiliki hak untuk menghapus proyek ini.');
+        }
+
+        $categoryId = $project->category_id;
+        $username = Auth::user()->username;
+
+        // Cascade delete relations
+        $project->comments()->delete();
+        $project->votes()->delete();
+        $project->bookmarks()->delete();
+        $project->reposts()->delete();
+        $project->delete();
+
+        Category::where('id', $categoryId)->where('projects_count', '>', 0)->decrement('projects_count');
+
+        return redirect()->route('profile.show', $username)
+            ->with('success', 'Project berhasil dihapus.');
+    }
+
+    /**
+     * Delete a comment on a project.
+     */
+    public function destroyComment(Request $request, ProjectComment $comment): JsonResponse|RedirectResponse
+    {
+        $userId = Auth::id();
+        $project = $comment->project;
+
+        $isAuthor = $comment->user_id === $userId;
+        $isProjectOwner = $project && $project->user_id === $userId;
+        $isAdmin = Auth::user()?->is_admin ?? false;
+
+        if (! $isAuthor && ! $isProjectOwner && ! $isAdmin) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Anda tidak memiliki izin untuk menghapus komentar ini.'], 403);
+            }
+            abort(403, 'Anda tidak memiliki izin untuk menghapus komentar ini.');
+        }
+
+        // Delete nested replies first if any
+        $comment->replies()->delete();
+        $comment->delete();
+
+        if ($project) {
+            $project->decrement('comments_count');
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'comments_count' => $project ? $project->fresh()->comments_count : 0,
+            ]);
+        }
+
+        return back()->with('success', 'Komentar berhasil dihapus.');
+    }
+
+    /**
      * AJAX Like endpoint (like / unlike). Likes only — no dislikes.
      */
     public function vote(Request $request, Project $project): JsonResponse
@@ -575,11 +762,11 @@ class ProjectController extends Controller
         if ($parentId) {
             $parent = ProjectComment::find($parentId);
             if ($parent && $parent->user_id && $parent->user_id !== $user->id) {
-                $parent->user->notify(new \App\Notifications\ProjectCommentNotification($comment, true));
+                $parent->user->notify(new ProjectCommentNotification($comment, true));
             }
         } else {
             if ($project->user && $project->user_id !== $user->id) {
-                $project->user->notify(new \App\Notifications\ProjectCommentNotification($comment, false));
+                $project->user->notify(new ProjectCommentNotification($comment, false));
             }
         }
 

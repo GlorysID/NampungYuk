@@ -529,25 +529,34 @@
                     if (c.tag === 'avatar') this.preview = previewUrl; else this.bannerPreview = previewUrl;
                     this.crop.open = false;
                 },
-                cancelCrop() { this.crop.open = false; }
+                cancelCrop() { this.crop.open = false; },
+                modalTab: '{{ $errors->has('current_password') || $errors->has('password') ? 'password' : 'profile' }}'
              }">
             <div class="hl-panel w-full max-w-lg my-6 bg-white dark:bg-[#0a0a0a] overflow-hidden"
                  x-transition:enter="transition ease-out duration-150"
                  x-transition:enter-start="opacity-0 scale-95"
                  x-transition:enter-end="opacity-100 scale-100">
 
-                <!-- Modal header -->
-                <div class="flex items-center justify-between px-5 py-3.5 border-b border-[#e4e4e7] dark:border-[#1f1f1f]">
-                    <div class="flex items-center gap-2">
-                        <h3 class="font-bold text-sm text-[#18181b] dark:text-[#fafafa]">Edit Profil</h3>
-                        <span class="hl-label">Profil</span>
+                <!-- Modal header & tabs -->
+                <div class="flex items-center justify-between px-5 py-3 border-b border-[#e4e4e7] dark:border-[#1f1f1f]">
+                    <div class="flex items-center gap-4">
+                        <button type="button" @click="modalTab = 'profile'"
+                                :class="modalTab === 'profile' ? 'text-[#0070f3] dark:text-[#3291ff] font-bold border-b-2 border-[#0070f3]' : 'text-[#63636b] dark:text-[#a0a0a0]'"
+                                class="pb-1 text-xs transition font-semibold">
+                            Edit Profil
+                        </button>
+                        <button type="button" @click="modalTab = 'password'"
+                                :class="modalTab === 'password' ? 'text-[#0070f3] dark:text-[#3291ff] font-bold border-b-2 border-[#0070f3]' : 'text-[#63636b] dark:text-[#a0a0a0]'"
+                                class="pb-1 text-xs transition font-semibold">
+                            Keamanan & Password
+                        </button>
                     </div>
                     <button type="button" @click="editOpen = false" class="text-[#63636b] hover:text-[#18181b] dark:hover:text-white transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
 
-                <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="px-5 py-4 space-y-4 max-h-[75vh] overflow-y-auto">
+                <form x-show="modalTab === 'profile'" method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="px-5 py-4 space-y-4 max-h-[75vh] overflow-y-auto">
                     @csrf
                     @method('PUT')
 
@@ -673,6 +682,36 @@
                         <button type="submit" class="btn-primary text-xs py-2 px-4">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                             <span>Simpan</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Password update form -->
+                <form x-show="modalTab === 'password'" x-cloak method="POST" action="{{ route('profile.password.update') }}" class="px-5 py-4 space-y-4 max-h-[75vh] overflow-y-auto">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="space-y-1">
+                        <label for="current_password" class="text-xs font-semibold text-[#18181b] dark:text-[#fafafa]">Password Saat Ini <span class="text-red-500">*</span></label>
+                        <input type="password" id="current_password" name="current_password" required placeholder="Masukkan password saat ini" class="ny-input text-xs w-full">
+                        @error('current_password') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div class="space-y-1">
+                        <label for="new_password" class="text-xs font-semibold text-[#18181b] dark:text-[#fafafa]">Password Baru <span class="text-red-500">*</span></label>
+                        <input type="password" id="new_password" name="password" required minlength="8" placeholder="Minimal 8 karakter" class="ny-input text-xs w-full">
+                        @error('password') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div class="space-y-1">
+                        <label for="new_password_confirmation" class="text-xs font-semibold text-[#18181b] dark:text-[#fafafa]">Konfirmasi Password Baru <span class="text-red-500">*</span></label>
+                        <input type="password" id="new_password_confirmation" name="password_confirmation" required minlength="8" placeholder="Ulangi password baru" class="ny-input text-xs w-full">
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 pt-2 border-t border-[#e4e4e7] dark:border-[#1f1f1f]">
+                        <button type="button" @click="editOpen = false" class="btn-secondary text-xs py-2 px-4">Batal</button>
+                        <button type="submit" class="btn-primary text-xs py-2 px-4">
+                            Simpan Password Baru
                         </button>
                     </div>
                 </form>

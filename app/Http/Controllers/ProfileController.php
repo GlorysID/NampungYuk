@@ -7,15 +7,16 @@ use App\Models\ProjectBookmark;
 use App\Models\ProjectRepost;
 use App\Models\ProjectVote;
 use App\Models\User;
+use App\Services\MediaOptimizer;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
-    public function __construct(private \App\Services\MediaOptimizer $media)
-    {
-    }
+    public function __construct(private MediaOptimizer $media) {}
 
     /**
      * Update the authenticated user's profile.
@@ -83,6 +84,30 @@ class ProfileController extends Controller
         return redirect()
             ->route('profile.show', $user->username)
             ->with('success', 'Profil kamu berhasil diperbarui!');
+    }
+
+    /**
+     * Update user password.
+     */
+    public function updatePassword(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ], [
+            'current_password.required' => 'Password saat ini wajib diisi.',
+            'current_password.current_password' => 'Password saat ini yang Anda masukkan salah.',
+            'password.required' => 'Password baru wajib diisi.',
+            'password.confirmed' => 'Konfirmasi password baru tidak cocok.',
+            'password.min' => 'Password baru minimal 8 karakter.',
+        ]);
+
+        $user = $request->user();
+        $user->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        return back()->with('success', 'Password akun Anda berhasil diperbarui!');
     }
 
     /**

@@ -50,23 +50,37 @@ Route::middleware('auth')->group(function () {
 Route::get('/feed-fragment/projects', [InfiniteFeedController::class, 'projectFeed'])->name('feeds.projects');
 Route::get('/feed-fragment/bookmarks', [InfiniteFeedController::class, 'bookmarkFeed'])->name('feeds.bookmarks');
 
-// Developer profile (public)
+// Developer profile & project showcase (public)
 Route::get('/u/{username}', [ProfileController::class, 'show'])->name('profile.show');
+Route::get('/project/{slug}', [ProjectController::class, 'show'])->name('projects.show');
+
+// Communities exploration (public read-only)
+Route::get('/komunitas', [CommunityController::class, 'index'])->name('communities.index');
+Route::get('/komunitas/{slug}', [CommunityController::class, 'show'])->name('communities.show');
+Route::get('/feed-fragment/communities', [InfiniteFeedController::class, 'communityFeed'])->name('feeds.communities');
+Route::get('/feed-fragment/community/{community:slug}', [InfiniteFeedController::class, 'communityShowFeed'])->name('feeds.community');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/project/{slug}', [ProjectController::class, 'show'])->name('projects.show');
+    // Project lifecycle (upload, edit, update, delete)
     Route::get('/unggah', [ProjectController::class, 'create'])->name('projects.create');
     Route::post('/unggah', [ProjectController::class, 'store'])->name('projects.store');
+    Route::get('/project/{project:slug}/edit', [ProjectController::class, 'edit'])->name('projects.edit');
+    Route::put('/project/{project:slug}', [ProjectController::class, 'update'])->name('projects.update');
+    Route::delete('/project/{project:slug}', [ProjectController::class, 'destroy'])->name('projects.destroy');
+
+    // Project interactions
     Route::post('/project/{project}/vote', [ProjectController::class, 'vote'])->name('projects.vote');
     Route::post('/project/{project}/comment', [ProjectController::class, 'comment'])->name('projects.comment');
+    Route::delete('/project/komentar/{comment}', [ProjectController::class, 'destroyComment'])->name('projects.comment.destroy');
     Route::post('/project/{project}/bookmark', [ProjectController::class, 'bookmark'])->name('projects.bookmark');
     Route::get('/koleksi', [ProjectController::class, 'bookmarks'])->name('projects.bookmarks');
 
     // Social graph: follow / unfollow
     Route::post('/u/{user:username}/follow', [FollowController::class, 'toggle'])->name('follow.toggle');
 
-    // Profile settings
+    // Profile & account settings
     Route::put('/pengaturan/profil', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/pengaturan/keamanan', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
 
     // Project repost & pin
     Route::post('/project/{project}/repost', [ProjectController::class, 'repost'])->name('projects.repost');
@@ -77,12 +91,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifikasi/latest', [NotificationController::class, 'latest'])->name('notifications.latest');
     Route::post('/notifikasi/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifikasi/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
-
-    // Communities (auth required)
-    Route::get('/komunitas', [CommunityController::class, 'index'])->name('communities.index');
-    Route::get('/komunitas/{slug}', [CommunityController::class, 'show'])->name('communities.show');
-    Route::get('/feed-fragment/communities', [InfiniteFeedController::class, 'communityFeed'])->name('feeds.communities');
-    Route::get('/feed-fragment/community/{community:slug}', [InfiniteFeedController::class, 'communityShowFeed'])->name('feeds.community');
 
     // Communities (member actions)
     Route::post('/komunitas', [CommunityController::class, 'store'])->name('communities.store');
@@ -133,7 +141,7 @@ Route::middleware('guest')->group(function () {
 Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('auth.google');
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
 
-Route::post('/login', [LoginController::class, 'store'])->name('auth.store');
+Route::post('/login', [LoginController::class, 'store'])->name('login.store');
 
 Route::post('/logout', [LoginController::class, 'destroy'])
     ->middleware('auth')
@@ -141,5 +149,3 @@ Route::post('/logout', [LoginController::class, 'destroy'])
 
 Route::redirect('/masuk', '/login');
 Route::redirect('/daftar', '/register');
-
-

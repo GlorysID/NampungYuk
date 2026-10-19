@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\Project;
+use App\Models\ProjectComment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class ProjectShowcaseTest extends TestCase
@@ -35,7 +37,7 @@ class ProjectShowcaseTest extends TestCase
         $response->assertSee('Web App');
     }
 
-    public function test_guest_is_redirected_to_login_when_viewing_project_detail(): void
+    public function test_guest_can_view_project_detail(): void
     {
         $category = Category::create(['name' => 'Open Source', 'slug' => 'open-source']);
         $creator = User::factory()->create(['name' => 'Rian Creator']);
@@ -54,9 +56,10 @@ class ProjectShowcaseTest extends TestCase
             'status' => 'production',
         ]);
 
-        // Guest redirected to login
+        // Guest can view project detail without login wall
         $guestResponse = $this->get('/project/'.$project->slug);
-        $guestResponse->assertRedirect(route('login'));
+        $guestResponse->assertStatus(200);
+        $guestResponse->assertSee('Library Mantap');
 
         // Authenticated user can view detail
         $authResponse = $this->actingAs($creator)->get('/project/'.$project->slug);
@@ -486,5 +489,190 @@ class ProjectShowcaseTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Akun tidak ditemukan');
+    }
+
+    public function test_author_can_view_edit_project_page(): void
+    {
+        $creator = User::factory()->create(['name' => 'Bambang Dev']);
+        $category = Category::create(['name' => 'Web App', 'slug' => 'web-app']);
+
+        $project = Project::create([
+            'user_id' => $creator->id,
+            'category_id' => $category->id,
+            'title' => 'Sistem Inventaris',
+            'slug' => 'sistem-inventaris',
+            'tagline' => 'Aplikasi pencatatan stok gudang',
+            'tech_stacks' => ['Laravel', 'Alpine.js'],
+        ]);
+
+        $response = $this->actingAs($creator)->get(route('projects.edit', $project->slug));
+
+        $response->assertStatus(200);
+        $response->assertSee('Edit Project:');
+        $response->assertSee('Sistem Inventaris');
+        $response->assertSee('Aplikasi pencatatan stok gudang');
+    }
+
+    public function test_non_author_cannot_edit_another_users_project(): void
+    {
+        $creator = User::factory()->create();
+        $intruder = User::factory()->create();
+        $category = Category::create(['name' => 'Mobile', 'slug' => 'mobile']);
+
+        $project = Project::create([
+            'user_id' => $creator->id,
+            'category_id' => $category->id,
+            'title' => 'Project Rahasia',
+            'slug' => 'project-rahasia',
+            'tagline' => 'Rahasia creator',
+            'tech_stacks' => ['Flutter'],
+        ]);
+
+        $response = $this->actingAs($intruder)->get(route('projects.edit', $project->slug));
+        $response->assertStatus(403);
+
+        $updateResponse = $this->actingAs($intruder)->put(route('projects.update', $project->slug), [
+            'title' => 'Hacked Project',
+            'tagline' => 'Tagline baru',
+            'category_id' => $category->id,
+            'tech_stacks' => 'Hacking',
+        ]);
+        $updateResponse->assertStatus(403);
+    }
+
+    public function test_author_can_update_project(): void
+    {
+        $creator = User::factory()->create();
+        $category1 = Category::create(['name' => 'Frontend', 'slug' => 'frontend']);
+        $category2 = Category::create(['name' => 'Backend', 'slug' => 'backend']);
+
+        $project = Project::create([
+            'user_id' => $creator->id,
+            'category_id' => $category1->id,
+            'title' => 'Judul Lama',
+            'slug' => 'judul-lama',
+            'tagline' => 'Tagline lama',
+            'tech_stacks' => ['HTML', 'CSS'],
+        ]);
+
+        $response = $this->actingAs($creator)->put(route('projects.update', $project->slug), [
+            'title' => 'Judul Baru Keren',
+            'tagline' => 'Tagline yang sudah disempurnakan',
+            'category_id' => $category2->id,
+            'tech_stacks' => 'Laravel, PostgreSQL, Docker',
+            'description' => 'Deskripsi terbaru tentang arsitektur backend.',
+            'status' => 'production',
+        ]);
+
+        $response->assertRedirect(route('projects.show', $project->slug));
+        $response->assertSessionHas('success');
+
+        $project->refresh();
+        $this->assertSame('Judul Baru Keren', $project->title);
+        $this->assertSame('Tagline yang sudah disempurnakan', $project->tagline);
+        $this->assertSame($category2->id, $project->category_id);
+        $this->assertSame(['Laravel', 'PostgreSQL', 'Docker'], $project->tech_stacks);
+    }
+
+    public function test_author_can_delete_project(): void
+    {
+        $creator = User::factory()->create(['username' => 'creator_budi']);
+        $category = Category::create(['name' => 'AI/ML', 'slug' => 'ai-ml']);
+
+        $project = Project::create([
+            'user_id' => $creator->id,
+            'category_id' => $category->id,
+            'title' => 'Model NLP',
+            'slug' => 'model-nlp',
+            'tagline' => 'Klasifikasi teks bahasa Indonesia',
+            'tech_stacks' => ['Python', 'PyTorch'],
+        ]);
+
+        $response = $this->actingAs($creator)->delete(route('projects.destroy', $project->slug));
+
+        $response->assertRedirect(route('profile.show', 'creator_budi'));
+        $this->assertDatabaseMissing('projects', ['id' => $project->id]);
+    }
+
+    public function test_comment_author_and_project_owner_can_delete_comment(): void
+    {
+        $projectOwner = User::factory()->create();
+        $commentAuthor = User::factory()->create();
+        $stranger = User::factory()->create();
+        $category = Category::create(['name' => 'DevOps', 'slug' => 'devops']);
+
+        $project = Project::create([
+            'user_id' => $projectOwner->id,
+            'category_id' => $category->id,
+            'title' => 'CI/CD Pipeline',
+            'slug' => 'cicd-pipeline',
+            'tagline' => 'Automated deploy pipeline',
+            'tech_stacks' => ['Docker', 'GitHub Actions'],
+            'comments_count' => 1,
+        ]);
+
+        $comment = ProjectComment::create([
+            'project_id' => $project->id,
+            'user_id' => $commentAuthor->id,
+            'content' => 'Komentar pertama yang keren!',
+        ]);
+
+        // Stranger cannot delete comment
+        $strangerResponse = $this->actingAs($stranger)->delete(route('projects.comment.destroy', $comment->id));
+        $strangerResponse->assertStatus(403);
+        $this->assertDatabaseHas('project_comments', ['id' => $comment->id]);
+
+        // Comment author can delete comment
+        $authorResponse = $this->actingAs($commentAuthor)->delete(route('projects.comment.destroy', $comment->id));
+        $authorResponse->assertStatus(302);
+        $this->assertDatabaseMissing('project_comments', ['id' => $comment->id]);
+
+        // Test project owner can also delete comments on their project
+        $comment2 = ProjectComment::create([
+            'project_id' => $project->id,
+            'user_id' => $commentAuthor->id,
+            'content' => 'Komentar kedua untuk ditest!',
+        ]);
+
+        $ownerResponse = $this->actingAs($projectOwner)->delete(route('projects.comment.destroy', $comment2->id));
+        $ownerResponse->assertStatus(302);
+        $this->assertDatabaseMissing('project_comments', ['id' => $comment2->id]);
+    }
+
+    public function test_user_can_update_their_password(): void
+    {
+        $user = User::factory()->create([
+            'password' => Hash::make('old-password-123'),
+        ]);
+
+        $response = $this->actingAs($user)->put(route('profile.password.update'), [
+            'current_password' => 'old-password-123',
+            'password' => 'new-secret-password-456',
+            'password_confirmation' => 'new-secret-password-456',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $user->refresh();
+        $this->assertTrue(Hash::check('new-secret-password-456', $user->password));
+    }
+
+    public function test_user_cannot_update_password_with_incorrect_current_password(): void
+    {
+        $user = User::factory()->create([
+            'password' => Hash::make('old-password-123'),
+        ]);
+
+        $response = $this->actingAs($user)->put(route('profile.password.update'), [
+            'current_password' => 'wrong-current-password',
+            'password' => 'new-secret-password-456',
+            'password_confirmation' => 'new-secret-password-456',
+        ]);
+
+        $response->assertSessionHasErrors(['current_password']);
+
+        $user->refresh();
+        $this->assertTrue(Hash::check('old-password-123', $user->password));
     }
 }

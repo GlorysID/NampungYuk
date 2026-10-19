@@ -58,6 +58,19 @@
                 <span x-text="showReplies ? 'Sembunyikan {{ $comment->replies->count() }} balasan' : 'Lihat {{ $comment->replies->count() }} balasan'"></span>
             </button>
         @endif
+
+        @auth
+            @if(auth()->id() === $comment->user_id || (isset($comment->project) && auth()->id() === $comment->project->user_id) || auth()->user()->is_admin)
+                <form action="{{ route('projects.comment.destroy', $comment->id) }}" method="POST" onsubmit="return confirm('Hapus komentar ini?')" class="inline">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="text-[11px] font-semibold text-rose-500/80 hover:text-rose-600 transition inline-flex items-center gap-1 cursor-pointer">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        <span>Hapus</span>
+                    </button>
+                </form>
+            @endif
+        @endauth
     </div>
 
     <!-- Inline reply form -->

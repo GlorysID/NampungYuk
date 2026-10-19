@@ -273,6 +273,13 @@
 
                 <!-- Repost button (hidden for own project) -->
                 @auth
+                    @if($project->user_id === auth()->id())
+                        <x-button :href="route('projects.edit', $project->slug)" variant="secondary" size="md">
+                            <svg class="w-4 h-4 text-[#0070f3] dark:text-[#3291ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            <span>Edit Karya</span>
+                        </x-button>
+                    @endif
+
                     @if($project->user_id !== auth()->id() && ! $project->isPrivate())
                         <button type="button" @click="repost()" :disabled="isReposting"
                                 :class="isReposted ? 'bg-[#e8f2ff] dark:bg-[#3291ff]/12 text-[#0070f3] dark:text-[#3291ff] border-[#3291ff]/30' : ''"
@@ -351,7 +358,7 @@
                     </button>
                 @endguest
 
-                <!-- Overflow menu (⋯): Bagikan + Laporkan -->
+                <!-- Overflow menu (⋯): Bagikan + Edit/Hapus + Laporkan -->
                 <div class="relative" x-data="{ menuOpen: false }" @click.outside="menuOpen = false">
                     <button @click="menuOpen = !menuOpen"
                             type="button"
@@ -377,6 +384,25 @@
                             <svg class="w-4 h-4 text-[#63636b] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
                             <span>Bagikan / Salin Tautan</span>
                         </button>
+
+                        <!-- Owner / Admin Actions: Edit & Hapus -->
+                        @if(auth()->check() && ($project->user_id === auth()->id() || auth()->user()->is_admin))
+                            <div class="border-t border-[#e4e4e7] dark:border-[#1f1f1f]"></div>
+                            <a href="{{ route('projects.edit', $project->slug) }}"
+                               class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-[#18181b] dark:text-[#fafafa] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition">
+                                <svg class="w-4 h-4 text-[#0070f3] dark:text-[#3291ff] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                <span>Edit Karya</span>
+                            </a>
+                            <form action="{{ route('projects.destroy', $project->slug) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus proyek ini secara permanen?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit"
+                                        class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition">
+                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    <span>Hapus Karya</span>
+                                </button>
+                            </form>
+                        @endif
 
                         <!-- Report (never for your own project) -->
                         @if($project->user_id !== auth()->id())
