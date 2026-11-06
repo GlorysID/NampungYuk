@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Laravel\Socialite\Facades\Socialite;
 
 class GoogleController extends Controller
 {
@@ -22,11 +22,11 @@ class GoogleController extends Controller
     {
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
-            
+
             // Cek apakah email user sudah terdaftar di database
             $user = User::where('email', $googleUser->getEmail())->first();
 
-            if (!$user) {
+            if (! $user) {
                 // Jika belum ada, otomatis buat akun baru (Register)
                 $user = User::create([
                     'name' => $googleUser->getName(),
@@ -43,7 +43,7 @@ class GoogleController extends Controller
             return redirect('/dashboard');
 
         } catch (\Exception $e) {
-            return redirect('/login')->with('error', 'Gagal login dengan Google: ' . $e->getMessage());
+            return redirect('/login')->with('error', 'Gagal login dengan Google: '.$e->getMessage());
         }
     }
 }

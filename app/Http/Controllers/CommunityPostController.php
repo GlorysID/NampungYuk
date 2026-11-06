@@ -8,6 +8,7 @@ use App\Models\CommunityPostComment;
 use App\Models\CommunityPostVote;
 use App\Notifications\CommunityCommentNotification;
 use App\Notifications\CommunityPostNotification;
+use App\Services\MediaOptimizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,9 +16,7 @@ use Illuminate\Support\Facades\Auth;
 
 class CommunityPostController extends Controller
 {
-    public function __construct(private \App\Services\MediaOptimizer $media)
-    {
-    }
+    public function __construct(private MediaOptimizer $media) {}
 
     /**
      * Create a post inside a community (members only).

@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Notifications\NewMessageNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -48,7 +49,7 @@ class ChatController extends Controller
     /**
      * Build the inbox (accepted conversations + pending requests) for a user.
      *
-     * @return array{conversations: \Illuminate\Support\Collection, requests: \Illuminate\Support\Collection}
+     * @return array{conversations: Collection, requests: Collection}
      */
     private function inboxData(int $userId, ?string $search): array
     {
@@ -92,10 +93,9 @@ class ChatController extends Controller
     /**
      * Search accounts to start a new chat with, excluding ones already listed.
      *
-     * @param  \Illuminate\Support\Collection  $conversations
-     * @return \Illuminate\Support\Collection
+     * @return Collection
      */
-    private function peopleSearch(int $userId, ?string $search, \Illuminate\Support\Collection $conversations)
+    private function peopleSearch(int $userId, ?string $search, Collection $conversations)
     {
         if (! $search) {
             return collect();
@@ -313,7 +313,8 @@ class ChatController extends Controller
      * Broadcast a typing indicator (no persistence).
      */
     public function typing(Request $request, User $user): JsonResponse
-    {        $auth = Auth::user();
+    {
+        $auth = Auth::user();
         if (! $auth || $user->id === $auth->id) {
             return response()->json(['success' => false], 401);
         }

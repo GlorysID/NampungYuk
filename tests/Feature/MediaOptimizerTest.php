@@ -23,7 +23,7 @@ class MediaOptimizerTest extends TestCase
 
     public function test_image_is_converted_to_webp_and_downscaled(): void
     {
-        $opt = new MediaOptimizer();
+        $opt = new MediaOptimizer;
         $src = $this->makeJpeg(2400, 1600);
 
         $bytes = $opt->encodeWebp($src, $opt->galleryMaxWidth);
@@ -41,7 +41,7 @@ class MediaOptimizerTest extends TestCase
 
     public function test_avatar_uses_smaller_cap(): void
     {
-        $opt = new MediaOptimizer();
+        $opt = new MediaOptimizer;
         $src = $this->makeJpeg(1000, 1000);
 
         $bytes = $opt->encodeWebp($src, $opt->avatarMaxWidth);
@@ -54,7 +54,7 @@ class MediaOptimizerTest extends TestCase
 
     public function test_smaller_image_is_not_upscaled(): void
     {
-        $opt = new MediaOptimizer();
+        $opt = new MediaOptimizer;
         $src = $this->makeJpeg(400, 300);
 
         $bytes = $opt->encodeWebp($src, $opt->galleryMaxWidth);

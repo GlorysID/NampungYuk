@@ -161,7 +161,8 @@ class ChatTest extends TestCase
     }
 
     public function test_sender_can_edit_own_recent_message(): void
-    {        [$me, $other] = $this->pair();
+    {
+        [$me, $other] = $this->pair();
         $conv = Conversation::between($me->id, $other->id);
         $msg = $conv->messages()->create(['sender_id' => $me->id, 'body' => 'asli']);
 

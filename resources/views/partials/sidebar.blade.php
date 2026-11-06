@@ -159,28 +159,32 @@
 
         @if(auth()->check() && auth()->user()->is_admin)
             @php $pendingReportsCount = \App\Models\Report::pending()->count(); @endphp
-            <div class="space-y-0.5 pt-2 border-t border-rose-500/20">
-                <p class="px-2 text-[10px] font-bold uppercase tracking-wider text-rose-500 flex items-center justify-between mb-1">
-                    <span>Admin Control</span>
-                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+            <div class="space-y-0.5 pt-2 border-t border-[#e4e4e7] dark:border-[#27272a]">
+                <p class="px-2 text-[10px] font-bold uppercase tracking-wider text-[#71717a] dark:text-[#a1a1aa] mb-1">
+                    ADMIN CONTROL
                 </p>
                 <a href="{{ route('admin.reports.index', ['tab' => 'all_users']) }}" 
-                   class="flex items-center justify-between px-3 py-1.5 rounded-lg font-medium transition {{ request()->get('tab') === 'all_users' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold border border-purple-500/30' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f4f4f5] dark:hover:bg-[#18181b]' }}">
+                   class="flex items-center justify-between px-3 py-1.5 rounded-lg font-medium transition {{ request()->get('tab') === 'all_users' ? 'bg-[#0070f3]/10 dark:bg-[#3291ff]/15 text-[#0070f3] dark:text-[#3291ff] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f4f4f5] dark:hover:bg-[#18181b]' }}">
                     <div class="flex items-center gap-2.5">
-                        <svg class="w-4 h-4 text-purple-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                        <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                         <span>Kelola Pengguna</span>
                     </div>
+                    @if(request()->get('tab') === 'all_users')
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#0070f3] dark:bg-[#3291ff]"></span>
+                    @endif
                 </a>
                 <a href="{{ route('admin.reports.index') }}" 
-                   class="flex items-center justify-between px-3 py-1.5 rounded-lg font-medium transition {{ request()->routeIs('admin.*') && request()->get('tab') !== 'all_users' ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold border border-rose-500/30' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f4f4f5] dark:hover:bg-[#18181b]' }}">
+                   class="flex items-center justify-between px-3 py-1.5 rounded-lg font-medium transition {{ request()->routeIs('admin.*') && request()->get('tab') !== 'all_users' ? 'bg-[#0070f3]/10 dark:bg-[#3291ff]/15 text-[#0070f3] dark:text-[#3291ff] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#18181b] dark:hover:text-white hover:bg-[#f4f4f5] dark:hover:bg-[#18181b]' }}">
                     <div class="flex items-center gap-2.5">
-                        <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                         <span>Laporan Pengaduan</span>
                     </div>
                     @if($pendingReportsCount > 0)
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500 text-white animate-pulse">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
                             {{ $pendingReportsCount }}
                         </span>
+                    @elseif(request()->routeIs('admin.*') && request()->get('tab') !== 'all_users')
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#0070f3] dark:bg-[#3291ff]"></span>
                     @endif
                 </a>
             </div>

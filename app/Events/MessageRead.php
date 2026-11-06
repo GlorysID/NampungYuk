@@ -2,7 +2,6 @@
 
 namespace App\Events;
 
-use App\Models\Conversation;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -14,7 +13,6 @@ class MessageRead implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
-     * @param  int  $conversationId
      * @param  int  $readerId  The user who read the messages.
      * @param  int|null  $upToMessageId  Highest message id marked as read.
      */
