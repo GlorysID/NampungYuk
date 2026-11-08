@@ -20,6 +20,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -41,12 +42,13 @@ class ProjectController extends Controller
 
         // Memerlukan login untuk melihat feed berdasarkan kategori kodingan atau filter teknologi
         if (($categorySlug || $techFilter) && ! Auth::check()) {
-            return redirect()->route('login')->with('info', 'Silakan masuk terlebih dahulu untuk melihat project berdasarkan kategori kodingan atau teknologi.');
+            return redirect()->route('projects.index')->with('auth_required', true);
         }
 
         // People search: same query box, results are accounts instead of projects.
         if ($view === 'people') {
             $people = User::query()
+                ->withCount(['followers', 'projects'])
                 ->search($search)
                 ->whereNull('ban_reason')
                 ->when($search === null || trim((string) $search) === '', fn ($q) => $q->orderByDesc('reputation_points'))
@@ -54,12 +56,11 @@ class ProjectController extends Controller
                 ->paginate(12)
                 ->withQueryString();
 
-            $viewer = Auth::user();
             $people->getCollection()->transform(function (User $person) {
                 return [
                     'user' => $person,
-                    'followers' => $person->followers()->count(),
-                    'projects' => $person->projects()->count(),
+                    'followers' => $person->followers_count,
+                    'projects' => $person->projects_count,
                 ];
             });
 
@@ -158,24 +159,8 @@ class ProjectController extends Controller
             $trendingToday = $trendingToday->concat($extra);
         }
 
-        // 2b. Hot hashtags — most-used tech tags across visible projects
-        $tagCounts = [];
-        Project::query()
-            ->visibleTo(Auth::id())
-            ->select('tech_stacks')
-            ->chunk(500, function ($rows) use (&$tagCounts) {
-                foreach ($rows as $row) {
-                    foreach ((array) $row->tech_stacks as $tag) {
-                        $tag = trim((string) $tag);
-                        if ($tag === '') {
-                            continue;
-                        }
-                        $tagCounts[$tag] = ($tagCounts[$tag] ?? 0) + 1;
-                    }
-                }
-            });
-        arsort($tagCounts);
-        $hotHashtags = array_slice($tagCounts, 0, 8, true);
+        // 2b. Hot hashtags — most-used tech tags across visible projects (cached 5 min)
+        $hotHashtags = $this->hotHashtags();
 
         // 3. Suggested developers to follow (not already followed, not self)
         $suggestedDevelopers = collect();
@@ -459,13 +444,18 @@ class ProjectController extends Controller
         // Increment category count
         $project->category->increment('projects_count');
 
+        Cache::forget('projects.hot_hashtags');
+        Cache::forget('rail:trending_projects_v2');
+
         // Notify followers about the new project + broadcast to live feed.
         $project->load('user');
-        $followers = $user->followers;
-        foreach ($followers as $follower) {
-            $follower->notify(new ProjectUploadedNotification($project));
+        if ($project->visibility !== 'private') {
+            $followers = $user->followers;
+            foreach ($followers as $follower) {
+                $follower->notify(new ProjectUploadedNotification($project));
+            }
+            ProjectPublished::dispatch($project);
         }
-        ProjectPublished::dispatch($project);
 
         return redirect()->route('projects.show', $project->slug)
             ->with('success', 'Project codingan kamu berhasil dipamerkan dan tampil di feed!');
@@ -592,6 +582,9 @@ class ProjectController extends Controller
             Category::where('id', $newCategoryId)->increment('projects_count');
         }
 
+        Cache::forget('projects.hot_hashtags');
+        Cache::forget('rail:trending_projects_v2');
+
         return redirect()->route('projects.show', $project->slug)
             ->with('success', 'Project codingan berhasil diperbarui!');
     }
@@ -617,6 +610,9 @@ class ProjectController extends Controller
 
         Category::where('id', $categoryId)->where('projects_count', '>', 0)->decrement('projects_count');
 
+        Cache::forget('projects.hot_hashtags');
+        Cache::forget('rail:trending_projects_v2');
+
         return redirect()->route('profile.show', $username)
             ->with('success', 'Project berhasil dihapus.');
     }
@@ -631,7 +627,9 @@ class ProjectController extends Controller
 
         $isAuthor = $comment->user_id === $userId;
         $isProjectOwner = $project && $project->user_id === $userId;
-        $isAdmin = Auth::user()?->is_admin ?? false;
+        /** @var User|null $currentUser */
+        $currentUser = Auth::user();
+        $isAdmin = $currentUser?->isAdmin() ?? false;
 
         if (! $isAuthor && ! $isProjectOwner && ! $isAdmin) {
             if ($request->wantsJson()) {
@@ -640,12 +638,16 @@ class ProjectController extends Controller
             abort(403, 'Anda tidak memiliki izin untuk menghapus komentar ini.');
         }
 
+        // Calculate total comments deleted (parent + replies)
+        $deletedCount = 1 + $comment->replies()->count();
+
         // Delete nested replies first if any
         $comment->replies()->delete();
         $comment->delete();
 
         if ($project) {
-            $project->decrement('comments_count');
+            $newCount = max(0, (int) $project->comments_count - $deletedCount);
+            $project->update(['comments_count' => $newCount]);
         }
 
         if ($request->wantsJson()) {
@@ -667,6 +669,12 @@ class ProjectController extends Controller
 
         if (! $userId) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        /** @var User $user */
+        $user = Auth::user();
+        if (! $this->isProjectAccessible($project, $user)) {
+            abort(403, 'Anda tidak memiliki akses ke proyek ini.');
         }
 
         $isAuthor = ($project->user_id === $userId);
@@ -734,6 +742,7 @@ class ProjectController extends Controller
             'parent_id' => ['nullable', 'exists:project_comments,id'],
         ]);
 
+        /** @var User|null $user */
         $user = Auth::user();
         if (! $user) {
             if ($request->wantsJson()) {
@@ -741,6 +750,10 @@ class ProjectController extends Controller
             }
 
             return redirect()->route('login');
+        }
+
+        if (! $this->isProjectAccessible($project, $user)) {
+            abort(403, 'Anda tidak memiliki akses ke proyek ini.');
         }
 
         $parentId = $validated['parent_id'] ?? null;
@@ -756,7 +769,9 @@ class ProjectController extends Controller
         $project->increment('comments_count');
 
         $comment->load('user');
-        CommentPosted::dispatch($comment);
+        if (! $project->isPrivate() && ! $project->hasWarning()) {
+            CommentPosted::dispatch($comment);
+        }
 
         // Notifications: reply -> parent author; top-level -> project owner.
         if ($parentId) {
@@ -797,6 +812,12 @@ class ProjectController extends Controller
         $userId = Auth::id();
         if (! $userId) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        /** @var User $user */
+        $user = Auth::user();
+        if (! $this->isProjectAccessible($project, $user)) {
+            abort(403, 'Anda tidak memiliki akses ke proyek ini.');
         }
 
         $bookmark = ProjectBookmark::where('project_id', $project->id)
@@ -852,6 +873,7 @@ class ProjectController extends Controller
      */
     public function repost(Request $request, Project $project): JsonResponse|RedirectResponse
     {
+        /** @var User|null $user */
         $user = Auth::user();
         if (! $user) {
             if ($request->wantsJson()) {
@@ -859,6 +881,10 @@ class ProjectController extends Controller
             }
 
             return redirect()->route('login');
+        }
+
+        if (! $this->isProjectAccessible($project, $user)) {
+            abort(403, 'Anda tidak memiliki akses ke proyek ini.');
         }
 
         if ($project->user_id === $user->id) {
@@ -956,5 +982,58 @@ class ProjectController extends Controller
         }
 
         return back()->with('success', $message);
+    }
+
+    /**
+     * Get the most-used tech tags across public visible projects (cached 5 min).
+     *
+     * @return array<string, int>
+     */
+    protected function hotHashtags(): array
+    {
+        return Cache::remember('projects.hot_hashtags', 300, function () {
+            $tagCounts = [];
+            Project::query()
+                ->where('visibility', 'public')
+                ->where(function ($q) {
+                    $q->where('is_flagged', false)->orWhereNull('is_flagged');
+                })
+                ->whereNull('warning_notes')
+                ->select('tech_stacks')
+                ->chunk(500, function ($rows) use (&$tagCounts) {
+                    foreach ($rows as $row) {
+                        foreach ((array) $row->tech_stacks as $tag) {
+                            $tag = trim((string) $tag);
+                            if ($tag === '') {
+                                continue;
+                            }
+                            $tagCounts[$tag] = ($tagCounts[$tag] ?? 0) + 1;
+                        }
+                    }
+                });
+            arsort($tagCounts);
+
+            return array_slice($tagCounts, 0, 8, true);
+        });
+    }
+
+    /**
+     * Determine if a project is accessible/interactable by the given user.
+     */
+    protected function isProjectAccessible(Project $project, ?User $user): bool
+    {
+        if ($user?->isAdmin()) {
+            return true;
+        }
+
+        if ($project->isPrivate() && (! $user || (int) $project->user_id !== (int) $user->id)) {
+            return false;
+        }
+
+        if ($project->hasWarning() && (! $user || (int) $project->user_id !== (int) $user->id)) {
+            return false;
+        }
+
+        return true;
     }
 }

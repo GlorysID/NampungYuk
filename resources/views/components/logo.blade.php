@@ -36,9 +36,12 @@
         'tagline' => 'text-[10px]',
         'gap' => 'gap-2.5',
     ];
+    $passedClass = (string) $attributes->get('class', '');
+    $hasDisplayClass = preg_match('/(^|\s)(hidden|block|flex|inline-flex|grid|inline-grid)(\s|$)/', $passedClass);
+    $defaultDisplay = $hasDisplayClass ? '' : 'inline-flex ';
 @endphp
 
-<div {{ $attributes->merge(['class' => "inline-flex items-center {$sizes['gap']} group select-none"]) }}>
+<div {{ $attributes->merge(['class' => "{$defaultDisplay}items-center {$sizes['gap']} group select-none"]) }}>
     @if($href)
         <a href="{{ $href }}" class="flex items-center {{ $sizes['gap'] }}">
     @else
@@ -66,11 +69,11 @@
 
             @if($showText)
                 <div class="flex flex-col">
-                    <span class="{{ $sizes['text'] }} font-extrabold tracking-tight text-[#18181b] dark:text-[#fafafa] leading-none">
-                        Nampung<span class="text-[#0070f3] dark:text-[#00c2cb]">Yuk</span>
+                    <span class="{{ $sizes['text'] }} font-extrabold tracking-tight text-[#0B0B0D] dark:text-[#EAE8E1] leading-none">
+                        Nampung<span class="text-[#6E6D67] dark:text-[#8E8D86]">Yuk</span>
                     </span>
                     @if($showTagline)
-                        <span class="{{ $sizes['tagline'] }} font-medium tracking-wide text-[#63636b] dark:text-[#a0a0a0] mt-0.5">
+                        <span class="{{ $sizes['tagline'] }} font-medium tracking-wide text-[#6E6D67] dark:text-[#8E8D86] mt-0.5">
                             Developer Showcase
                         </span>
                     @endif

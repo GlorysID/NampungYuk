@@ -157,11 +157,14 @@ class ChatTest extends TestCase
     public function test_guests_cannot_access_chat(): void
     {
         $other = User::factory()->create();
-        $this->get('/obrolan/'.$other->username)->assertRedirect('/login');
+        $this->get('/obrolan/'.$other->username)
+            ->assertRedirect(route('projects.index'))
+            ->assertSessionHas('auth_required');
     }
 
     public function test_sender_can_edit_own_recent_message(): void
-    {        [$me, $other] = $this->pair();
+    {
+        [$me, $other] = $this->pair();
         $conv = Conversation::between($me->id, $other->id);
         $msg = $conv->messages()->create(['sender_id' => $me->id, 'body' => 'asli']);
 

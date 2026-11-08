@@ -39,7 +39,7 @@
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
          @click="open = false"
-         class="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-md"></div>
+         class="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-xs"></div>
 
     <!-- Center Container -->
     <div class="min-h-full flex items-center justify-center p-4">
@@ -50,24 +50,24 @@
              x-transition:leave="transition ease-in duration-150 transform"
              x-transition:leave-start="opacity-100 scale-100 translate-y-0"
              x-transition:leave-end="opacity-0 scale-95 translate-y-2"
-             class="relative w-full max-w-lg bg-white dark:bg-[#0c0d12] border border-[#e4e4e7] dark:border-[#27272a] rounded-3xl overflow-hidden shadow-2xl p-6 sm:p-7 text-[#18181b] dark:text-[#fafafa]">
+             class="relative w-full max-w-lg bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] rounded-2xl overflow-hidden shadow-2xl p-6 sm:p-7 text-[#0B0B0D] dark:text-[#EAE8E1]">
 
             <!-- Close Button -->
             <button @click="open = false" 
                     type="button" 
-                    class="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 text-[#71717a] hover:text-[#18181b] dark:hover:text-white flex items-center justify-center transition">
+                    class="absolute top-4 right-4 w-8 h-8 rounded-lg bg-[#EFECE6] hover:bg-[#E2DFD7] dark:bg-[#161619] dark:hover:bg-[#19191D] text-[#6E6D67] hover:text-[#0B0B0D] dark:text-[#8E8D86] dark:hover:text-white flex items-center justify-center transition border border-[#E2DFD7] dark:border-[#242426] cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
 
             <!-- Header -->
             <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center shrink-0">
+                <div class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center shrink-0">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                 </div>
                 <div>
-                    <h3 class="text-lg font-bold tracking-tight text-[#18181b] dark:text-white">Laporkan Konten</h3>
-                    <p class="text-xs text-[#71717a] truncate max-w-[320px]">
-                        Target: <span class="font-semibold text-[#18181b] dark:text-[#fafafa]" x-text="title"></span>
+                    <h3 class="text-lg font-bold tracking-tight text-[#0B0B0D] dark:text-[#EAE8E1]">Laporkan Konten</h3>
+                    <p class="text-xs text-[#6E6D67] dark:text-[#8E8D86] truncate max-w-[320px]">
+                        Target: <span class="font-semibold text-[#0B0B0D] dark:text-[#EAE8E1]" x-text="title"></span>
                     </p>
                 </div>
             </div>
@@ -80,45 +80,45 @@
 
                 <!-- Reason Radio Selection -->
                 <div>
-                    <label class="block text-xs font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-2">Pilih Alasan Pelanggaran</label>
+                    <label class="block text-xs font-semibold text-[#0B0B0D] dark:text-[#EAE8E1] mb-2">Pilih Alasan Pelanggaran</label>
                     <div class="space-y-2">
-                        <label class="flex items-center gap-3 p-3 rounded-xl border border-[#e4e4e7] dark:border-[#27272a] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition text-xs select-none">
-                            <input type="radio" name="reason" value="spam" x-model="reason" class="text-[#0070f3] focus:ring-[#0070f3]">
+                        <label class="flex items-center gap-3 p-3 rounded-xl border border-[#E2DFD7] dark:border-[#242426] hover:bg-[#FAF8F5] dark:hover:bg-[#161619] cursor-pointer transition text-xs select-none">
+                            <input type="radio" name="reason" value="spam" x-model="reason" class="text-[#0B0B0D] dark:text-[#EAE8E1] focus:ring-[#0B0B0D]">
                             <div>
-                                <span class="font-semibold block text-[#18181b] dark:text-white">Spam / Iklan Berlebihan</span>
-                                <span class="text-[11px] text-[#71717a]">Promosi tidak relevan, bot, atau repost berulang.</span>
+                                <span class="font-semibold block text-[#0B0B0D] dark:text-[#EAE8E1]">Spam / Iklan Berlebihan</span>
+                                <span class="text-[11px] text-[#6E6D67] dark:text-[#8E8D86]">Promosi tidak relevan, bot, atau repost berulang.</span>
                             </div>
                         </label>
 
-                        <label class="flex items-center gap-3 p-3 rounded-xl border border-[#e4e4e7] dark:border-[#27272a] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition text-xs select-none">
-                            <input type="radio" name="reason" value="illegal_gambling" x-model="reason" class="text-[#0070f3] focus:ring-[#0070f3]">
+                        <label class="flex items-center gap-3 p-3 rounded-xl border border-[#E2DFD7] dark:border-[#242426] hover:bg-[#FAF8F5] dark:hover:bg-[#161619] cursor-pointer transition text-xs select-none">
+                            <input type="radio" name="reason" value="illegal_gambling" x-model="reason" class="text-[#0B0B0D] dark:text-[#EAE8E1] focus:ring-[#0B0B0D]">
                             <div>
-                                <span class="font-semibold block text-[#18181b] dark:text-white">Konten Ilegal / Judi / Malware</span>
-                                <span class="text-[11px] text-[#71717a]">Tautan judi online, file berbahaya, atau skema penipuan.</span>
+                                <span class="font-semibold block text-[#0B0B0D] dark:text-[#EAE8E1]">Konten Ilegal / Judi / Malware</span>
+                                <span class="text-[11px] text-[#6E6D67] dark:text-[#8E8D86]">Tautan judi online, file berbahaya, atau skema penipuan.</span>
                             </div>
                         </label>
 
-                        <label class="flex items-center gap-3 p-3 rounded-xl border border-[#e4e4e7] dark:border-[#27272a] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition text-xs select-none">
-                            <input type="radio" name="reason" value="copyright" x-model="reason" class="text-[#0070f3] focus:ring-[#0070f3]">
+                        <label class="flex items-center gap-3 p-3 rounded-xl border border-[#E2DFD7] dark:border-[#242426] hover:bg-[#FAF8F5] dark:hover:bg-[#161619] cursor-pointer transition text-xs select-none">
+                            <input type="radio" name="reason" value="copyright" x-model="reason" class="text-[#0B0B0D] dark:text-[#EAE8E1] focus:ring-[#0B0B0D]">
                             <div>
-                                <span class="font-semibold block text-[#18181b] dark:text-white">Plagiasi / Pelanggaran Hak Cipta</span>
-                                <span class="text-[11px] text-[#71717a]">Mengklaim karya orang lain tanpa izin atau atribusi.</span>
+                                <span class="font-semibold block text-[#0B0B0D] dark:text-[#EAE8E1]">Plagiasi / Pelanggaran Hak Cipta</span>
+                                <span class="text-[11px] text-[#6E6D67] dark:text-[#8E8D86]">Mengklaim karya orang lain tanpa izin atau atribusi.</span>
                             </div>
                         </label>
 
-                        <label class="flex items-center gap-3 p-3 rounded-xl border border-[#e4e4e7] dark:border-[#27272a] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition text-xs select-none">
-                            <input type="radio" name="reason" value="harassment" x-model="reason" class="text-[#0070f3] focus:ring-[#0070f3]">
+                        <label class="flex items-center gap-3 p-3 rounded-xl border border-[#E2DFD7] dark:border-[#242426] hover:bg-[#FAF8F5] dark:hover:bg-[#161619] cursor-pointer transition text-xs select-none">
+                            <input type="radio" name="reason" value="harassment" x-model="reason" class="text-[#0B0B0D] dark:text-[#EAE8E1] focus:ring-[#0B0B0D]">
                             <div>
-                                <span class="font-semibold block text-[#18181b] dark:text-white">Pelecehan / Ujaran Kebencian</span>
-                                <span class="text-[11px] text-[#71717a]">Menyerang individu, SARA, atau bahasa yang kasar.</span>
+                                <span class="font-semibold block text-[#0B0B0D] dark:text-[#EAE8E1]">Pelecehan / Ujaran Kebencian</span>
+                                <span class="text-[11px] text-[#6E6D67] dark:text-[#8E8D86]">Menyerang individu, SARA, atau bahasa yang kasar.</span>
                             </div>
                         </label>
 
-                        <label class="flex items-center gap-3 p-3 rounded-xl border border-[#e4e4e7] dark:border-[#27272a] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition text-xs select-none">
-                            <input type="radio" name="reason" value="broken_demo" x-model="reason" class="text-[#0070f3] focus:ring-[#0070f3]">
+                        <label class="flex items-center gap-3 p-3 rounded-xl border border-[#E2DFD7] dark:border-[#242426] hover:bg-[#FAF8F5] dark:hover:bg-[#161619] cursor-pointer transition text-xs select-none">
+                            <input type="radio" name="reason" value="broken_demo" x-model="reason" class="text-[#0B0B0D] dark:text-[#EAE8E1] focus:ring-[#0B0B0D]">
                             <div>
-                                <span class="font-semibold block text-[#18181b] dark:text-white">Tautan / Demo Palsu</span>
-                                <span class="text-[11px] text-[#71717a]">Demo diarahkan ke situs jebakan atau tidak berfungsi sama sekali.</span>
+                                <span class="font-semibold block text-[#0B0B0D] dark:text-[#EAE8E1]">Tautan / Demo Palsu</span>
+                                <span class="text-[11px] text-[#6E6D67] dark:text-[#8E8D86]">Demo diarahkan ke situs jebakan atau tidak berfungsi sama sekali.</span>
                             </div>
                         </label>
                     </div>
@@ -126,24 +126,31 @@
 
                 <!-- Additional Notes -->
                 <div>
-                    <label for="report-notes" class="block text-xs font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Catatan Tambahan (Opsional)</label>
+                    <label for="report-notes" class="block text-xs font-semibold text-[#0B0B0D] dark:text-[#EAE8E1] mb-1">Catatan Tambahan (Opsional)</label>
                     <textarea id="report-notes" 
                               name="notes" 
                               x-model="notes" 
                               rows="2" 
                               placeholder="Berikan detail atau bukti pendukung untuk memudahkan admin..." 
-                              class="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#16171d] border border-[#e4e4e7] dark:border-[#27272a] text-xs text-[#18181b] dark:text-white placeholder-[#a1a1aa] dark:placeholder-[#52525b] outline-none focus:border-[#0070f3] transition resize-none"></textarea>
+                              class="w-full px-3 py-2 rounded-xl bg-[#FAF8F5] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] text-xs text-[#0B0B0D] dark:text-[#EAE8E1] placeholder-[#908F88] outline-none focus:border-[#0B0B0D] dark:focus:border-[#EAE8E1] transition resize-none"></textarea>
                 </div>
 
                 <!-- Action Buttons -->
                 <div class="flex items-center justify-end gap-2.5 pt-2">
                     <button type="button" 
                             @click="open = false" 
-                            class="px-4 py-2 rounded-full border border-[#e4e4e7] dark:border-[#27272a] hover:bg-black/5 dark:hover:bg-white/5 text-xs font-semibold text-[#71717a] dark:text-[#a1a1aa] transition">
+                            class="btn-secondary text-xs py-2 px-4 cursor-pointer">
                         Batal
                     </button>
                     <button type="submit" 
-                            class="px-5 py-2 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-sm flex items-center gap-1.5 active:scale-95">
+                            class="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition shadow-xs flex items-center gap-1.5 active:scale-95 cursor-pointer">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                        <span>Kirim Laporan</span>
+                    </button>
+                </div>
+            </form>
+                    <button type="submit" 
+                            class="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition shadow-xs flex items-center gap-1.5 active:scale-95 cursor-pointer">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                         <span>Kirim Laporan</span>
                     </button>

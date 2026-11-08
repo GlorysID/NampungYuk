@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
+use App\Models\CommunityPost;
 use App\Models\Project;
 use App\Models\Report;
 use App\Models\User;
@@ -24,6 +26,7 @@ class AdminModerationController extends Controller
         $pendingCount = Report::pending()->count();
         $pendingProjectReportsCount = Report::pending()->where('reportable_type', Project::class)->count();
         $pendingUserReportsCount = Report::pending()->where('reportable_type', User::class)->count();
+        $pendingCommunityPostReportsCount = Report::pending()->where('reportable_type', CommunityPost::class)->count();
         $bannedUsersCount = User::where('is_banned', true)->count();
         $warnedUsersCount = User::whereNotNull('warning_notes')->count();
         $allUsersCount = User::count();
@@ -61,6 +64,7 @@ class AdminModerationController extends Controller
             'pendingCount',
             'pendingProjectReportsCount',
             'pendingUserReportsCount',
+            'pendingCommunityPostReportsCount',
             'bannedUsersCount',
             'warnedUsersCount',
             'allUsersCount',
@@ -148,6 +152,7 @@ class AdminModerationController extends Controller
     public function destroyProject(Project $project, Request $request): RedirectResponse
     {
         $title = $project->title;
+        $categoryId = $project->category_id;
 
         // Auto resolve pending reports for this project
         Report::where('reportable_type', Project::class)
@@ -161,7 +166,37 @@ class AdminModerationController extends Controller
 
         $project->delete();
 
+        if ($categoryId) {
+            Category::where('id', $categoryId)->where('projects_count', '>', 0)->decrement('projects_count');
+        }
+
         return redirect()->route('projects.index')->with('status', "Proyek '{$title}' berhasil dihapus secara permanen oleh Admin.");
+    }
+
+    /**
+     * Delete a community post as Admin.
+     */
+    public function destroyCommunityPost(CommunityPost $post, Request $request): RedirectResponse
+    {
+        $community = $post->community;
+
+        // Auto resolve pending reports for this post
+        Report::where('reportable_type', CommunityPost::class)
+            ->where('reportable_id', $post->id)
+            ->update([
+                'status' => 'resolved',
+                'admin_notes' => 'Postingan komunitas telah dihapus oleh Admin.',
+                'resolved_by' => $request->user()->id,
+                'resolved_at' => now(),
+            ]);
+
+        $post->delete();
+
+        if ($community && $community->posts_count > 0) {
+            $community->decrement('posts_count');
+        }
+
+        return back()->with('status', 'Postingan komunitas berhasil dihapus oleh Admin.');
     }
 
     /**
@@ -277,8 +312,18 @@ class AdminModerationController extends Controller
         $username = $user->username;
 
         // Clean up user's projects and relations
+        foreach ($user->projects as $p) {
+            if ($p->category_id) {
+                Category::where('id', $p->category_id)->where('projects_count', '>', 0)->decrement('projects_count');
+            }
+        }
         $user->projects()->delete();
         $user->comments()->delete();
+        foreach ($user->communityPosts as $cp) {
+            if ($cp->community && $cp->community->posts_count > 0) {
+                $cp->community->decrement('posts_count');
+            }
+        }
         $user->communityPosts()->delete();
         $user->delete();
 

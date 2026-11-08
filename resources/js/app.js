@@ -79,9 +79,11 @@ import Alpine from 'alpinejs';
         const entry = store[path()];
         if (entry && entry.pending && typeof entry.y === 'number') {
             // Defer so layout/images settle enough for an accurate restore.
+            // "instant" bypasses html { scroll-behavior: smooth } so returning to a
+            // page doesn't animate-scroll from the top (that read as a glitch).
             requestAnimationFrame(() => {
-                window.scrollTo({ top: entry.y, behavior: 'auto' });
-                setTimeout(() => window.scrollTo({ top: entry.y, behavior: 'auto' }), 60);
+                window.scrollTo({ top: entry.y, behavior: 'instant' });
+                setTimeout(() => window.scrollTo({ top: entry.y, behavior: 'instant' }), 60);
             });
             entry.pending = false;
             writeStore(store);
@@ -171,57 +173,85 @@ document.addEventListener('alpine:init', () => {
      * Space room: WebRTC mesh with Reverb signaling.
      * Each participant connects directly to every other participant.
      */
-    Alpine.data('spaceRoom', ({ spaceId, me, type, signalUrl, isHost }) => ({
-        joined: false,
-        micOn: false,
-        camOn: false,
-        peers: [],
-        localStream: null,
-        pcs: {},
-        pendingIce: {},
-        channel: null,
+    Alpine.data('spaceRoom', (config) => {
+        const spaceId = config.spaceId;
+        const routeKey = config.spaceSlug || config.spaceId;
+        const me = config.me;
+        const type = config.type;
+        const signalUrl = config.signalUrl;
+        const isHost = !!config.isHost;
+        const isJoined = !!(config.isJoined || isHost);
 
-        async init() {
-            if (! window.Echo) return;
-            this.channel = window.Echo.private('space.' + spaceId);
-            this.channel.listen('.space.signal', (e) => this.onSignal(e));
-        },
+        return {
+            joined: isJoined,
+            micOn: false,
+            camOn: false,
+            peers: [],
+            localStream: null,
+            pcs: {},
+            pendingIce: {},
+            channel: null,
 
-        async join() {
-            try {
-                this.localStream = await navigator.mediaDevices.getUserMedia({
-                    audio: true,
-                    video: type === 'video',
-                });
-                this.micOn = true;
-                this.camOn = type === 'video';
-                if (this.$refs.localVideo) this.$refs.localVideo.srcObject = this.localStream;
+            async init() {
+                if (isJoined) {
+                    this.subscribeChannel();
+                }
+            },
+
+            subscribeChannel() {
+                if (! window.Echo || this.channel) return;
+                this.channel = window.Echo.private('space.' + spaceId);
+                this.channel.listen('.space.signal', (e) => this.onSignal(e));
+            },
+
+            async join() {
+                try {
+                    this.localStream = await navigator.mediaDevices.getUserMedia({
+                        audio: true,
+                        video: type === 'video',
+                    });
+                    this.micOn = true;
+                    this.camOn = type === 'video';
+                    if (this.$refs.localVideo) this.$refs.localVideo.srcObject = this.localStream;
+
+                    const token = document.querySelector('meta[name=csrf-token]')?.content;
+                    const res = await fetch('/spaces/' + routeKey + '/join', {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
+                    });
+
+                    if (! res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        if (window.notify) window.notify(err.message || 'Gagal bergabung ke space.');
+                        return;
+                    }
+
+                    this.joined = true;
+                    this.subscribeChannel();
+                    if (window.notify) window.notify('Bergabung ke space.');
+                } catch (e) {
+                    if (window.notify) window.notify('Tidak bisa akses kamera/mikrofon.');
+                }
+            },
+
+            async leave() {
+                try { this.localStream?.getTracks().forEach((t) => t.stop()); } catch (e) {}
+                Object.values(this.pcs).forEach((pc) => pc.close());
+                this.pcs = {};
+                this.peers = [];
+                this.joined = false;
+
+                if (this.channel) {
+                    window.Echo?.leave('space.' + spaceId);
+                    this.channel = null;
+                }
 
                 const token = document.querySelector('meta[name=csrf-token]')?.content;
-                await fetch('/spaces/' + spaceId + '/join', {
+                await fetch('/spaces/' + routeKey + '/leave', {
                     method: 'POST',
                     headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
                 });
-
-                this.joined = true;
-                if (window.notify) window.notify('Bergabung ke space.');
-            } catch (e) {
-                if (window.notify) window.notify('Tidak bisa akses kamera/mikrofon.');
-            }
-        },
-
-        async leave() {
-            try { this.localStream?.getTracks().forEach((t) => t.stop()); } catch (e) {}
-            Object.values(this.pcs).forEach((pc) => pc.close());
-            this.pcs = {};
-            this.peers = [];
-            this.joined = false;
-            const token = document.querySelector('meta[name=csrf-token]')?.content;
-            await fetch('/spaces/' + spaceId + '/leave', {
-                method: 'POST',
-                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
-            });
-        },
+            },
 
         toggleMic() {
             const track = this.localStream?.getAudioTracks()[0];
@@ -315,7 +345,8 @@ document.addEventListener('alpine:init', () => {
                 });
             } catch (e) {}
         },
-    }));
+    };
+});
 
     /**
      * Chat room: send messages and receive them live via Echo (Reverb).
@@ -855,7 +886,7 @@ document.addEventListener('alpine:init', () => {
                 const time = row.querySelector('[data-conv-time]');
                 if (time) time.textContent = 'baru saja';
 
-                row.classList.add('bg-[#e8f2ff]/40', 'dark:bg-[#3291ff]/[0.06]');
+                row.classList.add('bg-emerald-500/[0.06]', 'dark:bg-emerald-500/[0.08]');
 
                 const badge = row.querySelector('[data-conv-unread]');
                 if (badge) {

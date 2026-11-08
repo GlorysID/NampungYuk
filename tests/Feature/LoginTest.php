@@ -177,7 +177,8 @@ class LoginTest extends TestCase
     {
         $response = $this->post(route('logout'));
 
-        $response->assertRedirect(route('login'));
+        $response->assertRedirect(route('projects.index'));
+        $response->assertSessionHas('auth_required');
 
         $this->assertGuest();
     }

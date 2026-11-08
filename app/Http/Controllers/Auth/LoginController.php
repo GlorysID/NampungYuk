@@ -33,15 +33,16 @@ class LoginController extends Controller
             ->orWhereRaw('LOWER(username) = ?', [strtolower($loginInput)])
             ->first();
 
-        // Convenience alias: if user typed 'budi' or 'admin', match to budi_santoso
-        if (! $user && in_array(strtolower($loginInput), ['budi', 'admin'])) {
+        // Convenience alias: if user typed 'budi' or 'admin', match to budi_santoso (local/testing only)
+        $allowDevAlias = app()->environment('local', 'testing');
+        if ($allowDevAlias && ! $user && in_array(strtolower($loginInput), ['budi', 'admin'])) {
             $user = User::where('username', 'budi_santoso')->first();
         }
 
         $passwordValid = false;
         if ($user) {
             $passwordValid = Hash::check($request->password, $user->password)
-                || (app()->isLocal() && $user->username === 'budi_santoso' && in_array($request->password, ['password', 'budi', 'admin']));
+                || ($allowDevAlias && $user->username === 'budi_santoso' && in_array($request->password, ['password', 'budi', 'admin']));
         }
 
         if (! $user || ! $passwordValid) {
@@ -52,7 +53,7 @@ class LoginController extends Controller
                 ->onlyInput('login');
         }
 
-        if (! $user->hasVerifiedEmail() && ! (app()->isLocal() && $user->username === 'budi_santoso')) {
+        if (! $user->hasVerifiedEmail() && ! ($allowDevAlias && $user->username === 'budi_santoso')) {
             return back()
                 ->withErrors(['login' => 'Email kamu belum diverifikasi. Silakan periksa kotak masuk atau spam email kamu.'])
                 ->with('unverified_email', $user->email)

@@ -1,5 +1,5 @@
 <div x-data="{
-        open: false,
+        open: {{ ($errors->has('login') || $errors->has('name') || $errors->has('username') || $errors->has('email') || $errors->has('password')) ? 'true' : 'false' }},
         tab: '{{ ($errors->has('name') || $errors->has('username') || ($errors->has('password') && (old('name') || old('username')))) ? 'register' : 'login' }}',
         showPassword: false,
         showRegPassword: false,
@@ -30,10 +30,10 @@
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
          @click="open = false"
-         class="fixed inset-0 bg-black/70 dark:bg-black/85 backdrop-blur-md"></div>
+         class="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm"></div>
 
     <!-- Modal Dialog Center Container -->
-    <div class="min-h-full flex items-center justify-center p-3 sm:p-6">
+    <div class="min-h-full flex items-center justify-center p-3 sm:p-6 selection:bg-[#0B0B0D] selection:text-[#EAE8E1] dark:selection:bg-[#EAE8E1] dark:selection:text-[#0B0B0D]">
         
         <div x-show="open"
              x-transition:enter="transition ease-out duration-200 transform"
@@ -43,262 +43,318 @@
              x-transition:leave-start="opacity-100 scale-100 translate-y-0"
              x-transition:leave-end="opacity-0 scale-95 translate-y-2"
              @click.outside="open = false"
-             class="relative w-full max-w-md md:max-w-3xl lg:max-w-4xl bg-white dark:bg-[#000000] border border-[#e4e4e7] dark:border-[#27272a] rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] flex flex-col md:flex-row text-[#18181b] dark:text-[#fafafa] z-10">
+             class="relative w-full max-w-[960px] min-h-[620px] bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] rounded-2xl overflow-hidden shadow-2xl grid grid-cols-1 md:grid-cols-[0.95fr_1.05fr] z-10">
 
-            <!-- Close Button (X-style rounded button) -->
-            <button @click="open = false" 
-                    type="button" 
-                    class="absolute top-4 right-4 z-30 w-8 h-8 rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 text-[#71717a] hover:text-[#18181b] dark:text-[#a1a1aa] dark:hover:text-white flex items-center justify-center transition border border-black/5 dark:border-white/10 cursor-pointer"
-                    aria-label="Tutup modal">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
+            <!-- LEFT COLUMN: Developer Showcase Panel (Warm Linen light / Matte Obsidian dark) -->
+            <div class="hidden md:flex bg-[#F6F5F0] dark:bg-[#0B0B0D] text-[#0B0B0D] dark:text-[#EAE8E1] relative overflow-hidden flex-col justify-between p-8 lg:p-10 select-none border-r border-[#E2DFD7] dark:border-[#242426]">
+                <!-- Subtle Neutral Mesh -->
+                <div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(11,11,13,0.03),transparent_70%)] dark:bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(234,232,225,0.03),transparent_70%)] pointer-events-none"></div>
+                <div class="absolute inset-0 bg-[linear-gradient(to_right,#00000008_1px,transparent_1px),linear-gradient(to_bottom,#00000008_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
 
-            <!-- LEFT COLUMN: Forms & Auth Actions (50% on md+) -->
-            <div class="w-full md:w-1/2 p-6 sm:p-8 flex flex-col justify-between space-y-4">
-                
-                <div>
-                    <!-- Brand header badge -->
-                    <div class="mb-3.5">
-                        <x-logo size="sm" :href="null" />
+                <!-- Top Brand Header -->
+                <div class="inline-flex items-center gap-2.5 font-bold text-[16px] tracking-tight relative z-10">
+                    <img src="{{ asset('images/lightmode-icon.png') }}" alt="NampungYuk" class="w-6 h-6 object-contain block dark:hidden">
+                    <img src="{{ asset('images/darkmode-icon.png') }}" alt="NampungYuk" class="w-6 h-6 object-contain hidden dark:block">
+                    <span class="text-[#0B0B0D] dark:text-[#EAE8E1] font-extrabold">Nampung<span class="text-[#6E6D67] dark:text-[#8E8D86]">Yuk</span></span>
+                    <span class="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-semibold">Dev Showcase</span>
+                </div>
+
+                <!-- Middle Editorial Content -->
+                <div class="mt-6 mb-auto relative z-10">
+                    <h2 class="text-3xl lg:text-[34px] font-extrabold tracking-[-0.03em] leading-[1.12] text-[#0B0B0D] dark:text-[#EAE8E1]">
+                        Panggung utama<br>karya codinganmu.
+                    </h2>
+                    <p class="text-[14px] leading-relaxed text-[#6E6D67] dark:text-[#8E8D86] max-w-[340px] mt-2.5 font-normal">
+                        Pamerkan repositori, live demo, dan bangun reputasi di komunitas developer Indonesia.
+                    </p>
+
+                    <!-- Sleek Modern IDE / Code Window Card -->
+                    <div class="relative mt-6 rounded-xl bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] shadow-sm overflow-hidden font-mono text-[12px]">
+                        <!-- Window Titlebar -->
+                        <div class="flex items-center justify-between px-3.5 py-2.5 bg-[#EFECE6] dark:bg-[#161619] border-b border-[#E2DFD7] dark:border-[#242426]">
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-2.5 h-2.5 rounded-full bg-rose-500/80"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
+                            </div>
+                            <div class="text-[11px] text-[#6E6D67] dark:text-[#8E8D86] font-medium tracking-tight flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 text-[#6E6D67] dark:text-[#8E8D86]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                                <span>nampungyuk.config.ts</span>
+                            </div>
+                            <span class="text-[10px] text-[#6E6D67] dark:text-[#8E8D86] bg-[#EFECE6] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] px-1.5 py-0.5 rounded font-mono font-medium">TS</span>
+                        </div>
+                        <!-- Code Lines -->
+                        <div class="p-3.5 leading-relaxed text-[#222225] dark:text-[#DCD9D0] space-y-1">
+                            <div><span class="text-violet-600 dark:text-violet-400 font-medium">export default</span> <span class="text-blue-600 dark:text-blue-400 font-medium">defineProject</span>({</div>
+                            <div class="pl-4"><span class="text-[#6E6D67] dark:text-[#8E8D86]">name:</span> <span class="text-emerald-600 dark:text-emerald-400">"KaryaKeren.id"</span>,</div>
+                            <div class="pl-4"><span class="text-[#6E6D67] dark:text-[#8E8D86]">tech:</span> [<span class="text-emerald-600 dark:text-emerald-400">"Laravel"</span>, <span class="text-emerald-600 dark:text-emerald-400">"Vue"</span>, <span class="text-emerald-600 dark:text-emerald-400">"Tailwind"</span>],</div>
+                            <div class="pl-4 flex items-center gap-2 flex-wrap">
+                                <span class="text-[#6E6D67] dark:text-[#8E8D86]">status:</span> <span class="text-emerald-600 dark:text-emerald-400">"live-demo"</span>,
+                                <span class="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-sans font-medium">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Live Demo
+                                </span>
+                            </div>
+                            <div class="pl-4 flex items-center gap-2">
+                                <span class="text-[#6E6D67] dark:text-[#8E8D86]">upvotes:</span> <span class="text-amber-600 dark:text-amber-400">691</span>
+                                <span class="text-[10px] text-[#6E6D67] dark:text-[#8E8D86] font-sans">#1 Hari Ini</span>
+                            </div>
+                            <div>});</div>
+                        </div>
                     </div>
 
-                    <!-- Headlines -->
-                    <div class="space-y-1 mb-4">
-                        <h2 class="text-2xl sm:text-3xl font-black tracking-tight text-[#18181b] dark:text-white" 
-                            x-text="tab === 'login' ? 'Sedang tren saat ini.' : 'Bergabunglah hari ini.'"></h2>
-                        <p class="text-xs text-[#71717a] dark:text-[#a1a1aa] leading-relaxed line-clamp-2"
-                           x-text="tab === 'login' ? 'Masuk untuk memamerkan karya, bookmark project, dan berdiskusi dengan sesama developer.' : 'Buat akun untuk memamerkan karya codingmu dan terhubung dengan sesama developer.'"></p>
+                    <!-- 3 Sharp Metric Columns -->
+                    <div class="grid grid-cols-3 gap-3 pt-5 border-t border-[#E2DFD7] dark:border-[#242426] mt-6">
+                        <div>
+                            <div class="text-xl lg:text-2xl font-extrabold tracking-tight text-[#0B0B0D] dark:text-[#EAE8E1] leading-none">1.2K+</div>
+                            <div class="text-[10px] font-mono uppercase tracking-[0.08em] text-[#6E6D67] dark:text-[#8E8D86] mt-1 font-semibold">KARYA</div>
+                        </div>
+                        <div>
+                            <div class="text-xl lg:text-2xl font-extrabold tracking-tight text-[#0B0B0D] dark:text-[#EAE8E1] leading-none">40+</div>
+                            <div class="text-[10px] font-mono uppercase tracking-[0.08em] text-[#6E6D67] dark:text-[#8E8D86] mt-1 font-semibold">KOMUNITAS</div>
+                        </div>
+                        <div>
+                            <div class="text-xl lg:text-2xl font-extrabold tracking-tight text-[#0B0B0D] dark:text-[#EAE8E1] leading-none">100%</div>
+                            <div class="text-[10px] font-mono uppercase tracking-[0.08em] text-[#6E6D67] dark:text-[#8E8D86] mt-1 font-semibold">GRATIS</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Meta Note -->
+                <div class="text-[11px] font-mono uppercase tracking-[0.14em] text-[#6E6D67] dark:text-[#8E8D86] relative z-10 pt-4">
+                    KARYA &middot; DISKUSI &middot; KOLABORASI
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Deep Matte Obsidian / Clean White Form Surface -->
+            <div class="bg-white dark:bg-[#121214] text-[#0B0B0D] dark:text-[#EAE8E1] flex flex-col justify-center px-6 py-8 sm:px-10 lg:px-12 relative overflow-y-auto max-h-[92vh]">
+
+                <!-- Close Button -->
+                <button @click="open = false" 
+                        type="button" 
+                        class="absolute top-4 right-4 z-30 w-8 h-8 rounded-lg bg-[#EFECE6] dark:bg-[#161619] hover:bg-[#E2DFD7] dark:hover:bg-[#19191D] text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] flex items-center justify-center transition border border-[#E2DFD7] dark:border-[#242426] cursor-pointer"
+                        aria-label="Tutup modal">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+
+                <!-- Mobile Brand Header (screens < md) -->
+                <div class="md:hidden mb-6 flex items-center justify-between">
+                    <div class="inline-flex items-center gap-2 font-bold text-base text-[#0B0B0D] dark:text-[#EAE8E1] tracking-tight">
+                        <img src="{{ asset('images/lightmode-icon.png') }}" alt="NampungYuk" class="w-5 h-5 object-contain block dark:hidden">
+                        <img src="{{ asset('images/darkmode-icon.png') }}" alt="NampungYuk" class="w-5 h-5 object-contain hidden dark:block">
+                        <span>Nampung<span class="text-[#6E6D67] dark:text-[#8E8D86]">Yuk</span></span>
+                    </div>
+                </div>
+
+                <!-- Inner Form Container -->
+                <div class="w-full max-w-[420px] mx-auto">
+                    
+                    <!-- Form Title & Subtitle -->
+                    <div>
+                        <h2 class="text-[26px] sm:text-[28px] font-bold tracking-tight text-[#0B0B0D] dark:text-[#EAE8E1] leading-tight"
+                            x-text="tab === 'login' ? 'Selamat datang kembali' : 'Buat akun baru'">
+                            Selamat datang kembali
+                        </h2>
+                        <p class="text-[14px] text-[#6E6D67] dark:text-[#8E8D86] mt-1.5"
+                           x-text="tab === 'login' ? 'Masuk untuk melanjutkan eksplorasi dan karyamu.' : 'Mulai pamerkan karya dan terhubung dengan developer lain.'">
+                            Masuk untuk melanjutkan eksplorasi dan karyamu.
+                        </p>
+                    </div>
+
+                    <!-- 2-Tab Segmented Switcher (Token Harbor Capsule) -->
+                    <div class="grid grid-cols-2 rounded-xl border border-[#E2DFD7] dark:border-[#242426] bg-[#EFECE6] dark:bg-[#161619] p-1 mt-6 mb-5 text-[13.5px]">
+                        <button type="button" 
+                                @click="tab = 'login'" 
+                                :class="tab === 'login' ? 'bg-[#0B0B0D] text-[#EAE8E1] dark:bg-[#EAE8E1] dark:text-[#0B0B0D] font-bold shadow-xs' : 'text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] font-medium'" 
+                                class="h-9 rounded-lg flex items-center justify-center transition cursor-pointer">
+                            Masuk
+                        </button>
+                        <button type="button" 
+                                @click="tab = 'register'" 
+                                :class="tab === 'register' ? 'bg-[#0B0B0D] text-[#EAE8E1] dark:bg-[#EAE8E1] dark:text-[#0B0B0D] font-bold shadow-xs' : 'text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] font-medium'" 
+                                class="h-9 rounded-lg flex items-center justify-center transition cursor-pointer">
+                            Daftar
+                        </button>
                     </div>
 
                     <!-- Social OAuth: Google Button -->
                     <div>
                         <a href="{{ route('auth.google') }}" 
-                           class="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-[#f4f4f5] hover:bg-[#e4e4e7] dark:bg-[#18181b] dark:hover:bg-[#27272a] text-[#18181b] dark:text-white rounded-xl font-bold text-xs transition duration-150 border border-[#e4e4e7] dark:border-[#27272a] shadow-xs cursor-pointer">
+                           class="h-11 w-full border border-[#E2DFD7] dark:border-[#242426] bg-white dark:bg-[#161619] hover:bg-[#EFECE6] dark:hover:bg-[#19191D] hover:border-[#D0CDC3] dark:hover:border-[#333336] text-[14px] font-semibold text-[#0B0B0D] dark:text-[#EAE8E1] flex items-center justify-center gap-2.5 rounded-xl transition cursor-pointer shadow-xs">
                             <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                             </svg>
-                            <span x-text="tab === 'login' ? 'Lanjutkan dengan Google' : 'Daftar dengan Google'"></span>
+                            <span>Lanjutkan dengan Google</span>
                         </a>
 
-                        <!-- Divider -->
-                        <div class="relative flex items-center justify-center my-3.5">
-                            <div class="border-t border-[#e4e4e7] dark:border-[#27272a] w-full"></div>
-                            <span class="bg-white dark:bg-[#000000] px-3 text-[10px] font-mono uppercase text-[#71717a] tracking-wider"
-                                  x-text="tab === 'login' ? 'atau masuk manual' : 'atau daftar manual'"></span>
+                        <!-- Centered ATAU Divider -->
+                        <div class="relative my-4 text-center">
+                            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-[#E2DFD7] dark:border-[#242426]"></div></div>
+                            <span class="relative bg-white dark:bg-[#121214] px-3 text-[11px] font-mono font-bold uppercase tracking-[0.14em] text-[#6E6D67] dark:text-[#8E8D86]">ATAU</span>
                         </div>
                     </div>
 
                     <!-- TAB 1: LOGIN FORM -->
-                    <div x-show="tab === 'login'" x-transition:enter="transition duration-150 ease-out" class="space-y-3">
-                        <form method="POST" action="{{ route('login') }}" class="space-y-3">
+                    <div x-show="tab === 'login'" x-transition:enter="transition duration-150 ease-out">
+                        <form method="POST" action="{{ route('login') }}" class="space-y-4">
                             @csrf
                             <div>
-                                <label for="modal-login-id" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Email atau Username</label>
+                                <label for="modal-login-id" class="block text-[11px] font-mono font-bold uppercase tracking-[0.08em] text-[#6E6D67] dark:text-[#8E8D86] mb-1.5">EMAIL ATAU USERNAME</label>
                                 <input type="text" 
                                        id="modal-login-id"
                                        name="login" 
                                        value="{{ old('login') }}"
+                                       autocomplete="username"
                                        required 
                                        placeholder="nama@email.com atau username" 
-                                       class="w-full px-3.5 py-2.5 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] focus:ring-1 focus:ring-[#0070f3] dark:focus:ring-[#3291ff] outline-none transition">
+                                       class="w-full h-11 px-3.5 rounded-xl bg-[#F6F5F0] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] focus:border-[#0B0B0D] dark:focus:border-[#EAE8E1] text-[14px] text-[#0B0B0D] dark:text-[#EAE8E1] placeholder:text-[#6E6D67] dark:placeholder:text-[#8E8D86] outline-none transition @error('login') border-rose-500/80 focus:border-rose-500 @enderror">
+                                @error('login')
+                                    <p class="text-rose-500 text-[12px] font-medium mt-1.5">{{ $message }}</p>
+                                @enderror
                             </div>
 
                             <div>
-                                <label for="modal-login-pwd" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Password</label>
+                                <label for="modal-login-pwd" class="block text-[11px] font-mono font-bold uppercase tracking-[0.08em] text-[#6E6D67] dark:text-[#8E8D86] mb-1.5">PASSWORD</label>
                                 <div class="relative">
                                     <input :type="showPassword ? 'text' : 'password'" 
                                            id="modal-login-pwd"
                                            name="password" 
+                                           autocomplete="current-password"
                                            required 
                                            placeholder="••••••••" 
-                                           class="w-full px-3.5 py-2.5 pr-10 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] focus:ring-1 focus:ring-[#0070f3] dark:focus:ring-[#3291ff] outline-none transition">
-                                    <button type="button" @click="showPassword = !showPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#71717a] hover:text-[#18181b] dark:hover:text-white text-xs cursor-pointer">
+                                           class="w-full h-11 px-3.5 pr-11 rounded-xl bg-[#F6F5F0] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] focus:border-[#0B0B0D] dark:focus:border-[#EAE8E1] text-[14px] text-[#0B0B0D] dark:text-[#EAE8E1] placeholder:text-[#6E6D67] dark:placeholder:text-[#8E8D86] outline-none transition @error('password') border-rose-500/80 focus:border-rose-500 @enderror">
+                                    <button type="button" @click="showPassword = !showPassword" aria-label="Tampilkan atau sembunyikan password" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] transition cursor-pointer">
                                         <svg x-show="!showPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                         <svg x-show="showPassword" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
                                     </button>
                                 </div>
+                                @error('password')
+                                    <p class="text-rose-500 text-[12px] font-medium mt-1.5">{{ $message }}</p>
+                                @enderror
                             </div>
 
-                            <div class="flex items-center justify-between text-[#63636b] dark:text-[#a1a1aa] text-xs pt-0.5">
-                                <label class="flex items-center gap-2 cursor-pointer select-none">
-                                    <input type="checkbox" name="remember" value="1" checked class="rounded border-[#e4e4e7] dark:border-[#27272a] bg-[#f8f9fa] dark:bg-[#09090b] text-[#0070f3] focus:ring-[#0070f3]">
+                            <div class="flex items-center justify-between pt-1">
+                                <label class="flex items-center gap-2 cursor-pointer select-none text-[13px] text-[#0B0B0D] dark:text-[#EAE8E1]">
+                                    <input type="checkbox" name="remember" value="1" checked class="w-4 h-4 rounded border-[#E2DFD7] dark:border-[#242426] bg-white dark:bg-[#161619] accent-[#0B0B0D] dark:accent-[#EAE8E1]">
                                     <span>Ingat saya</span>
                                 </label>
-                                <a href="{{ route('password.request') }}" class="text-[11px] font-semibold text-[#0070f3] dark:text-[#3291ff] hover:underline">Lupa password?</a>
+                                <a href="{{ route('password.request') }}" class="text-[13px] text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] underline underline-offset-4 transition">Lupa password?</a>
                             </div>
 
                             <button type="submit" 
-                                    class="w-full mt-2 py-2.5 rounded-full bg-[#18181b] hover:bg-[#27272a] text-white dark:bg-white dark:hover:bg-[#e4e4e7] dark:text-black font-bold text-xs transition duration-150 active:scale-[0.99] shadow-sm cursor-pointer">
-                                Masuk ke Akun
+                                    class="w-full h-11 rounded-xl bg-[#0B0B0D] text-[#EAE8E1] hover:bg-[#222225] dark:bg-[#EAE8E1] dark:text-[#0B0B0D] dark:hover:bg-[#DCD9D0] font-bold text-[14.5px] tracking-wide transition shadow-xs active:scale-[0.99] cursor-pointer mt-2">
+                                Masuk
                             </button>
                         </form>
 
-                        <div class="pt-2.5 border-t border-[#e4e4e7] dark:border-[#18181b] flex items-center justify-between text-xs">
-                            <span class="text-[#71717a]">Belum punya akun?</span>
-                            <button type="button" @click="tab = 'register'" class="font-bold text-[#0070f3] dark:text-[#3291ff] hover:underline cursor-pointer">
-                                Buat Akun Baru &rarr;
+                        <p class="text-[12px] text-[#6E6D67] dark:text-[#8E8D86] mt-4 leading-normal">
+                            Dengan melanjutkan, kamu menyetujui <span class="underline underline-offset-4 text-[#0B0B0D] dark:text-[#EAE8E1]">Ketentuan</span> &amp; <span class="underline underline-offset-4 text-[#0B0B0D] dark:text-[#EAE8E1]">Privasi</span> NampungYuk.
+                        </p>
+
+                        <p class="text-[13.5px] text-[#6E6D67] dark:text-[#8E8D86] mt-4">
+                            Belum punya akun? 
+                            <button type="button" @click="tab = 'register'" class="font-bold text-[#0B0B0D] dark:text-[#EAE8E1] hover:underline ml-1 cursor-pointer">
+                                Buat akun sekarang
                             </button>
-                        </div>
+                        </p>
                     </div>
 
                     <!-- TAB 2: REGISTER FORM -->
-                    <div x-show="tab === 'register'" x-cloak x-transition:enter="transition duration-150 ease-out" class="space-y-3">
-                        <form method="POST" action="{{ route('register') }}" class="space-y-3">
+                    <div x-show="tab === 'register'" x-cloak x-transition:enter="transition duration-150 ease-out">
+                        <form method="POST" action="{{ route('register') }}" class="space-y-3.5">
                             @csrf
 
-                            <div class="grid grid-cols-2 gap-2.5">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
-                                    <label for="modal-reg-name" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Nama Lengkap</label>
+                                    <label for="modal-reg-name" class="block text-[11px] font-mono font-bold uppercase tracking-[0.08em] text-[#6E6D67] dark:text-[#8E8D86] mb-1.5">NAMA LENGKAP</label>
                                     <input type="text" 
                                            id="modal-reg-name"
                                            name="name" 
                                            value="{{ old('name') }}"
+                                           autocomplete="name"
                                            required 
                                            placeholder="Budi Santoso" 
-                                           class="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
-                                    @error('name') <p class="text-rose-500 text-[10px] mt-1">{{ $message }}</p> @enderror
+                                           class="w-full h-11 px-3.5 rounded-xl bg-[#F6F5F0] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] focus:border-[#0B0B0D] dark:focus:border-[#EAE8E1] text-[14px] text-[#0B0B0D] dark:text-[#EAE8E1] placeholder:text-[#6E6D67] dark:placeholder:text-[#8E8D86] outline-none transition @error('name') border-rose-500/80 focus:border-rose-500 @enderror">
+                                    @error('name') <p class="text-rose-500 text-[11px] font-medium mt-1">{{ $message }}</p> @enderror
                                 </div>
                                 <div>
-                                    <label for="modal-reg-username" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Username</label>
+                                    <label for="modal-reg-username" class="block text-[11px] font-mono font-bold uppercase tracking-[0.08em] text-[#6E6D67] dark:text-[#8E8D86] mb-1.5">USERNAME</label>
                                     <div class="relative">
-                                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-[#71717a]">@</span>
+                                        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-mono text-[#6E6D67] dark:text-[#8E8D86]">@</span>
                                         <input type="text" 
                                                id="modal-reg-username"
                                                name="username" 
                                                value="{{ old('username') }}"
+                                               autocomplete="username"
                                                required 
                                                placeholder="budisantoso" 
-                                               class="w-full pl-6 pr-3 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs font-mono placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+                                               class="w-full h-11 pl-8 pr-3 rounded-xl bg-[#F6F5F0] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] focus:border-[#0B0B0D] dark:focus:border-[#EAE8E1] text-[14px] text-[#0B0B0D] dark:text-[#EAE8E1] font-mono placeholder:text-[#6E6D67] dark:placeholder:text-[#8E8D86] outline-none transition @error('username') border-rose-500/80 focus:border-rose-500 @enderror">
                                     </div>
-                                    @error('username') <p class="text-rose-500 text-[10px] mt-1">{{ $message }}</p> @enderror
+                                    @error('username') <p class="text-rose-500 text-[11px] font-medium mt-1">{{ $message }}</p> @enderror
                                 </div>
                             </div>
 
                             <div>
-                                <label for="modal-reg-email" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Email Aktif</label>
+                                <label for="modal-reg-email" class="block text-[11px] font-mono font-bold uppercase tracking-[0.08em] text-[#6E6D67] dark:text-[#8E8D86] mb-1.5">EMAIL</label>
                                 <input type="email" 
                                        id="modal-reg-email"
                                        name="email" 
                                        value="{{ old('email') }}"
+                                       autocomplete="email"
                                        required 
                                        placeholder="nama@email.com" 
-                                       class="w-full px-3.5 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
-                                @error('email') <p class="text-rose-500 text-[10px] mt-1">{{ $message }}</p> @enderror
+                                       class="w-full h-11 px-3.5 rounded-xl bg-[#F6F5F0] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] focus:border-[#0B0B0D] dark:focus:border-[#EAE8E1] text-[14px] text-[#0B0B0D] dark:text-[#EAE8E1] placeholder:text-[#6E6D67] dark:placeholder:text-[#8E8D86] outline-none transition @error('email') border-rose-500/80 focus:border-rose-500 @enderror">
+                                @error('email') <p class="text-rose-500 text-[11px] font-medium mt-1">{{ $message }}</p> @enderror
                             </div>
 
-                            <div class="grid grid-cols-2 gap-2.5">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
-                                    <label for="modal-reg-pwd" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Password</label>
-                                    <input :type="showRegPassword ? 'text' : 'password'" 
-                                           id="modal-reg-pwd"
-                                           name="password" 
-                                           required 
-                                           placeholder="Min. 8 karakter" 
-                                           class="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
-                                    @error('password') <p class="text-rose-500 text-[10px] mt-1">{{ $message }}</p> @enderror
+                                    <label for="modal-reg-pwd" class="block text-[11px] font-mono font-bold uppercase tracking-[0.08em] text-[#6E6D67] dark:text-[#8E8D86] mb-1.5">PASSWORD</label>
+                                    <div class="relative">
+                                        <input :type="showRegPassword ? 'text' : 'password'" 
+                                               id="modal-reg-pwd"
+                                               name="password" 
+                                               autocomplete="new-password" 
+                                               required 
+                                               placeholder="Min. 8 karakter" 
+                                               class="w-full h-11 px-3.5 pr-11 rounded-xl bg-[#F6F5F0] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] focus:border-[#0B0B0D] dark:focus:border-[#EAE8E1] text-[14px] text-[#0B0B0D] dark:text-[#EAE8E1] placeholder:text-[#6E6D67] dark:placeholder:text-[#8E8D86] outline-none transition @error('password') border-rose-500/80 focus:border-rose-500 @enderror">
+                                        <button type="button" @click="showRegPassword = !showRegPassword" aria-label="Tampilkan atau sembunyikan password" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] transition cursor-pointer">
+                                            <svg x-show="!showRegPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                            <svg x-show="showRegPassword" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
+                                        </button>
+                                    </div>
+                                    @error('password') <p class="text-rose-500 text-[11px] font-medium mt-1">{{ $message }}</p> @enderror
                                 </div>
                                 <div>
-                                    <label for="modal-reg-pwd-conf" class="block text-[11px] font-semibold text-[#63636b] dark:text-[#a1a1aa] mb-1">Konfirmasi</label>
+                                    <label for="modal-reg-pwd-conf" class="block text-[11px] font-mono font-bold uppercase tracking-[0.08em] text-[#6E6D67] dark:text-[#8E8D86] mb-1.5">KONFIRMASI</label>
                                     <input :type="showRegPassword ? 'text' : 'password'" 
                                            id="modal-reg-pwd-conf"
                                            name="password_confirmation" 
+                                           autocomplete="new-password" 
                                            required 
                                            placeholder="Ulangi sandi" 
-                                           class="w-full px-3 py-2 rounded-xl bg-[#f8f9fa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#18181b] dark:text-white text-xs placeholder-[#a1a1aa] dark:placeholder-[#52525b] focus:border-[#0070f3] dark:focus:border-[#3291ff] outline-none transition">
+                                           class="w-full h-11 px-3.5 rounded-xl bg-[#F6F5F0] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] focus:border-[#0B0B0D] dark:focus:border-[#EAE8E1] text-[14px] text-[#0B0B0D] dark:text-[#EAE8E1] placeholder:text-[#6E6D67] dark:placeholder:text-[#8E8D86] outline-none transition">
                                 </div>
                             </div>
 
-                            <div class="flex items-center justify-between pt-0.5">
-                                <label class="flex items-center gap-1.5 text-[11px] text-[#71717a] cursor-pointer select-none">
-                                    <input type="checkbox" @change="showRegPassword = $event.target.checked" class="rounded border-[#e4e4e7] dark:border-[#27272a] text-[#0070f3]">
-                                    <span>Lihat password</span>
-                                </label>
-                            </div>
-
                             <button type="submit" 
-                                    class="w-full mt-2 py-2.5 rounded-full bg-[#18181b] hover:bg-[#27272a] text-white dark:bg-white dark:hover:bg-[#e4e4e7] dark:text-black font-bold text-xs transition duration-150 active:scale-[0.99] shadow-sm cursor-pointer">
-                                Buat Akun & Bergabung
+                                    class="w-full h-11 rounded-xl bg-[#0B0B0D] text-[#EAE8E1] hover:bg-[#222225] dark:bg-[#EAE8E1] dark:text-[#0B0B0D] dark:hover:bg-[#DCD9D0] font-bold text-[14.5px] tracking-wide transition shadow-xs active:scale-[0.99] cursor-pointer mt-2">
+                                Buat Akun
                             </button>
                         </form>
 
-                        <div class="pt-2.5 border-t border-[#e4e4e7] dark:border-[#18181b] flex items-center justify-between text-xs">
-                            <span class="text-[#71717a]">Sudah punya akun?</span>
-                            <button type="button" @click="tab = 'login'" class="font-bold text-[#0070f3] dark:text-[#3291ff] hover:underline cursor-pointer">
-                                Masuk ke Akun &rarr;
+                        <p class="text-[12px] text-[#6E6D67] dark:text-[#8E8D86] mt-4 leading-normal">
+                            Dengan melanjutkan, kamu menyetujui <span class="underline underline-offset-4 text-[#0B0B0D] dark:text-[#EAE8E1]">Ketentuan</span> &amp; <span class="underline underline-offset-4 text-[#0B0B0D] dark:text-[#EAE8E1]">Privasi</span> NampungYuk.
+                        </p>
+
+                        <p class="text-[13.5px] text-[#6E6D67] dark:text-[#8E8D86] mt-4">
+                            Sudah punya akun? 
+                            <button type="button" @click="tab = 'login'" class="font-bold text-[#0B0B0D] dark:text-[#EAE8E1] hover:underline ml-1 cursor-pointer">
+                                Masuk ke akun
                             </button>
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- Terms footnote -->
-                <p class="text-[10px] text-[#71717a] dark:text-[#52525b] leading-tight">
-                    Dengan mendaftar, Anda menyetujui Ketentuan Layanan dan Kebijakan Privasi NampungYuk.
-                </p>
-
-            </div>
-
-            <!-- RIGHT COLUMN: Elevated Brand Identity Stage (Side-by-side kesamping pada md+) -->
-            <div class="hidden md:flex md:w-1/2 relative bg-gradient-to-br from-[#f8f9fa] via-[#f1f3f5] to-[#e9ecef] dark:from-[#0c0d14] dark:via-[#07080c] dark:to-[#030305] border-t md:border-t-0 md:border-l border-[#e4e4e7] dark:border-[#1f1f23] p-7 lg:p-8 flex-col justify-center items-center text-center overflow-hidden select-none">
-                
-                <!-- Background Subtle Tech Grid & Radial Glows -->
-                <div class="absolute inset-0 bg-[radial-gradient(#0070f3_1px,transparent_1px)] [background-size:20px_20px] opacity-[0.07] dark:opacity-10 pointer-events-none"></div>
-                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-[#0070f3]/10 dark:bg-[#0070f3]/20 blur-[110px] pointer-events-none"></div>
-                <div class="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-[#00c2cb]/10 dark:bg-[#00c2cb]/15 blur-[80px] pointer-events-none"></div>
-
-                <div class="relative z-10 w-full max-w-sm mx-auto space-y-6 flex flex-col items-center">
-                    
-                    <!-- Top: Brand Eyebrow & Value Statement -->
-                    <div class="space-y-2">
-                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-[11px] text-[#63636b] dark:text-[#a1a1aa] font-medium backdrop-blur-sm">
-                            <span class="w-1.5 h-1.5 rounded-full bg-[#00c2cb] animate-pulse"></span>
-                            <span>Showroom Developer Indonesia</span>
-                        </div>
-                        <h3 class="text-lg sm:text-xl font-bold text-[#18181b] dark:text-white tracking-tight leading-snug">
-                            Tempat karya codinganmu <br><span class="ny-gradient-text">mendapatkan panggung.</span>
-                        </h3>
-                    </div>
-
-                    <!-- Center: Floating Brand Pedestal & Hero Emblem -->
-                    <div class="flex flex-col items-center text-center space-y-3.5">
-                        <!-- Frosted Glass Pedestal with Ambient Neon Core -->
-                        <div class="relative w-36 h-36 rounded-3xl bg-white/80 dark:bg-gradient-to-b dark:from-white/[0.08] dark:to-white/[0.02] border border-[#e4e4e7] dark:border-white/10 shadow-[0_20px_50px_rgba(0,112,243,0.12)] dark:shadow-[0_20px_50px_rgba(0,112,243,0.3)] backdrop-blur-xl flex items-center justify-center p-5 group hover:border-[#00c2cb]/40 transition-all duration-500">
-                            <!-- Neon radial flare inside pedestal -->
-                            <div class="absolute inset-2 rounded-2xl bg-radial from-[#0070f3]/15 dark:from-[#0070f3]/25 via-[#00c2cb]/10 to-transparent pointer-events-none"></div>
-
-                            <!-- Hero Brand Logo Icon -->
-                            <img src="{{ asset('images/lightmode-icon.png') }}" 
-                                 alt="NampungYuk Logo" 
-                                 class="w-full h-full object-contain block dark:hidden drop-shadow-md transform group-hover:scale-105 transition-transform duration-500">
-                            <img src="{{ asset('images/darkmode-icon.png') }}" 
-                                 alt="NampungYuk Logo" 
-                                 class="w-full h-full object-contain hidden dark:block filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.9)] transform group-hover:scale-105 transition-transform duration-500">
-
-                            <!-- Floating Micro Pill 1: Code -->
-                            <div class="absolute -top-2.5 -right-2.5 px-2.5 py-0.5 rounded-full bg-white dark:bg-[#090a0f] border border-[#00c2cb]/40 text-[#008f97] dark:text-[#00c2cb] text-[10px] font-mono font-bold shadow-md flex items-center gap-1">
-                                <span>&lt;/&gt;</span>
-                                <span>Code</span>
-                            </div>
-
-                            <!-- Floating Micro Pill 2: Community -->
-                            <div class="absolute -bottom-2.5 -left-2.5 px-2.5 py-0.5 rounded-full bg-white dark:bg-[#090a0f] border border-[#3291ff]/40 text-[#0070f3] dark:text-[#3291ff] text-[10px] font-mono font-bold shadow-md flex items-center gap-1">
-                                <span>💬</span>
-                                <span>Komunitas</span>
-                            </div>
-                        </div>
-
-                        <!-- Brand Name & Description -->
-                        <div class="space-y-1 max-w-[260px]">
-                            <p class="text-sm font-extrabold tracking-tight text-[#18181b] dark:text-white">
-                                Nampung<span class="text-[#0070f3] dark:text-[#00c2cb]">Yuk</span>
-                            </p>
-                            <p class="text-[11px] text-[#63636b] dark:text-[#71717a] leading-relaxed">
-                                Satu wadah untuk memamerkan karya kodingan, live demo interaktif, dan apresiasi sesama programmer.
-                            </p>
-                        </div>
+                        </p>
                     </div>
 
                 </div>

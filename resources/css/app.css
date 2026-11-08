@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700;800&display=swap');
 @import 'tailwindcss';
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -7,124 +7,128 @@
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Geist', 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-display: 'Geist', 'Inter', ui-sans-serif, system-ui, sans-serif;
-    --font-mono: 'Geist Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-display: 'Geist', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-    /* Vercel Geist gray scale (the workhorse) */
-    --color-geist-50: #fafafa;
-    --color-geist-100: #f5f5f5;
-    --color-geist-200: #eaeaea;
-    --color-geist-300: #e8e8e8;
-    --color-geist-400: #e2e2e2;
-    --color-geist-500: #d8d8d8;
-    --color-geist-600: #a8a8a8;
-    --color-geist-700: #888888;
-    --color-geist-800: #666666;
-    --color-geist-900: #454545;
-    --color-geist-1000: #171717;
+    /* Developer Showcase zinc ramp */
+    --color-zinc-50: #fafafa;
+    --color-zinc-100: #f4f4f5;
+    --color-zinc-200: #e4e4e7;
+    --color-zinc-300: #d4d4d8;
+    --color-zinc-400: #a1a1aa;
+    --color-zinc-500: #71717a;
+    --color-zinc-600: #52525b;
+    --color-zinc-700: #3f3f46;
+    --color-zinc-800: #27272a;
+    --color-zinc-900: #18181b;
+    --color-zinc-950: #09090b;
 
-    /* Vercel blue (single accent) */
-    --color-blue-500: #0070f3;
-    --color-blue-600: #0761d1;
-    --color-blue-400: #3291ff;
+    /* Sharp Developer accents */
+    --color-emerald-400: #34d399;
+    --color-emerald-500: #10b981;
+    --color-emerald-600: #059669;
 }
 
 /* ==========================================================================
-   Design Tokens — "NampungYuk" · Vercel Geist palette
-   Black / White / Gray + single Vercel blue · Dark-first
+   Design Tokens — "NampungYuk" · Token Harbor Aesthetic
+   Matte Obsidian #0B0B0D · Warm Stone-Ivory #EAE8E1 · Warm Linen #F6F5F0
+   Hairline Border #242426 · Solid Stone Action Buttons · Segmented Pill Tabs
    ========================================================================== */
 :root {
-    /* ---- LIGHT theme (layered elevation: gray canvas → white cards) ---- */
-    --bg-app: #e9e9ec;          /* page canvas — darker gray so white cards separate clearly */
-    --bg-elevated: #ffffff;
-    --surface: #ffffff;         /* cards/panels lift above the gray canvas */
-    --surface-hover: #f7f7f8;
-    --surface-muted: #eeeeef;   /* inputs/pills clearly distinct */
-    --surface-glass: rgba(255, 255, 255, 0.82);
+    /* ---- LIGHT theme (Token Harbor: #F6F5F0 Warm Linen canvas → #FFFFFF surface) ---- */
+    --bg-app: #F6F5F0;
+    --bg-elevated: #FFFFFF;
+    --surface: #FFFFFF;
+    --surface-hover: #EFECE6;
+    --surface-muted: #EFECE6;
+    --surface-glass: rgba(246, 245, 240, 0.85);
 
-    --primary: #0070f3;
-    --primary-hover: #0761d1;
-    --primary-soft: #e6f0ff;
-    --primary-soft-text: #0761d1;
-    --accent: #0070f3;
-    --accent-soft: #e6f0ff;
+    --primary: #0B0B0D;
+    --primary-hover: #222225;
+    --primary-soft: #EFECE6;
+    --primary-soft-text: #0B0B0D;
+    --primary-text: #EAE8E1;
+    --accent: #10B981;
+    --accent-soft: rgba(16, 185, 129, 0.12);
 
-    --text-main: #18181b;
-    --text-muted: #63636b;
-    --text-faint: #9096a2;
+    --text-main: #0B0B0D;
+    --text-muted: #6E6D67;
+    --text-faint: #908F88;
 
-    --border-color: #e4e4e7;    /* default borders — clearly visible on white */
-    --border-subtle: #ececef;
-    --border-strong: #d0d0d6;
+    --border-color: #E2DFD7;
+    --border-subtle: #ECE9E1;
+    --border-strong: #D0CDC3;
 
-    --danger: #e5484d;
-    --warning: #f5a623;
-    --success: #18a058;
+    --danger: #EF4444;
+    --warning: #F59E0B;
+    --success: #10B981;
 
-    /* Vercel keeps gradients for "launch day" only — subtle here */
-    --gradient-brand: linear-gradient(135deg, #18181b 0%, #3f3f46 100%);
-    --gradient-brand-soft: linear-gradient(135deg, rgba(0,0,0,0.05), rgba(0,112,243,0.05));
+    --gradient-brand: linear-gradient(135deg, #0B0B0D 0%, #222225 100%);
+    --gradient-brand-soft: linear-gradient(135deg, rgba(11, 11, 13, 0.04), rgba(11, 11, 13, 0.01));
 
-    --shadow-soft: 0 1px 2px rgba(24, 24, 27, 0.05), 0 2px 8px -2px rgba(24, 24, 27, 0.07);
-    --shadow-lift: 0 6px 18px -6px rgba(24, 24, 27, 0.14), 0 2px 4px -2px rgba(24, 24, 27, 0.08);
-    --shadow-glow: 0 0 0 1px rgba(0, 112, 243, 0.14), 0 8px 30px -8px rgba(0, 112, 243, 0.25);
+    --shadow-soft: 0 1px 2px rgba(11, 11, 13, 0.04);
+    --shadow-lift: 0 4px 12px -2px rgba(11, 11, 13, 0.06);
+    --shadow-glow: 0 0 0 1px rgba(11, 11, 13, 0.06);
 
-    --radius-sm: 0.375rem;  /* 6px — Vercel canonical */
-    --radius-md: 0.5rem;    /* 8px */
-    --radius-lg: 0.75rem;   /* 12px */
-    --radius-xl: 1rem;      /* 16px */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
 
     color-scheme: light;
 }
 
 .dark {
-    /* ---- DARK theme (Vercel dark, canonical) ---- */
-    --bg-app: #000000;
-    --bg-elevated: #0a0a0a;
-    --surface: #0a0a0a;
-    --surface-hover: #111111;
-    --surface-muted: #171717;
-    --surface-glass: rgba(10, 10, 10, 0.72);
+    /* ---- DARK theme (Token Harbor: #0B0B0D Matte Obsidian canvas → #121214 surface) ---- */
+    --bg-app: #0B0B0D;
+    --bg-elevated: #121214;
+    --surface: #121214;
+    --surface-hover: #19191D;
+    --surface-muted: #161619;
+    --surface-glass: rgba(11, 11, 13, 0.85);
 
-    --primary: #3291ff;
-    --primary-hover: #47a8ff;
-    --primary-soft: rgba(50, 145, 255, 0.14);
-    --primary-soft-text: #47a8ff;
-    --accent: #3291ff;
-    --accent-soft: rgba(50, 145, 255, 0.14);
+    --primary: #EAE8E1;
+    --primary-hover: #DCD9D0;
+    --primary-soft: rgba(234, 232, 225, 0.1);
+    --primary-soft-text: #EAE8E1;
+    --primary-text: #0B0B0D;
+    --accent: #10B981;
+    --accent-soft: rgba(16, 185, 129, 0.15);
 
-    --text-main: #fafafa;
-    --text-muted: #a0a0a0;
-    --text-faint: #666666;
+    --text-main: #EAE8E1;
+    --text-muted: #8E8D86;
+    --text-faint: #605F5A;
 
-    --border-color: #1f1f1f;
-    --border-subtle: #171717;
-    --border-strong: #2e2e2e;
+    --border-color: #242426;
+    --border-subtle: #1C1C1E;
+    --border-strong: #333336;
 
-    --danger: #f32e40;
-    --warning: #f5a623;
-    --success: #17c964;
+    --danger: #EF4444;
+    --warning: #F59E0B;
+    --success: #10B981;
 
-    --gradient-brand: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
-    --gradient-brand-soft: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(50,145,255,0.08));
+    --gradient-brand: linear-gradient(135deg, #EAE8E1 0%, #8E8D86 100%);
+    --gradient-brand-soft: linear-gradient(135deg, rgba(234, 232, 225, 0.06), rgba(234, 232, 225, 0.02));
 
-    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.5), 0 2px 8px -2px rgba(0, 0, 0, 0.4);
-    --shadow-lift: 0 8px 30px -8px rgba(0, 0, 0, 0.8), 0 0 0 1px #1f1f1f;
-    --shadow-glow: 0 0 0 1px rgba(50, 145, 255, 0.3), 0 8px 30px -8px rgba(50, 145, 255, 0.35);
+    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-lift: 0 8px 24px -6px rgba(0, 0, 0, 0.6);
+    --shadow-glow: 0 0 0 1px #242426;
+
+    color-scheme: dark;
 }
 
 /* ==========================================================================
    Base Resets & Typography
    ========================================================================== */
 html {
-    /* Bump the whole UI ~10% larger (rem-based) to be the new default. */
-    font-size: 110%;
+    /* X-fidelity: 100% root so rem-based type sits at true px sizes. */
+    font-size: 100%;
     scroll-behavior: smooth;
     background-color: var(--bg-app);
     color: var(--text-main);
     scrollbar-gutter: stable;
-    scroll-padding-top: 5.5rem;
+    scroll-padding-top: 4.5rem;
 }
 
 html,
@@ -144,7 +148,7 @@ body {
     position: relative;
 }
 
-/* Ambient aura — Vercel blue, extremely subtle (keeps canvas mostly neutral) */
+/* Ambient aura — Warm subtle glow, keeping canvas warm & high contrast */
 body::before {
     content: '';
     position: fixed;
@@ -152,14 +156,14 @@ body::before {
     z-index: -1;
     pointer-events: none;
     background:
-        radial-gradient(55% 45% at 10% -8%, rgba(0, 112, 243, 0.06), transparent 60%),
-        radial-gradient(45% 40% at 98% 0%, rgba(0, 112, 243, 0.04), transparent 55%);
+        radial-gradient(55% 45% at 10% -8%, rgba(234, 232, 225, 0.45), transparent 60%),
+        radial-gradient(45% 40% at 98% 0%, rgba(226, 223, 215, 0.35), transparent 55%);
 }
 
 .dark body::before {
     background:
-        radial-gradient(55% 45% at 10% -8%, rgba(50, 145, 255, 0.10), transparent 60%),
-        radial-gradient(45% 40% at 98% 0%, rgba(50, 145, 255, 0.06), transparent 55%);
+        radial-gradient(55% 45% at 10% -8%, rgba(25, 25, 29, 0.6), transparent 60%),
+        radial-gradient(45% 40% at 98% 0%, rgba(22, 22, 25, 0.4), transparent 55%);
 }
 
 /* Accessible focus styling */
@@ -210,6 +214,33 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 
 ::-webkit-scrollbar-corner {
     background: transparent;
+}
+
+.scrollbar-none,
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.sidebar-scroll {
+    scrollbar-width: none;
+}
+
+.sidebar-scroll:hover {
+    scrollbar-width: thin;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+    width: 5px;
+}
+
+.sidebar-scroll:not(:hover)::-webkit-scrollbar-thumb {
+    background-color: transparent;
 }
 
 /* ==========================================================================
@@ -281,26 +312,27 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     pointer-events: none;
 }
 
-/* "NEW" badge — solid black (light) / white (dark), Vercel high-contrast */
+/* "NEW" badge — solid high-contrast with crisp status dot */
 .hl-new-badge {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
     font-family: var(--font-sans);
     font-size: 0.625rem;
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: 0.02em;
     text-transform: uppercase;
     padding: 0.125rem 0.5rem;
     border-radius: 9999px;
-    background: #000000;
-    color: #ffffff;
-    border: 1px solid transparent;
+    background: #0B0B0D;
+    color: #EAE8E1;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .dark .hl-new-badge {
-    background: #ffffff;
-    color: #000000;
+    background: #EAE8E1;
+    color: #0B0B0D;
+    border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .hl-new-badge::before {
@@ -308,8 +340,12 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     width: 5px;
     height: 5px;
     border-radius: 9999px;
-    background-color: #ffffff;
+    background-color: #10B981;
     animation: hl-pulse 1.6s ease-in-out infinite;
+}
+
+.dark .hl-new-badge::before {
+    background-color: #10B981;
 }
 
 @keyframes hl-pulse {
@@ -326,7 +362,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     animation: hl-slide-in 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Notification bell badge — gradient dot */
+/* Notification bell badge — solid pill */
 .hl-badge-dot {
     position: absolute;
     top: -4px;
@@ -342,45 +378,45 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     font-weight: 700;
     line-height: 1;
     border-radius: 9999px;
-    background: #000000;
-    color: #ffffff;
+    background: #0B0B0D;
+    color: #EAE8E1;
     border: 2px solid var(--surface);
 }
 
 .dark .hl-badge-dot {
-    background: #ffffff;
-    color: #000000;
+    background: #EAE8E1;
+    color: #0B0B0D;
 }
 
 /* Feed card */
 .project-nav-card {
     position: relative;
     overflow: hidden;
-    border-radius: var(--radius-lg);
-    transition: background-color 150ms ease;
+    border-radius: var(--radius-xl);
+    transition: background-color 150ms ease, border-color 150ms ease;
 }
 
-/* X-style hover: row brightens slightly, no movement */
+/* Token Harbor hover */
 .project-nav-card:hover {
-    background-color: #f2f2f2;
+    background-color: #FAF8F5;
 }
 
 .dark .project-nav-card:hover {
-    background-color: #0f0f0f;
+    background-color: #161619;
 }
 
-/* Primary button — solid high-contrast (Vercel: black in light, white in dark) */
+/* Primary button — solid Warm Stone in dark (#EAE8E1), solid Obsidian in light (#0B0B0D) */
 .btn-primary {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.4rem;
-    padding: 0.5rem 1rem;
-    font-size: 0.8125rem;
-    font-weight: 600;
+    gap: 0.5rem;
+    padding: 0.625rem 1.125rem;
+    font-size: 0.875rem;
+    font-weight: 700;
     border-radius: var(--radius-md);
-    background-color: #000000;
-    color: #ffffff;
+    background-color: #0B0B0D;
+    color: #EAE8E1;
     border: 1px solid transparent;
     letter-spacing: 0.01em;
     transition: background-color 140ms ease, transform 140ms ease, box-shadow 200ms ease;
@@ -388,18 +424,18 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 
 .btn-primary:hover {
-    background-color: #333333;
-    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+    background-color: #222225;
+    box-shadow: 0 0 0 3px rgba(11, 11, 13, 0.06);
 }
 
 .dark .btn-primary {
-    background-color: #ffffff;
-    color: #000000;
+    background-color: #EAE8E1;
+    color: #0B0B0D;
 }
 
 .dark .btn-primary:hover {
-    background-color: #ededed;
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+    background-color: #DCD9D0;
+    box-shadow: 0 0 0 3px rgba(234, 232, 225, 0.12);
 }
 
 .btn-primary:active {
@@ -411,9 +447,9 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.4rem;
-    padding: 0.5rem 1rem;
-    font-size: 0.8125rem;
+    gap: 0.5rem;
+    padding: 0.625rem 1.125rem;
+    font-size: 0.875rem;
     font-weight: 600;
     border-radius: var(--radius-md);
     background-color: transparent;
@@ -438,9 +474,9 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.375rem;
-    padding: 0.5rem 0.875rem;
-    font-size: 0.75rem;
+    gap: 0.4rem;
+    padding: 0.5625rem 1rem;
+    font-size: 0.8125rem;
     font-weight: 600;
     border-radius: 9999px;
     background-color: var(--primary-soft);
@@ -459,9 +495,9 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.375rem;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.75rem;
+    gap: 0.4rem;
+    padding: 0.5625rem 0.875rem;
+    font-size: 0.8125rem;
     font-weight: 600;
     border-radius: 9999px;
     background: transparent;
@@ -478,8 +514,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 /* Form input — rounded, soft, focus glow */
 .ny-input {
     width: 100%;
-    padding: 0.6875rem 1rem;
-    font-size: 0.875rem;
+    padding: 0.65rem 0.95rem;
+    font-size: 0.9375rem;
     background-color: var(--surface-muted);
     color: var(--text-main);
     border: 1px solid var(--border-color);
@@ -496,11 +532,11 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .tech-pill {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.35rem;
     font-family: var(--font-sans);
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    padding: 0.25rem 0.625rem;
+    padding: 0.3rem 0.75rem;
     border-radius: 9999px;
     background-color: var(--surface-muted);
     color: var(--text-muted);
@@ -524,7 +560,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 /* Section label — friendly uppercase (not terminal) */
 .hl-label {
     font-family: var(--font-sans);
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -559,27 +595,40 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     gap: 0.4rem;
     padding: 0.5625rem 1rem;
     font-size: 0.8125rem;
-    font-weight: 600;
+    font-weight: 700;
     border-radius: 9999px;
-    background-image: var(--gradient-brand);
-    color: #ffffff;
-    border: 1px solid transparent;
-    box-shadow: 0 6px 18px -6px rgba(99, 102, 241, 0.7);
-    transition: box-shadow 200ms ease;
+    background-color: #0B0B0D;
+    color: #EAE8E1;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 2px 8px -2px rgba(11, 11, 13, 0.35);
+    transition: background-color 150ms ease, box-shadow 200ms ease;
 }
 
 .btn-vercel-primary:hover {
-    box-shadow: 0 10px 26px -6px rgba(99, 102, 241, 0.85);
+    background-color: #222225;
+    box-shadow: 0 4px 14px -2px rgba(11, 11, 13, 0.45);
+}
+
+.dark .btn-vercel-primary {
+    background-color: #EAE8E1;
+    color: #0B0B0D;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 10px -2px rgba(234, 232, 225, 0.15);
+}
+
+.dark .btn-vercel-primary:hover {
+    background-color: #DCD9D0;
+    box-shadow: 0 4px 16px -2px rgba(234, 232, 225, 0.25);
 }
 
 .linear-pill {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.35rem;
     font-family: var(--font-sans);
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    padding: 0.25rem 0.625rem;
+    padding: 0.3rem 0.75rem;
     border-radius: 9999px;
     background-color: var(--surface-muted);
     color: var(--text-muted);
@@ -600,5 +649,6 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
+        transform: none !important;
     }
 }

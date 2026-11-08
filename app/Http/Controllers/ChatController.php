@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Notifications\NewMessageNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -48,7 +49,7 @@ class ChatController extends Controller
     /**
      * Build the inbox (accepted conversations + pending requests) for a user.
      *
-     * @return array{conversations: \Illuminate\Support\Collection, requests: \Illuminate\Support\Collection}
+     * @return array{conversations: Collection, requests: Collection}
      */
     private function inboxData(int $userId, ?string $search): array
     {
@@ -58,14 +59,36 @@ class ChatController extends Controller
             })
             ->orderByDesc('last_message_at')
             ->orderByDesc('updated_at')
-            ->get()
-            ->map(function ($c) use ($userId) {
-                $c->other = $c->otherUser($userId);
-                $c->last = $c->messages()->latest()->first();
-                $c->unread = $c->unreadCountFor($userId);
+            ->get();
 
-                return $c;
+        $conversationIds = $all->pluck('id');
+
+        // Batch load latest message per conversation (avoids N+1)
+        $latestMessages = Message::whereIn('conversation_id', $conversationIds)
+            ->whereIn('id', function ($query) {
+                $query->selectRaw('max(id)')
+                    ->from('messages')
+                    ->whereNull('deleted_at')
+                    ->groupBy('conversation_id');
             })
+            ->get()
+            ->keyBy('conversation_id');
+
+        // Batch count unread incoming messages per conversation (avoids N+1)
+        $unreadCounts = Message::whereIn('conversation_id', $conversationIds)
+            ->where('sender_id', '!=', $userId)
+            ->whereNull('read_at')
+            ->selectRaw('conversation_id, count(*) as unread_count')
+            ->groupBy('conversation_id')
+            ->pluck('unread_count', 'conversation_id');
+
+        $all = $all->map(function ($c) use ($userId, $latestMessages, $unreadCounts) {
+            $c->other = $c->otherUser($userId);
+            $c->last = $latestMessages->get($c->id);
+            $c->unread = (int) ($unreadCounts->get($c->id) ?? 0);
+
+            return $c;
+        })
             ->filter(fn ($c) => $c->other !== null);
 
         // Pending requests are only shown to the recipient (the non-initiator).
@@ -92,10 +115,9 @@ class ChatController extends Controller
     /**
      * Search accounts to start a new chat with, excluding ones already listed.
      *
-     * @param  \Illuminate\Support\Collection  $conversations
-     * @return \Illuminate\Support\Collection
+     * @return Collection
      */
-    private function peopleSearch(int $userId, ?string $search, \Illuminate\Support\Collection $conversations)
+    private function peopleSearch(int $userId, ?string $search, Collection $conversations)
     {
         if (! $search) {
             return collect();
@@ -313,7 +335,8 @@ class ChatController extends Controller
      * Broadcast a typing indicator (no persistence).
      */
     public function typing(Request $request, User $user): JsonResponse
-    {        $auth = Auth::user();
+    {
+        $auth = Auth::user();
         if (! $auth || $user->id === $auth->id) {
             return response()->json(['success' => false], 401);
         }

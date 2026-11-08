@@ -4,29 +4,30 @@
     'isOwner' => false,
 ])
 
-<div class="hl-panel ny-card--interactive group relative overflow-hidden">
+<div class="rounded-xl bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] overflow-hidden hover:border-[#D0CDC3] dark:hover:border-[#333336] transition shadow-xs group relative">
     <!-- Thumbnail -->
-    <a href="{{ route('projects.show', $project->slug) }}" class="block relative">
+    <a href="{{ route('projects.show', $project->slug) }}" class="block relative aspect-video bg-[#EFECE6] dark:bg-[#161619] overflow-hidden">
         @if($project->thumbnail)
             <img src="{{ $project->thumbnail }}" alt="{{ $project->title }}" loading="lazy" decoding="async"
-                 class="w-full aspect-video object-cover"
+                 class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
                  onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80';">
         @else
-            <div class="w-full aspect-video bg-[#eeeeef] dark:bg-[#171717] flex items-center justify-center text-[#0070f3] dark:text-[#3291ff]">
+            <div class="w-full h-full flex items-center justify-center text-[#6E6D67] dark:text-[#8E8D86]">
                 <svg class="w-8 h-8 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
             </div>
         @endif
 
         @if($pinned)
-            <span class="absolute top-2 left-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase bg-[#000000]/85 text-[#3291ff] backdrop-blur-sm">
-                <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24"><path d="M16 3a1 1 0 00-1 1v1.586l-4.293 4.293a1 1 0 00-.29.546l-.585 3.51-2.125 2.124a1 1 0 00.046 1.418l.001.001-1.045 1.045a1 1 0 001.414 1.414L9.16 20.9l.001.001a1 1 0 001.418.046l2.124-2.125 3.51-.585a1 1 0 00.546-.29L21 13.657H22a1 1 0 000-2h-1V7a1 1 0 00-1-1h-4z"/></svg>
+            <span class="absolute top-2 left-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-mono font-bold uppercase bg-[#0B0B0D]/90 text-emerald-400 border border-[#242426] backdrop-blur-xs">
+                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M16 3a1 1 0 00-1 1v1.586l-4.293 4.293a1 1 0 00-.29.546l-.585 3.51-2.125 2.124a1 1 0 00.046 1.418l.001.001-1.045 1.045a1 1 0 001.414 1.414L9.16 20.9l.001.001a1 1 0 001.418.046l2.124-2.125 3.51-.585a1 1 0 00.546-.29L21 13.657H22a1 1 0 000-2h-1V7a1 1 0 00-1-1h-4zM7 17l-3.293 3.293a1 1 0 01-1.414-1.414L5.586 15.586 7 17z"/></svg>
+                <span>Sematan</span>
             </span>
         @endif
     </a>
 
-    <div class="p-3 space-y-2">
-        <div class="flex items-center justify-between gap-2">
-            <a href="{{ route('projects.show', $project->slug) }}" class="font-bold text-xs text-[#18181b] dark:text-[#fafafa] leading-snug line-clamp-2 hover:text-[#0070f3] dark:hover:text-[#3291ff] transition">
+    <div class="p-3.5 space-y-2.5">
+        <div class="flex items-start justify-between gap-2">
+            <a href="{{ route('projects.show', $project->slug) }}" class="font-bold text-sm text-[#0B0B0D] dark:text-[#EAE8E1] leading-snug line-clamp-2 hover:underline transition">
                 {{ $project->title }}
             </a>
 
@@ -34,23 +35,23 @@
                 <form method="POST" action="{{ route('projects.pin', $project) }}" class="shrink-0">
                     @csrf
                     <button type="submit" title="{{ $pinned ? 'Lepas sematan' : 'Sematkan ke profil' }}"
-                            class="w-7 h-7 rounded-md flex items-center justify-center transition {{ $pinned ? 'text-[#0070f3] dark:text-[#3291ff] hover:bg-[#3291ff]/10' : 'text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3] hover:bg-[#f5f5f5] dark:hover:bg-[#111111]' }}">
-                        <svg class="w-3.5 h-3.5" fill="{{ $pinned ? 'currentColor' : 'none' }}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 3a1 1 0 00-1 1v1.586l-4.293 4.293a1 1 0 00-.29.546l-.585 3.51-2.125 2.124a1 1 0 00.046 1.418l.001.001-1.045 1.045a1 1 0 001.414 1.414L9.16 20.9l.001.001a1 1 0 001.418.046l2.124-2.125 3.51-.585a1 1 0 00.546-.29L21 13.657H22a1 1 0 000-2h-1V7a1 1 0 00-1-1h-4zM7 17l-3.293 3.293a1 1 0 01-1.414-1.414L5.586 15.586 7 17z"/></svg>
+                            class="w-8 h-8 rounded-lg flex items-center justify-center transition cursor-pointer {{ $pinned ? 'text-emerald-500 hover:bg-emerald-500/10' : 'text-[#6E6D67] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] hover:bg-[#EFECE6] dark:hover:bg-[#19191D]' }}">
+                        <svg class="w-4 h-4" fill="{{ $pinned ? 'currentColor' : 'none' }}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 3a1 1 0 00-1 1v1.586l-4.293 4.293a1 1 0 00-.29.546l-.585 3.51-2.125 2.124a1 1 0 00.046 1.418l.001.001-1.045 1.045a1 1 0 001.414 1.414L9.16 20.9l.001.001a1 1 0 001.418.046l2.124-2.125 3.51-.585a1 1 0 00.546-.29L21 13.657H22a1 1 0 000-2h-1V7a1 1 0 00-1-1h-4zM7 17l-3.293 3.293a1 1 0 01-1.414-1.414L5.586 15.586 7 17z"/></svg>
                     </button>
                 </form>
             @endif
         </div>
 
-        <div class="flex items-center gap-2 text-[10px] font-mono text-[#63636b] dark:text-[#a0a0a0]">
-            <span class="inline-flex items-center gap-1">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+        <div class="flex items-center gap-2.5 text-xs font-mono text-[#6E6D67] dark:text-[#8E8D86]">
+            <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
                 {{ $project->score }}
             </span>
-            <span>·</span>
-            <span>{{ $project->views_count }} views</span>
+            <span>&bull;</span>
+            <span>{{ $project->views_count }} tayangan</span>
             @if($project->isPrivate())
-                <span>·</span>
-                <span class="text-amber-600 dark:text-amber-400">Private</span>
+                <span>&bull;</span>
+                <span class="text-amber-600 dark:text-amber-400 font-semibold">Private</span>
             @endif
         </div>
     </div>

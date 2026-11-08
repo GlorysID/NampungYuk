@@ -16,12 +16,12 @@
     $bg = $palette[crc32($displayName) % count($palette)];
 
     $sizeClasses = [
-        'xs' => 'w-5 h-5 rounded-full text-[9px]',
-        'sm' => 'w-7 h-7 rounded-full text-[11px]',
-        'md' => 'w-9 h-9 rounded-full text-[13px]',
+        'xs' => 'w-6 h-6 rounded-full text-[10px]',
+        'sm' => 'w-8 h-8 rounded-full text-xs',
+        'md' => 'w-10 h-10 rounded-full text-sm font-semibold',
         'lg' => 'w-12 h-12 rounded-full text-base',
         'xl' => 'w-16 h-16 sm:w-20 sm:h-20 rounded-full text-2xl',
-    ][$size] ?? 'w-9 h-9 rounded-full text-[13px]';
+    ][$size] ?? 'w-10 h-10 rounded-full text-sm font-semibold';
 @endphp
 
 @if($avatarUrl)
@@ -29,7 +29,7 @@
          alt="{{ $displayName }}"
          loading="lazy"
          decoding="async"
-         {{ $attributes->merge(['class' => "$sizeClasses bg-[#eeeeef] dark:bg-[#171717] object-cover ring-1 ring-[#eaeaea] dark:ring-[#1f1f1f] shrink-0"]) }}>
+         {{ $attributes->merge(['class' => "$sizeClasses bg-zinc-100 dark:bg-zinc-900 object-cover ring-1 ring-zinc-200/80 dark:ring-zinc-800 shrink-0"]) }}>
 @else
     <span aria-label="{{ $displayName }}"
           {{ $attributes->merge(['class' => "$sizeClasses flex items-center justify-center font-bold text-white ring-1 ring-black/5 dark:ring-white/10 select-none shrink-0"]) }}

@@ -10,6 +10,7 @@ use App\Models\Project;
 use App\Models\ProjectBookmark;
 use App\Models\ProjectRepost;
 use App\Models\ProjectVote;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -37,7 +38,9 @@ class InfiniteFeedController extends Controller
 
         switch ($tab) {
             case 'following':
-                $ids = Auth::check() ? Auth::user()->followingIds() : [];
+                /** @var User|null $user */
+                $user = Auth::user();
+                $ids = $user ? $user->followingIds() : [];
                 $query->whereIn('user_id', $ids)->recent();
                 break;
             case 'prototype':
@@ -80,7 +83,7 @@ class InfiniteFeedController extends Controller
         $visibleIds = Community::visibleTo($userId)->pluck('id')->toArray();
         $joinedIds = $userId ? CommunityMember::where('user_id', $userId)->pluck('community_id')->toArray() : [];
 
-        $q = CommunityPost::with(['user', 'community'])->whereIn('community_id', $visibleIds);
+        $q = CommunityPost::with(['user', 'community', 'comments.user'])->whereIn('community_id', $visibleIds);
 
         if ($filterCommunity) {
             $cid = Community::where('slug', $filterCommunity)->value('id');
@@ -119,6 +122,19 @@ class InfiniteFeedController extends Controller
      */
     public function communityShowFeed(Request $request, Community $community)
     {
+        /** @var User|null $user */
+        $user = Auth::user();
+        if ($community->visibility === 'private') {
+            $isMember = $user && (
+                $community->hasMember($user->id)
+                || (int) $community->owner_id === (int) $user->id
+                || (method_exists($community, 'isMember') && $community->isMember($user))
+            );
+            if (! $user || (! $isMember && ! $user->isAdmin())) {
+                abort(403);
+            }
+        }
+
         $tab = $request->query('tab', 'terbaru');
         $search = $request->query('q');
         $userId = Auth::id();
@@ -156,7 +172,11 @@ class InfiniteFeedController extends Controller
         }
 
         $projectIds = ProjectBookmark::where('user_id', $userId)->pluck('project_id');
-        $projects = Project::with(['user', 'category'])->whereIn('id', $projectIds)->latest()->paginate(12);
+        $projects = Project::with(['user', 'category'])
+            ->visibleTo($userId)
+            ->whereIn('id', $projectIds)
+            ->latest()
+            ->paginate(12);
         $userBookmarkedIds = $projectIds->toArray();
         $userVotes = ProjectVote::where('user_id', $userId)->pluck('type', 'project_id')->toArray();
 

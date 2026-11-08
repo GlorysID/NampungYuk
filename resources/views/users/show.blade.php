@@ -2,6 +2,7 @@
 
 @section('title', $user->name . ' (@' . $user->username . ') — NampungYuk')
 @section('meta_description', $user->bio ?: 'Lihat karya project codingan dan kontribusi ' . $user->name . ' di NampungYuk.')
+@section('header_title', '@' . $user->username)
 
 @section('content')
 @php
@@ -13,13 +14,13 @@
 
     <!-- Banned Alert Banner (if user is banned) -->
     @if($user->is_banned)
-        <div class="p-4 rounded-xl border border-red-300 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 flex items-start gap-3">
+        <div class="p-4 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 flex items-start gap-3">
             <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
             </svg>
             <div>
                 <p class="font-bold text-sm">Akun Ini Sedang Dibekukan / Diblokir</p>
-                <p class="text-xs mt-1 text-red-600 dark:text-red-300/80">
+                <p class="text-xs mt-1 text-rose-600 dark:text-rose-300/80">
                     Alasan: {{ $user->ban_reason ?: 'Pelanggaran syarat dan ketentuan komunitas.' }}
                     @if($user->banned_at)
                         <span class="opacity-75">({{ $user->banned_at->diffForHumans() }})</span>
@@ -49,69 +50,61 @@
     @endif
 
     <!-- ===================== PROFILE HERO ===================== -->
-    <div class="hl-panel overflow-hidden">
+    <div class="rounded-2xl bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] shadow-xs overflow-hidden">
 
-        <!-- Cover banner (uploaded image, or Hyperliquid gradient mesh fallback) -->
-        <div class="relative h-28 sm:h-36 bg-[#000000] dark:bg-[#000000]">
+        <!-- Cover banner (uploaded image, or Developer Showcase gradient mesh fallback) -->
+        <div class="relative h-28 sm:h-36 bg-[#0B0B0D] overflow-hidden">
             @if($user->banner)
                 <img src="{{ $user->banner }}" alt="Banner {{ $user->name }}" class="absolute inset-0 w-full h-full object-cover">
-                <div class="absolute inset-0 bg-gradient-to-t from-[#000000]/70 to-transparent"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0B0B0D]/70 to-transparent"></div>
             @else
-                <div class="absolute inset-0 opacity-90"
-                     style="background:
-                        radial-gradient(120% 140% at 0% 0%, rgba(80,210,193,0.35) 0%, transparent 55%),
-                        radial-gradient(120% 140% at 100% 0%, rgba(14,156,139,0.28) 0%, transparent 55%),
-                        linear-gradient(180deg, rgba(20,24,33,0) 0%, rgba(11,14,17,0.6) 100%);"></div>
-                <!-- faint grid overlay for terminal feel -->
-                <div class="absolute inset-0 opacity-[0.07]"
-                     style="background-image: linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px); background-size: 26px 26px;"></div>
+                <div class="absolute inset-0 opacity-80"
+                     style="background: radial-gradient(120% 140% at 0% 0%, rgba(16, 185, 129, 0.22) 0%, transparent 60%), radial-gradient(120% 140% at 100% 0%, rgba(39, 39, 42, 0.95) 0%, transparent 60%), linear-gradient(180deg, rgba(24, 24, 27, 0.4) 0%, rgba(9, 9, 11, 0.95) 100%);"></div>
+                <div class="absolute inset-0 opacity-[0.04]"
+                     style="background-image: linear-gradient(rgba(255,255,255,0.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.7) 1px, transparent 1px); background-size: 24px 24px;"></div>
             @endif
         </div>
 
         <div class="relative z-10 px-5 sm:px-6 pb-5">
-            <!-- Row 1: Avatar (overlapping banner) + Action Buttons (comfortable spacing below banner) -->
+            <!-- Row 1: Avatar (overlapping banner) + Action Buttons -->
             <div class="flex items-start justify-between gap-4 mb-3">
                 <!-- Avatar -->
                 <div class="relative shrink-0 -mt-12 sm:-mt-14">
-                    <x-user-avatar :user="$user" size="xl" class="ring-4 ring-white dark:ring-[#0a0a0a]! shadow-md" />
+                    <x-user-avatar :user="$user" size="xl" class="ring-4 ring-white dark:ring-[#121214] shadow-md" />
                     @if($isOwner)
-                        <span class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#0070f3] dark:bg-[#3291ff] text-[#ffffff] flex items-center justify-center ring-2 ring-white dark:ring-[#0a0a0a] z-10">
+                        <span class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#0B0B0D] text-[#EAE8E1] dark:bg-[#EAE8E1] dark:text-[#0B0B0D] flex items-center justify-center ring-2 ring-white dark:ring-[#121214] z-10">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                         </span>
                     @endif
                 </div>
 
-                <!-- Actions: Button Ikuti / Edit Profil / Overflow (Bagikan, Laporkan) / Admin Menu -->
+                <!-- Actions: Button Ikuti / Edit Profil / Overflow / Admin Menu -->
                 <div class="flex items-center gap-2 shrink-0 pt-3 sm:pt-4 flex-wrap justify-end">
                     @if($isOwner)
-                        <button type="button" @click="editOpen = true" class="btn-secondary text-xs py-2 px-3.5 shadow-sm">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        <button type="button" @click="editOpen = true" class="btn-secondary h-10 text-sm px-4 shadow-xs cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                             <span>Edit Profil</span>
                         </button>
                     @else
-                        <div class="pt-0.5">
-                            <x-follow-button :user="$user" />
-                        </div>
+                        <x-follow-button :user="$user" />
 
                         <!-- Message button -->
                         @auth
                             @php
-                                // IG rule: a message lands directly only when the recipient
-                                // (this profile owner) already follows the sender (me).
                                 $messageLandsDirectly = $user->isFollowing(auth()->user());
                             @endphp
                             <a href="{{ route('chat.show', $user->username) }}"
-                               class="btn-secondary text-xs py-2 px-3.5 shadow-sm"
+                               class="btn-secondary h-10 text-sm px-4 shadow-xs"
                                title="{{ $messageLandsDirectly ? 'Kirim pesan ke '.$user->name : $user->name.' belum mengikutimu — pesanmu akan masuk sebagai permintaan pesan.' }}">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
                                 <span>Pesan</span>
                             </a>
                         @else
                             <button type="button"
                                     @click="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
-                                    class="btn-secondary text-xs py-2 px-3.5 shadow-sm cursor-pointer"
+                                    class="btn-secondary h-10 text-sm px-4 shadow-xs cursor-pointer"
                                     title="Masuk untuk mengirim pesan">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
                                 <span>Pesan</span>
                             </button>
                         @endauth
@@ -144,7 +137,7 @@
                                 aria-label="Menu lainnya"
                                 aria-haspopup="true"
                                 :aria-expanded="menuOpen"
-                                class="btn-secondary text-xs py-2 px-2.5 shadow-sm"
+                                class="btn-secondary text-xs py-2 px-2.5 shadow-xs cursor-pointer"
                                 title="Aksi lainnya">
                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                 <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
@@ -155,29 +148,29 @@
                              x-transition:enter="transition ease-out duration-120"
                              x-transition:enter-start="opacity-0 -translate-y-1"
                              x-transition:enter-end="opacity-100 translate-y-0"
-                             class="absolute right-0 top-full mt-1.5 z-40 min-w-[190px] rounded-xl bg-white dark:bg-[#0a0a0a] border border-[#e4e4e7] dark:border-[#1f1f1f] shadow-lg overflow-hidden text-xs">
+                             class="absolute right-0 top-full mt-1.5 z-40 min-w-[190px] rounded-xl bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] shadow-lg overflow-hidden text-xs">
                             <!-- Share -->
                             <button @click.stop="shareProfile()"
                                     type="button"
-                                    class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-[#18181b] dark:text-[#fafafa] hover:bg-[#f5f5f5] dark:hover:bg-[#111111] transition">
-                                <svg class="w-4 h-4 text-[#63636b] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                                    class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-[#0B0B0D] dark:text-[#EAE8E1] hover:bg-[#EFECE6] dark:hover:bg-[#161619] transition cursor-pointer">
+                                <svg class="w-4 h-4 text-[#908F88] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
                                 <span>Bagikan Profil</span>
                             </button>
 
                             <!-- Report (never for your own profile) -->
                             @if(! $isOwner)
-                                <div class="border-t border-[#e4e4e7] dark:border-[#1f1f1f]"></div>
+                                <div class="border-t border-[#E2DFD7] dark:border-[#242426]"></div>
                                 @auth
                                     <button @click.stop="window.openReportModal({ type: 'user', id: {{ $user->id }}, title: '{{ addslashes($user->name) }} (@{{ $user->username }})' }); menuOpen = false"
                                             type="button"
-                                            class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition">
+                                            class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer">
                                         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                                         <span>Laporkan Akun</span>
                                     </button>
                                 @else
                                     <button @click.stop="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
                                             type="button"
-                                            class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition">
+                                            class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer">
                                         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                                         <span>Laporkan Akun</span>
                                     </button>
@@ -189,7 +182,7 @@
                     <!-- Admin Moderator Controls on User -->
                     @if(auth()->check() && auth()->user()->is_admin && auth()->id() !== $user->id)
                         <div x-data="{ adminMenuOpen: false, banModalOpen: false, warnModalOpen: false, warnNotes: '{{ addslashes($user->warning_notes ?? '') }}' }" class="relative">
-                            <button @click="adminMenuOpen = !adminMenuOpen" type="button" class="px-2.5 py-2 rounded-lg border border-purple-300 dark:border-purple-800/60 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-xs font-semibold hover:bg-purple-100 dark:hover:bg-purple-900/40 flex items-center gap-1.5 shadow-sm">
+                            <button @click="adminMenuOpen = !adminMenuOpen" type="button" class="px-2.5 py-2 rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-xs font-semibold hover:bg-purple-100 dark:hover:bg-purple-900/40 flex items-center gap-1.5 shadow-xs cursor-pointer">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                                 </svg>
@@ -197,19 +190,19 @@
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                             </button>
 
-                            <div x-show="adminMenuOpen" @click.outside="adminMenuOpen = false" x-cloak class="absolute right-0 mt-2 w-48 rounded-xl bg-white dark:bg-[#121212] border border-[#e4e4e7] dark:border-[#222] shadow-xl p-1 z-30 text-xs">
+                            <div x-show="adminMenuOpen" @click.outside="adminMenuOpen = false" x-cloak class="absolute right-0 mt-2 w-48 rounded-xl bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] shadow-xl p-1 z-30 text-xs">
                                 <!-- Warning Action -->
                                 @if($user->hasWarning())
                                     <form action="{{ route('admin.users.warn', $user) }}" method="POST">
                                         @csrf
                                         <input type="hidden" name="action" value="remove">
-                                        <button type="submit" class="w-full text-left px-3 py-2 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex items-center gap-2">
+                                        <button type="submit" class="w-full text-left px-3 py-2 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex items-center gap-2 cursor-pointer">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                             Cabut Peringatan
                                         </button>
                                     </form>
                                 @else
-                                    <button @click="warnModalOpen = true; adminMenuOpen = false" type="button" class="w-full text-left px-3 py-2 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex items-center gap-2">
+                                    <button @click="warnModalOpen = true; adminMenuOpen = false" type="button" class="w-full text-left px-3 py-2 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex items-center gap-2 cursor-pointer">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                                         Beri Peringatan Akun
                                     </button>
@@ -219,13 +212,13 @@
                                 @if($user->is_banned)
                                     <form action="{{ route('admin.users.unban', $user) }}" method="POST">
                                         @csrf
-                                        <button type="submit" class="w-full text-left px-3 py-2 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-2">
+                                        <button type="submit" class="w-full text-left px-3 py-2 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-2 cursor-pointer">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                             Buka Blokir (Unban)
                                         </button>
                                     </form>
                                 @else
-                                    <button @click="banModalOpen = true; adminMenuOpen = false" type="button" class="w-full text-left px-3 py-2 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2">
+                                    <button @click="banModalOpen = true; adminMenuOpen = false" type="button" class="w-full text-left px-3 py-2 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 cursor-pointer">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
                                         Blokir Akun (Ban)
                                     </button>
@@ -234,7 +227,7 @@
                                 <form action="{{ route('admin.users.destroy', $user) }}" method="POST" onsubmit="return confirm('PERINGATAN ADMIN: Hapus permanen akun ini beserta semua karyanya?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="w-full text-left px-3 py-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center gap-2">
+                                    <button type="submit" class="w-full text-left px-3 py-2 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 cursor-pointer">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                         Hapus Total Akun
                                     </button>
@@ -242,39 +235,39 @@
                             </div>
 
                             <!-- User Warning Modal -->
-                            <div x-show="warnModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                                <div @click.outside="warnModalOpen = false" class="bg-white dark:bg-[#121212] border border-[#e4e4e7] dark:border-[#222] rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-4">
+                            <div x-show="warnModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+                                <div @click.outside="warnModalOpen = false" class="bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-4">
                                     <h3 class="text-base font-bold text-amber-600 dark:text-amber-400">Beri Peringatan ke Akun {{ $user->name }}</h3>
-                                    <p class="text-xs text-[#63636b] dark:text-[#a0a0a0]">Catatan peringatan ini akan ditampilkan secara khusus pada akun yang bersangkutan.</p>
+                                    <p class="text-xs text-[#6E6D67] dark:text-[#8E8D86]">Catatan peringatan ini akan ditampilkan secara khusus pada akun yang bersangkutan.</p>
                                     <form action="{{ route('admin.users.warn', $user) }}" method="POST" class="space-y-3">
                                         @csrf
                                         <input type="hidden" name="action" value="set">
                                         <div>
-                                            <label class="block text-xs font-semibold mb-1 text-[#18181b] dark:text-[#fafafa]">Catatan Peringatan:</label>
-                                            <textarea name="warning_notes" x-model="warnNotes" rows="3" required placeholder="Contoh: Aktivitas akun melanggar pedoman komunitas NampungYuk." class="w-full text-xs p-2.5 rounded-lg border border-[#e4e4e7] dark:border-[#222] bg-[#f9f9f9] dark:bg-[#0a0a0a] text-[#18181b] dark:text-[#fafafa] focus:ring-1 focus:ring-amber-500"></textarea>
+                                            <label class="block text-xs font-semibold mb-1 text-[#0B0B0D] dark:text-[#EAE8E1]">Catatan Peringatan:</label>
+                                            <textarea name="warning_notes" x-model="warnNotes" rows="3" required placeholder="Contoh: Aktivitas akun melanggar pedoman komunitas NampungYuk." class="w-full text-xs p-2.5 rounded-lg border border-[#E2DFD7] dark:border-[#242426] bg-[#FAF8F5] dark:bg-[#161619] text-[#0B0B0D] dark:text-[#EAE8E1] focus:ring-1 focus:ring-amber-500"></textarea>
                                         </div>
                                         <div class="flex justify-end gap-2 pt-2">
                                             <button @click="warnModalOpen = false" type="button" class="btn-secondary text-xs py-2 px-3">Batal</button>
-                                            <button type="submit" class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs shadow">Kirim Peringatan</button>
+                                            <button type="submit" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs shadow-xs">Kirim Peringatan</button>
                                         </div>
                                     </form>
                                 </div>
                             </div>
 
                             <!-- Ban Modal -->
-                            <div x-show="banModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                                <div @click.outside="banModalOpen = false" class="bg-white dark:bg-[#121212] border border-[#e4e4e7] dark:border-[#222] rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-4">
-                                    <h3 class="text-base font-bold text-[#18181b] dark:text-[#fafafa]">Blokir Akun {{ $user->name }}</h3>
-                                    <p class="text-xs text-[#63636b] dark:text-[#a0a0a0]">Pengguna ini tidak akan bisa login lagi ke sistem sampai admin membuka blokirnya.</p>
+                            <div x-show="banModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+                                <div @click.outside="banModalOpen = false" class="bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-4">
+                                    <h3 class="text-base font-bold text-[#0B0B0D] dark:text-[#EAE8E1]">Blokir Akun {{ $user->name }}</h3>
+                                    <p class="text-xs text-[#6E6D67] dark:text-[#8E8D86]">Pengguna ini tidak akan bisa login lagi ke sistem sampai admin membuka blokirnya.</p>
                                     <form action="{{ route('admin.users.ban', $user) }}" method="POST" class="space-y-3">
                                         @csrf
                                         <div>
-                                            <label class="block text-xs font-semibold mb-1 text-[#18181b] dark:text-[#fafafa]">Alasan Pemblokiran:</label>
-                                            <textarea name="reason" rows="3" required placeholder="Contoh: Terdeteksi spam berulang / bot." class="w-full text-xs p-2.5 rounded-lg border border-[#e4e4e7] dark:border-[#222] bg-[#f9f9f9] dark:bg-[#0a0a0a] text-[#18181b] dark:text-[#fafafa] focus:ring-1 focus:ring-red-500"></textarea>
+                                            <label class="block text-xs font-semibold mb-1 text-[#0B0B0D] dark:text-[#EAE8E1]">Alasan Pemblokiran:</label>
+                                            <textarea name="reason" rows="3" required placeholder="Contoh: Terdeteksi spam berulang / bot." class="w-full text-xs p-2.5 rounded-lg border border-[#E2DFD7] dark:border-[#242426] bg-[#FAF8F5] dark:bg-[#161619] text-[#0B0B0D] dark:text-[#EAE8E1] focus:ring-1 focus:ring-rose-500"></textarea>
                                         </div>
                                         <div class="flex justify-end gap-2 pt-2">
                                             <button @click="banModalOpen = false" type="button" class="btn-secondary text-xs py-2 px-3">Batal</button>
-                                            <button type="submit" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold text-xs shadow">Blokir Akun</button>
+                                            <button type="submit" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs shadow-xs">Blokir Akun</button>
                                         </div>
                                     </form>
                                 </div>
@@ -284,18 +277,18 @@
                 </div>
             </div>
 
-            <!-- Row 2: Name & Username (Sepenuhnya di bawah banner pada background halaman) -->
+            <!-- Row 2: Name & Username -->
             <div class="space-y-0.5 mt-2">
                 <div class="flex items-center gap-2 min-w-0 flex-wrap">
-                    <h1 class="text-xl sm:text-2xl font-bold leading-tight text-[#18181b] dark:text-[#fafafa] tracking-tight">
+                    <h1 class="text-2xl sm:text-3xl font-bold leading-tight text-[#0B0B0D] dark:text-[#EAE8E1] tracking-tight">
                         {{ $user->name }}
                     </h1>
                 </div>
-                <p class="text-xs sm:text-sm text-[#63636b] dark:text-[#a0a0a0] font-mono">&#64;{{ $user->username }}</p>
+                <p class="text-sm text-[#6E6D67] dark:text-[#8E8D86] font-mono">&#64;{{ $user->username }}</p>
             </div>
 
             @if($user->bio)
-                <p class="text-xs sm:text-sm text-[#18181b] dark:text-[#fafafa] leading-relaxed mt-3.5 max-w-2xl">{{ $user->bio }}</p>
+                <p class="text-sm sm:text-[15px] text-[#222225] dark:text-[#DCD9D0] leading-relaxed mt-3.5 max-w-2xl">{{ $user->bio }}</p>
             @endif
 
             <!-- ===== PROFILE LINKS (link-in-bio list) ===== -->
@@ -303,41 +296,41 @@
                 <div class="mt-4 flex flex-wrap gap-2 max-w-2xl">
                     @foreach($user->links as $link)
                         <a href="{{ $link->url }}" target="_blank" rel="noopener noreferrer"
-                           class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#e4e4e7] dark:border-[#1f1f1f] bg-white dark:bg-[#0a0a0a] hover:border-[#0070f3] dark:hover:border-[#3291ff] hover:bg-[#f7f7f8] dark:hover:bg-[#111111] transition group"
+                           class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#E2DFD7] dark:border-[#242426] bg-[#FAF8F5] dark:bg-[#161619] hover:border-[#D0CDC3] dark:hover:border-[#333336] hover:bg-[#EFECE6] dark:hover:bg-[#19191D] transition group"
                            title="{{ $link->url }}">
-                            <svg class="w-3.5 h-3.5 text-[#0070f3] dark:text-[#3291ff] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-                            <span class="text-xs font-semibold text-[#18181b] dark:text-[#fafafa] group-hover:text-[#0070f3] dark:group-hover:text-[#3291ff] transition">{{ $link->label }}</span>
-                            <span class="text-[11px] text-[#63636b] dark:text-[#a0a0a0] hidden sm:inline">{{ $link->domain() }}</span>
+                            <svg class="w-3.5 h-3.5 text-[#6E6D67] dark:text-[#8E8D86] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                            <span class="text-xs sm:text-sm font-semibold text-[#0B0B0D] dark:text-[#EAE8E1] transition">{{ $link->label }}</span>
+                            <span class="text-xs text-[#6E6D67] dark:text-[#8E8D86] hidden sm:inline">{{ $link->domain() }}</span>
                         </a>
                     @endforeach
                 </div>
             @endif
 
-            <!-- ===== STAT TERMINAL BAR (mono, dense, hoverable) ===== -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-px mt-5 rounded-lg overflow-hidden border border-[#e4e4e7] dark:border-[#1f1f1f] bg-[#eaeaea] dark:bg-[#1f1f1f]">
-                <div class="bg-white dark:bg-[#0a0a0a] px-4 py-3">
-                    <p class="hl-label">Reputasi</p>
-                    <p class="hl-stat text-lg font-bold text-[#0070f3] dark:text-[#3291ff] mt-0.5 flex items-center gap-1">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
-                        {{ number_format($user->reputation_points) }}
+            <!-- ===== STAT TERMINAL BAR ===== -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-px mt-5 rounded-xl overflow-hidden border border-[#E2DFD7] dark:border-[#242426] bg-[#E2DFD7] dark:bg-[#242426]">
+                <div class="bg-white dark:bg-[#121214] px-4 py-3">
+                    <p class="text-xs font-bold uppercase tracking-wider text-[#6E6D67] dark:text-[#8E8D86] font-mono">Reputasi</p>
+                    <p class="text-xl sm:text-2xl font-bold text-[#0B0B0D] dark:text-[#EAE8E1] mt-0.5 flex items-center gap-1.5 font-mono">
+                        <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
+                        <span>{{ number_format($user->reputation_points) }}</span>
                         <span class="sr-only">{{ number_format($user->reputation_points) }} Poin Reputasi</span>
                     </p>
                 </div>
-                <div class="bg-white dark:bg-[#0a0a0a] px-4 py-3">
-                    <p class="hl-label">Karya</p>
-                    <p class="hl-stat text-lg font-bold text-[#18181b] dark:text-[#fafafa] mt-0.5">{{ $totalProjects }}</p>
+                <div class="bg-white dark:bg-[#121214] px-4 py-3">
+                    <p class="text-xs font-bold uppercase tracking-wider text-[#6E6D67] dark:text-[#8E8D86] font-mono">Karya</p>
+                    <p class="text-xl sm:text-2xl font-bold text-[#0B0B0D] dark:text-[#EAE8E1] mt-0.5 font-mono">{{ $totalProjects }}</p>
                 </div>
-                <div class="bg-white dark:bg-[#0a0a0a] px-4 py-3">
-                    <p class="hl-label">Pengikut</p>
-                    <p class="hl-stat text-lg font-bold text-[#18181b] dark:text-[#fafafa] mt-0.5">{{ number_format($followersCount) }}</p>
+                <div class="bg-white dark:bg-[#121214] px-4 py-3">
+                    <p class="text-xs font-bold uppercase tracking-wider text-[#6E6D67] dark:text-[#8E8D86] font-mono">Pengikut</p>
+                    <p class="text-xl sm:text-2xl font-bold text-[#0B0B0D] dark:text-[#EAE8E1] mt-0.5 font-mono">{{ number_format($followersCount) }}</p>
                 </div>
-                <div class="bg-white dark:bg-[#0a0a0a] px-4 py-3">
-                    <p class="hl-label">Mengikuti</p>
-                    <p class="hl-stat text-lg font-bold text-[#18181b] dark:text-[#fafafa] mt-0.5">{{ number_format($followingCount) }}</p>
+                <div class="bg-white dark:bg-[#121214] px-4 py-3">
+                    <p class="text-xs font-bold uppercase tracking-wider text-[#6E6D67] dark:text-[#8E8D86] font-mono">Mengikuti</p>
+                    <p class="text-xl sm:text-2xl font-bold text-[#0B0B0D] dark:text-[#EAE8E1] mt-0.5 font-mono">{{ number_format($followingCount) }}</p>
                 </div>
             </div>
 
-            <p class="text-[11px] font-mono text-[#63636b] dark:text-[#a0a0a0] mt-3">
+            <p class="text-xs font-mono text-[#6E6D67] dark:text-[#8E8D86] mt-3.5">
                 Bergabung {{ $user->created_at->translatedFormat('F Y') }} · {{ number_format($totalUpvotesReceived) }} total upvote diterima
             </p>
         </div>
@@ -347,9 +340,9 @@
     @if($pinnedProjects->count() > 0)
         <div class="space-y-3">
             <div class="flex items-center gap-2">
-                <svg class="w-4 h-4 text-[#0070f3] dark:text-[#3291ff]" fill="currentColor" viewBox="0 0 24 24"><path d="M16 3a1 1 0 00-1 1v1.586l-4.293 4.293a1 1 0 00-.29.546l-.585 3.51-2.125 2.124a1 1 0 00.046 1.418l.001.001-1.045 1.045a1 1 0 001.414 1.414L9.16 20.9l.001.001a1 1 0 001.418.046l2.124-2.125 3.51-.585a1 1 0 00.546-.29L21 13.657H22a1 1 0 000-2h-1V7a1 1 0 00-1-1h-4zM7 17l-3.293 3.293a1 1 0 01-1.414-1.414L5.586 15.586 7 17z"/></svg>
-                <h2 class="hl-label !text-[#18181b] dark:!text-[#fafafa]">Disematkan</h2>
-                <span class="text-[10px] font-mono text-[#63636b] dark:text-[#a0a0a0]">{{ $pinnedProjects->count() }}/3</span>
+                <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 24 24"><path d="M16 3a1 1 0 00-1 1v1.586l-4.293 4.293a1 1 0 00-.29.546l-.585 3.51-2.125 2.124a1 1 0 00.046 1.418l.001.001-1.045 1.045a1 1 0 001.414 1.414L9.16 20.9l.001.001a1 1 0 001.418.046l2.124-2.125 3.51-.585a1 1 0 00.546-.29L21 13.657H22a1 1 0 000-2h-1V7a1 1 0 00-1-1h-4zM7 17l-3.293 3.293a1 1 0 01-1.414-1.414L5.586 15.586 7 17z"/></svg>
+                <h2 class="text-xs font-bold uppercase tracking-wider text-[#0B0B0D] dark:text-[#EAE8E1] font-mono">Disematkan</h2>
+                <span class="text-[10px] font-mono text-[#6E6D67] dark:text-[#8E8D86]">{{ $pinnedProjects->count() }}/3</span>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                 @foreach($pinnedProjects as $project)
@@ -360,38 +353,38 @@
     @endif
 
     <!-- ===================== TABS ===================== -->
-    <div class="hl-panel p-1.5 flex items-center gap-1.5">
+    <div class="rounded-xl bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] p-1 flex items-center gap-1.5 overflow-x-auto shadow-xs">
         <button @click="activeTab = 'projects'"
-                :class="activeTab === 'projects' ? 'bg-[#0070f3] text-[#ffffff] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:bg-[#f5f5f5] dark:hover:bg-[#111111]'"
-                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-md text-xs font-medium transition">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                :class="activeTab === 'projects' ? 'bg-[#0B0B0D] text-[#EAE8E1] dark:bg-[#EAE8E1] dark:text-[#0B0B0D] font-semibold shadow-xs' : 'text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] hover:bg-[#EFECE6] dark:hover:bg-[#161619]'"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
             <span>Karya</span>
-            <span class="hl-stat text-[10px] px-1.5 py-0.5 rounded" :class="activeTab === 'projects' ? 'bg-black/15' : 'bg-[#eeeeef] dark:bg-[#171717]'">{{ $totalProjects }}</span>
+            <span class="text-xs font-mono px-2 py-0.5 rounded" :class="activeTab === 'projects' ? 'bg-white/20 dark:bg-black/20 text-[#EAE8E1] dark:text-[#0B0B0D]' : 'bg-[#EFECE6] dark:bg-[#161619] text-[#6E6D67] dark:text-[#8E8D86]'">{{ $totalProjects }}</span>
         </button>
 
         <button @click="activeTab = 'comments'"
-                :class="activeTab === 'comments' ? 'bg-[#0070f3] text-[#ffffff] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:bg-[#f5f5f5] dark:hover:bg-[#111111]'"
-                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-md text-xs font-medium transition">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                :class="activeTab === 'comments' ? 'bg-[#0B0B0D] text-[#EAE8E1] dark:bg-[#EAE8E1] dark:text-[#0B0B0D] font-semibold shadow-xs' : 'text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] hover:bg-[#EFECE6] dark:hover:bg-[#161619]'"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
             <span>Diskusi</span>
-            <span class="hl-stat text-[10px] px-1.5 py-0.5 rounded" :class="activeTab === 'comments' ? 'bg-black/15' : 'bg-[#eeeeef] dark:bg-[#171717]'">{{ $comments->count() }}</span>
+            <span class="text-xs font-mono px-2 py-0.5 rounded" :class="activeTab === 'comments' ? 'bg-white/20 dark:bg-black/20 text-[#EAE8E1] dark:text-[#0B0B0D]' : 'bg-[#EFECE6] dark:bg-[#161619] text-[#6E6D67] dark:text-[#8E8D86]'">{{ $comments->count() }}</span>
         </button>
 
         <button @click="activeTab = 'reposts'"
-                :class="activeTab === 'reposts' ? 'bg-[#0070f3] text-[#ffffff] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:bg-[#f5f5f5] dark:hover:bg-[#111111]'"
-                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-md text-xs font-medium transition">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                :class="activeTab === 'reposts' ? 'bg-[#0B0B0D] text-[#EAE8E1] dark:bg-[#EAE8E1] dark:text-[#0B0B0D] font-semibold shadow-xs' : 'text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] hover:bg-[#EFECE6] dark:hover:bg-[#161619]'"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
             <span>Repost</span>
-            <span class="hl-stat text-[10px] px-1.5 py-0.5 rounded" :class="activeTab === 'reposts' ? 'bg-black/15' : 'bg-[#eeeeef] dark:bg-[#171717]'">{{ $totalReposts }}</span>
+            <span class="text-xs font-mono px-2 py-0.5 rounded" :class="activeTab === 'reposts' ? 'bg-white/20 dark:bg-black/20 text-[#EAE8E1] dark:text-[#0B0B0D]' : 'bg-[#EFECE6] dark:bg-[#161619] text-[#6E6D67] dark:text-[#8E8D86]'">{{ $totalReposts }}</span>
         </button>
 
         @if($isOwner)
             <button @click="activeTab = 'likes'"
-                    :class="activeTab === 'likes' ? 'bg-[#0070f3] text-[#ffffff] font-semibold' : 'text-[#63636b] dark:text-[#a0a0a0] hover:bg-[#f5f5f5] dark:hover:bg-[#111111]'"
-                    class="inline-flex items-center gap-2 px-3.5 py-2 rounded-md text-xs font-medium transition">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                    :class="activeTab === 'likes' ? 'bg-[#0B0B0D] text-[#EAE8E1] dark:bg-[#EAE8E1] dark:text-[#0B0B0D] font-semibold shadow-xs' : 'text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] hover:bg-[#EFECE6] dark:hover:bg-[#161619]'"
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
                 <span>Disukai</span>
-                <span class="hl-stat text-[10px] px-1.5 py-0.5 rounded" :class="activeTab === 'likes' ? 'bg-black/15' : 'bg-[#eeeeef] dark:bg-[#171717]'">{{ $totalLikes }}</span>
+                <span class="text-xs font-mono px-2 py-0.5 rounded" :class="activeTab === 'likes' ? 'bg-white/20 dark:bg-black/20 text-[#EAE8E1] dark:text-[#0B0B0D]' : 'bg-[#EFECE6] dark:bg-[#161619] text-[#6E6D67] dark:text-[#8E8D86]'">{{ $totalLikes }}</span>
             </button>
         @endif
     </div>
@@ -415,7 +408,7 @@
 
     <!-- ===================== TAB: REPOSTS ===================== -->
     <div x-show="activeTab === 'reposts'" x-cloak class="space-y-4">
-        <p class="text-[11px] text-[#63636b] dark:text-[#a0a0a0] px-1">
+        <p class="text-[11px] text-[#6E6D67] dark:text-[#8E8D86] px-1">
             Project yang dibagikan ulang oleh {{ $isOwner ? 'kamu' : $user->name }}.
         </p>
         @forelse($repostedProjects as $project)
@@ -451,19 +444,19 @@
     <!-- ===================== TAB: COMMENTS ===================== -->
     <div x-show="activeTab === 'comments'" x-cloak class="space-y-3">
         @forelse($comments as $comment)
-            <div class="hl-panel p-4 space-y-2">
+            <div class="rounded-xl bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] p-4 space-y-2 shadow-xs">
                 <div class="flex items-center justify-between text-xs">
                     @if($comment->project)
-                        <span class="text-[#63636b] dark:text-[#a0a0a0]">
+                        <span class="text-[#6E6D67] dark:text-[#8E8D86]">
                             Memberikan masukan di
-                            <a href="{{ route('projects.show', $comment->project->slug) }}#komentar" class="font-bold text-[#0070f3] dark:text-[#3291ff] hover:underline">
+                            <a href="{{ route('projects.show', $comment->project->slug) }}#komentar" class="font-bold text-[#0B0B0D] dark:text-[#EAE8E1] hover:underline">
                                 {{ $comment->project->title }}
                             </a>
                         </span>
                     @endif
-                    <span class="text-[#63636b] dark:text-[#a0a0a0] text-[11px] font-mono">{{ $comment->created_at->diffForHumans() }}</span>
+                    <span class="text-[#908F88] dark:text-[#605F5A] text-[11px] font-mono">{{ $comment->created_at->diffForHumans() }}</span>
                 </div>
-                <p class="text-xs sm:text-sm text-[#18181b] dark:text-[#fafafa] leading-relaxed">"{{ $comment->content }}"</p>
+                <p class="text-xs sm:text-sm text-[#222225] dark:text-[#DCD9D0] leading-relaxed">"{{ $comment->content }}"</p>
             </div>
         @empty
             <x-empty-state title="Belum ada ulasan" description="Developer ini belum memberikan komentar pada project lain." />
@@ -473,7 +466,7 @@
     <!-- ===================== EDIT PROFILE MODAL ===================== -->
     @if($isOwner)
         <div x-show="editOpen" x-cloak
-             class="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto bg-black/55 backdrop-blur-xs"
+             class="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto bg-black/60 backdrop-blur-xs"
              @click.self="editOpen = false"
              @keydown.escape.window="editOpen = false"
              role="dialog" aria-modal="true"
@@ -532,26 +525,26 @@
                 cancelCrop() { this.crop.open = false; },
                 modalTab: '{{ $errors->has('current_password') || $errors->has('password') ? 'password' : 'profile' }}'
              }">
-            <div class="hl-panel w-full max-w-lg my-6 bg-white dark:bg-[#0a0a0a] overflow-hidden"
+            <div class="rounded-2xl w-full max-w-lg my-6 bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] shadow-2xl overflow-hidden"
                  x-transition:enter="transition ease-out duration-150"
                  x-transition:enter-start="opacity-0 scale-95"
                  x-transition:enter-end="opacity-100 scale-100">
 
                 <!-- Modal header & tabs -->
-                <div class="flex items-center justify-between px-5 py-3 border-b border-[#e4e4e7] dark:border-[#1f1f1f]">
+                <div class="flex items-center justify-between px-5 py-3 border-b border-[#E2DFD7] dark:border-[#242426]">
                     <div class="flex items-center gap-4">
                         <button type="button" @click="modalTab = 'profile'"
-                                :class="modalTab === 'profile' ? 'text-[#0070f3] dark:text-[#3291ff] font-bold border-b-2 border-[#0070f3]' : 'text-[#63636b] dark:text-[#a0a0a0]'"
-                                class="pb-1 text-xs transition font-semibold">
+                                :class="modalTab === 'profile' ? 'text-[#0B0B0D] dark:text-[#EAE8E1] font-bold border-b-2 border-[#0B0B0D] dark:border-[#EAE8E1]' : 'text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1]'"
+                                class="pb-1 text-xs transition font-semibold cursor-pointer">
                             Edit Profil
                         </button>
                         <button type="button" @click="modalTab = 'password'"
-                                :class="modalTab === 'password' ? 'text-[#0070f3] dark:text-[#3291ff] font-bold border-b-2 border-[#0070f3]' : 'text-[#63636b] dark:text-[#a0a0a0]'"
-                                class="pb-1 text-xs transition font-semibold">
+                                :class="modalTab === 'password' ? 'text-[#0B0B0D] dark:text-[#EAE8E1] font-bold border-b-2 border-[#0B0B0D] dark:border-[#EAE8E1]' : 'text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1]'"
+                                class="pb-1 text-xs transition font-semibold cursor-pointer">
                             Keamanan & Password
                         </button>
                     </div>
-                    <button type="button" @click="editOpen = false" class="text-[#63636b] hover:text-[#18181b] dark:hover:text-white transition">
+                    <button type="button" @click="editOpen = false" class="text-[#908F88] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] transition cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
@@ -562,12 +555,11 @@
 
                     <!-- Banner upload -->
                     <div class="space-y-2">
-                        <p class="hl-label">Banner Profil</p>
-                        <label class="relative block h-24 rounded-lg overflow-hidden border border-[#e4e4e7] dark:border-[#1f1f1f] cursor-pointer group">
+                        <p class="text-xs font-semibold text-[#0B0B0D] dark:text-[#EAE8E1]">Banner Profil</p>
+                        <label class="relative block h-24 rounded-xl overflow-hidden border border-[#E2DFD7] dark:border-[#242426] cursor-pointer group">
                             <img x-show="bannerPreview" :src="bannerPreview" class="absolute inset-0 w-full h-full object-cover" alt="">
-                            <div x-show="!bannerPreview" class="absolute inset-0 bg-[#eeeeef] dark:bg-[#171717] flex items-center justify-center"
-                                 style="background-image: radial-gradient(120% 140% at 0% 0%, rgba(80,210,193,0.28) 0%, transparent 55%);">
-                                <span class="text-[11px] font-mono text-[#63636b] dark:text-[#a0a0a0]">Klik untuk unggah banner</span>
+                            <div x-show="!bannerPreview" class="absolute inset-0 bg-[#FAF8F5] dark:bg-[#161619] flex items-center justify-center">
+                                <span class="text-[11px] font-mono text-[#6E6D67] dark:text-[#8E8D86]">Klik untuk unggah banner</span>
                             </div>
                             <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition flex items-center justify-center">
                                 <span class="opacity-0 group-hover:opacity-100 transition text-white text-[11px] font-semibold flex items-center gap-1">
@@ -579,7 +571,7 @@
                                    @change="startCrop($event.target.files[0], 'banner')">
                             <input type="file" x-ref="bannerInput" name="banner" class="hidden">
                         </label>
-                        <p class="text-[10px] text-[#63636b] dark:text-[#a0a0a0]">JPG, PNG, WEBP · maks 4MB · kamu bisa pilih bagian foto setelah upload.</p>
+                        <p class="text-[10px] text-[#6E6D67] dark:text-[#8E8D86]">JPG, PNG, WEBP · maks 5MB per gambar · kamu bisa pilih bagian foto setelah upload.</p>
                         @error('banner') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
                     </div>
 
@@ -588,10 +580,9 @@
                         <img x-show="preview || {{ $user->avatar ? 'true' : 'false' }}"
                              :src="preview || '{{ $user->avatar }}'"
                              alt="{{ $user->name }}"
-                             class="w-16 h-16 rounded-full object-cover ring-1 ring-[#eaeaea] dark:ring-[#1f1f1f] shrink-0">
+                             class="w-16 h-16 rounded-full object-cover ring-1 ring-[#E2DFD7] dark:ring-[#242426] shrink-0">
                         <span x-show="!(preview || {{ $user->avatar ? 'true' : 'false' }})"
-                              class="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold text-white ring-1 ring-[#eaeaea] dark:ring-[#1f1f1f] shrink-0"
-                              style="background-color: #4F46E5;">{{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}</span>
+                              class="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold bg-[#0B0B0D] text-[#EAE8E1] dark:bg-[#EAE8E1] dark:text-[#0B0B0D] ring-1 ring-[#E2DFD7] dark:ring-[#242426] shrink-0">{{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}</span>
                         <div class="flex-1 space-y-1.5">
                             <label for="avatar" class="btn-secondary text-xs py-1.5 px-3 cursor-pointer inline-flex">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
@@ -600,28 +591,28 @@
                                        @change="startCrop($event.target.files[0], 'avatar')">
                                 <input type="file" x-ref="avatarInput" name="avatar" class="hidden">
                             </label>
-                            <p class="text-[10px] text-[#63636b] dark:text-[#a0a0a0]">Maks 2MB · kamu bisa pilih bagian foto setelah upload.</p>
+                            <p class="text-[10px] text-[#6E6D67] dark:text-[#8E8D86]">Maks 5MB per gambar · kamu bisa pilih bagian foto setelah upload.</p>
                             @error('avatar') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div class="space-y-1">
-                            <label for="name" class="text-xs font-semibold text-[#18181b] dark:text-[#fafafa]">Nama Lengkap</label>
+                            <label for="name" class="text-xs font-semibold text-[#0B0B0D] dark:text-[#EAE8E1]">Nama Lengkap</label>
                             <input type="text" id="name" name="name" value="{{ old('name', $user->name) }}" class="ny-input text-sm">
                             @error('name') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
                         </div>
                         <div class="space-y-1">
-                            <label for="username" class="text-xs font-semibold text-[#18181b] dark:text-[#fafafa]">Username</label>
+                            <label for="username" class="text-xs font-semibold text-[#0B0B0D] dark:text-[#EAE8E1]">Username</label>
                             <div class="relative">
-                                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#63636b] dark:text-[#a0a0a0] font-mono text-sm pointer-events-none select-none">@</span>
+                                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6E6D67] dark:text-[#8E8D86] font-mono text-sm pointer-events-none select-none">@</span>
                                 <input type="text"
                                        id="username"
                                        name="username"
                                        value="{{ old('username', $user->username) }}"
                                        placeholder="username"
                                        @if (! $user->canChangeUsername()) readonly @endif
-                                       class="ny-input text-sm font-mono !pl-9 @if (! $user->canChangeUsername()) !bg-[#f4f4f5] dark:!bg-[#141414] !text-[#71717a] dark:!text-[#a1a1aa] cursor-not-allowed select-none @endif">
+                                       class="ny-input text-sm font-mono !pl-9 @if (! $user->canChangeUsername()) !bg-[#EFECE6] dark:!bg-[#161619] !text-[#6E6D67] cursor-not-allowed select-none @endif">
                             </div>
                             @if (! $user->canChangeUsername())
                                 <p class="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5 mt-1 leading-snug">
@@ -629,7 +620,7 @@
                                     <span>Hanya bisa diubah 7 hari sekali. Tersedia lagi dalam <strong>{{ $user->daysUntilNextUsernameChange() }} hari</strong> ({{ $user->nextAllowedUsernameChangeDate()?->translatedFormat('d F Y') }}).</span>
                                 </p>
                             @else
-                                <p class="text-[10px] text-[#63636b] dark:text-[#a0a0a0]">Catatan: Username hanya dapat diubah 1 kali setiap 7 hari.</p>
+                                <p class="text-[10px] text-[#6E6D67] dark:text-[#8E8D86]">Catatan: Username hanya dapat diubah 1 kali setiap 7 hari.</p>
                             @endif
                             @error('username') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
                         </div>
@@ -637,19 +628,19 @@
 
                     <div class="space-y-1">
                         <div class="flex items-center justify-between">
-                            <label for="bio" class="text-xs font-semibold text-[#18181b] dark:text-[#fafafa]">Bio</label>
-                            <span class="text-[10px] font-mono text-[#63636b] dark:text-[#a0a0a0]">maks 280</span>
+                            <label for="bio" class="text-xs font-semibold text-[#0B0B0D] dark:text-[#EAE8E1]">Bio</label>
+                            <span class="text-[10px] font-mono text-[#6E6D67] dark:text-[#8E8D86]">maks 280</span>
                         </div>
                         <textarea id="bio" name="bio" rows="3" maxlength="280" class="ny-input text-sm resize-none" placeholder="Ceritakan spesialisasimu...">{{ old('bio', $user->bio) }}</textarea>
                         @error('bio') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
                     </div>
 
                     <!-- Dynamic profile links (link-in-bio), max 6 -->
-                    <div class="space-y-2 pt-1 border-t border-[#e4e4e7] dark:border-[#1f1f1f]"
+                    <div class="space-y-2 pt-1 border-t border-[#E2DFD7] dark:border-[#242426]"
                          x-data="{ links: {{ Illuminate\Support\Js::from($user->links->map(fn($l) => ['label' => $l->label, 'url' => $l->url])->values()) }} }">
                         <div class="flex items-center justify-between">
-                            <label class="text-xs font-semibold text-[#18181b] dark:text-[#fafafa]">Link Profil</label>
-                            <span class="text-[10px] text-[#63636b] dark:text-[#a0a0a0]" x-text="links.length + '/6'"></span>
+                            <label class="text-xs font-semibold text-[#0B0B0D] dark:text-[#EAE8E1]">Link Profil</label>
+                            <span class="text-[10px] text-[#6E6D67] dark:text-[#8E8D86]" x-text="links.length + '/6'"></span>
                         </div>
 
                         <template x-for="(link, i) in links" :key="i">
@@ -660,7 +651,7 @@
                                 <input type="url" :name="'links[' + i + '][url]'" x-model="link.url"
                                        placeholder="https://..." class="ny-input text-xs flex-1 min-w-0">
                                 <button type="button" @click="links.splice(i, 1)"
-                                        class="shrink-0 w-8 h-8 rounded-md flex items-center justify-center text-[#63636b] dark:text-[#a0a0a0] hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition"
+                                        class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-[#908F88] hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer"
                                         title="Hapus link">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                 </button>
@@ -669,7 +660,7 @@
 
                         <button type="button" @click="if (links.length < 6) links.push({ label: '', url: '' })"
                                 :disabled="links.length >= 6"
-                                class="btn-secondary text-xs py-1.5 px-3 disabled:opacity-40">
+                                class="btn-secondary text-xs py-1.5 px-3 disabled:opacity-40 cursor-pointer">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                             <span>Tambah Link</span>
                         </button>
@@ -677,9 +668,9 @@
                         @error('links.*.url') <p class="text-rose-500 text-[11px]">Pastikan semua URL valid.</p> @enderror
                     </div>
 
-                    <div class="flex items-center justify-end gap-2 pt-1 border-t border-[#e4e4e7] dark:border-[#1f1f1f] mt-2">
-                        <button type="button" @click="editOpen = false" class="btn-secondary text-xs py-2 px-4">Batal</button>
-                        <button type="submit" class="btn-primary text-xs py-2 px-4">
+                    <div class="flex items-center justify-end gap-2 pt-1 border-t border-[#E2DFD7] dark:border-[#242426] mt-2">
+                        <button type="button" @click="editOpen = false" class="btn-secondary text-xs py-2 px-4 cursor-pointer">Batal</button>
+                        <button type="submit" class="btn-primary text-xs py-2 px-4 cursor-pointer">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                             <span>Simpan</span>
                         </button>
@@ -692,32 +683,32 @@
                     @method('PUT')
 
                     <div class="space-y-1">
-                        <label for="current_password" class="text-xs font-semibold text-[#18181b] dark:text-[#fafafa]">Password Saat Ini <span class="text-red-500">*</span></label>
-                        <input type="password" id="current_password" name="current_password" required placeholder="Masukkan password saat ini" class="ny-input text-xs w-full">
+                        <label for="current_password" class="text-xs font-semibold text-[#0B0B0D] dark:text-[#EAE8E1]">Password Saat Ini <span class="text-rose-500">*</span></label>
+                        <input type="password" id="current_password" name="current_password" autocomplete="current-password" required placeholder="Masukkan password saat ini" class="ny-input text-xs w-full">
                         @error('current_password') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
                     </div>
 
                     <div class="space-y-1">
-                        <label for="new_password" class="text-xs font-semibold text-[#18181b] dark:text-[#fafafa]">Password Baru <span class="text-red-500">*</span></label>
-                        <input type="password" id="new_password" name="password" required minlength="8" placeholder="Minimal 8 karakter" class="ny-input text-xs w-full">
+                        <label for="new_password" class="text-xs font-semibold text-[#0B0B0D] dark:text-[#EAE8E1]">Password Baru <span class="text-rose-500">*</span></label>
+                        <input type="password" id="new_password" name="password" autocomplete="new-password" required minlength="8" placeholder="Minimal 8 karakter" class="ny-input text-xs w-full">
                         @error('password') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
                     </div>
 
                     <div class="space-y-1">
-                        <label for="new_password_confirmation" class="text-xs font-semibold text-[#18181b] dark:text-[#fafafa]">Konfirmasi Password Baru <span class="text-red-500">*</span></label>
-                        <input type="password" id="new_password_confirmation" name="password_confirmation" required minlength="8" placeholder="Ulangi password baru" class="ny-input text-xs w-full">
+                        <label for="new_password_confirmation" class="text-xs font-semibold text-[#0B0B0D] dark:text-[#EAE8E1]">Konfirmasi Password Baru <span class="text-rose-500">*</span></label>
+                        <input type="password" id="new_password_confirmation" name="password_confirmation" autocomplete="new-password" required minlength="8" placeholder="Ulangi password baru" class="ny-input text-xs w-full">
                     </div>
 
-                    <div class="flex items-center justify-end gap-2 pt-2 border-t border-[#e4e4e7] dark:border-[#1f1f1f]">
-                        <button type="button" @click="editOpen = false" class="btn-secondary text-xs py-2 px-4">Batal</button>
-                        <button type="submit" class="btn-primary text-xs py-2 px-4">
+                    <div class="flex items-center justify-end gap-2 pt-2 border-t border-[#E2DFD7] dark:border-[#242426]">
+                        <button type="button" @click="editOpen = false" class="btn-secondary text-xs py-2 px-4 cursor-pointer">Batal</button>
+                        <button type="submit" class="btn-primary text-xs py-2 px-4 cursor-pointer">
                             Simpan Password Baru
                         </button>
                     </div>
                 </form>
             </div>
 
-            <!-- CROP OVERLAY (choose which part of the photo is visible) -->
+            <!-- CROP OVERLAY -->
             <div x-show="crop.open" x-cloak
                  class="fixed inset-0 z-[60] bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-4"
                  @keydown.escape.window="cancelCrop()">
@@ -745,18 +736,18 @@
 
                     <!-- Zoom controls -->
                     <div class="flex items-center justify-center gap-3">
-                        <button type="button" @click="cropZoom(-0.1)" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition">
+                        <button type="button" @click="cropZoom(-0.1)" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
                         </button>
-                        <input type="range" min="0.1" max="4" step="0.01" :value="crop.scale" @input="crop.scale = parseFloat($event.target.value); clampCrop()" class="w-40 accent-[#0070f3]">
-                        <button type="button" @click="cropZoom(0.1)" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition">
+                        <input type="range" min="0.1" max="4" step="0.01" :value="crop.scale" @input="crop.scale = parseFloat($event.target.value); clampCrop()" class="w-40 accent-[#0B0B0D] dark:accent-[#EAE8E1]">
+                        <button type="button" @click="cropZoom(0.1)" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                         </button>
                     </div>
 
                     <div class="flex items-center justify-center gap-2 pt-1">
-                        <button type="button" @click="cancelCrop()" class="btn-secondary text-xs py-2 px-4">Batal</button>
-                        <button type="button" @click="applyCrop()" class="btn-primary text-xs py-2 px-4">
+                        <button type="button" @click="cancelCrop()" class="btn-secondary text-xs py-2 px-4 cursor-pointer">Batal</button>
+                        <button type="submit" @click="applyCrop()" class="btn-primary text-xs py-2 px-4 cursor-pointer">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                             <span>Terapkan</span>
                         </button>

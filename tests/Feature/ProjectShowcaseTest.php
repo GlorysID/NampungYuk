@@ -84,7 +84,8 @@ class ProjectShowcaseTest extends TestCase
             'tech_stacks' => 'Python',
         ]);
 
-        $response->assertRedirect('/login');
+        $response->assertRedirect(route('projects.index'));
+        $response->assertSessionHas('auth_required');
         $this->assertDatabaseMissing('projects', ['title' => 'Guest Tool']);
     }
 
@@ -250,7 +251,8 @@ class ProjectShowcaseTest extends TestCase
             'content' => 'Komentar dari guest',
         ]);
 
-        $response->assertRedirect('/login');
+        $response->assertRedirect(route('projects.index'));
+        $response->assertSessionHas('auth_required');
         $this->assertDatabaseMissing('project_comments', [
             'content' => 'Komentar dari guest',
         ]);
@@ -344,12 +346,14 @@ class ProjectShowcaseTest extends TestCase
             'tech_stacks' => ['Flutter'],
         ]);
 
-        // Guest must be redirected to login
+        // Guest is bounced back to the feed with the login modal open
         $guestResponse = $this->get('/?kategori=web-app');
-        $guestResponse->assertRedirect(route('login'));
+        $guestResponse->assertRedirect(route('projects.index'));
+        $guestResponse->assertSessionHas('auth_required');
 
         $guestTechResponse = $this->get('/?tech=Flutter');
-        $guestTechResponse->assertRedirect(route('login'));
+        $guestTechResponse->assertRedirect(route('projects.index'));
+        $guestTechResponse->assertSessionHas('auth_required');
 
         // Authenticated user can filter
         $user = User::factory()->create();

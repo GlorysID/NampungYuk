@@ -15,11 +15,16 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SpaceController;
+use App\Models\Space;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [ProjectController::class, 'index'])->name('projects.index');
 Route::get('/feed/latest', [ProjectController::class, 'latest'])->name('projects.latest');
+
+// Global search (X-style tabbed results)
+Route::get('/cari', [SearchController::class, 'index'])->name('search.index');
 
 // Chat / Obrolan (auth required)
 Route::middleware('auth')->group(function () {
@@ -37,14 +42,19 @@ Route::middleware('auth')->group(function () {
 });
 
 // Spaces (live audio/video)
+Route::bind('space', function (string $value) {
+    return Space::where('slug', $value)
+        ->orWhere('id', $value)
+        ->firstOrFail();
+});
 Route::get('/spaces', [SpaceController::class, 'index'])->name('spaces.index');
+Route::get('/spaces/{slug}', [SpaceController::class, 'show'])->name('spaces.show');
 Route::middleware('auth')->group(function () {
     Route::post('/spaces', [SpaceController::class, 'store'])->name('spaces.store');
-    Route::get('/spaces/{slug}', [SpaceController::class, 'show'])->name('spaces.show');
-    Route::post('/spaces/{space:slug}/join', [SpaceController::class, 'join'])->name('spaces.join');
-    Route::post('/spaces/{space:slug}/leave', [SpaceController::class, 'leave'])->name('spaces.leave');
-    Route::post('/spaces/{space:slug}/end', [SpaceController::class, 'end'])->name('spaces.end');
-    Route::post('/spaces/{space:slug}/signal', [SpaceController::class, 'signal'])->name('spaces.signal');
+    Route::post('/spaces/{space}/join', [SpaceController::class, 'join'])->name('spaces.join');
+    Route::post('/spaces/{space}/leave', [SpaceController::class, 'leave'])->name('spaces.leave');
+    Route::post('/spaces/{space}/end', [SpaceController::class, 'end'])->name('spaces.end');
+    Route::post('/spaces/{space}/signal', [SpaceController::class, 'signal'])->name('spaces.signal');
 });
 
 // Infinite-scroll feed fragments (HTML partials)
@@ -124,6 +134,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/user/{user}/ban', [AdminModerationController::class, 'banUser'])->name('users.ban');
     Route::post('/user/{user}/unban', [AdminModerationController::class, 'unbanUser'])->name('users.unban');
     Route::delete('/user/{user}', [AdminModerationController::class, 'destroyUser'])->name('users.destroy');
+    Route::delete('/community-post/{post}', [AdminModerationController::class, 'destroyCommunityPost'])->name('community-posts.destroy');
 });
 
 Route::middleware('guest')->group(function () {
@@ -133,7 +144,7 @@ Route::middleware('guest')->group(function () {
 
     // Password reset
     Route::get('/lupa-password', [PasswordResetController::class, 'request'])->name('password.request');
-    Route::post('/lupa-password', [PasswordResetController::class, 'email'])->name('password.email');
+    Route::post('/lupa-password', [PasswordResetController::class, 'email'])->name('password.email')->middleware('throttle:5,1');
     Route::get('/reset-password/{token}', [PasswordResetController::class, 'reset'])->name('password.reset');
     Route::post('/reset-password', [PasswordResetController::class, 'update'])->name('password.update');
 

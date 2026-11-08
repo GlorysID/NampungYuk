@@ -68,10 +68,26 @@ class SpaceController extends Controller
     }
 
     /**
+     * Resolve space by slug or numeric ID.
+     */
+    protected function resolveSpace(Space|string $space): Space
+    {
+        if ($space instanceof Space) {
+            return $space;
+        }
+
+        return Space::where('slug', $space)
+            ->orWhere('id', $space)
+            ->firstOrFail();
+    }
+
+    /**
      * Join a space.
      */
-    public function join(Request $request, Space $space): JsonResponse|RedirectResponse
+    public function join(Request $request, Space|string $space): JsonResponse|RedirectResponse
     {
+        $space = $this->resolveSpace($space);
+
         $user = Auth::user();
         if (! $user) {
             if ($request->wantsJson()) {
@@ -79,6 +95,14 @@ class SpaceController extends Controller
             }
 
             return redirect()->route('login');
+        }
+
+        if ($space->status === 'ended') {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Space telah berakhir.'], 422);
+            }
+
+            return redirect()->route('spaces.index')->with('error', 'Space telah berakhir.');
         }
 
         SpaceParticipant::firstOrCreate(
@@ -98,8 +122,10 @@ class SpaceController extends Controller
     /**
      * Leave a space.
      */
-    public function leave(Request $request, Space $space): JsonResponse|RedirectResponse
+    public function leave(Request $request, Space|string $space): JsonResponse|RedirectResponse
     {
+        $space = $this->resolveSpace($space);
+
         $user = Auth::user();
         if (! $user) {
             return redirect()->route('login');
@@ -118,8 +144,10 @@ class SpaceController extends Controller
     /**
      * End a space (host only).
      */
-    public function end(Request $request, Space $space): RedirectResponse
+    public function end(Request $request, Space|string $space): RedirectResponse
     {
+        $space = $this->resolveSpace($space);
+
         $user = Auth::user();
         if (! $user || $space->host_id !== $user->id) {
             abort(403);
@@ -134,8 +162,10 @@ class SpaceController extends Controller
     /**
      * WebRTC signaling relay (offer / answer / ice) to a specific peer.
      */
-    public function signal(Request $request, Space $space): JsonResponse
+    public function signal(Request $request, Space|string $space): JsonResponse
     {
+        $space = $this->resolveSpace($space);
+
         $user = Auth::user();
         if (! $user) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
@@ -146,6 +176,18 @@ class SpaceController extends Controller
             'kind' => ['required', 'in:offer,answer,ice'],
             'payload' => ['required', 'array'],
         ]);
+
+        $isSenderParticipant = SpaceParticipant::where('space_id', $space->id)
+            ->where('user_id', $user->id)
+            ->exists();
+
+        $isRecipientParticipant = SpaceParticipant::where('space_id', $space->id)
+            ->where('user_id', $data['to'])
+            ->exists();
+
+        if (! $isSenderParticipant || ! $isRecipientParticipant) {
+            abort(403, 'Hanya peserta aktif yang dapat bertukar sinyal.');
+        }
 
         broadcast(new SpaceSignal($space->id, $user->id, $data['to'], $data['kind'], $data['payload']))->toOthers();
 

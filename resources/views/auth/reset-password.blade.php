@@ -4,7 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Reset Password — NampungYuk</title>
-    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    <link rel="icon" href="{{ asset('images/icon-dark.png') }}" type="image/png">
+    <link rel="apple-touch-icon" href="{{ asset('images/icon-dark.png') }}">
+    <meta name="description" content="Perbarui kata sandi akun NampungYuk kamu dengan aman.">
+
     <script>
         (function() {
             const savedTheme = localStorage.getItem('theme');
@@ -17,70 +20,180 @@
             }
         })();
     </script>
+
+    <!-- Fonts: Geist + Geist Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-[#e9e9ec] dark:bg-[#000000] text-[#18181b] dark:text-[#fafafa] h-dvh overflow-hidden grid grid-rows-[auto_1fr_auto] gap-2 p-4 sm:p-5 antialiased selection:bg-[#3291ff]/25" x-data>
+<body class="bg-[#F6F5F0] dark:bg-[#0B0B0D] text-[#0B0B0D] dark:text-[#EAE8E1] min-h-screen antialiased selection:bg-[#0B0B0D] selection:text-[#EAE8E1] dark:selection:bg-[#EAE8E1] dark:selection:text-[#0B0B0D]">
 
-    <div class="w-full max-w-md mx-auto flex items-center justify-between text-xs">
-        <a href="{{ route('login') }}" class="inline-flex items-center gap-1.5 text-[#63636b] dark:text-[#a0a0a0] hover:text-[#0070f3] transition font-medium">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-            <span>Kembali ke Masuk</span>
-        </a>
-    </div>
+    <div class="min-h-screen grid grid-cols-1 lg:grid-cols-2" x-data="{ showPassword: false }">
 
-    <div class="w-full max-w-md mx-auto min-h-0 flex items-center justify-center">
-        <div class="w-full ny-card px-6 py-6 sm:px-7 sm:py-7 space-y-5 bg-white dark:bg-[#0a0a0a] max-h-full overflow-y-auto">
-            <div class="text-center space-y-2">
-                <x-logo size="lg" :show-tagline="true" class="justify-center" />
-                <div class="space-y-0.5">
-                    <h1 class="text-base font-bold text-[#18181b] dark:text-[#fafafa]">Buat Password Baru</h1>
-                    <p class="text-[11px] text-[#63636b] dark:text-[#a0a0a0]">Masukkan password baru untuk akunmu.</p>
+        <!-- LEFT HALF: Developer Showcase Panel (Full-bleed 50vw) -->
+        <div class="hidden lg:flex bg-[#F6F5F0] dark:bg-[#0B0B0D] text-[#0B0B0D] dark:text-[#EAE8E1] relative overflow-hidden flex-col justify-between p-12 lg:p-16 min-h-screen select-none border-r border-[#E2DFD7] dark:border-[#242426]">
+            <!-- Subtle Neutral Mesh -->
+            <div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(11,11,13,0.03),transparent_70%)] dark:bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(234,232,225,0.03),transparent_70%)] pointer-events-none"></div>
+            <div class="absolute inset-0 bg-[linear-gradient(to_right,#00000008_1px,transparent_1px),linear-gradient(to_bottom,#00000008_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
+
+            <!-- Top-Left Brand Header -->
+            <a href="{{ url('/') }}" class="inline-flex items-center gap-2.5 font-bold text-[17px] tracking-tight relative z-10 hover:opacity-90 transition">
+                <img src="{{ asset('images/lightmode-icon.png') }}" alt="NampungYuk" class="w-7 h-7 object-contain block dark:hidden">
+                <img src="{{ asset('images/darkmode-icon.png') }}" alt="NampungYuk" class="w-7 h-7 object-contain hidden dark:block">
+                <span class="text-[#0B0B0D] dark:text-[#EAE8E1] font-extrabold">Nampung<span class="text-[#6E6D67] dark:text-[#8E8D86]">Yuk</span></span>
+                <span class="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-semibold">Dev Showcase</span>
+            </a>
+
+            <!-- Middle Display Headline & Value Proposition -->
+            <div class="my-auto py-10 relative z-10 max-w-[480px]">
+                <h2 class="text-4xl lg:text-[44px] font-extrabold tracking-[-0.03em] leading-[1.08] text-[#0B0B0D] dark:text-[#EAE8E1]">
+                    Kata sandi baru,<br>langkah baru.
+                </h2>
+                <p class="text-[15.5px] leading-relaxed text-[#6E6D67] dark:text-[#8E8D86] mt-4 font-normal">
+                    Buat kata sandi baru yang kuat dan unik agar akun serta karya codinganmu selalu terlindungi.
+                </p>
+
+                <!-- Sleek Terminal Window Card -->
+                <div class="relative mt-7 rounded-xl bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] shadow-sm overflow-hidden font-mono text-[12.5px]">
+                    <div class="flex items-center justify-between px-4 py-2.5 bg-[#EFECE6] dark:bg-[#161619] border-b border-[#E2DFD7] dark:border-[#242426]">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-rose-500/80"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
+                        </div>
+                        <div class="text-[11px] text-[#6E6D67] dark:text-[#8E8D86] font-medium tracking-tight flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 text-[#6E6D67] dark:text-[#8E8D86]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                            <span>key.rotation.ts</span>
+                        </div>
+                        <span class="text-[10px] text-[#6E6D67] dark:text-[#8E8D86] bg-[#EFECE6] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] px-1.5 py-0.5 rounded font-mono font-medium">KEY</span>
+                    </div>
+                    <div class="p-4 leading-relaxed text-[#222225] dark:text-[#DCD9D0] space-y-1">
+                        <div><span class="text-violet-600 dark:text-violet-400 font-medium">const</span> <span class="text-blue-600 dark:text-blue-400 font-medium">credentials</span> = {</div>
+                        <div class="pl-4"><span class="text-[#6E6D67] dark:text-[#8E8D86]">hashAlgorithm:</span> <span class="text-emerald-600 dark:text-emerald-400">"bcrypt-cost-12"</span>,</div>
+                        <div class="pl-4"><span class="text-[#6E6D67] dark:text-[#8E8D86]">minEntropy:</span> <span class="text-amber-600 dark:text-amber-400">80</span>,</div>
+                        <div class="pl-4 flex items-center gap-2">
+                            <span class="text-[#6E6D67] dark:text-[#8E8D86]">status:</span> <span class="text-emerald-600 dark:text-emerald-400">"validating"</span>,
+                            <span class="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-sans font-medium">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Strong Key
+                            </span>
+                        </div>
+                        <div>};</div>
+                    </div>
+                </div>
+
+                <!-- 3 Sharp Metric Columns -->
+                <div class="grid grid-cols-3 gap-6 pt-7 border-t border-[#E2DFD7] dark:border-[#242426] mt-8">
+                    <div>
+                        <div class="text-2xl lg:text-[26px] font-extrabold tracking-tight text-[#0B0B0D] dark:text-[#EAE8E1] leading-none">1.2K+</div>
+                        <div class="text-[10.5px] font-mono uppercase tracking-[0.08em] text-[#6E6D67] dark:text-[#8E8D86] mt-2 font-semibold">KARYA TERPAMER</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl lg:text-[26px] font-extrabold tracking-tight text-[#0B0B0D] dark:text-[#EAE8E1] leading-none">40+</div>
+                        <div class="text-[10.5px] font-mono uppercase tracking-[0.08em] text-[#6E6D67] dark:text-[#8E8D86] mt-2 font-semibold">KOMUNITAS</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl lg:text-[26px] font-extrabold tracking-tight text-[#0B0B0D] dark:text-[#EAE8E1] leading-none">100%</div>
+                        <div class="text-[10.5px] font-mono uppercase tracking-[0.08em] text-[#6E6D67] dark:text-[#8E8D86] mt-2 font-semibold">GRATIS &amp; TERBUKA</div>
+                    </div>
                 </div>
             </div>
 
-            <form method="POST" action="{{ route('password.update') }}" class="space-y-4 text-xs">
-                @csrf
-                <input type="hidden" name="token" value="{{ $token }}">
-
-                <div class="space-y-1">
-                    <label for="email" class="flex items-center gap-1.5 font-semibold text-[#18181b] dark:text-[#fafafa]">
-                        <svg class="w-3.5 h-3.5 text-[#63636b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                        <span>Alamat Email</span>
-                    </label>
-                    <input type="email" id="email" name="email" value="{{ old('email', $email) }}" required readonly class="ny-input text-xs sm:text-sm opacity-70">
-                    @error('email') <p class="text-rose-500 font-medium text-[11px] mt-1">{{ $message }}</p> @enderror
-                </div>
-
-                <div class="space-y-1">
-                    <label for="password" class="flex items-center gap-1.5 font-semibold text-[#18181b] dark:text-[#fafafa]">
-                        <svg class="w-3.5 h-3.5 text-[#63636b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                        <span>Password Baru (Minimal 8 karakter)</span>
-                    </label>
-                    <input type="password" id="password" name="password" required autofocus placeholder="••••••••" class="ny-input text-xs sm:text-sm">
-                    @error('password') <p class="text-rose-500 font-medium text-[11px] mt-1">{{ $message }}</p> @enderror
-                </div>
-
-                <div class="space-y-1">
-                    <label for="password_confirmation" class="flex items-center gap-1.5 font-semibold text-[#18181b] dark:text-[#fafafa]">
-                        <svg class="w-3.5 h-3.5 text-[#63636b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                        <span>Konfirmasi Password Baru</span>
-                    </label>
-                    <input type="password" id="password_confirmation" name="password_confirmation" required placeholder="••••••••" class="ny-input text-xs sm:text-sm">
-                </div>
-
-                <button type="submit" class="btn-primary w-full py-2.5 text-xs sm:text-sm font-bold gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                    <span>Simpan Password Baru</span>
-                </button>
-            </form>
+            <!-- Bottom Left Footer Metatag -->
+            <div class="text-[11px] font-mono uppercase tracking-[0.16em] text-[#6E6D67] dark:text-[#8E8D86] relative z-10">
+                KEAMANAN &middot; AKUN &middot; NAMPUNGYUK
+            </div>
         </div>
-    </div>
 
-    <div class="w-full max-w-md mx-auto text-center text-[11px] text-[#63636b] dark:text-[#a0a0a0]">
-        <span>NampungYuk &copy; {{ date('Y') }} &bull; Platform Komunitas Developer</span>
+        <!-- RIGHT HALF: Form Surface (Full-bleed 50vw) -->
+        <div class="w-full min-h-screen bg-white dark:bg-[#121214] text-[#0B0B0D] dark:text-[#EAE8E1] flex flex-col justify-center px-6 py-10 sm:px-12 lg:px-16 relative overflow-y-auto">
+
+            <!-- Top Navigation Bar -->
+            <div class="absolute top-6 left-6 right-6 sm:top-8 sm:left-12 sm:right-12 flex items-center justify-between z-20">
+                <a href="{{ url('/') }}" class="lg:hidden inline-flex items-center gap-2 font-bold text-base text-[#0B0B0D] dark:text-[#EAE8E1] tracking-tight">
+                    <img src="{{ asset('images/lightmode-icon.png') }}" alt="NampungYuk" class="w-5 h-5 object-contain block dark:hidden">
+                    <img src="{{ asset('images/darkmode-icon.png') }}" alt="NampungYuk" class="w-5 h-5 object-contain hidden dark:block">
+                    <span>Nampung<span class="text-[#6E6D67] dark:text-[#8E8D86]">Yuk</span></span>
+                </a>
+                <div class="hidden lg:block"></div>
+                <a href="{{ route('login') }}" class="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] transition">
+                    <span>&larr;</span>
+                    <span>Kembali ke Masuk</span>
+                </a>
+            </div>
+
+            <!-- Inner Form Wrapper -->
+            <div class="w-full max-w-[420px] mx-auto my-auto py-12">
+
+                <!-- Header -->
+                <div>
+                    <h1 class="text-[28px] sm:text-[32px] font-bold tracking-tight text-[#0B0B0D] dark:text-[#EAE8E1] leading-tight">
+                        Buat password baru
+                    </h1>
+                    <p class="text-[15px] text-[#6E6D67] dark:text-[#8E8D86] mt-1.5">
+                        Masukkan password baru yang aman untuk akunmu.
+                    </p>
+                </div>
+
+                <!-- Reset Form -->
+                <form method="POST" action="{{ route('password.update') }}" class="mt-7 space-y-4">
+                    @csrf
+                    <input type="hidden" name="token" value="{{ $token }}">
+
+                    <div>
+                        <label for="email" class="block text-[11px] font-mono font-bold uppercase tracking-[0.08em] text-[#6E6D67] dark:text-[#8E8D86] mb-1.5">ALAMAT EMAIL</label>
+                        <input type="email" 
+                               id="email" 
+                               name="email" 
+                               value="{{ old('email', $email) }}" 
+                               required 
+                               readonly 
+                               class="w-full h-12 px-4 rounded-xl bg-[#EFECE6] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] text-[15px] text-[#6E6D67] dark:text-[#8E8D86] opacity-80 cursor-not-allowed outline-none font-mono">
+                        @error('email')
+                            <p class="text-rose-500 text-[12px] font-medium mt-1.5">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="password" class="block text-[11px] font-mono font-bold uppercase tracking-[0.08em] text-[#6E6D67] dark:text-[#8E8D86] mb-1.5">PASSWORD BARU</label>
+                        <div class="relative">
+                            <input :type="showPassword ? 'text' : 'password'" 
+                                   id="password" 
+                                   name="password" 
+                                   required 
+                                   autofocus 
+                                   placeholder="Min. 8 karakter" 
+                                   class="w-full h-12 px-4 pr-11 rounded-xl bg-[#F6F5F0] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] focus:border-[#0B0B0D] dark:focus:border-[#EAE8E1] text-[15px] text-[#0B0B0D] dark:text-[#EAE8E1] placeholder:text-[#6E6D67] dark:placeholder:text-[#8E8D86] outline-none transition @error('password') border-rose-500/80 focus:border-rose-500 @enderror">
+                            <button type="button" @click="showPassword = !showPassword" aria-label="Tampilkan atau sembunyikan password" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] transition cursor-pointer">
+                                <svg x-show="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                <svg x-show="showPassword" x-cloak class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
+                            </button>
+                        </div>
+                        @error('password')
+                            <p class="text-rose-500 text-[12px] font-medium mt-1.5">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="password_confirmation" class="block text-[11px] font-mono font-bold uppercase tracking-[0.08em] text-[#6E6D67] dark:text-[#8E8D86] mb-1.5">KONFIRMASI PASSWORD BARU</label>
+                        <input :type="showPassword ? 'text' : 'password'" 
+                               id="password_confirmation" 
+                               name="password_confirmation" 
+                               required 
+                               placeholder="Ulangi kata sandi baru" 
+                               class="w-full h-12 px-4 rounded-xl bg-[#F6F5F0] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] focus:border-[#0B0B0D] dark:focus:border-[#EAE8E1] text-[15px] text-[#0B0B0D] dark:text-[#EAE8E1] placeholder:text-[#6E6D67] dark:placeholder:text-[#8E8D86] outline-none transition">
+                    </div>
+
+                    <button type="submit" 
+                            class="w-full h-12 rounded-xl bg-[#0B0B0D] text-[#EAE8E1] hover:bg-[#222225] dark:bg-[#EAE8E1] dark:text-[#0B0B0D] dark:hover:bg-[#DCD9D0] font-bold text-[15px] transition shadow-xs active:scale-[0.99] cursor-pointer mt-2">
+                        Simpan Password Baru
+                    </button>
+                </form>
+
+            </div>
+
+        </div>
+
     </div>
 
 </body>

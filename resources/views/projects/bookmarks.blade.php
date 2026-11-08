@@ -2,32 +2,33 @@
 
 @section('title', 'Koleksi Tersimpan — NampungYuk')
 @section('meta_description', 'Koleksi project codingan pilihan yang disimpan untuk dipelajari kembali.')
+@section('header_title', 'Koleksi Tersimpan')
 
 @section('content')
 <div class="space-y-6 max-w-4xl mx-auto">
 
     <!-- Header Banner -->
-    <div class="ny-card p-5 sm:p-6 flex items-center justify-between gap-4 bg-white dark:bg-[#0a0a0a] border border-[#e4e4e7] dark:border-[#1f1f1f]">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-[#e8f2ff] dark:bg-[#3291ff]/12 text-[#0070f3] dark:text-[#3291ff] border border-[#3291ff]/30 dark:border-[#3291ff]/30 flex items-center justify-center shrink-0">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+    <div class="rounded-2xl bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] p-5 sm:p-6 flex items-center justify-between gap-4 shadow-xs">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-[#0B0B0D] text-[#EAE8E1] dark:bg-[#EAE8E1] dark:text-[#0B0B0D] flex items-center justify-center shrink-0 shadow-xs">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
                 </svg>
             </div>
             <div>
-                <h1 class="text-base sm:text-lg font-extrabold text-[#18181b] dark:text-[#fafafa]">
+                <h1 class="text-lg sm:text-xl font-extrabold text-[#0B0B0D] dark:text-[#EAE8E1] tracking-tight">
                     Koleksi Proyek Tersimpan
                 </h1>
-                <p class="text-xs text-[#63636b] dark:text-[#a0a0a0]">
+                <p class="text-sm text-[#6E6D67] dark:text-[#8E8D86] leading-relaxed mt-0.5">
                     Project pilihan yang ingin kamu pelajari kembali, eksplorasi arsitekturnya, atau coba kodingannya.
                 </p>
             </div>
         </div>
 
         <a href="{{ route('projects.index') }}" 
-           class="text-xs text-[#63636b] hover:text-[#0070f3] font-medium hidden sm:inline-flex items-center gap-1 transition">
+           class="px-3.5 py-2 rounded-xl border border-[#E2DFD7] dark:border-[#242426] bg-[#EFECE6] dark:bg-[#161619] hover:bg-[#E2DFD7] dark:hover:bg-[#19191D] text-[#0B0B0D] dark:text-[#EAE8E1] text-xs font-semibold hidden sm:inline-flex items-center gap-1.5 transition">
             <span>Jelajahi Feed</span>
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
             </svg>
         </a>
@@ -48,7 +49,7 @@
                 <x-empty-state 
                     title="Belum ada project yang disimpan" 
                     description="Simpan project menarik dari feed dengan menekan tombol bookmark agar kamu bisa mempelajarinya kembali nanti."
-                    action-label="Explore Projects"
+                    action-label="Jelajahi Feed"
                     :action-url="route('projects.index')">
                     <x-slot:icon>
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -60,7 +61,8 @@
         </div>
 
         <div x-ref="sentinel" class="pt-4 flex justify-center">
-            <button type="button" x-show="!done" @click="loadMore()" :disabled="loading" class="btn-secondary text-xs py-2.5 px-5 disabled:opacity-60">
+            <button type="button" x-show="!done" @click="loadMore()" :disabled="loading"
+                    class="px-5 py-2.5 rounded-xl border border-[#E2DFD7] dark:border-[#242426] bg-[#EFECE6] dark:bg-[#161619] hover:bg-[#E2DFD7] dark:hover:bg-[#19191D] text-[#0B0B0D] dark:text-[#EAE8E1] text-xs font-semibold shadow-xs transition disabled:opacity-60 cursor-pointer">
                 <span x-show="!loading">Muat lebih banyak</span>
                 <span x-show="loading" x-cloak>Memuat...</span>
             </button>

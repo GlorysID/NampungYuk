@@ -11,15 +11,15 @@
     ][$size] ?? 'text-[11px] px-2.5 py-0.5 rounded-full font-semibold';
 
     $variantClass = [
-        'brand' => 'bg-[#e8f2ff] dark:bg-[#3291ff]/16 text-[#0761d1] dark:text-[#47a8ff] border border-[#3291ff]/25',
-        'teal' => 'bg-[#e8f2ff] dark:bg-[#3291ff]/16 text-[#0761d1] dark:text-[#47a8ff] border border-[#3291ff]/25',
-        'neutral' => 'bg-[#eeeeef] dark:bg-[#171717] text-[#18181b] dark:text-[#fafafa] border border-[#e4e4e7] dark:border-[#1f1f1f]',
-        'success' => 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40',
-        'warning' => 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40',
-        'danger' => 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/40',
-        'purple' => 'bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border border-violet-200/60 dark:border-violet-800/40',
-        'cyan' => 'bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 border border-cyan-200/60 dark:border-cyan-800/40',
-    ][$variant] ?? 'bg-[#eeeeef] dark:bg-[#171717] text-[#18181b] dark:text-[#fafafa] border border-[#e4e4e7] dark:border-[#1f1f1f]';
+        'brand' => 'bg-[#0B0B0D] dark:bg-[#EAE8E1] text-[#EAE8E1] dark:text-[#0B0B0D] font-bold border border-transparent',
+        'teal' => 'bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30',
+        'neutral' => 'bg-[#EFECE6] dark:bg-[#161619] text-[#0B0B0D] dark:text-[#EAE8E1] border border-[#E2DFD7] dark:border-[#242426]',
+        'success' => 'bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30',
+        'warning' => 'bg-amber-500/10 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30',
+        'danger' => 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30',
+        'purple' => 'bg-purple-500/10 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30',
+        'cyan' => 'bg-[#EFECE6] dark:bg-[#161619] text-[#0B0B0D] dark:text-[#EAE8E1] border border-[#E2DFD7] dark:border-[#242426]',
+    ][$variant] ?? 'bg-[#EFECE6] dark:bg-[#161619] text-[#0B0B0D] dark:text-[#EAE8E1] border border-[#E2DFD7] dark:border-[#242426]';
 @endphp
 
 <span {{ $attributes->merge(['class' => "inline-flex items-center gap-1.5 select-none tracking-tight $sizeClass $variantClass"]) }}>

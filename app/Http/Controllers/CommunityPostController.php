@@ -6,8 +6,10 @@ use App\Models\Community;
 use App\Models\CommunityPost;
 use App\Models\CommunityPostComment;
 use App\Models\CommunityPostVote;
+use App\Models\User;
 use App\Notifications\CommunityCommentNotification;
 use App\Notifications\CommunityPostNotification;
+use App\Services\MediaOptimizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,9 +17,7 @@ use Illuminate\Support\Facades\Auth;
 
 class CommunityPostController extends Controller
 {
-    public function __construct(private \App\Services\MediaOptimizer $media)
-    {
-    }
+    public function __construct(private MediaOptimizer $media) {}
 
     /**
      * Create a post inside a community (members only).
@@ -79,9 +79,14 @@ class CommunityPostController extends Controller
      */
     public function vote(Request $request, CommunityPost $post): JsonResponse
     {
+        /** @var User|null $user */
         $user = Auth::user();
         if (! $user) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        if ($post->community?->isPrivate() && ! $post->community->hasMember($user->id) && ! $user->isAdmin()) {
+            abort(403);
         }
 
         $existing = CommunityPostVote::where('community_post_id', $post->id)
@@ -119,11 +124,16 @@ class CommunityPostController extends Controller
      */
     public function comment(Request $request, CommunityPost $post): RedirectResponse|JsonResponse
     {
+        /** @var User|null $user */
         $user = Auth::user();
         if (! $user) {
             return $request->wantsJson()
                 ? response()->json(['message' => 'Unauthenticated.'], 401)
                 : redirect()->route('login');
+        }
+
+        if ($post->community?->isPrivate() && ! $post->community->hasMember($user->id) && ! $user->isAdmin()) {
+            abort(403);
         }
 
         $data = $request->validate([
@@ -202,18 +212,26 @@ class CommunityPostController extends Controller
     }
 
     /**
-     * Delete a post (owner/mod only).
+     * Delete a post (author, community owner/mod, or admin).
      */
     public function destroy(Request $request, CommunityPost $post): RedirectResponse
     {
+        /** @var User|null $user */
         $user = Auth::user();
         $community = $post->community;
-        if (! $user || ! $community->isModerator($user->id)) {
+        $isAuthor = $user && (int) $post->user_id === (int) $user->id;
+        $isAdmin = $user?->isAdmin() ?? false;
+        $isMod = $user && $community && $community->isModerator($user->id);
+
+        if (! $user || (! $isAuthor && ! $isAdmin && ! $isMod)) {
             abort(403);
         }
 
         $post->delete();
-        $community->decrement('posts_count');
+
+        if ($community && $community->posts_count > 0) {
+            $community->decrement('posts_count');
+        }
 
         return back()->with('success', 'Postingan dihapus.');
     }

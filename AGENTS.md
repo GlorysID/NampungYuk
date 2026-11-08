@@ -1,3 +1,74 @@
+# NampungYuk Agent Guidelines & Project Instructions
+
+Panduan operasional dan aturan main bagi seluruh agent/asisten AI yang bekerja di repositori **NampungYuk**.
+
+---
+
+## 1. Aturan Global & Preferensi Komunikasi
+
+- **Bahasa**: Gunakan bahasa Indonesia santai (boleh gaul: gue/lo/bro) kecuali user meminta bahasa Inggris atau berbicara dengan bahasa lain.
+- **Jawaban Langsung**: Berikan jawaban ringkas dan to the point terlebih dahulu; penjelasan mendalam hanya jika diminta.
+- **Tanpa Emoji**: Dilarang menambahkan emoji ke dalam berkas kode, template Blade, maupun teks balasan kecuali user memintanya secara eksplisit.
+- **Efisiensi Token**: Dilarang membaca berkas besar secara penuh jika hanya membutuhkan sebagian; utamakan `grep`, `ast-grep`, atau `offset`/`limit`.
+- **Manajemen Konteks**: Catat progres, keputusan teknis, dan audit pada `PROGRESS.md` di root project untuk tugas multi-langkah.
+
+---
+
+## 2. Lingkungan Pengembangan & Eksekusi Perintah
+
+- **Sistem Operasi**: Windows 11 dengan shell **Windows PowerShell 5.1**.
+- **Karakter Rantai Perintah**: PowerShell 5.1 **TIDAK MENDUKUNG** operator `&&`. Selalu gunakan pola PowerShell:
+  `cmd1; if ($?) { cmd2 }`
+- **Binary PHP (WAJIB)**:
+  PHP di system PATH default (`php`) adalah PHP 8.2 yang tidak kompatibel dengan Laravel 13. Selalu gunakan absolute path binary PHP 8.3 Laragon untuk seluruh perintah `artisan`, `composer`, `phpunit`, dan `pint`:
+  - `& "C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe" artisan <perintah>`
+  - `& "C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe" vendor/bin/pint --dirty --format agent`
+- **Basis Data**:
+  - Pengembangan Lokal: MySQL 8.4 Laragon (`127.0.0.1:3306`, database `nampungyuk`, user `root`, password kosong).
+  - Pengujian Otomatis (`phpunit.xml`): Menggunakan SQLite in-memory (`:memory:`). DILARANG mengubah konfigurasi ini.
+  - **Dilarang Mutasi DB Nyata**: Jangan pernah menjalankan skrip ad-hoc yang melakukan mutasi destruktif (`delete()`, `truncate()`) langsung ke database MySQL pengembangan. Gunakan selalu feature test dengan `RefreshDatabase`.
+
+---
+
+## 3. Standar Desain Visual (Token Harbor Aesthetic)
+
+Platform mengadopsi estetika **Token Harbor**:
+- **Dark Mode**:
+  - Canvas: Matte Obsidian `#0B0B0D`
+  - Card & Surface: `#121214` (hover: `#19191D`, muted: `#161619`)
+  - Border: Hairline border 1px tipis halus `#242426`
+  - Teks Utama: Warm Stone-Ivory `#EAE8E1`
+  - Teks Sekunder: Stone Gray `#8E8D86` / `#605F5A`
+  - Tombol Utama / CTA: Blok solid Warm Stone `#EAE8E1` dengan teks hitam tebal `#0B0B0D`
+- **Light Mode**:
+  - Canvas: Warm Linen `#F6F5F0`
+  - Card & Surface: `#FFFFFF` (hover/muted: `#EFECE6`)
+  - Border: Hairline border 1px `#E2DFD7`
+  - Teks Utama: `#0B0B0D`
+  - Teks Sekunder: `#6E6D67`
+- **Tipografi**: Font murni **Geist** (sans) dan **Geist Mono** (monospace).
+- **Aturan Alur Tamu (Guest Flow)**: Dilarang membajak klik baca tamu (klik judul karya, profil kreator, komentar, kategori, atau tech-pill). Tamu bebas menjelajah; modal login hanya dipicu untuk aksi tulis/interaksi (upvote, bookmark, repost, komentar, chat).
+- **Semantik Skor**: Gunakan panah **Upvote (`^`)** secara seragam di seluruh platform untuk metrik apresiasi karya dan postingan.
+
+---
+
+## 4. Konvensi Arsitektur & Koding
+
+1. **Aturan Domain Khusus (`.ai/rules/*.md`)**:
+   Sebelum merencanakan atau mengedit berkas, periksa dan patuhi aturan yang terdaftar pada `.ai/rules/index.md`.
+2. **Chat Gate Monotonik**:
+   Gerbang obrolan bersifat Instagram-style dan searah (monotonik). Jangan mengubah status `accepted` kembali ke `pending`. Pertahankan reaktivitas Alpine `x-show="isPending"` dan `x-show="canSend"` di dalam DOM tanpa `@if` server-rendered.
+3. **Privasi Proyek & Komunitas**:
+   Selalu gunakan scope `Project::scopeVisibleTo($userId)` saat mengambil proyek dan pastikan broadcast publik tidak disiarkan untuk proyek privat atau bertanda peringatan.
+4. **Spaces WebRTC**:
+   Gunakan helper resolver `resolveSpace()` yang mendukung slug maupun ID numerik. Tunda langganan channel privat Reverb hingga permintaan join berhasil.
+5. **Quality Gates Sebelum Finalisasi**:
+   Setiap perubahan kode PHP wajib diformat dengan Laravel Pint dan diuji dengan test suite terkait:
+   `& "C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe" vendor/bin/pint --dirty --format agent`
+   `& "C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe" artisan test --compact`
+
+---
+
 <laravel-boost-guidelines>
 === foundation rules ===
 
