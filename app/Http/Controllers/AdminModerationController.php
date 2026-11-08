@@ -170,7 +170,13 @@ class AdminModerationController extends Controller
             Category::where('id', $categoryId)->where('projects_count', '>', 0)->decrement('projects_count');
         }
 
-        return redirect()->route('projects.index')->with('status', "Proyek '{$title}' berhasil dihapus secara permanen oleh Admin.");
+        $message = "Konten Berhasil Dihapus. Proyek '{$title}' berhasil dihapus secara permanen.";
+
+        if ($request->headers->get('referer') && str_contains($request->headers->get('referer'), '/admin')) {
+            return back()->with('status', $message);
+        }
+
+        return redirect()->route('projects.index')->with('status', $message);
     }
 
     /**

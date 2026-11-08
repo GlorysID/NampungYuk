@@ -215,13 +215,27 @@
                         <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
                     @endif
                 </p>
-                <a href="{{ route('admin.reports.index') }}"
-                   class="flex items-center justify-between px-3 py-2.5 rounded-xl text-[15px] font-medium transition {{ request()->routeIs('admin.*') ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 font-semibold border border-rose-500/30' : 'text-[#6E6D67] dark:text-[#8E8D86] hover:text-rose-600 dark:hover:text-rose-400 hover:bg-[#EFECE6] dark:hover:bg-[#19191D]' }}">
+
+                <a href="{{ route('admin.reports.index', ['tab' => 'all_users']) }}"
+                   class="flex items-center justify-between px-3 py-2.5 rounded-xl text-[15px] font-medium transition {{ request()->routeIs('admin.*') && request()->get('tab') === 'all_users' ? 'bg-[#EFECE6] dark:bg-[#19191D] text-[#0B0B0D] dark:text-[#EAE8E1] font-semibold border-l-2 border-[#0B0B0D] dark:border-[#EAE8E1]' : 'text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] hover:bg-[#EFECE6]/60 dark:hover:bg-[#19191D]/60' }}">
                     <div class="flex items-center gap-3">
-                        <svg class="w-5 h-5 text-rose-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        <span>Kelola Pengguna</span>
+                    </div>
+                    @if(request()->routeIs('admin.*') && request()->get('tab') === 'all_users')
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    @endif
+                </a>
+
+                <a href="{{ route('admin.reports.index') }}"
+                   class="flex items-center justify-between px-3 py-2.5 rounded-xl text-[15px] font-medium transition {{ request()->routeIs('admin.*') && request()->get('tab') !== 'all_users' ? 'bg-[#EFECE6] dark:bg-[#19191D] text-[#0B0B0D] dark:text-[#EAE8E1] font-semibold border-l-2 border-[#0B0B0D] dark:border-[#EAE8E1]' : 'text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] hover:bg-[#EFECE6]/60 dark:hover:bg-[#19191D]/60' }}">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                         </svg>
-                        <span>Moderasi Laporan</span>
+                        <span>Laporan Pengaduan</span>
                     </div>
                     @if($pendingCount > 0)
                         <span class="px-2 py-0.5 text-xs font-bold rounded-md bg-rose-500 text-white font-mono">
