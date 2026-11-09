@@ -29,8 +29,8 @@
                     :class="following
                         ? (hoverUnfollow
                             ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-300 dark:border-rose-800'
-                            : 'bg-transparent text-[#0B0B0D] dark:text-[#EAE8E1] border border-[#D0CDC3] dark:border-[#333336] hover:border-[#0B0B0D] dark:hover:border-[#EAE8E1]')
-                        : 'bg-[#0B0B0D] hover:bg-[#222225] dark:bg-[#EAE8E1] dark:hover:bg-[#DCD9D0] text-[#EAE8E1] dark:text-[#0B0B0D] font-bold border border-transparent shadow-xs'"
+                            : 'bg-transparent text-[var(--primary)] border border-[var(--border-strong)] hover:border-[var(--primary)]')
+                        : 'bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--primary-text)] font-bold border border-transparent shadow-xs'"
                     class="inline-flex items-center justify-center gap-1.5 font-semibold transition active:scale-[0.98] disabled:opacity-60 cursor-pointer {{ $size === 'sm' ? 'h-8 px-3 text-xs rounded-lg' : 'h-10 px-4 text-sm rounded-xl' }}">
                 <span x-show="following && hoverUnfollow" x-cloak x-text="'Berhenti mengikuti'"></span>
                 <span x-show="!following || !hoverUnfollow" style="display: inline;" x-text="following ? 'Mengikuti' : 'Ikuti'"></span>
@@ -42,7 +42,7 @@
                  x-transition:enter-start="opacity-0 -translate-y-1"
                  x-transition:enter-end="opacity-100 translate-y-0"
                  @mouseleave="menuOpen = false"
-                 class="absolute right-0 top-full mt-1.5 z-40 min-w-[220px] rounded-xl bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] shadow-xl overflow-hidden">
+                 class="absolute right-0 top-full mt-1.5 z-40 min-w-[220px] rounded-xl bg-[var(--surface)] border border-[var(--border-color)] shadow-xl overflow-hidden">
                 <button type="button"
                         @click="toggle(); menuOpen = false"
                         class="w-full flex items-start gap-2.5 px-3.5 py-2.5 text-left hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer">
@@ -51,7 +51,7 @@
                     </svg>
                     <span class="min-w-0">
                         <span class="block text-xs font-semibold text-rose-600 dark:text-rose-400" x-text="'Berhenti mengikuti @' + username"></span>
-                        <span class="block text-[10px] text-[#6E6D67] dark:text-[#8E8D86]">Repost mereka tidak akan tampil di timeline-mu.</span>
+                        <span class="block text-[10px] text-[var(--text-muted)]">Repost mereka tidak akan tampil di timeline-mu.</span>
                     </span>
                 </button>
             </div>
@@ -59,7 +59,7 @@
     @else
         <button type="button"
                 @click="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
-                class="inline-flex items-center justify-center gap-1.5 font-bold bg-[#0B0B0D] hover:bg-[#222225] dark:bg-[#EAE8E1] dark:hover:bg-[#DCD9D0] text-[#EAE8E1] dark:text-[#0B0B0D] border border-transparent shadow-xs transition active:scale-[0.98] cursor-pointer {{ $size === 'sm' ? 'h-8 px-3 text-xs rounded-lg' : 'h-10 px-4 text-sm rounded-xl' }}">
+                class="inline-flex items-center justify-center gap-1.5 font-bold bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--primary-text)] border border-transparent shadow-xs transition active:scale-[0.98] cursor-pointer {{ $size ==='sm' ?'h-8 px-3 text-xs rounded-lg' :'h-10 px-4 text-sm rounded-xl' }}">
             <span>Ikuti</span>
         </button>
     @endauth

@@ -15,12 +15,12 @@
     ][$size] ?? 'text-sm px-4.5 py-2.5 gap-2';
 
     $variantClasses = [
-        'primary' => 'bg-[#0B0B0D] hover:bg-[#222225] text-[#EAE8E1] dark:bg-[#EAE8E1] dark:hover:bg-[#DCD9D0] dark:text-[#0B0B0D] font-bold border border-transparent shadow-xs',
-        'secondary' => 'bg-[#EFECE6] dark:bg-[#161619] hover:bg-[#E2DFD7] dark:hover:bg-[#19191D] text-[#0B0B0D] dark:text-[#EAE8E1] border border-[#E2DFD7] dark:border-[#242426]',
-        'soft' => 'bg-[#EFECE6] text-[#0B0B0D] dark:bg-[#19191D] dark:text-[#EAE8E1] border border-[#D0CDC3] dark:border-[#333336]',
-        'ghost' => 'bg-transparent text-[#6E6D67] dark:text-[#8E8D86] hover:bg-[#EFECE6] dark:hover:bg-[#161619] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1]',
+        'primary' => 'bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--primary-text)] font-bold border border-transparent shadow-xs',
+        'secondary' => 'bg-[var(--surface-muted)] hover:bg-[var(--surface-chip-hover)] text-[var(--primary)] border border-[var(--border-color)]',
+        'soft' => 'bg-[var(--surface-hover)] text-[var(--primary)] border border-[var(--border-strong)]',
+        'ghost' => 'bg-transparent text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--primary)]',
         'danger' => 'bg-rose-600 hover:bg-rose-700 text-white border border-transparent shadow-xs',
-    ][$variant] ?? 'bg-[#0B0B0D] hover:bg-[#222225] text-[#EAE8E1] dark:bg-[#EAE8E1] dark:hover:bg-[#DCD9D0] dark:text-[#0B0B0D] font-bold border border-transparent shadow-xs';
+    ][$variant] ?? 'bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--primary-text)] font-bold border border-transparent shadow-xs';
 @endphp
 
 @if($href)

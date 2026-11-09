@@ -45,14 +45,14 @@
 }">
 
     <!-- Page Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E2DFD7] dark:border-[#242426]">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--border-color)]">
         <div>
             <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-[10px] font-bold uppercase tracking-wider mb-2">
                 <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
                 <span>Administrator Space</span>
             </div>
-            <h1 class="text-2xl font-black text-[#0B0B0D] dark:text-[#EAE8E1] tracking-tight">Panel Moderasi & Pengguna</h1>
-            <p class="text-xs text-[#6E6D67] dark:text-[#8E8D86] mt-1">Kelola pengguna secara langsung, tinjau laporan konten, beri peringatan, atau blokir akun yang melanggar.</p>
+            <h1 class="text-2xl font-black text-[var(--primary)] tracking-tight">Panel Moderasi & Pengguna</h1>
+            <p class="text-xs text-[var(--text-muted)] mt-1">Kelola pengguna secara langsung, tinjau laporan konten, beri peringatan, atau blokir akun yang melanggar.</p>
         </div>
 
         <div class="flex items-center gap-2">
@@ -63,36 +63,36 @@
     </div>
 
     <!-- Tabs Navigation -->
-    <div class="flex items-center gap-2 border-b border-[#E2DFD7] dark:border-[#242426] pb-px overflow-x-auto text-xs font-semibold">
+    <div class="flex items-center gap-2 border-b border-[var(--border-color)] pb-px overflow-x-auto text-xs font-semibold">
         <a href="{{ route('admin.reports.index', ['tab' => 'all_users']) }}" 
-           class="px-4 py-2.5 rounded-t-xl transition flex items-center gap-2 border-b-2 {{ $tab === 'all_users' ? 'border-[#0B0B0D] dark:border-[#EAE8E1] text-[#0B0B0D] dark:text-[#EAE8E1] bg-[#EFECE6] dark:bg-[#19191D] font-bold' : 'border-transparent text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1]' }}">
+           class="px-4 py-2.5 rounded-t-xl transition flex items-center gap-2 border-b-2 {{ $tab === 'all_users' ? 'border-[var(--primary)] text-[var(--primary)] bg-[var(--surface-hover)] font-bold' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--primary)]' }}">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
             <span>Kelola Semua Pengguna</span>
-            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-[#EFECE6] dark:bg-[#161619] text-[#6E6D67] dark:text-[#8E8D86] border border-[#E2DFD7] dark:border-[#242426]">
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-[var(--surface-muted)] text-[var(--text-muted)] border border-[var(--border-color)]">
                 {{ $allUsersCount }}
             </span>
         </a>
 
         <a href="{{ route('admin.reports.index', ['tab' => 'projects']) }}" 
-           class="px-4 py-2.5 rounded-t-xl transition flex items-center gap-2 border-b-2 {{ $tab === 'projects' ? 'border-[#0B0B0D] dark:border-[#EAE8E1] text-[#0B0B0D] dark:text-[#EAE8E1] bg-[#EFECE6] dark:bg-[#19191D] font-bold' : 'border-transparent text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1]' }}">
+           class="px-4 py-2.5 rounded-t-xl transition flex items-center gap-2 border-b-2 {{ $tab === 'projects' ? 'border-[var(--primary)] text-[var(--primary)] bg-[var(--surface-hover)] font-bold' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--primary)]' }}">
             <span>Laporan Konten</span>
-            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ ($pendingProjectReportsCount + ($pendingCommunityPostReportsCount ?? 0)) > 0 ? 'bg-[#0B0B0D] text-[#EAE8E1] dark:bg-[#EAE8E1] dark:text-[#0B0B0D] font-bold shadow-xs' : 'bg-[#EFECE6] dark:bg-[#161619] text-[#6E6D67] dark:text-[#8E8D86] border border-[#E2DFD7] dark:border-[#242426]' }}">
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ ($pendingProjectReportsCount + ($pendingCommunityPostReportsCount ?? 0)) > 0 ? 'bg-[var(--primary)] text-[var(--primary-text)] font-bold shadow-xs' : 'bg-[var(--surface-muted)] text-[var(--text-muted)] border border-[var(--border-color)]' }}">
                 {{ $pendingProjectReportsCount + ($pendingCommunityPostReportsCount ?? 0) }}
             </span>
         </a>
 
         <a href="{{ route('admin.reports.index', ['tab' => 'users']) }}" 
-           class="px-4 py-2.5 rounded-t-xl transition flex items-center gap-2 border-b-2 {{ $tab === 'users' ? 'border-[#0B0B0D] dark:border-[#EAE8E1] text-[#0B0B0D] dark:text-[#EAE8E1] bg-[#EFECE6] dark:bg-[#19191D] font-bold' : 'border-transparent text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1]' }}">
+           class="px-4 py-2.5 rounded-t-xl transition flex items-center gap-2 border-b-2 {{ $tab === 'users' ? 'border-[var(--primary)] text-[var(--primary)] bg-[var(--surface-hover)] font-bold' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--primary)]' }}">
             <span>Laporan Akun</span>
-            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $pendingUserReportsCount > 0 ? 'bg-[#0B0B0D] text-[#EAE8E1] dark:bg-[#EAE8E1] dark:text-[#0B0B0D] font-bold shadow-xs' : 'bg-[#EFECE6] dark:bg-[#161619] text-[#6E6D67] dark:text-[#8E8D86] border border-[#E2DFD7] dark:border-[#242426]' }}">
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $pendingUserReportsCount > 0 ? 'bg-[var(--primary)] text-[var(--primary-text)] font-bold shadow-xs' : 'bg-[var(--surface-muted)] text-[var(--text-muted)] border border-[var(--border-color)]' }}">
                 {{ $pendingUserReportsCount }}
             </span>
         </a>
 
         <a href="{{ route('admin.reports.index', ['tab' => 'banned']) }}" 
-           class="px-4 py-2.5 rounded-t-xl transition flex items-center gap-2 border-b-2 {{ $tab === 'banned' ? 'border-[#0B0B0D] dark:border-[#EAE8E1] text-[#0B0B0D] dark:text-[#EAE8E1] bg-[#EFECE6] dark:bg-[#19191D] font-bold' : 'border-transparent text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1]' }}">
+           class="px-4 py-2.5 rounded-t-xl transition flex items-center gap-2 border-b-2 {{ $tab === 'banned' ? 'border-[var(--primary)] text-[var(--primary)] bg-[var(--surface-hover)] font-bold' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--primary)]' }}">
             <span>Akun Diblokir</span>
-            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-[#EFECE6] dark:bg-[#161619] text-[#6E6D67] dark:text-[#8E8D86] border border-[#E2DFD7] dark:border-[#242426]">
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-[var(--surface-muted)] text-[var(--text-muted)] border border-[var(--border-color)]">
                 {{ $bannedUsersCount }}
             </span>
         </a>
@@ -103,64 +103,61 @@
         <div class="space-y-3">
             @forelse($projectReports as $report)
                 @php $reportable = $report->reportable; @endphp
-                <div class="bg-white dark:bg-[#121214] p-5 space-y-4 rounded-2xl border shadow-xs transition {{ $report->status === 'pending' ? 'border-[#D0CDC3] dark:border-[#333336] bg-[#FAF8F5] dark:bg-[#141416]' : 'border-[#E2DFD7] dark:border-[#242426]' }}">
+                <div class="bg-[var(--surface)] p-5 space-y-4 rounded-2xl border shadow-xs transition {{ $report->status ==='pending' ?'border-[var(--border-strong)] bg-[var(--surface-input)]' :'border-[var(--border-color)]' }}">
                     <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                         <div class="flex items-start gap-3.5 min-w-0">
                             @if($reportable instanceof \App\Models\Project && $reportable->thumbnail)
-                                <img src="{{ $reportable->thumbnail }}" alt="{{ $reportable->title }}" class="w-14 h-14 rounded-xl object-cover shrink-0 border border-[#E2DFD7] dark:border-[#242426]">
+                                <img src="{{ $reportable->thumbnail }}" alt="{{ $reportable->title }}" class="w-14 h-14 rounded-xl object-cover shrink-0 border border-[var(--border-color)]">
                             @elseif($reportable instanceof \App\Models\CommunityPost)
-                                <div class="w-14 h-14 rounded-xl bg-[#EFECE6] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] flex items-center justify-center text-xs text-[#6E6D67] dark:text-[#8E8D86] shrink-0 font-mono">
-                                    [Post]
-                                </div>
+                                <div class="w-14 h-14 rounded-xl bg-[var(--surface-muted)] border border-[var(--border-color)] flex items-center justify-center text-xs text-[var(--text-muted)] shrink-0 font-mono">
+                                    [Post] </div>
                             @elseif($reportable instanceof \App\Models\ProjectComment)
-                                <div class="w-14 h-14 rounded-xl bg-[#EFECE6] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] flex items-center justify-center text-xs text-[#6E6D67] dark:text-[#8E8D86] shrink-0 font-mono">
-                                    [Komentar]
-                                </div>
+                                <div class="w-14 h-14 rounded-xl bg-[var(--surface-muted)] border border-[var(--border-color)] flex items-center justify-center text-xs text-[var(--text-muted)] shrink-0 font-mono">
+                                    [Komentar] </div>
                             @else
-                                <div class="w-14 h-14 rounded-xl bg-[#EFECE6] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] flex items-center justify-center text-xs text-[#6E6D67] dark:text-[#8E8D86] shrink-0 font-mono">
-                                    [App]
-                                </div>
+                                <div class="w-14 h-14 rounded-xl bg-[var(--surface-muted)] border border-[var(--border-color)] flex items-center justify-center text-xs text-[var(--text-muted)] shrink-0 font-mono">
+                                    [App] </div>
                             @endif
 
                             <div class="space-y-1 min-w-0">
                                 <div class="flex items-center gap-2 flex-wrap">
-                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider {{ $report->status === 'pending' ? 'bg-[#0B0B0D] text-[#EAE8E1] dark:bg-[#EAE8E1] dark:text-[#0B0B0D]' : ($report->status === 'resolved' ? 'bg-[#EFECE6] dark:bg-[#161619] text-[#0B0B0D] dark:text-[#EAE8E1] border border-[#E2DFD7] dark:border-[#242426]' : 'bg-[#EFECE6] dark:bg-[#161619] text-[#6E6D67] dark:text-[#8E8D86] border border-[#E2DFD7] dark:border-[#242426]') }}">
+                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider {{ $report->status === 'pending' ? 'bg-[var(--primary)] text-[var(--primary-text)]' : ($report->status === 'resolved' ? 'bg-[var(--surface-muted)] text-[var(--primary)] border border-[var(--border-color)]' : 'bg-[var(--surface-muted)] text-[var(--text-muted)] border border-[var(--border-color)]') }}">
                                         {{ $report->status }}
                                     </span>
-                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#EFECE6] dark:bg-[#161619] text-[#0B0B0D] dark:text-[#EAE8E1] border border-[#E2DFD7] dark:border-[#242426]">
+                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[var(--surface-muted)] text-[var(--primary)] border border-[var(--border-color)]">
                                         {{ $report->reason_label }}
                                     </span>
-                                    <span class="text-[11px] text-[#908F88] dark:text-[#605F5A]">• dilaporkan {{ $report->created_at->diffForHumans() }}</span>
+                                    <span class="text-[11px] text-[var(--text-faint)]">• dilaporkan {{ $report->created_at->diffForHumans() }}</span>
                                 </div>
 
                                 @if($reportable instanceof \App\Models\Project)
-                                    <h3 class="text-sm font-bold text-[#0B0B0D] dark:text-[#EAE8E1] truncate">
+                                    <h3 class="text-sm font-bold text-[var(--primary)] truncate">
                                         <a href="{{ route('projects.show', $reportable->slug) }}" target="_blank" class="hover:underline inline-flex items-center gap-1">
                                             <span>{{ $reportable->title }}</span>
                                             <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                         </a>
                                     </h3>
-                                    <p class="text-xs text-[#6E6D67] dark:text-[#8E8D86]">
-                                        Author: <a href="{{ route('profile.show', $reportable->user->username) }}" target="_blank" class="font-medium text-[#0B0B0D] dark:text-[#EAE8E1] hover:underline">&#64;{{ $reportable->user->username }}</a>
+                                    <p class="text-xs text-[var(--text-muted)]">
+                                        Author: <a href="{{ route('profile.show', $reportable->user->username) }}" target="_blank" class="font-medium text-[var(--primary)] hover:underline">&#64;{{ $reportable->user->username }}</a>
                                     </p>
                                 @elseif($reportable instanceof \App\Models\CommunityPost)
-                                    <h3 class="text-sm font-bold text-[#0B0B0D] dark:text-[#EAE8E1]">
+                                    <h3 class="text-sm font-bold text-[var(--primary)]">
                                         <span>Postingan Komunitas: </span>
                                         <span class="font-normal">{{ Str::limit($reportable->content, 90) }}</span>
                                     </h3>
-                                    <p class="text-xs text-[#6E6D67] dark:text-[#8E8D86]">
-                                        Author: <a href="{{ route('profile.show', $reportable->user->username) }}" target="_blank" class="font-medium text-[#0B0B0D] dark:text-[#EAE8E1] hover:underline">&#64;{{ $reportable->user->username }}</a>
+                                    <p class="text-xs text-[var(--text-muted)]">
+                                        Author: <a href="{{ route('profile.show', $reportable->user->username) }}" target="_blank" class="font-medium text-[var(--primary)] hover:underline">&#64;{{ $reportable->user->username }}</a>
                                         @if($reportable->community)
                                              · Komunitas: <a href="{{ route('communities.show', $reportable->community->slug) }}" target="_blank" class="hover:underline">{{ $reportable->community->name }}</a>
                                         @endif
                                     </p>
                                 @elseif($reportable instanceof \App\Models\ProjectComment)
-                                    <h3 class="text-sm font-bold text-[#0B0B0D] dark:text-[#EAE8E1]">
+                                    <h3 class="text-sm font-bold text-[var(--primary)]">
                                         <span>Komentar: </span>
                                         <span class="font-normal">{{ Str::limit($reportable->body, 90) }}</span>
                                     </h3>
-                                    <p class="text-xs text-[#6E6D67] dark:text-[#8E8D86]">
-                                        Author: <a href="{{ route('profile.show', $reportable->user->username) }}" target="_blank" class="font-medium text-[#0B0B0D] dark:text-[#EAE8E1] hover:underline">&#64;{{ $reportable->user->username }}</a>
+                                    <p class="text-xs text-[var(--text-muted)]">
+                                        Author: <a href="{{ route('profile.show', $reportable->user->username) }}" target="_blank" class="font-medium text-[var(--primary)] hover:underline">&#64;{{ $reportable->user->username }}</a>
                                     </p>
                                 @else
                                     <p class="text-xs text-rose-500 font-semibold italic">Konten telah dihapus dari sistem.</p>
@@ -169,22 +166,22 @@
                         </div>
 
                         <!-- Reporter Info -->
-                        <div class="text-left sm:text-right text-xs shrink-0 bg-[#FAF8F5] dark:bg-[#161619] p-2.5 rounded-xl border border-[#E2DFD7] dark:border-[#242426]">
-                            <span class="text-[10px] text-[#6E6D67] dark:text-[#8E8D86] block">Pelapor:</span>
+                        <div class="text-left sm:text-right text-xs shrink-0 bg-[var(--surface-subtle)] p-2.5 rounded-xl border border-[var(--border-color)]">
+                            <span class="text-[10px] text-[var(--text-muted)] block">Pelapor:</span>
                             @if($report->reporter)
-                                <a href="{{ route('profile.show', $report->reporter->username) }}" class="font-bold text-[#0B0B0D] dark:text-[#EAE8E1] hover:underline">
+                                <a href="{{ route('profile.show', $report->reporter->username) }}" class="font-bold text-[var(--primary)] hover:underline">
                                     &#64;{{ $report->reporter->username }}
                                 </a>
                             @else
-                                <span class="font-medium text-[#6E6D67] dark:text-[#8E8D86]">Anonim / Guest</span>
+                                <span class="font-medium text-[var(--text-muted)]">Anonim / Guest</span>
                             @endif
                         </div>
                     </div>
 
                     <!-- Notes -->
                     @if($report->notes)
-                        <div class="p-3 rounded-xl bg-[#FAF8F5] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] text-xs text-[#0B0B0D] dark:text-[#EAE8E1]">
-                            <span class="font-semibold text-[#6E6D67] dark:text-[#8E8D86] text-[10px] block uppercase mb-0.5">Catatan Pelapor:</span>
+                        <div class="p-3 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border-color)] text-xs text-[var(--primary)]">
+                            <span class="font-semibold text-[var(--text-muted)] text-[10px] block uppercase mb-0.5">Catatan Pelapor:</span>
                             {{ $report->notes }}
                         </div>
                     @endif
@@ -198,7 +195,7 @@
                             <form method="POST" action="{{ route('admin.projects.warn', $reportable->id) }}">
                                 @csrf
                                 <input type="hidden" name="action" value="remove">
-                                <button type="submit" class="px-2.5 py-1 rounded-lg bg-[#EFECE6] hover:bg-[#E2DFD7] dark:bg-[#161619] dark:hover:bg-[#19191D] text-[11px] font-bold text-amber-900 dark:text-amber-200 transition cursor-pointer">
+                                <button type="submit" class="px-2.5 py-1 rounded-lg bg-[var(--surface-muted)] hover:bg-[var(--surface-chip-hover)] text-[11px] font-bold text-amber-900 dark:text-amber-200 transition cursor-pointer">
                                     Cabut Peringatan
                                 </button>
                             </form>
@@ -206,7 +203,7 @@
                     @endif
 
                     <!-- Action Bar -->
-                    <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#E2DFD7] dark:border-[#242426] text-xs">
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--border-color)] text-xs">
                         <div class="flex items-center gap-2">
                             @if($reportable instanceof \App\Models\Project)
                                 @if(!$reportable->warning_notes)
@@ -240,18 +237,18 @@
                             @if($report->status === 'pending')
                                 <form method="POST" action="{{ route('admin.reports.dismiss', $report->id) }}">
                                     @csrf
-                                    <button type="submit" class="px-3 py-1.5 rounded-xl hover:bg-[#EFECE6] dark:hover:bg-[#19191D] text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] font-semibold border border-[#E2DFD7] dark:border-[#242426] transition cursor-pointer">
+                                    <button type="submit" class="px-3 py-1.5 rounded-xl hover:bg-[var(--surface-hover)] text-[var(--text-muted)] hover:text-[var(--primary)] font-semibold border border-[var(--border-color)] transition cursor-pointer">
                                         Abaikan
                                     </button>
                                 </form>
                                 <form method="POST" action="{{ route('admin.reports.resolve', $report->id) }}">
                                     @csrf
-                                    <button type="submit" class="px-3.5 py-1.5 rounded-xl bg-[#0B0B0D] hover:bg-[#222225] dark:bg-[#EAE8E1] dark:hover:bg-[#DCD9D0] text-[#EAE8E1] dark:text-[#0B0B0D] font-bold transition shadow-xs cursor-pointer">
+                                    <button type="submit" class="px-3.5 py-1.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--primary-text)] font-bold transition shadow-xs cursor-pointer">
                                         Tandai Selesai
                                     </button>
                                 </form>
                             @else
-                                <span class="text-[11px] text-[#908F88] dark:text-[#605F5A]">
+                                <span class="text-[11px] text-[var(--text-faint)]">
                                     Ditangani {{ $report->resolved_at?->diffForHumans() }}
                                 </span>
                             @endif
@@ -259,12 +256,12 @@
                     </div>
                 </div>
             @empty
-                <div class="bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] rounded-2xl p-12 text-center space-y-3 shadow-xs">
+                <div class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl p-12 text-center space-y-3 shadow-xs">
                     <div class="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                     </div>
-                    <h3 class="text-base font-bold text-[#0B0B0D] dark:text-[#EAE8E1]">Tidak ada laporan konten</h3>
-                    <p class="text-xs text-[#6E6D67] dark:text-[#8E8D86]">Semua konten dalam keadaan aman dan tidak memiliki laporan pelanggaran tertunda.</p>
+                    <h3 class="text-base font-bold text-[var(--primary)]">Tidak ada laporan konten</h3>
+                    <p class="text-xs text-[var(--text-muted)]">Semua konten dalam keadaan aman dan tidak memiliki laporan pelanggaran tertunda.</p>
                 </div>
             @endforelse
 
@@ -279,36 +276,36 @@
         <div class="space-y-3">
             @forelse($userReports as $report)
                 @php $reportedUser = $report->reportable; @endphp
-                <div class="bg-white dark:bg-[#121214] p-5 space-y-4 rounded-2xl border shadow-xs transition {{ $report->status === 'pending' ? 'border-[#D0CDC3] dark:border-[#333336] bg-[#FAF8F5] dark:bg-[#141416]' : 'border-[#E2DFD7] dark:border-[#242426]' }}">
+                <div class="bg-[var(--surface)] p-5 space-y-4 rounded-2xl border shadow-xs transition {{ $report->status ==='pending' ?'border-[var(--border-strong)] bg-[var(--surface-input)]' :'border-[var(--border-color)]' }}">
                     <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                         <div class="flex items-start gap-3.5 min-w-0">
                             @if($reportedUser && $reportedUser->avatar)
-                                <img src="{{ $reportedUser->avatar }}" alt="{{ $reportedUser->name }}" class="w-12 h-12 rounded-full object-cover shrink-0 border border-[#E2DFD7] dark:border-[#242426]">
+                                <img src="{{ $reportedUser->avatar }}" alt="{{ $reportedUser->name }}" class="w-12 h-12 rounded-full object-cover shrink-0 border border-[var(--border-color)]">
                             @else
-                                <div class="w-12 h-12 rounded-full bg-[#EFECE6] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] flex items-center justify-center text-xs text-[#0B0B0D] dark:text-[#EAE8E1] shrink-0 font-bold">
+                                <div class="w-12 h-12 rounded-full bg-[var(--surface-muted)] border border-[var(--border-color)] flex items-center justify-center text-xs text-[var(--primary)] shrink-0 font-bold">
                                     {{ $reportedUser ? strtoupper(substr($reportedUser->name, 0, 2)) : '??' }}
                                 </div>
                             @endif
 
                             <div class="space-y-1 min-w-0">
                                 <div class="flex items-center gap-2 flex-wrap">
-                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider {{ $report->status === 'pending' ? 'bg-[#0B0B0D] text-[#EAE8E1] dark:bg-[#EAE8E1] dark:text-[#0B0B0D]' : ($report->status === 'resolved' ? 'bg-[#EFECE6] dark:bg-[#161619] text-[#0B0B0D] dark:text-[#EAE8E1] border border-[#E2DFD7] dark:border-[#242426]' : 'bg-[#EFECE6] dark:bg-[#161619] text-[#6E6D67] dark:text-[#8E8D86] border border-[#E2DFD7] dark:border-[#242426]') }}">
+                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider {{ $report->status === 'pending' ? 'bg-[var(--primary)] text-[var(--primary-text)]' : ($report->status === 'resolved' ? 'bg-[var(--surface-muted)] text-[var(--primary)] border border-[var(--border-color)]' : 'bg-[var(--surface-muted)] text-[var(--text-muted)] border border-[var(--border-color)]') }}">
                                         {{ $report->status }}
                                     </span>
-                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#EFECE6] dark:bg-[#161619] text-[#0B0B0D] dark:text-[#EAE8E1] border border-[#E2DFD7] dark:border-[#242426]">
+                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[var(--surface-muted)] text-[var(--primary)] border border-[var(--border-color)]">
                                         {{ $report->reason_label }}
                                     </span>
-                                    <span class="text-[11px] text-[#908F88] dark:text-[#605F5A]">• dilaporkan {{ $report->created_at->diffForHumans() }}</span>
+                                    <span class="text-[11px] text-[var(--text-faint)]">• dilaporkan {{ $report->created_at->diffForHumans() }}</span>
                                 </div>
 
                                 @if($reportedUser)
-                                    <h3 class="text-sm font-bold text-[#0B0B0D] dark:text-[#EAE8E1] truncate">
+                                    <h3 class="text-sm font-bold text-[var(--primary)] truncate">
                                         <a href="{{ route('profile.show', $reportedUser->username) }}" target="_blank" class="hover:underline flex items-center gap-1.5">
                                             <span>{{ $reportedUser->name }}</span>
-                                            <span class="text-xs font-mono text-[#6E6D67] dark:text-[#8E8D86]">&#64;{{ $reportedUser->username }}</span>
+                                            <span class="text-xs font-mono text-[var(--text-muted)]">&#64;{{ $reportedUser->username }}</span>
                                         </a>
                                     </h3>
-                                    <p class="text-xs text-[#6E6D67] dark:text-[#8E8D86]">
+                                    <p class="text-xs text-[var(--text-muted)]">
                                         Email: {{ $reportedUser->email }} • Terdaftar {{ $reportedUser->created_at->format('d M Y') }}
                                         @if($reportedUser->is_banned)
                                             <span class="text-rose-600 dark:text-rose-400 font-bold ml-1">(Status: BANNED)</span>
@@ -321,28 +318,28 @@
                         </div>
 
                         <!-- Reporter Info -->
-                        <div class="text-left sm:text-right text-xs shrink-0 bg-[#FAF8F5] dark:bg-[#161619] p-2.5 rounded-xl border border-[#E2DFD7] dark:border-[#242426]">
-                            <span class="text-[10px] text-[#6E6D67] dark:text-[#8E8D86] block">Pelapor:</span>
+                        <div class="text-left sm:text-right text-xs shrink-0 bg-[var(--surface-subtle)] p-2.5 rounded-xl border border-[var(--border-color)]">
+                            <span class="text-[10px] text-[var(--text-muted)] block">Pelapor:</span>
                             @if($report->reporter)
-                                <a href="{{ route('profile.show', $report->reporter->username) }}" class="font-bold text-[#0B0B0D] dark:text-[#EAE8E1] hover:underline">
+                                <a href="{{ route('profile.show', $report->reporter->username) }}" class="font-bold text-[var(--primary)] hover:underline">
                                     &#64;{{ $report->reporter->username }}
                                 </a>
                             @else
-                                <span class="font-medium text-[#6E6D67] dark:text-[#8E8D86]">Anonim</span>
+                                <span class="font-medium text-[var(--text-muted)]">Anonim</span>
                             @endif
                         </div>
                     </div>
 
                     <!-- Notes -->
                     @if($report->notes)
-                        <div class="p-3 rounded-xl bg-[#FAF8F5] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] text-xs text-[#0B0B0D] dark:text-[#EAE8E1]">
-                            <span class="font-semibold text-[#6E6D67] dark:text-[#8E8D86] text-[10px] block uppercase mb-0.5">Catatan Pelapor:</span>
+                        <div class="p-3 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border-color)] text-xs text-[var(--primary)]">
+                            <span class="font-semibold text-[var(--text-muted)] text-[10px] block uppercase mb-0.5">Catatan Pelapor:</span>
                             {{ $report->notes }}
                         </div>
                     @endif
 
                     <!-- Action Bar -->
-                    <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#E2DFD7] dark:border-[#242426] text-xs">
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--border-color)] text-xs">
                         <div class="flex items-center gap-2">
                             @if($reportedUser && !$reportedUser->is_admin)
                                 @if(!$reportedUser->is_banned)
@@ -353,7 +350,7 @@
                                 @else
                                     <form method="POST" action="{{ route('admin.users.unban', $reportedUser->id) }}">
                                         @csrf
-                                        <button type="submit" class="px-3.5 py-1.5 rounded-xl bg-[#0B0B0D] hover:bg-[#222225] dark:bg-[#EAE8E1] dark:hover:bg-[#DCD9D0] text-[#EAE8E1] dark:text-[#0B0B0D] font-bold transition shadow-xs cursor-pointer">
+                                        <button type="submit" class="px-3.5 py-1.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--primary-text)] font-bold transition shadow-xs cursor-pointer">
                                             Buka Blokir (Unban)
                                         </button>
                                     </form>
@@ -362,7 +359,7 @@
                                 <form method="POST" action="{{ route('admin.users.destroy', $reportedUser->id) }}" onsubmit="return confirm('Apakah Anda yakin ingin MENGHAPUS TOTAL akun ini beserta seluruh proyeknya?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="px-3 py-1.5 rounded-xl bg-[#EFECE6] hover:bg-rose-500/10 hover:text-rose-600 text-[#6E6D67] dark:bg-[#161619] dark:text-[#8E8D86] font-semibold border border-[#E2DFD7] dark:border-[#242426] transition cursor-pointer">
+                                    <button type="submit" class="px-3 py-1.5 rounded-xl bg-[var(--surface-muted)] hover:bg-rose-500/10 hover:text-rose-600 text-[var(--text-muted)] font-semibold border border-[var(--border-color)] transition cursor-pointer">
                                         Hapus Akun Total
                                     </button>
                                 </form>
@@ -373,18 +370,18 @@
                             @if($report->status === 'pending')
                                 <form method="POST" action="{{ route('admin.reports.dismiss', $report->id) }}">
                                     @csrf
-                                    <button type="submit" class="px-3 py-1.5 rounded-xl hover:bg-[#EFECE6] dark:hover:bg-[#19191D] text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] font-semibold border border-[#E2DFD7] dark:border-[#242426] transition cursor-pointer">
+                                    <button type="submit" class="px-3 py-1.5 rounded-xl hover:bg-[var(--surface-hover)] text-[var(--text-muted)] hover:text-[var(--primary)] font-semibold border border-[var(--border-color)] transition cursor-pointer">
                                         Abaikan
                                     </button>
                                 </form>
                                 <form method="POST" action="{{ route('admin.reports.resolve', $report->id) }}">
                                     @csrf
-                                    <button type="submit" class="px-3.5 py-1.5 rounded-xl bg-[#0B0B0D] hover:bg-[#222225] dark:bg-[#EAE8E1] dark:hover:bg-[#DCD9D0] text-[#EAE8E1] dark:text-[#0B0B0D] font-bold transition shadow-xs cursor-pointer">
+                                    <button type="submit" class="px-3.5 py-1.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--primary-text)] font-bold transition shadow-xs cursor-pointer">
                                         Tandai Selesai
                                     </button>
                                 </form>
                             @else
-                                <span class="text-[11px] text-[#908F88] dark:text-[#605F5A]">
+                                <span class="text-[11px] text-[var(--text-faint)]">
                                     Ditangani {{ $report->resolved_at?->diffForHumans() }}
                                 </span>
                             @endif
@@ -392,12 +389,12 @@
                     </div>
                 </div>
             @empty
-                <div class="bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] rounded-2xl p-12 text-center space-y-3 shadow-xs">
+                <div class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl p-12 text-center space-y-3 shadow-xs">
                     <div class="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                     </div>
-                    <h3 class="text-base font-bold text-[#0B0B0D] dark:text-[#EAE8E1]">Tidak ada laporan akun pengguna</h3>
-                    <p class="text-xs text-[#6E6D67] dark:text-[#8E8D86]">Semua profil pengguna beraktivitas normal tanpa ada laporan pelanggaran tertunda.</p>
+                    <h3 class="text-base font-bold text-[var(--primary)]">Tidak ada laporan akun pengguna</h3>
+                    <p class="text-xs text-[var(--text-muted)]">Semua profil pengguna beraktivitas normal tanpa ada laporan pelanggaran tertunda.</p>
                 </div>
             @endforelse
 
@@ -411,7 +408,7 @@
     @if($tab === 'banned')
         <div class="space-y-3">
             @forelse($bannedUsers as $bUser)
-                <div class="bg-white dark:bg-[#121214] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-rose-500/20 bg-rose-500/[0.02] rounded-2xl shadow-xs">
+                <div class="bg-[var(--surface)] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-rose-500/20 bg-rose-500/[0.02] rounded-2xl shadow-xs">
                     <div class="flex items-center gap-3.5 min-w-0">
                         @if($bUser->avatar)
                             <img src="{{ $bUser->avatar }}" alt="{{ $bUser->name }}" class="w-12 h-12 rounded-full object-cover shrink-0 grayscale border border-rose-500/30">
@@ -422,15 +419,15 @@
                         @endif
 
                         <div class="space-y-0.5 min-w-0">
-                            <h3 class="text-sm font-bold text-[#0B0B0D] dark:text-[#EAE8E1] flex items-center gap-2 truncate">
+                            <h3 class="text-sm font-bold text-[var(--primary)] flex items-center gap-2 truncate">
                                 <span>{{ $bUser->name }}</span>
-                                <span class="text-xs font-mono text-[#6E6D67] dark:text-[#8E8D86]">&#64;{{ $bUser->username }}</span>
+                                <span class="text-xs font-mono text-[var(--text-muted)]">&#64;{{ $bUser->username }}</span>
                                 <span class="px-2 py-0.2 rounded-full text-[10px] font-bold bg-rose-500 text-white">Banned</span>
                             </h3>
-                            <p class="text-xs text-[#6E6D67] dark:text-[#8E8D86] truncate">
-                                Alasan Ban: <span class="font-medium text-[#0B0B0D] dark:text-[#EAE8E1]">{{ $bUser->ban_reason ?: 'Tidak disebutkan' }}</span>
+                            <p class="text-xs text-[var(--text-muted)] truncate">
+                                Alasan Ban: <span class="font-medium text-[var(--primary)]">{{ $bUser->ban_reason ?: 'Tidak disebutkan' }}</span>
                             </p>
-                            <p class="text-[11px] text-[#908F88] dark:text-[#605F5A]">
+                            <p class="text-[11px] text-[var(--text-faint)]">
                                 Diblokir sejak: {{ $bUser->banned_at?->format('d M Y, H:i') ?: '-' }}
                             </p>
                         </div>
@@ -439,7 +436,7 @@
                     <div class="flex items-center gap-2 shrink-0">
                         <form method="POST" action="{{ route('admin.users.unban', $bUser->id) }}">
                             @csrf
-                            <button type="submit" class="px-3.5 py-1.5 rounded-xl bg-[#0B0B0D] hover:bg-[#222225] dark:bg-[#EAE8E1] dark:hover:bg-[#DCD9D0] text-[#EAE8E1] dark:text-[#0B0B0D] text-xs font-bold transition shadow-xs cursor-pointer">
+                            <button type="submit" class="px-3.5 py-1.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--primary-text)] text-xs font-bold transition shadow-xs cursor-pointer">
                                 Buka Blokir (Unban)
                             </button>
                         </form>
@@ -453,12 +450,12 @@
                     </div>
                 </div>
             @empty
-                <div class="bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] rounded-2xl p-12 text-center space-y-3 shadow-xs">
+                <div class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl p-12 text-center space-y-3 shadow-xs">
                     <div class="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </div>
-                    <h3 class="text-base font-bold text-[#0B0B0D] dark:text-[#EAE8E1]">Tidak ada akun yang diblokir</h3>
-                    <p class="text-xs text-[#6E6D67] dark:text-[#8E8D86]">Saat ini seluruh pengguna memiliki status akun aktif.</p>
+                    <h3 class="text-base font-bold text-[var(--primary)]">Tidak ada akun yang diblokir</h3>
+                    <p class="text-xs text-[var(--text-muted)]">Saat ini seluruh pengguna memiliki status akun aktif.</p>
                 </div>
             @endforelse
 
@@ -472,25 +469,25 @@
     @if($tab === 'all_users')
         <div class="space-y-4">
             <!-- Search & Metric Bar -->
-            <div class="bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-3 shadow-xs">
+            <div class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-3 shadow-xs">
                 <form method="GET" action="{{ route('admin.reports.index') }}" class="flex items-center gap-2 w-full md:w-auto flex-1">
                     <input type="hidden" name="tab" value="all_users">
                     <div class="relative flex-1 max-w-md">
                         <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#908F88]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        <input type="text" name="q" value="{{ $searchQuery ?? '' }}" placeholder="Cari nama, username, atau email pengguna..." class="w-full pl-9 pr-3 py-2 rounded-xl bg-[#FAF8F5] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] text-xs text-[#0B0B0D] dark:text-[#EAE8E1] outline-none focus:border-[#0B0B0D] dark:focus:border-[#EAE8E1] transition">
+                        <input type="text" name="q" value="{{ $searchQuery ?? '' }}" placeholder="Cari nama, username, atau email pengguna..." class="w-full pl-9 pr-3 py-2 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border-color)] text-xs text-[var(--primary)] outline-none focus:border-[var(--primary)] transition">
                     </div>
                     <button type="submit" class="btn-primary text-xs py-2 px-4 cursor-pointer">
                         Cari
                     </button>
                     @if(!empty($searchQuery))
-                        <a href="{{ route('admin.reports.index', ['tab' => 'all_users']) }}" class="px-3 py-2 rounded-xl border border-[#E2DFD7] dark:border-[#242426] text-xs text-[#6E6D67] dark:text-[#8E8D86] hover:bg-[#EFECE6] dark:hover:bg-[#161619] transition">
+                        <a href="{{ route('admin.reports.index', ['tab' => 'all_users']) }}" class="px-3 py-2 rounded-xl border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:bg-[var(--surface-muted)] transition">
                             Reset
                         </a>
                     @endif
                 </form>
 
-                <div class="flex items-center gap-2 text-xs shrink-0 font-medium text-[#6E6D67] dark:text-[#8E8D86]">
-                    <span>Total: <strong class="text-[#0B0B0D] dark:text-[#EAE8E1]">{{ $allUsersCount }}</strong></span>
+                <div class="flex items-center gap-2 text-xs shrink-0 font-medium text-[var(--text-muted)]">
+                    <span>Total: <strong class="text-[var(--primary)]">{{ $allUsersCount }}</strong></span>
                     <span>•</span>
                     <span class="text-amber-600 dark:text-amber-400">Peringatan: <strong>{{ $warnedUsersCount }}</strong></span>
                     <span>•</span>
@@ -501,19 +498,19 @@
             <!-- Users List -->
             <div class="space-y-3">
                 @forelse($allUsers as $u)
-                    <div class="bg-white dark:bg-[#121214] p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border shadow-xs transition {{ $u->is_banned ? 'border-rose-500/30 bg-rose-500/[0.02]' : ($u->hasWarning() ? 'border-amber-500/30 bg-amber-500/[0.02]' : 'border-[#E2DFD7] dark:border-[#242426]') }}">
+                    <div class="bg-[var(--surface)] p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border shadow-xs transition {{ $u->is_banned ?'border-rose-500/30 bg-rose-500/[0.02]' : ($u->hasWarning() ?'border-amber-500/30 bg-amber-500/[0.02]' :'border-[var(--border-color)]') }}">
                         <!-- Left: User Profile Info -->
                         <div class="flex items-start gap-3.5 min-w-0">
                             <x-user-avatar :user="$u" size="lg" class="shrink-0" />
                             <div class="min-w-0 space-y-1">
                                 <div class="flex items-center gap-2 flex-wrap">
-                                    <h3 class="text-sm font-bold text-[#0B0B0D] dark:text-[#EAE8E1] truncate">
+                                    <h3 class="text-sm font-bold text-[var(--primary)] truncate">
                                         {{ $u->name }}
                                     </h3>
-                                    <span class="text-xs font-mono text-[#6E6D67] dark:text-[#8E8D86] truncate">&#64;{{ $u->username }}</span>
+                                    <span class="text-xs font-mono text-[var(--text-muted)] truncate">&#64;{{ $u->username }}</span>
 
                                     @if($u->is_admin)
-                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#EFECE6] dark:bg-[#19191D] text-[#0B0B0D] dark:text-[#EAE8E1] border border-[#E2DFD7] dark:border-[#242426]">
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--surface-hover)] text-[var(--primary)] border border-[var(--border-color)]">
                                             Admin
                                         </span>
                                     @endif
@@ -527,13 +524,13 @@
                                             Dalam Peringatan
                                         </span>
                                     @else
-                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#EFECE6] dark:bg-[#161619] text-[#0B0B0D] dark:text-[#EAE8E1] border border-[#E2DFD7] dark:border-[#242426]">
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[var(--surface-muted)] text-[var(--primary)] border border-[var(--border-color)]">
                                             Aktif
                                         </span>
                                     @endif
                                 </div>
 
-                                <p class="text-xs text-[#6E6D67] dark:text-[#8E8D86] flex items-center gap-2 flex-wrap">
+                                <p class="text-xs text-[var(--text-muted)] flex items-center gap-2 flex-wrap">
                                     <span>{{ $u->email }}</span>
                                     <span>•</span>
                                     <span>{{ $u->projects_count }} Karya</span>
@@ -558,10 +555,10 @@
                         </div>
 
                         <!-- Right: Direct Admin Action Buttons -->
-                        <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end pt-2 md:pt-0 border-t md:border-t-0 border-[#E2DFD7] dark:border-[#242426]">
+                        <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end pt-2 md:pt-0 border-t md:border-t-0 border-[var(--border-color)]">
                             <!-- View Profile -->
                             <a href="{{ route('profile.show', $u->username) }}" target="_blank"
-                               class="px-3 py-1.5 rounded-xl border border-[#E2DFD7] dark:border-[#242426] hover:bg-[#EFECE6] dark:hover:bg-[#161619] text-xs font-semibold text-[#6E6D67] dark:text-[#8E8D86] transition flex items-center gap-1.5">
+                               class="px-3 py-1.5 rounded-xl border border-[var(--border-color)] hover:bg-[var(--surface-muted)] text-xs font-semibold text-[var(--text-muted)] transition flex items-center gap-1.5">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                 <span>Profil</span>
                             </a>
@@ -588,7 +585,7 @@
                                 @if($u->is_banned)
                                     <form method="POST" action="{{ route('admin.users.unban', $u->id) }}">
                                         @csrf
-                                        <button type="submit" class="px-3.5 py-1.5 rounded-xl bg-[#0B0B0D] hover:bg-[#222225] dark:bg-[#EAE8E1] dark:hover:bg-[#DCD9D0] text-[#EAE8E1] dark:text-[#0B0B0D] text-xs font-bold transition shadow-xs cursor-pointer">
+                                        <button type="submit" class="px-3.5 py-1.5 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--primary-text)] text-xs font-bold transition shadow-xs cursor-pointer">
                                             Buka Blokir
                                         </button>
                                     </form>
@@ -612,9 +609,9 @@
                         </div>
                     </div>
                 @empty
-                    <div class="bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] rounded-2xl p-12 text-center space-y-3 shadow-xs">
-                        <p class="text-sm font-semibold text-[#0B0B0D] dark:text-[#EAE8E1]">Tidak ada pengguna yang cocok dengan pencarian.</p>
-                        <a href="{{ route('admin.reports.index', ['tab' => 'all_users']) }}" class="text-xs text-[#0B0B0D] dark:text-[#EAE8E1] hover:underline font-semibold">Tampilkan Semua Pengguna</a>
+                    <div class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl p-12 text-center space-y-3 shadow-xs">
+                        <p class="text-sm font-semibold text-[var(--primary)]">Tidak ada pengguna yang cocok dengan pencarian.</p>
+                        <a href="{{ route('admin.reports.index', ['tab' => 'all_users']) }}" class="text-xs text-[var(--primary)] hover:underline font-semibold">Tampilkan Semua Pengguna</a>
                     </div>
                 @endforelse
             </div>
@@ -629,16 +626,16 @@
     <div x-show="warnModalOpen" x-cloak class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
         <div class="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-xs" @click="warnModalOpen = false"></div>
         <div class="min-h-full flex items-center justify-center p-4">
-            <div class="relative w-full max-w-md bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] rounded-2xl p-6 shadow-2xl space-y-4 text-[#0B0B0D] dark:text-[#EAE8E1]">
+            <div class="relative w-full max-w-md bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl p-6 shadow-2xl space-y-4 text-[var(--primary)]">
                 <h3 class="text-base font-bold">Pasang Peringatan Resmi pada Proyek</h3>
-                <p class="text-xs text-[#6E6D67] dark:text-[#8E8D86]">Proyek: <strong class="text-[#0B0B0D] dark:text-[#EAE8E1]" x-text="warnProjectTitle"></strong></p>
+                <p class="text-xs text-[var(--text-muted)]">Proyek: <strong class="text-[var(--primary)]" x-text="warnProjectTitle"></strong></p>
 
                 <form method="POST" :action="'/admin/project/' + warnProjectId + '/warning'" class="space-y-4">
                     @csrf
                     <input type="hidden" name="action" value="set">
                     <div>
                         <label class="block text-xs font-semibold mb-1">Catatan Peringatan (Tampil di Proyek):</label>
-                        <textarea name="warning_notes" x-model="warnNotes" rows="3" required class="w-full px-3 py-2 rounded-xl bg-[#FAF8F5] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] text-xs outline-none focus:border-amber-500 transition resize-none"></textarea>
+                        <textarea name="warning_notes" x-model="warnNotes" rows="3" required class="w-full px-3 py-2 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border-color)] text-xs outline-none focus:border-amber-500 transition resize-none"></textarea>
                     </div>
 
                     <div class="flex items-center justify-end gap-2">
@@ -654,17 +651,17 @@
     <div x-show="userWarnModalOpen" x-cloak class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
         <div class="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-xs" @click="userWarnModalOpen = false"></div>
         <div class="min-h-full flex items-center justify-center p-4">
-            <div class="relative w-full max-w-md bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] rounded-2xl p-6 shadow-2xl space-y-4 text-[#0B0B0D] dark:text-[#EAE8E1]">
+            <div class="relative w-full max-w-md bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl p-6 shadow-2xl space-y-4 text-[var(--primary)]">
                 <h3 class="text-base font-bold text-amber-700 dark:text-amber-400">Beri Peringatan ke Akun Pengguna</h3>
-                <p class="text-xs text-[#6E6D67] dark:text-[#8E8D86]">Pengguna: <strong class="text-[#0B0B0D] dark:text-[#EAE8E1]" x-text="userWarnName"></strong></p>
+                <p class="text-xs text-[var(--text-muted)]">Pengguna: <strong class="text-[var(--primary)]" x-text="userWarnName"></strong></p>
 
                 <form method="POST" :action="'/admin/user/' + userWarnId + '/warning'" class="space-y-4">
                     @csrf
                     <input type="hidden" name="action" value="set">
                     <div>
                         <label class="block text-xs font-semibold mb-1">Catatan Peringatan Akun:</label>
-                        <textarea name="warning_notes" x-model="userWarnNotes" rows="3" required class="w-full px-3 py-2 rounded-xl bg-[#FAF8F5] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] text-xs outline-none focus:border-amber-500 transition resize-none"></textarea>
-                        <p class="text-[10px] text-[#6E6D67] dark:text-[#8E8D86] mt-1">Peringatan ini akan ditampilkan pada profil akun tersebut.</p>
+                        <textarea name="warning_notes" x-model="userWarnNotes" rows="3" required class="w-full px-3 py-2 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border-color)] text-xs outline-none focus:border-amber-500 transition resize-none"></textarea>
+                        <p class="text-[10px] text-[var(--text-muted)] mt-1">Peringatan ini akan ditampilkan pada profil akun tersebut.</p>
                     </div>
 
                     <div class="flex items-center justify-end gap-2">
@@ -680,16 +677,16 @@
     <div x-show="banModalOpen" x-cloak class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
         <div class="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-xs" @click="banModalOpen = false"></div>
         <div class="min-h-full flex items-center justify-center p-4">
-            <div class="relative w-full max-w-md bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] rounded-2xl p-6 shadow-2xl space-y-4 text-[#0B0B0D] dark:text-[#EAE8E1]">
+            <div class="relative w-full max-w-md bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl p-6 shadow-2xl space-y-4 text-[var(--primary)]">
                 <h3 class="text-base font-bold text-rose-600 dark:text-rose-400">Blokir Akun Pengguna (Ban)</h3>
-                <p class="text-xs text-[#6E6D67] dark:text-[#8E8D86]">Pengguna: <strong class="text-[#0B0B0D] dark:text-[#EAE8E1]" x-text="banUserName"></strong></p>
+                <p class="text-xs text-[var(--text-muted)]">Pengguna: <strong class="text-[var(--primary)]" x-text="banUserName"></strong></p>
 
                 <form method="POST" :action="'/admin/user/' + banUserId + '/ban'" class="space-y-4">
                     @csrf
                     <div>
                         <label class="block text-xs font-semibold mb-1">Alasan Penonaktifan Akun:</label>
-                        <textarea name="ban_reason" x-model="banReason" rows="3" required class="w-full px-3 py-2 rounded-xl bg-[#FAF8F5] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] text-xs outline-none focus:border-rose-500 transition resize-none"></textarea>
-                        <p class="text-[10px] text-[#6E6D67] dark:text-[#8E8D86] mt-1">Alasan ini akan ditampilkan kepada pengguna saat mereka mencoba login.</p>
+                        <textarea name="ban_reason" x-model="banReason" rows="3" required class="w-full px-3 py-2 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border-color)] text-xs outline-none focus:border-rose-500 transition resize-none"></textarea>
+                        <p class="text-[10px] text-[var(--text-muted)] mt-1">Alasan ini akan ditampilkan kepada pengguna saat mereka mencoba login.</p>
                     </div>
 
                     <div class="flex items-center justify-end gap-2">

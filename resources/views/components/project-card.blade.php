@@ -7,7 +7,7 @@
     'uid' => 'p',
 ])
 
-<article class="project-nav-card bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] hover:border-[#D0CDC3] dark:hover:border-[#333336] rounded-2xl p-5 sm:p-6 transition relative mb-5 last:mb-0 space-y-4 group cursor-pointer shadow-xs"
+<article class="project-nav-card bg-[var(--surface)] border border-[var(--border-color)] hover:border-[var(--border-strong)] rounded-2xl p-5 sm:p-6 transition relative mb-5 last:mb-0 space-y-4 group cursor-pointer"
          @click="if (! $event.target.closest('a, button, input, textarea, select, [data-no-card-nav]')) { window.location.href = '{{ route('projects.show', $project->slug) }}'; }"
          x-data="{
              score: {{ $project->score }},
@@ -133,37 +133,43 @@
     <!-- 2. Project Title & Tagline & Quick Action Pills -->
     <div class="space-y-2">
         <div class="flex items-start justify-between gap-3">
-            <div class="flex items-center gap-2.5 flex-wrap min-w-0">
-                <h2 class="text-lg sm:text-[21px] font-bold text-[#0B0B0D] dark:text-[#EAE8E1] leading-snug tracking-tight group-hover:opacity-85 transition">
-                    <a href="{{ route('projects.show', $project->slug) }}" class="card-detail-link focus-visible:rounded">
-                        {{ $project->title }}
-                    </a>
-                </h2>
+            <div class="min-w-0 flex-1 space-y-1.5">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <h2 class="text-lg sm:text-[20px] font-bold text-[var(--primary)] leading-snug tracking-tight group-hover:opacity-85 transition">
+                        <a href="{{ route('projects.show', $project->slug) }}" class="card-detail-link focus-visible:rounded">
+                            {{ $project->title }}
+                        </a>
+                    </h2>
 
-                @if(! $project->thumbnail && $project->created_at->diffInHours(now()) < 24)
-                    <span class="hl-new-badge">New</span>
-                @endif
+                    @if(! $project->thumbnail && $project->created_at->diffInHours(now()) < 24)
+                        <span class="hl-new-badge">New</span>
+                    @endif
+                </div>
 
-                @if($project->demo_url)
-                    <a href="{{ $project->demo_url }}" target="_blank" rel="noopener noreferrer" @click.stop
-                       class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-[#EFECE6] dark:bg-[#161619] text-[#0B0B0D] dark:text-[#EAE8E1] border border-[#E2DFD7] dark:border-[#242426] hover:border-[#D0CDC3] dark:hover:border-[#333336] transition">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                        <span>Demo</span>
-                    </a>
-                @endif
-                @if($project->prototype_url)
-                    <a href="{{ $project->prototype_url }}" target="_blank" rel="noopener noreferrer" @click.stop
-                       class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:border-emerald-500 transition">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span>Interaktif</span>
-                    </a>
-                @endif
-                @if($project->github_url)
-                    <a href="{{ $project->github_url }}" target="_blank" rel="noopener noreferrer" @click.stop
-                       class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono text-[#6E6D67] dark:text-[#8E8D86] bg-[#EFECE6] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] transition">
-                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
-                        <span>GitHub</span>
-                    </a>
+                @if($project->demo_url || $project->prototype_url || $project->github_url)
+                    <div class="flex items-center gap-2 flex-wrap pt-0.5">
+                        @if($project->demo_url)
+                            <a href="{{ $project->demo_url }}" target="_blank" rel="noopener noreferrer" @click.stop
+                               class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-[var(--surface-muted)] text-[var(--primary)] transition">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                <span>Demo</span>
+                            </a>
+                        @endif
+                        @if($project->prototype_url)
+                            <a href="{{ $project->prototype_url }}" target="_blank" rel="noopener noreferrer" @click.stop
+                               class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 transition">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <span>Interaktif</span>
+                            </a>
+                        @endif
+                        @if($project->github_url)
+                            <a href="{{ $project->github_url }}" target="_blank" rel="noopener noreferrer" @click.stop
+                               class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-mono text-[var(--text-muted)] bg-[var(--surface-muted)] hover:text-[var(--primary)] transition">
+                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+                                <span>GitHub</span>
+                            </a>
+                        @endif
+                    </div>
                 @endif
             </div>
 
@@ -171,14 +177,14 @@
                 <form method="POST" action="{{ route('projects.pin', $project) }}" class="shrink-0" @click.stop>
                     @csrf
                     <button type="submit" title="{{ $project->is_pinned ? 'Lepas sematan' : 'Sematkan ke profil' }}"
-                            class="w-8 h-8 rounded-lg flex items-center justify-center transition {{ $project->is_pinned ? 'text-[#0B0B0D] dark:text-[#EAE8E1] bg-[#EFECE6] dark:bg-[#19191D]' : 'text-[#6E6D67] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] hover:bg-[#EFECE6] dark:hover:bg-[#19191D]' }}">
+                            class="w-8 h-8 rounded-lg flex items-center justify-center transition {{ $project->is_pinned ? 'text-[var(--primary)] bg-[var(--surface-hover)]' : 'text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--surface-hover)]' }}">
                         <svg class="w-4 h-4" fill="{{ $project->is_pinned ? 'currentColor' : 'none' }}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 3a1 1 0 00-1 1v1.586l-4.293 4.293a1 1 0 00-.29.546l-.585 3.51-2.125 2.124a1 1 0 00.046 1.418l.001.001-1.045 1.045a1 1 0 001.414 1.414L9.16 20.9l.001.001a1 1 0 001.418.046l2.124-2.125 3.51-.585a1 1 0 00.546-.29L21 13.657H22a1 1 0 000-2h-1V7a1 1 0 00-1-1h-4zM7 17l-3.293 3.293a1 1 0 01-1.414-1.414L5.586 15.586 7 17z"/></svg>
                     </button>
                 </form>
             @endif
         </div>
 
-        <p class="text-[15px] text-[#6E6D67] dark:text-[#8E8D86] leading-relaxed line-clamp-2">
+        <p class="text-[14.5px] sm:text-[15px] text-[var(--text-muted)] leading-relaxed line-clamp-2">
             {{ $project->tagline }}
         </p>
 
@@ -201,7 +207,7 @@
     <!-- 3. Gallery media (16:9 container, crisp 1px borders) -->
     @php $gallery = $project->galleryImages(); $galleryCount = count($gallery); @endphp
     @if($galleryCount > 0)
-        <div class="relative block mx-auto max-w-full w-full overflow-hidden rounded-xl border border-[#E2DFD7] dark:border-[#242426] bg-[#EFECE6] dark:bg-[#161619]">
+        <div class="relative block mx-auto max-w-full w-full overflow-hidden rounded-xl bg-[var(--surface-muted)]">
             <button type="button" class="block w-full text-left cursor-pointer" data-no-card-nav @click.stop="openLightbox(0)">
                 @if($galleryCount === 1)
                     {{-- Single image --}}
@@ -325,23 +331,23 @@
             </div>
 
             <!-- Right: compact detail panel -->
-            <aside class="lg:w-80 shrink-0 bg-white dark:bg-[#121214] border-t lg:border-t-0 lg:border-l border-[#E2DFD7] dark:border-[#242426] p-5 overflow-y-auto">
+            <aside class="lg:w-80 shrink-0 bg-[var(--surface)] border-t lg:border-t-0 lg:border-l border-[var(--border-color)] p-5 overflow-y-auto">
                 <div class="flex items-center gap-2.5">
                     <x-user-avatar :user="$project->user" size="sm" />
                     <div class="min-w-0">
-                        <p class="font-bold text-sm text-[#0B0B0D] dark:text-[#EAE8E1] truncate">{{ $project->user?->name ?? 'Anonim' }}</p>
-                        <p class="text-[11px] text-[#6E6D67] dark:text-[#8E8D86] truncate">{{ $project->created_at->diffForHumans() }}</p>
+                        <p class="font-bold text-sm text-[var(--primary)] truncate">{{ $project->user?->name ?? 'Anonim' }}</p>
+                        <p class="text-[11px] text-[var(--text-muted)] truncate">{{ $project->created_at->diffForHumans() }}</p>
                     </div>
                 </div>
 
-                <h3 class="mt-4 font-bold text-sm text-[#0B0B0D] dark:text-[#EAE8E1] leading-snug">{{ $project->title }}</h3>
-                <p class="mt-1 text-xs text-[#6E6D67] dark:text-[#8E8D86] leading-relaxed line-clamp-4">{{ $project->tagline }}</p>
+                <h3 class="mt-4 font-bold text-sm text-[var(--primary)] leading-snug">{{ $project->title }}</h3>
+                <p class="mt-1 text-xs text-[var(--text-muted)] leading-relaxed line-clamp-4">{{ $project->tagline }}</p>
 
                 @if($project->category)
-                    <span class="inline-block mt-3 text-[11px] font-medium px-2 py-0.5 rounded-md bg-[#EFECE6] dark:bg-[#161619] text-[#4A4944] dark:text-[#A8A7A0] border border-[#E2DFD7] dark:border-[#242426]">{{ $project->category->name }}</span>
+                    <span class="inline-block mt-3 text-[11px] font-medium px-2 py-0.5 rounded-md bg-[var(--surface-muted)] text-[var(--text-soft)]">{{ $project->category->name }}</span>
                 @endif
 
-                <div class="flex items-center gap-4 mt-4 text-xs text-[#6E6D67] dark:text-[#8E8D86]">
+                <div class="flex items-center gap-4 mt-4 text-xs text-[var(--text-muted)]">
                     <span class="inline-flex items-center gap-1 font-mono"><svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>{{ $project->score }}</span>
                     <span class="inline-flex items-center gap-1 font-mono"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>{{ $project->comments_count }}</span>
                     <span class="inline-flex items-center gap-1 font-mono"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>{{ $project->views_count }}</span>

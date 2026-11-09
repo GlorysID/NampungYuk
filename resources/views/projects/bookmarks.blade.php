@@ -8,25 +8,25 @@
 <div class="space-y-6 max-w-4xl mx-auto">
 
     <!-- Header Banner -->
-    <div class="rounded-2xl bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] p-5 sm:p-6 flex items-center justify-between gap-4 shadow-xs">
+    <div class="rounded-2xl bg-[var(--surface)] border border-[var(--border-color)] p-5 sm:p-6 flex items-center justify-between gap-4 shadow-xs">
         <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-xl bg-[#0B0B0D] text-[#EAE8E1] dark:bg-[#EAE8E1] dark:text-[#0B0B0D] flex items-center justify-center shrink-0 shadow-xs">
+            <div class="w-12 h-12 rounded-xl bg-[var(--primary)] text-[var(--primary-text)] flex items-center justify-center shrink-0 shadow-xs">
                 <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
                 </svg>
             </div>
             <div>
-                <h1 class="text-lg sm:text-xl font-extrabold text-[#0B0B0D] dark:text-[#EAE8E1] tracking-tight">
+                <h1 class="text-lg sm:text-xl font-extrabold text-[var(--primary)] tracking-tight">
                     Koleksi Proyek Tersimpan
                 </h1>
-                <p class="text-sm text-[#6E6D67] dark:text-[#8E8D86] leading-relaxed mt-0.5">
+                <p class="text-sm text-[var(--text-muted)] leading-relaxed mt-0.5">
                     Project pilihan yang ingin kamu pelajari kembali, eksplorasi arsitekturnya, atau coba kodingannya.
                 </p>
             </div>
         </div>
 
         <a href="{{ route('projects.index') }}" 
-           class="px-3.5 py-2 rounded-xl border border-[#E2DFD7] dark:border-[#242426] bg-[#EFECE6] dark:bg-[#161619] hover:bg-[#E2DFD7] dark:hover:bg-[#19191D] text-[#0B0B0D] dark:text-[#EAE8E1] text-xs font-semibold hidden sm:inline-flex items-center gap-1.5 transition">
+           class="px-3.5 py-2 rounded-xl border border-[var(--border-color)] bg-[var(--surface-muted)] hover:bg-[var(--surface-chip-hover)] text-[var(--primary)] text-xs font-semibold hidden sm:inline-flex items-center gap-1.5 transition">
             <span>Jelajahi Feed</span>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
@@ -62,7 +62,7 @@
 
         <div x-ref="sentinel" class="pt-4 flex justify-center">
             <button type="button" x-show="!done" @click="loadMore()" :disabled="loading"
-                    class="px-5 py-2.5 rounded-xl border border-[#E2DFD7] dark:border-[#242426] bg-[#EFECE6] dark:bg-[#161619] hover:bg-[#E2DFD7] dark:hover:bg-[#19191D] text-[#0B0B0D] dark:text-[#EAE8E1] text-xs font-semibold shadow-xs transition disabled:opacity-60 cursor-pointer">
+                    class="px-5 py-2.5 rounded-xl border border-[var(--border-color)] bg-[var(--surface-muted)] hover:bg-[var(--surface-chip-hover)] text-[var(--primary)] text-xs font-semibold shadow-xs transition disabled:opacity-60 cursor-pointer">
                 <span x-show="!loading">Muat lebih banyak</span>
                 <span x-show="loading" x-cloak>Memuat...</span>
             </button>

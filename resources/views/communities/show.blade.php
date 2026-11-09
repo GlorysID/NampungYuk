@@ -8,8 +8,8 @@
 <div class="space-y-5 max-w-3xl mx-auto">
 
     <!-- Community header -->
-    <div class="bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] rounded-2xl overflow-hidden shadow-xs">
-        <div class="h-24 sm:h-32 relative bg-[#F6F5F0] dark:bg-[#0B0B0D]">
+    <div class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl overflow-hidden shadow-xs">
+        <div class="h-24 sm:h-32 relative bg-[var(--bg-app)]">
             @if($community->cover)
                 <img src="{{ $community->cover }}" alt="" class="absolute inset-0 w-full h-full object-cover">
             @else
@@ -19,40 +19,40 @@
         <div class="px-5 pb-5 -mt-8 relative z-10">
             <div class="flex items-end gap-4">
                 @if($community->icon)
-                    <img src="{{ $community->icon }}" alt="" class="w-16 sm:w-20 h-16 sm:h-20 rounded-2xl object-cover ring-4 ring-white dark:ring-[#121214] bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426]">
+                    <img src="{{ $community->icon }}" alt="" class="w-16 sm:w-20 h-16 sm:h-20 rounded-2xl object-cover ring-4 ring-[var(--surface)] bg-[var(--surface)] border border-[var(--border-color)]">
                 @else
-                    <div class="w-16 sm:w-20 h-16 sm:h-20 rounded-2xl bg-[#0B0B0D] text-[#EAE8E1] dark:bg-[#EAE8E1] dark:text-[#0B0B0D] flex items-center justify-center text-2xl font-bold ring-4 ring-white dark:ring-[#121214]">{{ mb_substr($community->name, 0, 1) }}</div>
+                    <div class="w-16 sm:w-20 h-16 sm:h-20 rounded-2xl bg-[var(--primary)] text-[var(--primary-text)] flex items-center justify-center text-2xl font-bold ring-4 ring-[var(--surface)]">{{ mb_substr($community->name, 0, 1) }}</div>
                 @endif
                 <div class="flex-1 min-w-0 pb-1">
                     <div class="flex items-center gap-2 flex-wrap">
-                        <h1 class="text-xl sm:text-2xl font-bold text-[#0B0B0D] dark:text-[#EAE8E1] truncate">{{ $community->name }}</h1>
+                        <h1 class="text-xl sm:text-2xl font-bold text-[var(--primary)] truncate">{{ $community->name }}</h1>
                         @if($community->topic)
-                            <span class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-[#EFECE6] dark:bg-[#161619] text-[#6E6D67] dark:text-[#8E8D86] border border-[#E2DFD7] dark:border-[#242426]">{{ $community->topic }}</span>
+                            <span class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-[var(--surface-muted)] text-[var(--text-muted)] border border-[var(--border-color)]">{{ $community->topic }}</span>
                         @endif
                         <span class="text-xs font-bold uppercase {{ $community->isPrivate() ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400' }}">{{ $community->isPrivate() ? 'Private' : 'Publik' }}</span>
                     </div>
-                    <p class="text-xs sm:text-sm text-[#6E6D67] dark:text-[#8E8D86] mt-0.5">{{ number_format($community->members_count) }} anggota · {{ $community->posts_count }} postingan · dibuat oleh {{ $community->owner?->name }}</p>
+                    <p class="text-xs sm:text-sm text-[var(--text-muted)] mt-0.5">{{ number_format($community->members_count) }} anggota · {{ $community->posts_count }} postingan · dibuat oleh {{ $community->owner?->name }}</p>
                 </div>
                 @auth
                     <button type="button" x-data="communityJoin({ joined: {{ $isMember ? 'true' : 'false' }}, url: '{{ route('communities.join', $community) }}' })"
                             @click="toggle()" :disabled="loading"
-                            :class="joined ? 'bg-[#EFECE6] dark:bg-[#161619] text-[#0B0B0D] dark:text-[#EAE8E1] border border-[#E2DFD7] dark:border-[#242426]' : 'bg-[#0B0B0D] text-[#EAE8E1] dark:bg-[#EAE8E1] dark:text-[#0B0B0D] hover:bg-[#222225] dark:hover:bg-[#DCD9D0]'"
+                            :class="joined ? 'bg-[var(--surface-muted)] text-[var(--primary)] border border-[var(--border-color)]' : 'bg-[var(--primary)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)]'"
                             class="text-sm font-semibold py-2.5 px-5 rounded-xl transition disabled:opacity-60 shrink-0 cursor-pointer shadow-xs select-none active:scale-[0.98]"
                             x-text="joined ? 'Bergabung' : 'Gabung'"></button>
                 @else
-                    <button type="button" @click="window.openAuthModal('login')" class="text-sm font-semibold py-2.5 px-5 rounded-xl bg-[#0B0B0D] text-[#EAE8E1] dark:bg-[#EAE8E1] dark:text-[#0B0B0D] hover:bg-[#222225] dark:hover:bg-[#DCD9D0] transition shrink-0 cursor-pointer shadow-xs select-none active:scale-[0.98]">
+                    <button type="button" @click="window.openAuthModal('login')" class="text-sm font-semibold py-2.5 px-5 rounded-xl bg-[var(--primary)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)] transition shrink-0 cursor-pointer shadow-xs select-none active:scale-[0.98]">
                         Gabung
                     </button>
                 @endauth
             </div>
 
             @if($community->description)
-                <div class="mt-4 p-4 rounded-xl bg-[#F6F5F0] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426]">
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-[#6E6D67] dark:text-[#8E8D86] mb-1.5">Tentang komunitas ini</p>
-                    <p class="text-sm sm:text-[14.5px] text-[#0B0B0D] dark:text-[#EAE8E1] leading-relaxed whitespace-pre-line">{{ $community->description }}</p>
+                <div class="mt-4 p-4 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border-color)]">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">Tentang komunitas ini</p>
+                    <p class="text-sm sm:text-[14.5px] text-[var(--primary)] leading-relaxed whitespace-pre-line">{{ $community->description }}</p>
                     @if($community->rules)
-                        <p class="text-[11px] font-bold uppercase tracking-wider text-[#6E6D67] dark:text-[#8E8D86] mt-3 mb-1.5">Aturan komunitas</p>
-                        <p class="text-xs sm:text-sm text-[#6E6D67] dark:text-[#8E8D86] leading-relaxed whitespace-pre-line">{{ $community->rules }}</p>
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] mt-3 mb-1.5">Aturan komunitas</p>
+                        <p class="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed whitespace-pre-line">{{ $community->rules }}</p>
                     @endif
                 </div>
             @endif
@@ -64,7 +64,7 @@
                             <x-user-avatar :user="$m" size="xs" class="ring-2 ring-white dark:ring-[#121214]!" />
                         @endforeach
                     </div>
-                    <span class="text-[11px] text-[#6E6D67] dark:text-[#8E8D86]">+{{ max(0, $community->members_count - 6) }} lainnya</span>
+                    <span class="text-[11px] text-[var(--text-muted)]">+{{ max(0, $community->members_count - 6) }} lainnya</span>
                 </div>
             @endif
         </div>
@@ -72,10 +72,10 @@
 
     <!-- Sort tabs + search -->
     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-        <div class="inline-flex items-center p-1 rounded-xl bg-[#EFECE6] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] text-xs shrink-0">
+        <div class="inline-flex items-center p-1 rounded-xl bg-[var(--surface-muted)] border border-[var(--border-color)] text-xs shrink-0">
             @foreach(['terbaru' => 'Terbaru', 'populer' => 'Terpopuler', 'terjawab' => 'Terjawab'] as $key => $label)
                 <a href="{{ route('communities.show', array_filter(['slug' => $community->slug, 'tab' => $key, 'q' => $search])) }}"
-                   class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition {{ $tab === $key ? 'bg-white dark:bg-[#121214] text-[#0B0B0D] dark:text-[#EAE8E1] shadow-xs' : 'text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1]' }}">
+                   class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition {{ $tab === $key ? 'bg-[var(--surface)] text-[var(--primary)] shadow-xs' : 'text-[var(--text-muted)] hover:text-[var(--primary)]' }}">
                     {{ $label }}
                 </a>
             @endforeach
@@ -83,46 +83,46 @@
         <form method="GET" action="{{ route('communities.show', $community->slug) }}" class="relative flex-1">
             @if($tab) <input type="hidden" name="tab" value="{{ $tab }}"> @endif
             <svg class="w-4 h-4 text-[#908F88] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-            <input type="text" name="q" value="{{ $search }}" placeholder="Cari di komunitas ini..." class="w-full pl-10 pr-3.5 py-2 rounded-xl bg-white dark:bg-[#141416] border border-[#E2DFD7] dark:border-[#242426] text-[#0B0B0D] dark:text-[#EAE8E1] placeholder:text-[#908F88] dark:placeholder:text-[#6E6D67] text-xs sm:text-sm outline-none focus:border-[#0B0B0D] dark:focus:border-[#EAE8E1] shadow-xs transition">
+            <input type="text" name="q" value="{{ $search }}" placeholder="Cari di komunitas ini..." class="w-full pl-10 pr-3.5 py-2 rounded-xl bg-[var(--surface-input)] border border-[var(--border-color)] text-[var(--primary)] placeholder:text-[var(--text-placeholder)] text-xs sm:text-sm outline-none focus:border-[var(--primary)] shadow-xs transition">
         </form>
     </div>
 
     <!-- Post composer (members only) -->
     @auth
         @if($isMember)
-            <form method="POST" action="{{ route('communities.post', $community) }}" enctype="multipart/form-data" class="bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] rounded-2xl p-4 space-y-3 shadow-xs" x-data="{ type: 'discussion' }">
+            <form method="POST" action="{{ route('communities.post', $community) }}" enctype="multipart/form-data" class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl p-4 space-y-3 shadow-xs" x-data="{ type: 'discussion' }">
                 @csrf
                 <div class="flex gap-3">
                     <x-user-avatar :user="auth()->user()" size="sm" />
                     <textarea name="content" required maxlength="2000" rows="2" placeholder="Bagikan ilmu, ajukan pertanyaan, atau mulai diskusi..."
-                              class="w-full px-3.5 py-2.5 rounded-xl bg-[#F6F5F0] dark:bg-[#141416] border border-[#E2DFD7] dark:border-[#242426] text-[#0B0B0D] dark:text-[#EAE8E1] placeholder:text-[#908F88] dark:placeholder:text-[#6E6D67] text-sm resize-none outline-none focus:border-[#0B0B0D] dark:focus:border-[#EAE8E1] transition flex-1"></textarea>
+                              class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-input)] border border-[var(--border-color)] text-[var(--primary)] placeholder:text-[var(--text-placeholder)] text-sm resize-none outline-none focus:border-[var(--primary)] transition flex-1"></textarea>
                 </div>
                 <input type="hidden" name="type" :value="type">
                 <div class="flex flex-wrap items-center justify-between gap-2 pl-10">
                     <div class="flex items-center gap-1.5">
                         @foreach(['discussion' => 'Diskusi', 'question' => 'Tanya Jawab'] as $k => $lbl)
                             <button type="button" @click="type = '{{ $k }}'"
-                                    :class="type === '{{ $k }}' ? 'bg-[#0B0B0D] text-[#EAE8E1] dark:bg-[#EAE8E1] dark:text-[#0B0B0D] font-bold shadow-xs' : 'bg-[#EFECE6] dark:bg-[#161619] text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1]'"
+                                    :class="type === '{{ $k }}' ? 'bg-[var(--primary)] text-[var(--primary-text)] font-bold shadow-xs' : 'bg-[var(--surface-muted)] text-[var(--text-muted)] hover:text-[var(--primary)]'"
                                     class="text-[11px] font-medium px-3 py-1 rounded-full transition cursor-pointer">{{ $lbl }}</button>
                         @endforeach
                         @if($isModerator)
                             <button type="button" @click="type = 'announcement'"
-                                    :class="type === 'announcement' ? 'bg-[#0B0B0D] text-[#EAE8E1] dark:bg-[#EAE8E1] dark:text-[#0B0B0D] font-bold shadow-xs' : 'bg-[#EFECE6] dark:bg-[#161619] text-[#6E6D67] dark:text-[#8E8D86] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1]'"
+                                    :class="type === 'announcement' ? 'bg-[var(--primary)] text-[var(--primary-text)] font-bold shadow-xs' : 'bg-[var(--surface-muted)] text-[var(--text-muted)] hover:text-[var(--primary)]'"
                                     class="text-[11px] font-medium px-3 py-1 rounded-full transition cursor-pointer">Pengumuman</button>
                         @endif
                     </div>
                     <div class="flex items-center gap-2">
-                        <label class="inline-flex items-center gap-1.5 text-xs text-[#6E6D67] dark:text-[#8E8D86] cursor-pointer hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] transition">
+                        <label class="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)] cursor-pointer hover:text-[var(--primary)] transition">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                             <span>Foto</span>
                             <input type="file" name="images[]" accept="image/*" multiple class="hidden">
                         </label>
-                        <button type="submit" class="px-4 py-2 rounded-xl bg-[#0B0B0D] text-[#EAE8E1] dark:bg-[#EAE8E1] dark:text-[#0B0B0D] hover:bg-[#222225] dark:hover:bg-[#DCD9D0] text-xs font-bold transition shadow-xs cursor-pointer select-none active:scale-[0.98]">Posting</button>
+                        <button type="submit" class="px-4 py-2 rounded-xl bg-[var(--primary)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)] text-xs font-bold transition shadow-xs cursor-pointer select-none active:scale-[0.98]">Posting</button>
                     </div>
                 </div>
             </form>
         @else
-            <div class="bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] rounded-2xl p-4 text-center text-xs text-[#6E6D67] dark:text-[#8E8D86] shadow-xs">
+            <div class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl p-4 text-center text-xs text-[var(--text-muted)] shadow-xs">
                 Gabung dulu ke komunitas ini untuk mulai memposting atau mengajukan pertanyaan.
             </div>
         @endif
@@ -130,10 +130,10 @@
 
     <!-- Manage members (owner only) -->
     @if($isOwner && $memberList->count() > 0)
-        <div class="bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] rounded-2xl p-4 space-y-3 shadow-xs" x-data="{ openMgmt: false }">
+        <div class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl p-4 space-y-3 shadow-xs" x-data="{ openMgmt: false }">
             <button type="button" @click="openMgmt = !openMgmt" class="w-full flex items-center justify-between cursor-pointer">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-[#6E6D67] dark:text-[#8E8D86] flex items-center gap-1.5">
-                    <svg class="w-3.5 h-3.5 text-[#6E6D67] dark:text-[#8E8D86]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-[var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                     <span>Kelola Anggota ({{ $memberList->count() }})</span>
                 </h3>
                 <svg class="w-4 h-4 text-[#908F88] transition-transform" :class="openMgmt ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -141,21 +141,21 @@
 
             <div x-show="openMgmt" x-cloak class="space-y-1.5 pt-1">
                 @foreach($memberList as $m)
-                    <div class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-[#F6F5F0] dark:hover:bg-[#161619] transition">
+                    <div class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-[var(--surface-subtle)] transition">
                         <x-user-avatar :user="$m" size="sm" />
                         <div class="min-w-0 flex-1">
-                            <p class="font-semibold text-xs text-[#0B0B0D] dark:text-[#EAE8E1] truncate">{{ $m->name }}</p>
-                            <p class="text-[10px] text-[#6E6D67] dark:text-[#8E8D86] truncate">&#64;{{ $m->username }}</p>
+                            <p class="font-semibold text-xs text-[var(--primary)] truncate">{{ $m->name }}</p>
+                            <p class="text-[10px] text-[var(--text-muted)] truncate">&#64;{{ $m->username }}</p>
                         </div>
                         @if($m->id === $community->owner_id)
-                            <span class="text-[10px] font-bold uppercase text-[#0B0B0D] dark:text-[#EAE8E1] shrink-0">Owner</span>
+                            <span class="text-[10px] font-bold uppercase text-[var(--primary)] shrink-0">Owner</span>
                         @else
                             @if($m->pivot->role === 'mod')
                                 <span class="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400 shrink-0 mr-1">Mod</span>
                             @endif
                             <form method="POST" action="{{ route('communities.moderator', [$community, $m]) }}">
                                 @csrf
-                                <button type="submit" class="text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition shrink-0 cursor-pointer {{ $m->pivot->role === 'mod' ? 'border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30' : 'border-[#E2DFD7] dark:border-[#242426] text-[#0B0B0D] dark:text-[#EAE8E1] hover:bg-[#EFECE6] dark:hover:bg-[#161619]' }}">
+                                <button type="submit" class="text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition shrink-0 cursor-pointer {{ $m->pivot->role === 'mod' ? 'border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30' : 'border-[var(--border-color)] text-[var(--primary)] hover:bg-[var(--surface-muted)]' }}">
                                     {{ $m->pivot->role === 'mod' ? 'Copot' : 'Jadikan Mod' }}
                                 </button>
                             </form>
@@ -181,7 +181,7 @@
 
         <div x-ref="sentinel" class="pt-4 flex justify-center">
             <button type="button" x-show="!done" @click="loadMore()" :disabled="loading"
-                    class="px-5 py-2.5 rounded-xl border border-[#E2DFD7] dark:border-[#242426] bg-[#EFECE6] dark:bg-[#161619] hover:bg-[#E2DFD7] dark:hover:bg-[#19191D] text-[#0B0B0D] dark:text-[#EAE8E1] text-xs font-semibold shadow-xs transition disabled:opacity-60 cursor-pointer">
+                    class="px-5 py-2.5 rounded-xl border border-[var(--border-color)] bg-[var(--surface-muted)] hover:bg-[var(--surface-chip-hover)] text-[var(--primary)] text-xs font-semibold shadow-xs transition disabled:opacity-60 cursor-pointer">
                 <span x-show="!loading">Muat lebih banyak</span>
                 <span x-show="loading" x-cloak>Memuat...</span>
             </button>

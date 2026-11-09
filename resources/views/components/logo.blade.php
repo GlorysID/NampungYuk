@@ -69,11 +69,11 @@
 
             @if($showText)
                 <div class="flex flex-col">
-                    <span class="{{ $sizes['text'] }} font-extrabold tracking-tight text-[#0B0B0D] dark:text-[#EAE8E1] leading-none">
-                        Nampung<span class="text-[#6E6D67] dark:text-[#8E8D86]">Yuk</span>
+                    <span class="{{ $sizes['text'] }} font-extrabold tracking-tight text-[var(--primary)] leading-none">
+                        Nampung<span class="text-[var(--text-muted)]">Yuk</span>
                     </span>
                     @if($showTagline)
-                        <span class="{{ $sizes['tagline'] }} font-medium tracking-wide text-[#6E6D67] dark:text-[#8E8D86] mt-0.5">
+                        <span class="{{ $sizes['tagline'] }} font-medium tracking-wide text-[var(--text-muted)] mt-0.5">
                             Developer Showcase
                         </span>
                     @endif

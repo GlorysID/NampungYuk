@@ -155,20 +155,6 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
-    Alpine.store('theme', {
-        dark: document.documentElement.classList.contains('dark'),
-        toggle() {
-            this.dark = !this.dark;
-            if (this.dark) {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('theme', 'dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('theme', 'light');
-            }
-        }
-    });
-
     /**
      * Space room: WebRTC mesh with Reverb signaling.
      * Each participant connects directly to every other participant.

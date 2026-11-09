@@ -45,10 +45,10 @@
              x-transition:leave="transition ease-in duration-150 transform"
              x-transition:leave-start="opacity-100 scale-100 translate-y-0"
              x-transition:leave-end="opacity-0 scale-95 translate-y-2"
-             class="relative w-full max-w-lg bg-white dark:bg-[#121214] border border-[#E2DFD7] dark:border-[#242426] rounded-2xl overflow-hidden shadow-2xl p-6 sm:p-7 text-[#0B0B0D] dark:text-[#EAE8E1]">
+             class="relative w-full max-w-lg bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl overflow-hidden shadow-2xl p-6 sm:p-7 text-[var(--primary)]">
 
             <button @click="open = false" type="button"
-                    class="absolute top-4 right-4 w-8 h-8 rounded-lg bg-[#EFECE6] hover:bg-[#E2DFD7] dark:bg-[#161619] dark:hover:bg-[#19191D] text-[#6E6D67] hover:text-[#0B0B0D] dark:text-[#8E8D86] dark:hover:text-white flex items-center justify-center transition border border-[#E2DFD7] dark:border-[#242426] cursor-pointer">
+                    class="absolute top-4 right-4 w-8 h-8 rounded-lg bg-[var(--surface-muted)] hover:bg-[var(--surface-chip-hover)] text-[var(--text-muted)] hover:text-[var(--action-invert)] flex items-center justify-center transition border border-[var(--border-color)] cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
 
@@ -57,10 +57,10 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                 </div>
                 <div class="min-w-0">
-                    <h3 class="text-lg font-bold tracking-tight text-[#0B0B0D] dark:text-[#EAE8E1]"
+                    <h3 class="text-lg font-bold tracking-tight text-[var(--primary)]"
                         x-text="action === 'remove' ? 'Cabut Peringatan Project' : 'Beri Peringatan Project'"></h3>
-                    <p class="text-xs text-[#6E6D67] dark:text-[#8E8D86] truncate max-w-[320px]">
-                        Target: <span class="font-semibold text-[#0B0B0D] dark:text-[#EAE8E1]" x-text="title"></span>
+                    <p class="text-xs text-[var(--text-muted)] truncate max-w-[320px]">
+                        Target: <span class="font-semibold text-[var(--primary)]" x-text="title"></span>
                     </p>
                 </div>
             </div>
@@ -71,18 +71,18 @@
 
                 <template x-if="action === 'set'">
                     <div>
-                        <label class="block text-xs font-semibold text-[#0B0B0D] dark:text-[#EAE8E1] mb-2">
+                        <label class="block text-xs font-semibold text-[var(--primary)] mb-2">
                             Keterangan Peringatan (tampil publik pada project)
                         </label>
                         <textarea name="warning_notes" x-model="notes" rows="3" maxlength="500" required
                                   placeholder="Contoh: Konten mengandung tautan yang melanggar pedoman komunitas. Mohon segera diperbaiki."
-                                  class="w-full px-3 py-2.5 rounded-xl bg-[#FAF8F5] dark:bg-[#161619] border border-[#E2DFD7] dark:border-[#242426] text-xs text-[#0B0B0D] dark:text-[#EAE8E1] placeholder-[#908F88] outline-none focus:border-amber-500 transition resize-none"></textarea>
-                        <p class="text-[11px] text-[#6E6D67] dark:text-[#8E8D86] mt-1">Keterangan ini akan ditampilkan kepada pembuat project dan pengunjung halaman project.</p>
+                                  class="w-full px-3 py-2.5 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border-color)] text-xs text-[var(--primary)] placeholder-[#908F88] outline-none focus:border-amber-500 transition resize-none"></textarea>
+                        <p class="text-[11px] text-[var(--text-muted)] mt-1">Keterangan ini akan ditampilkan kepada pembuat project dan pengunjung halaman project.</p>
                     </div>
                 </template>
 
                 <template x-if="action === 'remove'">
-                    <p class="text-xs text-[#6E6D67] dark:text-[#8E8D86]">
+                    <p class="text-xs text-[var(--text-muted)]">
                         Peringatan pada project ini akan dihapus dan project kembali tampil normal.
                     </p>
                 </template>

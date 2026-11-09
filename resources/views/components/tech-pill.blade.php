@@ -4,7 +4,7 @@
 ])
 
 @php
-    $classes = "inline-flex items-center gap-1 font-mono text-[12px] px-2.5 py-1 rounded-lg bg-[#EFECE6] dark:bg-[#161619] text-[#4A4944] dark:text-[#A8A7A0] border border-[#E2DFD7] dark:border-[#242426] hover:border-[#D0CDC3] dark:hover:border-[#333336] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] transition-colors select-none";
+    $classes = "inline-flex items-center gap-1 font-mono text-[12px] px-2.5 py-1 rounded-lg bg-[var(--surface-muted)] text-[var(--text-soft)] hover:text-[var(--primary)] transition-colors select-none";
 @endphp
 
 @if($clickable)

@@ -9,16 +9,16 @@
                 <x-user-avatar :user="$project->user" size="md" />
             </a>
             <div class="min-w-0 flex items-center gap-1.5 flex-wrap">
-                <a href="{{ route('profile.show', $project->user->username) }}" class="font-bold text-[14.5px] text-[#0B0B0D] dark:text-[#EAE8E1] hover:underline transition truncate" @click.stop>
+                <a href="{{ route('profile.show', $project->user->username) }}" class="font-bold text-[14.5px] text-[var(--primary)] hover:underline transition truncate" @click.stop>
                     {{ $project->user->name }}
                 </a>
-                <span class="text-[#6E6D67] dark:text-[#8E8D86] font-mono text-[12.5px] truncate">&#64;{{ $project->user->username }}</span>
-                <span class="text-[#908F88] dark:text-[#605F5A] text-[12.5px] shrink-0">&middot;</span>
-                <span class="text-[#6E6D67] dark:text-[#8E8D86] text-[12.5px] shrink-0">{{ $project->created_at->diffForHumans() }}</span>
+                <span class="text-[var(--text-muted)] font-mono text-[12.5px] truncate">&#64;{{ $project->user->username }}</span>
+                <span class="text-[var(--text-faint)] text-[12.5px] shrink-0">&middot;</span>
+                <span class="text-[var(--text-muted)] text-[12.5px] shrink-0">{{ $project->created_at->diffForHumans() }}</span>
                 @if($project->category)
-                    <span class="text-[#908F88] dark:text-[#605F5A] text-[12.5px] shrink-0">&middot;</span>
+                    <span class="text-[var(--text-faint)] text-[12.5px] shrink-0">&middot;</span>
                     <a href="{{ route('projects.index', ['kategori' => $project->category->slug]) }}"
-                       class="text-xs font-medium px-2.5 py-0.5 rounded-md bg-[#EFECE6] dark:bg-[#161619] text-[#4A4944] dark:text-[#A8A7A0] border border-[#E2DFD7] dark:border-[#242426] hover:text-[#0B0B0D] dark:hover:text-[#EAE8E1] transition"
+                       class="text-[11.5px] font-medium px-2 py-0.5 rounded-md bg-[var(--surface-muted)] text-[var(--text-muted)] hover:text-[var(--primary)] border border-[var(--border-color)] hover:border-[var(--border-strong)] transition-colors"
                        @click.stop>
                         {{ $project->category->name }}
                     </a>
