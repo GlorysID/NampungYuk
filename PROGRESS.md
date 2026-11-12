@@ -144,6 +144,58 @@ Dokumen ini mencatat riwayat investigasi, keputusan arsitektur, overhaul UI/UX, 
 
 ---
 
+### Milestone 9: Audit Komprehensif Ulang, Penyesuaian Navigasi Sidebar & Guest Gating (9 Nov 2026)
+- **Konteks & Permintaan User**:
+  1. Hapus "Direktori Kreator" dan badge "v1.0" dari sidebar.
+  2. Kunci tombol penting di sidebar untuk tamu (`@guest`) agar memicu modal login (`openAuthModal('login')`). Pilihan user: Komunitas, Spaces, dan Kategori Kodingan.
+  3. Ganti menu "Prototipe Interaktif" di sidebar dengan "Obrolan" (`route('chat.index')`).
+  4. Lakukan audit ulang proyek secara komprehensif dan lengkapi file `.md` yang ada maupun yang belum ada.
+- **Yang dikerjakan**:
+  - **Navigasi Sidebar (`partials/sidebar.blade.php`)**:
+    - Item "Prototipe Interaktif" diganti dengan "Obrolan", link aktif pada `chat.*`.
+    - Duplikasi entri "Obrolan" di blok `@auth` bawah dibersihkan sehingga hanya ada 1 link Obrolan di Menu Utama.
+    - "Direktori Kreator" dan badge `v1.0` dihapus dari header brand sidebar.
+    - Guest gating dipasang pada item: Komunitas, Spaces, Obrolan, dan Kategori Kodingan (`@guest @click.prevent="window.openAuthModal('login')" @endguest`).
+    - Gating selaras dipasang pada navigasi mobile bottom bar (`layouts/app.blade.php`).
+    - Pengujian `ProjectShowcaseTest.php` disesuaikan untuk memvalidasi teks 'Obrolan' menggantikan 'Prototipe Interaktif'.
+  - **Dokumen Audit Komprehensif (`AUDIT.md`)**:
+    - Dibuat berkas baru `AUDIT.md` yang merangkum temuan audit read-only: Keamanan (S1-S7), Performa (P1-P5), Integritas Data (D1-D4), Utang Teknis & Kode Mati (U1-U4), Cakupan Testing, dan Status Desain.
+  - **Pembaruan Dokumentasi Lainnya**:
+    - `README.md`: disinkronkan dengan Laravel 13, dark mode only, deskripsi media GD/FFmpeg, update navigasi sidebar, dan instruksi path PHP Laragon.
+    - `PROJECT_CONTEXT.md`: diperbarui dengan skema 28 tabel DB, detail rail sticky no-scrollbar, borderless inner elements, dan sidebar non-scroll.
+    - `.ai/rules/`: `index.md`, `layouts.md`, `controllers.md`, `dev-environment.md` disinkronkan.
+- **Verifikasi**: `npm run build` ok, `view:cache`/`view:clear` ok, 142 test lulus (506 assertions), encoding bersih.
+
+---
+
+### Milestone 10: Iterasi 4 Sidebar Kiri: Pengelompokan Berlabel & Pengurangan Item Nav (10 Nov 2026)
+- **Konteks & Permintaan User**:
+  - User merasa deret 14 item nav berurutan di sidebar kiri seperti tumpukan link mentah. Arah yang dipilih: "Group berlabel + kurangi item".
+  - Memecah daftar nav menjadi 3 grup berlabel kecil tipis uppercase (`text-[11px] font-bold uppercase tracking-wider text-[var(--text-faint)]`):
+    1. **Feed**: Semua Karya, Trending, Terbaru, Mengikuti (auth)
+    2. **Jelajahi**: Cari Karya, Direktori Kreator, Komunitas, Spaces
+    3. **Aktivitas**: Obrolan, Notifikasi (auth, badge count), Permintaan Pengguna (auth), Koleksi Tersimpan (auth)
+  - Mengurangi item: Menghapus entri **Populer** (`tab=populer`) dan **Prototipe Interaktif** (`tab=prototype`) dari link sidebar nav.
+  - Mempertahankan deteksi active-state yang bersih pada `$isExploreFeed` agar "Semua Karya" tidak aktif saat ada `tab` di request URL.
+  - Menjaga item tetap rapat dan seragam (`flex flex-col gap-0.5`, `min-h-[44px]`, `py-2.5 px-3.5`, `rounded-full`).
+  - Menjaga section admin (Moderasi Admin), kategori komunitas, tombol CTA Pamer Kodingan / Masuk Daftar, dan user profile pill tetap utuh.
+- **Verifikasi**: `artisan view:clear`, `artisan view:cache`, Pint agent, dan 142 Feature & Unit Tests lulus 100% (512 assertions, 0 failure).
+
+### Milestone 11: Perbaikan Glitch FOUC Navigasi "Shell Menyempit ke Tengah" (10 Nov 2026)
+- **Diagnosis (dari `laravel-boost` browser-logs, bukan tebakan)**: `public/hot` ada → Vite dev server aktif. CSS di-serve `Cache-Control: no-cache`, ~154 KB, dari origin berbeda (`http://[::1]:5173`), dan di-fetch ulang tiap pindah halaman. Log mencatat `[vite] server connection lost. Polling for restart...` dua kali. Saat request CSS gagal/nyangkut, Chrome melukis dokumen tanpa CSS → 3 kolom shell runtuh lalu menggeser ke tengah = kesan "menyempit ke tengah sekilas".
+- **Perbaikan**:
+  1. Menghapus `@import url('https://fonts.googleapis.com/...')` duplikat dari `resources/css/app.css` (font sudah di-`<link>` di `layouts/app.blade.php` dan 5 halaman auth; diverifikasi tiap view yang memuat app.css punya link font).
+  2. Menambah critical shell geometry inline di `<style>` setelah tag vite di `layouts/app.blade.php`, dengan kelas baru `.ny-shell`/`.ny-aside`/`.ny-main`/`.ny-rail`. Karena berada setelah tag vite dengan spesifisitas sama, aturan ini menang saat app.css belum mendarat, sehingga shell tidak pernah render runtuh. Tidak menyetel `main max-width` karena halaman meng-override `@section('main_width')`.
+  3. **Iterasi lanjutan**: `.ny-aside`/`.ny-rail` diset `display: none` sebagai default (mobile-first), baru dibuka lewat media query `min-width:1024px`/`1280px`. Sebelumnya hanya ditambah, sehingga sebelum app.css mendarat rail kanan ikut render in-flow (default `div` = block) → tiga kolom terjepit lalu melebar = sisa glitch "menyempit ke tengah".
+- **Guest gating sidebar (dikonfirmasi user)**: memulihkan proteksi klik tamu pada link **Komunitas** dan **Spaces** (`href="{{ auth()->check() ? route(...) : '#' }}"` + `@guest @click.prevent="window.openAuthModal('login')" @endguest`) sesuai `.ai/rules/layouts.md`. Sebelumnya gate ini terhapus tanpa persetujuan user.
+- **Jebakan Blade**: `@vite`/`@section` yang ditulis sebagai teks di dalam komentar CSS tetap dikompilasi Blade → `Vite::__invoke()` dipanggil tanpa argumen (`ArgumentCountError`). Komentar akhirnya ditulis tanpa token `@`.
+- **Catatan `shortcut:`**: nilai px di critical CSS menduplikasi kelas Tailwind pada elemen shell di file yang sama; ubah keduanya bersama bila kolom berubah.
+- **Akar masalah sebenarnya (diukur)**: dev server nyuplai `app.css` dengan header `no-cache`, ~160 KB, **~120–900 ms** per request, dan browser fetch ulang tiap pindah halaman → tiap navigasi punya jendela tanpa style 0,1–0,9 detik. Critical CSS hanya menyelamatkan geometri, bukan seluruh styling, jadi flash masih terlihat.
+- **Resolusi**: dev server tetap dipakai (HMR). Aset build sempat dicoba (`npm run build`, `public/hot` dihapus) untuk mengisolasi penyebab — dengan build, flash hilang total (stylesheet same-origin + hashed + ke-cache), jadi penyebab terbukti. Karena user butuh HMR, `public/hot` dipulihkan dan app kembali ke dev server; sifat `no-cache` dev server tetap bikin pop singkat tiap navigasi, tapi keruntuhan kolom ("menyempit ke tengah") sudah dicegah oleh critical CSS.
+- **Verifikasi**: `artisan view:clear`/`view:cache` ok, HTML hasil render memuat blok critical (default-hidden rail/aside) + tanpa `ArgumentCountError`, guest Komunitas/Spaces `href="#"` dengan `click.prevent openAuthModal`, 142 test lulus (512 assertions).
+
+---
+
 ## 3. Checklist Verifikasi & Quality Gates
 
 - [x] `npm run build` selesai tanpa error kompilasi Vite/Tailwind.
@@ -151,18 +203,31 @@ Dokumen ini mencatat riwayat investigasi, keputusan arsitektur, overhaul UI/UX, 
 - [x] `php artisan view:cache` sukses mengompilasi seluruh file Blade.
 - [x] `php artisan test --compact` berhasil menjalankan 142 test dengan 0 kegagalan (506 assertions, 9 Nov 2026).
 - [x] Audit design token drift selesai: baseline metrik hardcoded hex terdokumentasi.
-- [x] Migrasi token warna selesai: 4.843 → 276 literal hex di view, 0 hex di aturan komponen `app.css`, bundle CSS -20,7%.
+- [x] Migrasi token warna selesai: 4.843 → ~106 literal hex di view reguler, 0 hex di aturan komponen `app.css`, bundle CSS -20,7%.
 - [x] Verifikasi runtime light/dark (beranda, login, detail proyek): semua token flip benar, 0 variabel tak terdefinisi, 0 teks kontras rendah.
 - [x] Percobaan normalisasi radius & full-bleed media di-rollback penuh; token radius di 48 file Blade identik dengan HEAD (621 token), `.project-nav-card` kembali seperti semula (Milestone 6).
 - [x] Verifikasi radius lewat px komputasi: `rounded-xl`/`rounded-2xl` = 16px (override `:root`), bukan asumsi default Tailwind.
 - [x] Polish kartu feed & rail kanan: rail jadi daftar `divide-y` utuh, border elemen dalam (thumbnail/chip/pill/media) dihapus, `shadow-xs` kartu rail dihapus (Milestone 7).
 - [x] Rail kanan `sticky` tanpa scrollbar kedua (`no-scrollbar`); sidebar kiri solid tanpa scroll internal; aturan `.sidebar-scroll` yang tak terpakai dihapus dari `app.css` (Milestone 7).
 - [x] Dark mode only: `<html class="dark">` di-hardcode, script `localStorage.theme`, `Alpine.store('theme')`, dan kedua tombol toggle tema dihapus (Milestone 8).
+- [x] Navigasi sidebar dimutakhirkan: "Prototipe Interaktif" diganti "Obrolan", "Direktori Kreator" & badge "v1.0" dihapus (Milestone 9).
+- [x] Guest gating sidebar & mobile: Komunitas, Spaces, Obrolan, Kategori memicu modal login saat diklik tamu (Milestone 9).
+- [x] Berkas `AUDIT.md` komprehensif dibuat dan seluruh file dokumentasi (`README.md`, `PROJECT_CONTEXT.md`, `.ai/rules/*`) disinkronkan (Milestone 9).
 - [x] Celah keamanan IDOR pada feed komunitas privat telah ditutup dan diuji via feature test.
 - [x] Alur guest tidak lagi dihadang modal login saat mengakses rute publik.
 - [x] Tidak ada duplikasi logo atau duplikasi baris otentikasi pada desktop.
 - [x] Layout obrolan dan moderasi admin melebar secara proporsional (`max-w-none`).
 - [x] Integritas constraint database `project_votes` dan `project_bookmarks` terpasang.
+- [x] Alur guest tidak lagi dihadang modal login saat mengakses rute publik.
+- [x] Tidak ada duplikasi logo atau duplikasi baris otentikasi pada desktop.
+- [x] Layout obrolan dan moderasi admin melebar secara proporsional (`max-w-none`).
+- [x] Integritas constraint database `project_votes` dan `project_bookmarks` terpasang.
+- [x] Sidebar dirapikan: lebar aside 264/280px, padding `px-6`, item `h-10`, grup Feed/Jelajahi/Aktivitas; label "Permintaan Pengguna" dipertahankan karena di-assert test.
+- [x] Bug shell bergeser ke tengah diperbaiki: `.ny-shell` jadi `justify-content: flex-start` sehingga kolom kiri selalu menempel di kiri walau rail kanan di-hide (halaman chat/create/edit) atau belum aktif (di bawah `xl`). Diverifikasi screenshot headless 1024/1200/1279/1280/1530px.
+- [x] Sidebar density dinaikkan ala X: item `h-11` teks 15px ikon 20px, label grup 11px, grup `gap-5`, CTA jadi pill full-width `h-12 rounded-full`. Dikoreksi dari usulan awal h-12 (memotong 2 item di 858px) setelah verifikasi screenshot; 12 item muat di 858px, di 800px item terakhir masih perlu scroll.
+- [x] Footer editorial (logo + Feed/Pamerkan/Koleksi/Shortcuts/GitHub) dipindah dari kolom tengah ke dasar rail kanan.
+- [x] Gap bawah halaman hilang: `body` `lg:pb-8` → `lg:pb-0` (`pb-20` mobile dipertahankan untuk bottom nav). CDP 1530x858: `scrollHeight` 9112 → 9080 = tinggi shell.
+- [x] Komentar dirapatkan jadi thread rata: chrome kartu (`rounded-xl`/`border`/`shadow`/`bg`) dibuang dari `components/comment-card.blade.php`, layout avatar 32px + kolom isi, `py-3`, `space-y-1`, pemisah `divide-y` di container (project show) dan tab komentar profil. Terukur 114px per komentar 2 baris (sebelumnya ~140px).
 
 ---
 

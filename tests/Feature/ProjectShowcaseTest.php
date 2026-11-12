@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Project;
 use App\Models\ProjectComment;
 use App\Models\User;
+use App\Notifications\NewFollowerNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -427,23 +428,31 @@ class ProjectShowcaseTest extends TestCase
         $authResponse->assertStatus(200);
         $authResponse->assertSee('Pamer Kodingan');
         $authResponse->assertSee('Koleksi Tersimpan');
+        $authResponse->assertSee('Notifikasi');
+        $authResponse->assertSee('Permintaan Pengguna');
+
+        $follower = User::factory()->create();
+        $user->notify(new NewFollowerNotification($follower));
+        $badgeResponse = $this->actingAs($user)->get('/');
+        $badgeResponse->assertStatus(200);
+        $badgeResponse->assertSee('Notifikasi');
     }
 
     public function test_sidebar_renders_navigation_categories_and_mobile_drawer_toggle(): void
     {
-        $category = Category::create(['name' => 'AI Machine Learning', 'slug' => 'ai-ml']);
-
         $response = $this->get('/');
         $response->assertStatus(200);
 
         // Sidebar Navigation
-        $response->assertSee('Menu Utama');
+        $response->assertSee('Feed');
+        $response->assertSee('Jelajahi');
+        $response->assertSee('Aktivitas');
         $response->assertSee('Semua Karya');
         $response->assertSee('Trending');
-        $response->assertSee('Prototipe Interaktif');
-        $response->assertSee('Kategori Kodingan');
-        $response->assertSee('Tech Stacks');
-        $response->assertSee('AI Machine Learning');
+        $response->assertSee('Obrolan');
+        $response->assertDontSee('Menu Utama');
+        $response->assertDontSee('Kategori Kodingan');
+        $response->assertDontSee('Tech Stacks');
 
         // Mobile Drawer Toggle
         $response->assertSee('aria-label="Buka Menu Sidebar"', false);

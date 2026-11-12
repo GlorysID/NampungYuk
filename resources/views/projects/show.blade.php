@@ -653,7 +653,7 @@
         @endauth
 
         <!-- Comments List -->
-        <div class="space-y-3 pt-2">
+        <div class="divide-y divide-[var(--border-color)] pt-2">
             @forelse($project->comments as $comment)
                 <x-comment-card :comment="$comment" />
             @empty

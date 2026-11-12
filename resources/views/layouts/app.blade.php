@@ -21,9 +21,30 @@
     <style>
         html { background-color: var(--bg-app); color-scheme: dark; }
         [x-cloak] { display: none !important; }
+
+        /*
+         * Critical shell geometry. Parsed with the HTML (app.css may still be in
+         * flight), so the 3-column shell can never render collapsed and snap into
+         * place on navigation. Kept after the vite tags on purpose: same
+         * specificity, so later-in-document wins where both apply. Does not set
+         * main max-width, because pages override the main_width section.
+         *
+         * shortcut: these values duplicate the Tailwind classes on the shell
+         * elements in this same file; change both together if a column resizes.
+         */
+        .ny-shell { display: flex; justify-content: flex-start; width: 100%; max-width: 1440px; margin-inline: auto; }
+        .ny-main { flex: 1 1 0%; min-width: 0; }
+        /* Default-hidden so the columns never render in-flow before app.css lands. */
+        .ny-aside { display: none; }
+        .ny-rail { display: none; }
+        @media (min-width: 1024px) { .ny-aside { display: flex; flex-direction: column; flex: 0 0 264px; } }
+        @media (min-width: 1280px) {
+            .ny-aside { flex-basis: 280px; }
+            .ny-rail { display: block; flex: 0 0 370px; }
+        }
     </style>
 </head>
-<body class="bg-[var(--bg-app)] text-[var(--primary)] min-h-screen transition-colors duration-150 antialiased selection:bg-[var(--primary)] selection:text-[var(--primary-text)] relative overflow-x-hidden pb-20 lg:pb-8"
+<body class="bg-[var(--bg-app)] text-[var(--primary)] min-h-screen transition-colors duration-150 antialiased selection:bg-[var(--primary)] selection:text-[var(--primary-text)] relative overflow-x-hidden pb-20 lg:pb-0"
       x-data="{
           mobileSidebarOpen: false,
           mobileSearchOpen: false,
@@ -158,16 +179,19 @@
     @endphp
 
     <!-- MAIN 3-COLUMN SHELL -->
-    <div class="mx-auto flex w-full @yield('shell_width', 'max-w-[1440px]') justify-center min-h-screen">
+    <div class="ny-shell mx-auto flex w-full @yield('shell_width', 'max-w-[1440px]') min-h-screen">
         
         <!-- DESKTOP SIDEBAR -->
-        <aside class="hidden lg:flex lg:flex-col w-[280px] xl:w-[300px] shrink-0 sticky top-0 h-screen z-30 bg-[var(--surface-invert)] border-r border-[var(--border-color)]">
+        <aside class="ny-aside hidden lg:flex lg:flex-col w-[264px] xl:w-[280px] shrink-0 sticky top-0 h-screen z-30 bg-[var(--surface-invert)] border-r border-[var(--border-color)]">
             @include('partials.sidebar')
         </aside>
 
         <!-- CENTER COLUMN -->
-        <main class="flex-1 min-w-0 w-full @yield('main_width','max-w-[760px]') lg:border-x border-[var(--border-color)] flex flex-col">
+        <main class="ny-main flex-1 min-w-0 w-full @yield('main_width','max-w-[760px]') lg:border-x border-[var(--border-color)] flex flex-col">
 
+            @hasSection('header')
+                @yield('header')
+            @else
             <!-- FEED HEADER (64px h-16, sticky, translucent) -->
             <header class="sticky top-0 z-20 h-16 px-4 sm:px-6 flex items-center justify-between gap-3 relative bg-[var(--bg-app)]/85 backdrop-blur-md border-b border-[var(--border-color)]">
                 
@@ -299,50 +323,6 @@
                                 </a>
                             </div>
                         </div>
-
-                        <!-- Profile Dropdown -->
-                        <div class="relative" x-data="{ open: false }">
-                            <button @click="open = !open" 
-                                    type="button"
-                                    class="flex items-center gap-1.5 p-0.5 rounded-lg hover:bg-[var(--surface-hover)] transition"
-                                    aria-haspopup="true"
-                                    :aria-expanded="open"
-                                    aria-label="Menu akun {{ Auth::user()->name }}">
-                                <x-user-avatar :user="Auth::user()" size="sm" />
-                            </button>
-                            <div x-show="open" 
-                                 @click.away="open = false" 
-                                 x-cloak 
-                                 class="absolute right-0 mt-2 w-56 bg-[var(--surface)] rounded-xl border border-[var(--border-color)] shadow-xl py-1.5 z-50 text-xs">
-                                <div class="px-4 py-2.5 border-b border-[var(--border-color)]">
-                                    <p class="font-bold truncate text-[var(--primary)] text-[13.5px]">{{ Auth::user()->name }}</p>
-                                    <p class="text-xs text-[var(--text-muted)] font-mono truncate mt-0.5">&#64;{{ Auth::user()->username }}</p>
-                                </div>
-                                <a href="{{ Auth::user()->username ? route('profile.show', Auth::user()->username) : '#' }}" class="flex items-center gap-2.5 px-4 py-2.5 text-[var(--primary)] hover:bg-[var(--surface-hover)] transition text-sm">
-                                    <svg class="w-4 h-4 text-[var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                    </svg>
-                                    <span>Profil Saya</span>
-                                </a>
-                                <a href="{{ route('projects.bookmarks') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-[var(--primary)] hover:bg-[var(--surface-hover)] transition text-sm">
-                                    <svg class="w-4 h-4 text-[var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
-                                    </svg>
-                                    <span>Koleksi Tersimpan</span>
-                                </a>
-
-                                <div class="border-t border-[var(--border-color)] my-1"></div>
-                                <form method="POST" action="{{ route('logout') }}">
-                                    @csrf
-                                    <button type="submit" class="w-full text-left px-4 py-2.5 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition flex items-center gap-2.5 text-sm">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                                        </svg>
-                                        <span>Keluar</span>
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
                     @else
                         <!-- Guest Actions -->
                         <div class="flex items-center gap-1 sm:gap-2 text-sm shrink-0">
@@ -357,6 +337,7 @@
                 </div>
 
             </header>
+            @endif
 
             <!-- MAIN WORKSPACE CONTENT CONTAINER -->
             <div class="w-full px-4 sm:px-6 py-6 flex-1 flex flex-col justify-between">
@@ -383,35 +364,13 @@
                         @yield('content')
                     </div>
                 </div>
-
-                <!-- Clean Editorial Footer -->
-                @unless(View::hasSection('hide_footer'))
-                <footer class="mt-16 pt-6 border-t border-[var(--border-color)] text-xs text-[var(--text-muted)] flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <div class="flex items-center gap-2">
-                        <x-logo size="sm" />
-                        <span>&bull;</span>
-                        <span>Platform Showcase Project & Pengalaman Developer</span>
-                    </div>
-                    <div class="flex items-center gap-4 text-[var(--text-muted)] text-xs">
-                        <a href="{{ route('projects.index') }}" class="hover:text-[var(--primary)] transition">Feed</a>
-                        @auth
-                            <a href="{{ route('projects.create') }}" class="hover:text-[var(--primary)] transition">Pamerkan</a>
-                            <a href="{{ route('projects.bookmarks') }}" class="hover:text-[var(--primary)] transition">Koleksi</a>
-                        @else
-                            <button type="button" @click="window.openAuthModal('login')" class="hover:text-[var(--primary)] transition cursor-pointer">Masuk</button>
-                        @endauth
-                        <button type="button" @click="showHelpModal = true" class="hover:text-[var(--primary)] transition">Shortcuts (?)</button>
-                        <a href="https://github.com/GlorysID/NampungYuk" target="_blank" rel="noopener noreferrer" class="hover:text-[var(--primary)] transition">GitHub</a>
-                    </div>
-                </footer>
-                @endunless
             </div>
 
         </main>
 
         <!-- RIGHT RAIL: global search + page rail (hidden below xl) -->
         @unless(View::hasSection('hide_right_rail'))
-        <aside class="hidden xl:block w-[340px] xl:w-[370px] shrink-0 sticky top-0 max-h-screen overflow-y-auto no-scrollbar pl-6 pr-1">
+        <aside class="ny-rail hidden xl:block w-[340px] xl:w-[370px] shrink-0 sticky top-0 max-h-screen overflow-y-auto no-scrollbar pl-6 pr-1">
             <div class="sticky top-0 z-10 h-16 flex items-center bg-[var(--bg-app)]/85 backdrop-blur-md border-b border-[var(--border-color)] mb-5">
                 <form action="{{ $searchAction }}" method="GET" class="relative w-full" role="search">
                     @if($onProfile)
@@ -513,6 +472,28 @@
                         @endif
                     </div>
                 @endif
+
+                <!-- Editorial footer (dipindah ke dasar rail kanan) -->
+                @unless(View::hasSection('hide_footer'))
+                <footer class="mt-6 pt-4 border-t border-[var(--border-color)] text-xs text-[var(--text-muted)] flex flex-col gap-3">
+                    <div class="flex items-start gap-2">
+                        <x-logo size="sm" />
+                        <span>&bull;</span>
+                        <span>Platform Showcase Project & Pengalaman Developer</span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                        <a href="{{ route('projects.index') }}" class="hover:text-[var(--primary)] transition">Feed</a>
+                        @auth
+                            <a href="{{ route('projects.create') }}" class="hover:text-[var(--primary)] transition">Pamerkan</a>
+                            <a href="{{ route('projects.bookmarks') }}" class="hover:text-[var(--primary)] transition">Koleksi</a>
+                        @else
+                            <button type="button" @click="window.openAuthModal('login')" class="hover:text-[var(--primary)] transition cursor-pointer">Masuk</button>
+                        @endauth
+                        <button type="button" @click="showHelpModal = true" class="hover:text-[var(--primary)] transition">Shortcuts (?)</button>
+                        <a href="https://github.com/GlorysID/NampungYuk" target="_blank" rel="noopener noreferrer" class="hover:text-[var(--primary)] transition">GitHub</a>
+                    </div>
+                </footer>
+                @endunless
             </div>
         </aside>
         @endunless
@@ -533,7 +514,8 @@
         </a>
 
         <!-- 2. Komunitas -->
-        <a href="{{ route('communities.index') }}" 
+        <a href="{{ auth()->check() ? route('communities.index') : '#' }}"
+           @guest @click.prevent="window.openAuthModal('login')" @endguest
            class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition {{ request()->routeIs('communities.*') ? 'text-[var(--primary)] font-bold' : 'text-[var(--text-muted)]' }}">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
@@ -542,7 +524,8 @@
         </a>
 
         <!-- 3. Spaces -->
-        <a href="{{ route('spaces.index') }}" 
+        <a href="{{ auth()->check() ? route('spaces.index') : '#' }}"
+           @guest @click.prevent="window.openAuthModal('login')" @endguest
            class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition {{ request()->routeIs('spaces.*') ? 'text-[var(--primary)] font-bold' : 'text-[var(--text-muted)]' }}">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z"/>

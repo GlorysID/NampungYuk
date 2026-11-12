@@ -16,7 +16,7 @@
     <div class="flex-1 overflow-y-auto min-h-0">
         {{-- Message requests --}}
         @if(($requests ?? collect())->count() > 0)
-            <div class="border-b border-amber-300 dark:border-amber-500/20" x-data="{ busy: null }">
+            <div id="permintaan" class="border-b border-amber-300 dark:border-amber-500/20" x-data="{ busy: null }">
                 <div class="px-4 py-2 bg-amber-50 dark:bg-amber-950/30 flex items-center gap-2">
                     <svg class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                     <span class="text-[11px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300">Permintaan Pesan</span>

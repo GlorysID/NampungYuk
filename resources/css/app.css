@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700;800&display=swap');
 @import 'tailwindcss';
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -255,6 +254,11 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .scrollbar-none::-webkit-scrollbar,
 .no-scrollbar::-webkit-scrollbar {
     display: none;
+}
+
+/* Sidebar nav: active row (marked .is-active in partials/sidebar.blade.php) gets an emerald icon */
+.ny-nav .is-active > div > svg {
+    color: var(--accent);
 }
 
 /* ==========================================================================

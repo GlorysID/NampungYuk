@@ -9,8 +9,9 @@ NampungYuk adalah platform showcase karya programmer dan wadah kolaborasi komuni
 - **Framework Backend**: Laravel 13.30.1
 - **Bahasa Pemrograman**: PHP 8.3 (Binary Laragon: `C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe`)
 - **Basis Data**:
-  - Pengembangan Lokal: MySQL 8.4 (Port 3306, Database: `nampungyuk`, User: `root`, Password: kosong)
-  - Pengujian Otomatis (PHPUnit): SQLite `:memory:`
+  - Konvensi pengembangan (sesuai `AGENTS.md` dan `.env.example`): MySQL 8.4 Laragon (Port 3306, Database: `nampungyuk`, User: `root`, Password: kosong).
+  - **Kondisi aktual di workspace ini (per 9 Nov 2026)**: `.env` aktif memakai `DB_CONNECTION=sqlite` dengan file `database/database.sqlite`. Jadi klaim "dev = MySQL" adalah niat konfigurasi, bukan keadaan runtime saat ini. Jangan mengubahnya tanpa memberi tahu user.
+  - Pengujian Otomatis (`phpunit.xml`): SQLite in-memory (`:memory:`), driver `sqlite`. DILARANG mengubah konfigurasi ini.
 - **Layanan Realtime**: Laravel Reverb 1.12.0 + Laravel Echo 2.5.0 + Pusher-JS 8.6.0 (Port 8080)
 - **Kompresi & Optimasi Media**: `App\Services\MediaOptimizer` (PHP GD untuk WebP, CLI `ffmpeg` untuk video H.264)
 - **Frontend & Bundling**: Blade Templates, Tailwind CSS v4.3.3 (`@tailwindcss/vite`), Alpine.js 3.17.1, Vite 8.2.2
@@ -21,11 +22,13 @@ NampungYuk adalah platform showcase karya programmer dan wadah kolaborasi komuni
 
 ## 2. Standar Desain Visual (Token Harbor Aesthetic)
 
-Platform menggunakan bahasa visual arsitektural terinspirasi dari gaya **Token Harbor** yang mengutamakan kontras tinggi, hairline border, serta keterbacaan tingkat tinggi:
+Platform menggunakan bahasa visual arsitektural terinspirasi dari gaya **Token Harbor** yang mengutamakan kontras tinggi, hairline border, serta keterbacaan tingkat tinggi. Aplikasi kini **dark mode only** — light mode sudah dihapus.
 
 ### A. Palet Warna Utama
 
-| Token | Dark Mode | Light Mode | Penggunaan |
+Kolom "Light (dead code)" bertahan hanya sebagai referensi historis: nilainya masih ada di blok `:root` `app.css` tapi **tidak terjangkau** karena `<html class="dark">` di-hardcode. Jangan dipakai untuk pekerjaan baru.
+
+| Token | Dark Mode (aktif) | Light (dead code) | Penggunaan |
 | :--- | :--- | :--- | :--- |
 | **Canvas Utama (`--bg-app`)** | `#0B0B0D` | `#F6F5F0` | Latar belakang halaman aplikasi |
 | **Permukaan Kartu (`--surface`)** | `#121214` | `#FFFFFF` | Latar belakang kartu feed, sidebar, dialog |
@@ -41,11 +44,12 @@ Platform menggunakan bahasa visual arsitektural terinspirasi dari gaya **Token H
 
 ### B. Status Implementasi Token (Penting untuk Agent Berikutnya)
 
-- **Sumber kebenaran tunggal**: seluruh token di atas didefinisikan di `resources/css/app.css` (`:root` untuk light, `.dark` untuk dark) dan **harus** jadi satu-satunya sumber warna. Tema tetap double-mode; jangan memangkas light mode.
-- **Konvensi wajib untuk kode baru**: **jangan** menulis `bg-[#hex]`, `text-[#hex]`, atau `border-[#hex]` beserta pasangan `dark:`-nya. Pakai utility token, mis. `bg-[var(--surface)]`, `hover:bg-[var(--surface-hover)]`, `text-[var(--text-muted)]`, `border-[var(--border-color)]`, `divide-[var(--border-color)]`, dan `bg-[var(--primary)]` + `text-[var(--primary-text)]` untuk CTA solid. Token otomatis flip karena nilainya didefinisikan per mode; tidak perlu `dark:` untuk warna dasar.
-- **Status migrasi (9 Nov 2026, selesai)**: 2.348 pasangan `*-[#light] dark:*-[#dark]` sudah dikollaps menjadi satu utility token. Literal hex di view turun 4.843 → 276 (-94%), dan aturan komponen di `app.css` sudah 0 hex. Bundle CSS produksi turun 133,68 kB → 105,90 kB.
+- **Sumber kebenaran tunggal**: seluruh token di atas didefinisikan di `resources/css/app.css` (`:root` untuk light yang kini dead code, `.dark` untuk dark yang aktif) dan **harus** jadi satu-satunya sumber warna.
+- **Dark mode only**: `<html class="dark">` di-hardcode di `resources/views/layouts/app.blade.php` dan 5 halaman `resources/views/auth/*.blade.php`. Tailwind memakai `@custom-variant dark (&:where(.dark, .dark *))` (`app.css:4`), jadi utility `dark:` tetap sah dan selalu aktif. **Jangan** menambahkan toggle tema, `localStorage.theme`, `prefers-color-scheme`, atau `Alpine.store('theme')` — semuanya sudah dihapus (Milestone 8 di `PROGRESS.md`).
+- **Konvensi wajib untuk kode baru**: **jangan** menulis `bg-[#hex]`, `text-[#hex]`, atau `border-[#hex]`. Pakai utility token, mis. `bg-[var(--surface)]`, `hover:bg-[var(--surface-hover)]`, `text-[var(--text-muted)]`, `border-[var(--border-color)]`, `divide-[var(--border-color)]`, dan `bg-[var(--primary)]` + `text-[var(--primary-text)]` untuk CTA solid. Token otomatis mengikuti dark mode; tidak perlu `dark:` untuk warna dasar.
+- **Status migrasi (9 Nov 2026, selesai)**: 2.348 pasangan `*-[#light] dark:*-[#dark]` sudah dikollaps menjadi satu utility token. Literal hex di view turun dari 4.843 menjadi ~106 kemunculan di view reguler, dan aturan komponen di `app.css` sudah 0 hex. Bundle CSS produksi ~106 kB.
 - **Token tambahan hasil migrasi** (di luar tabel palet utama di atas): `--surface-subtle`, `--surface-sunken`, `--surface-input`, `--surface-deep`, `--surface-chip-hover`, `--surface-muted-flat`, `--surface-invert`, `--action-invert`, `--border-soft`, `--text-soft`, `--text-dim`, `--text-strong`, `--text-placeholder`. Nilainya diambil persis dari pasangan hex yang dipakai komponen, jadi tidak ada perubahan visual.
-- **Sisa 276 hex yang disengaja** (jangan "dibersihkan" tanpa alasan):
+- **Sisa hex yang disengaja** (jangan "dibersihkan" tanpa alasan):
   - Pulau selalu-gelap yang tidak boleh flip: code block `bg-[#0B0B0D] text-emerald-400`, panel video Spaces, editor wizard `projects/create` & `projects/edit`.
   - Pasangan yang opacity-nya beda antar mode (mis. `divide-[#E2DFD7]/60 dark:divide-[#242426]`, `bg-[#EFECE6]/70 dark:bg-[#161619]`) dan satu `!important` (`dark:ring-[#121214]!`).
 - **Palette Tailwind yang masih dipakai**: `emerald` 334x, `rose` 328x, `amber` 164x (skala status lengkap: `/10`, `/15`, `/30`, `-600`, `-700`), `zinc` 34x, plus `purple`/`violet`/`blue` 39x. Skala ini sengaja tidak dipetakan ke token tunggal karena akan mengubah hue (rose-500 `#F43F5E` vs `--danger` `#EF4444`).
@@ -53,21 +57,22 @@ Platform menggunakan bahasa visual arsitektural terinspirasi dari gaya **Token H
 
 ### C. Aturan Dimensi & Tipografi
 - **Radius (kondisi yang diterima, jangan diubah tanpa approval desain)**: proyek ini meng-override skala Tailwind di `:root` → `rounded-md` 8px, `rounded-lg` 12px, `rounded-xl` **16px**, `rounded-2xl` 16px, `rounded-full` pill. Artinya `rounded-xl` dan `rounded-2xl` setara; jangan "merapikan" ke skala default Tailwind — sudah dicoba (kartu 12px + media full-bleed) dan ditolak user karena terlihat berantakan.
-- **Kartu permukaan** (feed, 2 kartu right rail, panel halaman) dan **container media inset** di kartu feed memakai radius 16px dengan hairline border 1px; gambar di kartu feed **inset ber-border**, bukan full-bleed ke tepi kartu.
+- **Kartu permukaan** (feed, 2 kartu right rail, panel halaman) memakai radius 16px (`rounded-2xl`) dengan hairline border 1px `border-[var(--border-color)]`.
+- **Elemen dalam kartu dibuat borderless (Milestone 7)**: thumbnail, chip skor trending, pill kategori, dan pembungkus media inset (`rounded-xl overflow-hidden bg-[var(--surface-muted)]`) dibuat tanpa border 1px untuk mengurangi kebisingan visual (visual noise) ala timeline X. `shadow-xs` pada kartu rail juga dihapus. Komponen `x-tech-pill` dibuat borderless secara global.
 - **Verifikasi radius**: pakai px hasil komputasi (`getComputedStyle(el).borderRadius`) atau token efektif di CSS build — grep CSS bisa menangkap definisi Tailwind lebih dulu padahal override `:root` yang menang.
 - **Shell Maksimal**: `max-w-[1440px]` terpusat.
-- **Sidebar Kiri Desktop**: Lebar `280px` (layar lg) hingga `300px` (layar xl), dengan kontainer internal `overflow-y-auto sidebar-scroll`.
+- **Sidebar Kiri Desktop**: Lebar `280px` (layar lg) hingga `300px` (layar xl), solid tanpa scroll internal (`overflow-hidden`). Menu utama: Semua Karya, Trending, Obrolan, Terbaru, Mengikuti (auth), Komunitas, Spaces. Item Komunitas, Spaces, Obrolan, dan Kategori Kodingan dikunci modal login jika diklik oleh tamu (`@guest`). Direktori Kreator dan badge `v1.0` telah dihapus.
 - **Kolom Utama Feed**: Maksimal `760px` pada beranda, dapat dilebarkan ke `max-w-none` untuk halaman kerja penuh (Obrolan, Spaces, Moderasi Admin, Form Unggah/Edit).
-- **Rail Kanan**: Lebar `340px` (layar xl) hingga `370px`, memuat pencarian global kontekstual dan rekomendasi karya/komunitas.
+- **Rail Kanan**: Lebar `340px` (layar xl) hingga `370px`, `sticky top-0 max-h-screen overflow-y-auto no-scrollbar` (tetap menempel saat feed di-scroll, tanpa scrollbar ganda). Berisi pencarian global kontekstual, kartu Trending Hari Ini (`divide-y` list), dan kartu Sedang Hangat Dibicarakan (vertikal list topik).
 - **Header**: Tinggi konsisten `h-16` (56px-64px), sticky dengan efek translucent backdrop blur.
 
 ---
 
 ## 3. Struktur Skema Database & Relasi
 
-Basis data terdiri dari 20 tabel domain dan framework:
+Basis data terdiri dari 28 tabel total (20 tabel domain, 7 tabel framework Laravel, 1 tabel migrations):
 
-1. **`users`**: Data akun, profil sosial, reputasi (`reputation_points`), hak akses (`is_admin`), serta riwayat moderasi (`is_banned`, `ban_reason`, `warning_notes`).
+### A. Tabel Domain (20 Tabel)
 2. **`user_links`**: Tautan portofolio eksternal developer (`user_id`, `label`, `url`, `sort_order`).
 3. **`follows`**: Graf sosial hubungan pengikut dan yang diikuti (`follower_id`, `following_id`).
 4. **`categories`**: Kategori teknologi proyek (`name`, `slug`, `icon`, `projects_count`).
@@ -92,6 +97,16 @@ Basis data terdiri dari 20 tabel domain dan framework:
 18. **`messages`**: Isi pesan percakapan dengan fitur soft-delete dan pelacakan edit (`conversation_id`, `sender_id`, `body`, `read_at`, `edited_at`, `deleted_at`).
 19. **`reports`**: Sistem pelaporan konten polimorfik (`reporter_id`, `reportable_type`, `reportable_id`, `reason`, `notes`, `status`, `admin_notes`, `resolved_by`).
 20. **`notifications`**: Notifikasi aktivitas akun dan platform.
+
+### B. Tabel Framework & Infrastruktur (8 Tabel)
+21. **`password_reset_tokens`**: Token reset kata sandi berbasis email.
+22. **`sessions`**: Penyimpanan sesi HTTP database driver (`SESSION_DRIVER=database`).
+23. **`cache`**: Penyimpanan cache database driver (`CACHE_STORE=database`).
+24. **`cache_locks`**: Atomic lock untuk race-condition protection di database cache.
+25. **`jobs`**: Antrean pekerjaan latar belakang (`QUEUE_CONNECTION=database`).
+26. **`job_batches`**: Pelacakan batch queue jobs.
+27. **`failed_jobs`**: Log kegagalan eksekusi queue worker.
+28. **`migrations`**: Riwayat migrasi skema database Laravel.
 
 ---
 

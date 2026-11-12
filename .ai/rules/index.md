@@ -8,8 +8,9 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/views/components/project-actions.blade.php | .ai/rules/components.md |
 | app/Http/Controllers/ChatController.php, app/Http/Controllers/ProfileController.php | .ai/rules/controllers.md |
 | resources/css/** | .ai/rules/css.md |
+| app/**, config/**, routes/**, database/** | .ai/rules/dev-environment.md |
 | tests/Feature/** | .ai/rules/feature.md |
-| resources/views/layouts/app.blade.php | .ai/rules/layouts.md |
+| resources/views/layouts/app.blade.php, resources/views/partials/sidebar.blade.php | .ai/rules/layouts.md |
 | app/Models/Conversation.php | .ai/rules/models.md |
 | app/Services/MediaOptimizer.php | .ai/rules/services.md |
 | resources/views/**/*.blade.php | .ai/rules/views.md |

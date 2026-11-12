@@ -442,9 +442,9 @@
     @endif
 
     <!-- ===================== TAB: COMMENTS ===================== -->
-    <div x-show="activeTab === 'comments'" x-cloak class="space-y-3">
+    <div x-show="activeTab === 'comments'" x-cloak class="divide-y divide-[var(--border-color)]">
         @forelse($comments as $comment)
-            <div class="rounded-xl bg-[var(--surface)] border border-[var(--border-color)] p-4 space-y-2 shadow-xs">
+            <div class="py-3 space-y-1">
                 <div class="flex items-center justify-between text-xs">
                     @if($comment->project)
                         <span class="text-[var(--text-muted)]">

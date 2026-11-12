@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             CommunitySeeder::class,
             NampungYukSeeder::class,
             MassDummySeeder::class,
+            DemoAccountSeeder::class,
         ]);
     }
 }

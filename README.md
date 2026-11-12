@@ -32,8 +32,9 @@ NampungYuk hadir sebagai solusi bagi para pengembang aplikasi untuk tidak hanya 
 ## Fitur Utama
 
 ### 1. Showcase Proyek & Feed Interaktif
-- Penelusuran proyek berdasarkan tab Trending, Terbaru, Populer, dan Prototipe Interaktif.
+- Penelusuran proyek berdasarkan tab Trending, Terbaru, Populer, dan Mengikuti (auth).
 - Filter pencarian berbasis kategori kodingan dan tech stack (tagar teknologi).
+- Akses cepat fitur Obrolan langsung dari sidebar antarmuka.
 - Sistem voting (upvote/downvote) dengan kalkulasi skor reputasi.
 - Fitur bookmark (koleksi tersimpan) dan repost karya.
 
@@ -107,7 +108,8 @@ Bagian ini memuat panduan visual antarmuka platform. Seluruh gambar disimpan dal
 <!-- Simpan tangkapan layar dashboard moderasi laporan pada path: docs/images/admin-moderasi.png -->
 ![Panel Moderasi Administrator](docs/images/admin-moderasi.png)
 
-### 8. Tampilan Responsif Mobile & Dark Mode
+### 8. Tampilan Responsif Mobile & Dark Mode (Only)
+Platform mengadopsi estetika **Token Harbor** yang dirancang **Dark Mode Only** (tidak ada light mode atau toggle tema) demi kenyamanan eksplorasi kode berjam-jam dengan kontras tinggi dan aksen warna Warm Stone.
 <!-- TEMPAT GAMBAR: RESPONSIVE / DARK MODE -->
 <!-- Simpan tangkapan layar tampilan mobile drawer atau tema gelap pada path: docs/images/responsive-dark-mode.png -->
 ![Tampilan Mode Gelap dan Ponsel](docs/images/responsive-dark-mode.png)
@@ -117,13 +119,13 @@ Bagian ini memuat panduan visual antarmuka platform. Seluruh gambar disimpan dal
 ## Teknologi yang Digunakan
 
 - **Bahasa Pemrograman:** PHP 8.3+
-- **Framework Backend:** Laravel 11 / 12
-- **Frontend & UI:** Blade Templates, TailwindCSS, Alpine.js
-- **Basis Data:** SQLite (default lokal) / MySQL (produksi)
+- **Framework Backend:** Laravel 13 (v13.30.1)
+- **Frontend & UI:** Blade Templates, Tailwind CSS v4, Alpine.js
+- **Basis Data:** SQLite (default lokal dev & test) / MySQL 8.4 (opsional produksi)
 - **Autentikasi Eksternal:** Laravel Socialite (Google OAuth 2.0)
 - **Layanan Realtime:** Laravel Reverb (WebSockets)
-- **Kompresi Media:** Intervention Image & WebP Optimizer
-- **Testing:** PHPUnit 12
+- **Kompresi Media:** PHP GD (WebP) & FFmpeg CLI (H.264 Video) via `App\Services\MediaOptimizer`
+- **Testing:** PHPUnit 12 (142 tests, 506 assertions)
 
 ---
 
@@ -131,7 +133,7 @@ Bagian ini memuat panduan visual antarmuka platform. Seluruh gambar disimpan dal
 
 Sebelum menjalankan proyek di komputer lokal, pastikan perangkat Anda telah terpasang:
 
-1. **PHP:** Versi 8.3 atau lebih baru (dengan ekstensi `pdo_sqlite`, `pdo_mysql`, `mbstring`, `fileinfo`, `gd` aktif).
+1. **PHP:** Versi 8.3 atau lebih baru (dengan ekstensi `pdo_sqlite`, `pdo_mysql`, `mbstring`, `fileinfo`, `gd` aktif). Pada lingkungan Laragon Windows, pastikan menggunakan binary PHP 8.3 (`C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe`).
 2. **Composer:** Versi 2.x
 3. **Node.js:** Versi 18.x atau 20.x dan **npm**
 4. **Git**

@@ -117,6 +117,26 @@ class ChatRequestTest extends TestCase
         $response->assertSee('Stranger Danger');
     }
 
+    public function test_sidebar_request_modal_lists_pending_requests_for_recipient_only(): void
+    {
+        $recipient = User::factory()->create();
+        $stranger = User::factory()->create(['name' => 'Stranger Danger']);
+
+        $this->actingAs($stranger)->postJson('/obrolan/'.$recipient->username.'/kirim', ['body' => 'preview-unik-xyz']);
+
+        // Landed on the feed: the modal payload is rendered with the layout.
+        $this->actingAs($recipient)->get('/')
+            ->assertStatus(200)
+            ->assertSee('Permintaan Pengguna')
+            ->assertSee('Stranger Danger')
+            ->assertSee('preview-unik-xyz');
+
+        // The initiator must not see their own outgoing request in the modal.
+        $this->actingAs($stranger)->get('/')
+            ->assertStatus(200)
+            ->assertDontSee('preview-unik-xyz');
+    }
+
     public function test_profile_has_message_button_for_other_users(): void
     {
         $a = User::factory()->create();
