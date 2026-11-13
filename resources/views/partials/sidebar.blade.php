@@ -11,8 +11,7 @@
             $isPeopleNav = request()->routeIs('projects.index') && request('view') === 'people';
             $isTrendNav = request()->routeIs('projects.index') && request('tab') === 'trend';
             $isTerbaruNav = request()->routeIs('projects.index') && request('tab') === 'terbaru';
-            $isFollowingNav = request()->routeIs('projects.index') && request('tab') === 'following';
-            $isExploreFeed = request()->routeIs('projects.index') && ! $isPeopleNav && ! $isTrendNav && ! $isTerbaruNav && ! $isFollowingNav && ! request('kategori') && ! request('tech') && ! request('tab');
+            $isExploreFeed = request()->routeIs('projects.index') && ! $isPeopleNav && ! $isTrendNav && ! $isTerbaruNav && ! request('kategori') && ! request('tech') && ! request('tab');
         @endphp
 
         <!-- Group 1: Feed -->
@@ -54,19 +53,6 @@
                         <span class="truncate">Terbaru</span>
                     </div>
                 </a>
-
-                @auth
-                    <!-- Mengikuti -->
-                    <a href="{{ route('projects.index', ['tab' => 'following']) }}"
-                       class="flex items-center justify-between gap-2 h-11 px-3 rounded-lg text-[15px] transition border border-transparent {{ $isFollowingNav ? 'is-active relative bg-[var(--surface)] text-[var(--primary)] font-semibold before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-[2px] before:rounded-full before:bg-emerald-500' : 'text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--surface-hover)]/60 font-medium' }}">
-                        <div class="flex items-center gap-3.5 min-w-0">
-                            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
-                            </svg>
-                            <span class="truncate">Mengikuti</span>
-                        </div>
-                    </a>
-                @endauth
             </nav>
         </div>
 
