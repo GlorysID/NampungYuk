@@ -25,42 +25,46 @@
     <div class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl divide-y divide-[var(--border-color)] overflow-hidden shadow-xs">
         @forelse($notifications as $notification)
             @php $data = $notification->data; @endphp
-            <a href="{{ $data['url'] ?? '#' }}"
-               class="flex items-start gap-3.5 p-4 transition hover:bg-[var(--surface-subtle)] {{ is_null($notification->read_at) ?'bg-[#EFECE6]/60 dark:bg-[#19191D]/90 border-l-2 border-[var(--primary)]' :'border-l-2 border-transparent' }}">
-                
-                <!-- Icon / Avatar -->
-                <div class="shrink-0">
-                    @if(!empty($data['actor_avatar']))
-                        <img src="{{ $data['actor_avatar'] }}" alt="" class="w-9 h-9 rounded-xl object-cover border border-[var(--border-color)]">
-                    @else
-                        <div class="w-9 h-9 rounded-xl bg-[var(--surface-muted)] flex items-center justify-center text-[var(--primary)] border border-[var(--border-color)]">
-                            @if(($data['type'] ?? '') === 'project_uploaded' || ($data['type'] ?? '') === 'project_reposted')
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                            @elseif(($data['type'] ?? '') === 'project_trending')
-                                <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-                            @elseif(($data['type'] ?? '') === 'community_post' || ($data['type'] ?? '') === 'community_comment')
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                            @else
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                            @endif
-                        </div>
+            <form method="POST" action="{{ route('notifications.read', $notification->id) }}">
+                @csrf
+                <input type="hidden" name="to" value="{{ $data['url'] ?? '' }}">
+                <button type="submit"
+                        class="w-full text-left flex items-start gap-3.5 p-4 transition hover:bg-[var(--surface-subtle)] cursor-pointer {{ is_null($notification->read_at) ?'bg-[var(--surface-subtle)] border-l-2 border-[var(--primary)]' :'border-l-2 border-transparent' }}">
+                    
+                    <!-- Icon / Avatar -->
+                    <span class="shrink-0">
+                        @if(!empty($data['actor_avatar']))
+                            <img src="{{ $data['actor_avatar'] }}" alt="" class="w-9 h-9 rounded-full object-cover border border-[var(--border-color)]">
+                        @else
+                            <span class="w-9 h-9 rounded-full bg-[var(--surface-muted)] flex items-center justify-center text-[var(--primary)] border border-[var(--border-color)]">
+                                @if(($data['type'] ?? '') === 'project_uploaded' || ($data['type'] ?? '') === 'project_reposted')
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                @elseif(($data['type'] ?? '') === 'project_trending')
+                                    <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                                @elseif(($data['type'] ?? '') === 'community_post' || ($data['type'] ?? '') === 'community_comment')
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                @else
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                @endif
+                            </span>
+                        @endif
+                    </span>
+
+                    <!-- Body -->
+                    <span class="min-w-0 flex-1 block">
+                        <span class="block text-xs sm:text-sm text-[var(--primary)] leading-relaxed">
+                            {{ $data['message'] ?? 'Ada aktivitas baru' }}
+                        </span>
+                        <span class="block text-[11px] font-mono text-[var(--text-faint)] mt-1">
+                            {{ $notification->created_at->diffForHumans() }}
+                        </span>
+                    </span>
+
+                    @if(is_null($notification->read_at))
+                        <span class="w-2 h-2 rounded-full bg-[var(--primary)] mt-2 shrink-0" title="Belum dibaca"></span>
                     @endif
-                </div>
-
-                <!-- Body -->
-                <div class="min-w-0 flex-1">
-                    <p class="text-xs sm:text-sm text-[var(--primary)] leading-relaxed">
-                        {{ $data['message'] ?? 'Ada aktivitas baru' }}
-                    </p>
-                    <p class="text-[11px] font-mono text-[var(--text-faint)] mt-1">
-                        {{ $notification->created_at->diffForHumans() }}
-                    </p>
-                </div>
-
-                @if(is_null($notification->read_at))
-                    <span class="w-2 h-2 rounded-full bg-[var(--primary)] mt-2 shrink-0" title="Belum dibaca"></span>
-                @endif
-            </a>
+                </button>
+            </form>
         @empty
             <div class="p-10 text-center space-y-2">
                 <div class="w-12 h-12 rounded-2xl bg-[var(--surface-muted)] mx-auto flex items-center justify-center text-[var(--text-faint)] border border-[var(--border-color)]">

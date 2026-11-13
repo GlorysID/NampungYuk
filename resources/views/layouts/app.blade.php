@@ -50,6 +50,7 @@
           mobileSearchOpen: false,
           activeCardIndex: -1,
           showHelpModal: false,
+          requestsOpen: false,
           toast: { show: false, message: '' },
           init() {
               window.notify = (msg) => this.notify(msg);
@@ -87,6 +88,7 @@
               }
               if (e.key === 'Escape') {
                   this.showHelpModal = false;
+                  this.requestsOpen = false;
                   this.mobileSidebarOpen = false;
                   this.mobileSearchOpen = false;
                   return;
@@ -639,6 +641,96 @@
             </div>
         </div>
     </div>
+
+    @auth
+        @php
+            $reqPayload = ($chatRequests ?? collect())->map(fn ($c) => [
+                'id' => $c->id,
+                'name' => $c->other->name,
+                'username' => $c->other->username,
+                'avatar' => $c->other->avatar,
+                'preview' => $c->last->body ?? 'Ingin mengirim pesan…',
+            ])->values();
+        @endphp
+
+        <!-- USER CHAT REQUESTS MODAL -->
+        <div x-show="requestsOpen"
+             x-cloak
+             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+             @click.self="requestsOpen = false"
+             role="dialog"
+             aria-modal="true"
+             aria-label="Permintaan Pengguna">
+            <div class="max-w-md w-full rounded-2xl bg-[var(--surface)] border border-[var(--border-color)] shadow-xl overflow-hidden flex flex-col max-h-[70vh]"
+                 x-data="{ items: {{ \Illuminate\Support\Js::from($reqPayload) }}, busy: null }"
+                 x-transition:enter="transition ease-out duration-150"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100">
+                <!-- Modal Header -->
+                <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] shrink-0">
+                    <h3 class="text-[17px] font-bold text-[var(--primary)]">Permintaan Pengguna</h3>
+                    <button type="button"
+                            @click="requestsOpen = false"
+                            class="h-8 w-8 rounded-lg text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--surface-hover)] inline-flex items-center justify-center transition cursor-pointer"
+                            aria-label="Tutup dialog">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Modal Content / List -->
+                <div class="overflow-y-auto">
+                    <div x-show="items.length > 0">
+                        @foreach(($chatRequests ?? collect()) as $c)
+                            <div x-show="items.some(i => i.id === {{ $c->id }})"
+                                 class="flex items-start gap-3 p-4 border-b border-[var(--border-color)] last:border-0">
+                                <a href="{{ route('profile.show', $c->other->username) }}" class="shrink-0 pt-0.5">
+                                    <x-user-avatar :user="$c->other" size="md" />
+                                </a>
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-baseline gap-1.5 min-w-0">
+                                        <a href="{{ route('profile.show', $c->other->username) }}" class="font-bold text-sm text-[var(--primary)] hover:underline truncate">
+                                            {{ $c->other->name }}
+                                        </a>
+                                        <span class="font-mono text-xs text-[var(--text-muted)] truncate shrink-0">&#64;{{ $c->other->username }}</span>
+                                    </div>
+                                    <p class="text-[13px] text-[var(--text-muted)] line-clamp-2 mt-1">
+                                        {{ $c->last->body ?? 'Ingin mengirim pesan…' }}
+                                    </p>
+                                    <div class="flex items-center gap-2 mt-3">
+                                        <button type="button"
+                                                :disabled="busy === {{ $c->id }}"
+                                                @click="busy = {{ $c->id }}; fetch('{{ route('chat.decline', $c->other->username) }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' } }).then(r => { if (r.ok) { items = items.filter(i => i.id !== {{ $c->id }}); window.notify && window.notify('Permintaan ditolak'); } }).finally(() => { busy = null; })"
+                                                class="flex-1 h-9 rounded-lg text-xs font-semibold border border-rose-500/40 text-rose-400 hover:bg-rose-500/10 disabled:opacity-50 transition cursor-pointer flex items-center justify-center">
+                                            Tolak
+                                        </button>
+                                        <button type="button"
+                                                :disabled="busy === {{ $c->id }}"
+                                                @click="busy = {{ $c->id }}; fetch('{{ route('chat.accept', $c->other->username) }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' } }).then(r => { if (r.ok) { items = items.filter(i => i.id !== {{ $c->id }}); window.notify && window.notify('Permintaan diterima'); } }).finally(() => { busy = null; })"
+                                                class="flex-1 h-9 rounded-lg text-xs font-semibold border border-[var(--border-color)] text-[var(--primary)] hover:bg-[var(--surface-hover)] disabled:opacity-50 transition cursor-pointer flex items-center justify-center">
+                                            Terima
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <!-- Empty State -->
+                    <div x-show="items.length === 0" class="py-12 px-4 text-center">
+                        <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-[var(--surface-muted)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)]">
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+                        <p class="font-bold text-sm text-[var(--primary)]">Tidak ada permintaan</p>
+                        <p class="text-xs text-[var(--text-muted)] mt-1 max-w-xs mx-auto">Permintaan pesan baru akan muncul di sini.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endauth
 
     <!-- FLOATING TOAST NOTIFICATION -->
     <div x-show="toast.show" 

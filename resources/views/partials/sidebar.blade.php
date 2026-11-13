@@ -146,15 +146,21 @@
 
                 @auth
                     <!-- Permintaan Pengguna -->
-                    <a href="{{ route('chat.index') }}#permintaan"
-                       class="flex items-center justify-between gap-2 h-11 px-3 rounded-lg text-[15px] transition border border-transparent text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--surface-hover)]/60 font-medium">
+                    <button type="button"
+                            @click="requestsOpen = true"
+                            class="flex items-center justify-between gap-2 h-11 px-3 rounded-lg text-[15px] transition border border-transparent text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--surface-hover)]/60 font-medium cursor-pointer">
                         <div class="flex items-center gap-3.5 min-w-0">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                             </svg>
                             <span class="truncate">Permintaan Pengguna</span>
                         </div>
-                    </a>
+                        @if(($chatRequests ?? collect())->count() > 0)
+                            <span class="ml-auto text-[11px] font-mono px-1.5 py-0.5 rounded bg-[var(--surface-muted)] text-[var(--text-muted)]">
+                                {{ $chatRequests->count() }}
+                            </span>
+                        @endif
+                    </button>
 
                     @php $unreadCount = $unreadNotificationsCount ?? 0; @endphp
                     <!-- Notifikasi -->
@@ -257,17 +263,42 @@
         @endauth
     </div>
 
-    <!-- Bottom: guest auth actions -->
+    <!-- Bottom: guest auth actions & promo card -->
     @guest
-        <div class="shrink-0 pt-3 border-t border-[var(--border-color)]">
-            <div class="grid grid-cols-2 gap-2">
-                <button type="button" @click="window.openAuthModal('login')"
-                        class="w-full inline-flex items-center justify-center rounded-lg border border-[var(--border-color)] hover:bg-[var(--surface-hover)] text-[var(--primary)] text-[14px] font-semibold h-11 px-3 transition cursor-pointer">
-                    <span>Masuk</span>
-                </button>
+        <div class="shrink-0 pt-3 flex flex-col gap-3">
+            <!-- Promo Card -->
+            <div class="rounded-xl bg-[var(--surface)] border border-[var(--border-color)] p-3.5 space-y-2">
+                <h3 class="text-[14px] font-bold text-[var(--primary)] tracking-tight leading-tight">
+                    Pamer karya, dapat feedback
+                </h3>
+                <p class="text-[12.5px] text-[var(--text-muted)] leading-snug">
+                    Showcase project, kumpulkan upvote, dan dapat masukan teknis.
+                </p>
+                <div class="space-y-1.5">
+                    <div class="flex items-start gap-2 text-[12.5px] text-[var(--text-muted)]">
+                        <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span>Unggah project + link demo & GitHub</span>
+                    </div>
+                    <div class="flex items-start gap-2 text-[12.5px] text-[var(--text-muted)]">
+                        <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span>Ngobrol langsung dengan sesama kreator</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Auth Buttons -->
+            <div class="space-y-2">
                 <button type="button" @click="window.openAuthModal('register')"
-                        class="w-full inline-flex items-center justify-center rounded-lg bg-[var(--primary)] hover:opacity-90 text-[var(--primary-text)] text-[14px] font-bold h-11 px-3 transition cursor-pointer">
-                    <span>Daftar</span>
+                        class="w-full inline-flex items-center justify-center rounded-full bg-[var(--primary)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)] font-bold text-[14px] h-11 px-4 transition active:scale-[0.98] cursor-pointer">
+                    <span>Daftar gratis</span>
+                </button>
+                <button type="button" @click="window.openAuthModal('login')"
+                        class="w-full inline-flex items-center justify-center rounded-full border border-[var(--border-color)] hover:bg-[var(--surface-hover)] text-[var(--primary)] font-semibold text-[14px] h-11 px-4 transition active:scale-[0.98] cursor-pointer">
+                    <span>Masuk</span>
                 </button>
             </div>
         </div>

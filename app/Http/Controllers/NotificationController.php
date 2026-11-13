@@ -19,9 +19,9 @@ class NotificationController extends Controller
 
         $notifications = $user->notifications()->paginate(20);
 
-        // Mark all as read when opening the full page.
-        $user->unreadNotifications->markAsRead();
-
+        // Notifikasi TIDAK ditandai dibaca hanya karena halaman dibuka: status
+        // belum-dibaca hanya hilang saat notifikasi itu diklik, atau lewat
+        // tombol "Tandai semua dibaca".
         return view('notifications.index', compact('notifications'));
     }
 
@@ -69,6 +69,20 @@ class NotificationController extends Controller
                 'success' => true,
                 'unread_count' => $user->unreadNotifications()->count(),
             ]);
+        }
+
+        $target = (string) $request->input('to', '');
+        $parts = parse_url($target);
+
+        // Lanjut ke tujuan notifikasi (dari payload), hanya kalau host-nya host
+        // aplikasi ini — dan pakai path relatif supaya user tetap di host yang
+        // dia buka (payload bisa berisi host APP_URL yang beda dari request).
+        $allowedHosts = array_filter([$request->getHost(), parse_url((string) config('app.url'), PHP_URL_HOST)]);
+
+        if (! empty($parts['path']) && (empty($parts['host']) || in_array($parts['host'], $allowedHosts, true))) {
+            $path = $parts['path'].(isset($parts['query']) ? '?'.$parts['query'] : '');
+
+            return redirect()->to($path);
         }
 
         return back();
