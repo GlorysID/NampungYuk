@@ -42,7 +42,7 @@ class GoogleAuthTest extends TestCase
 
         Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
 
-        $response = $this->get('/auth/google/callback');
+        $response = $this->get('/auth/google/callback?code=mock-oauth-code');
 
         $response->assertRedirect('/');
         $this->assertAuthenticated();
@@ -78,7 +78,7 @@ class GoogleAuthTest extends TestCase
 
         Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
 
-        $response = $this->get('/auth/google/callback');
+        $response = $this->get('/auth/google/callback?code=mock-oauth-code');
 
         $response->assertRedirect('/');
         $this->assertAuthenticatedAs($existingUser);
@@ -113,7 +113,7 @@ class GoogleAuthTest extends TestCase
 
         Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
 
-        $response = $this->get('/auth/google/callback');
+        $response = $this->get('/auth/google/callback?code=mock-oauth-code');
 
         $response->assertRedirect('/');
         $this->assertAuthenticated();
@@ -121,5 +121,33 @@ class GoogleAuthTest extends TestCase
             'email' => 'stateless@example.com',
             'google_id' => 'google-stateless-123',
         ]);
+    }
+
+    public function test_google_callback_handles_access_denied_error_without_calling_token_endpoint(): void
+    {
+        Config::set('services.google.client_id', 'mock-google-client-id');
+        Config::set('services.google.client_secret', 'mock-google-client-secret');
+
+        Socialite::shouldReceive('driver')->never();
+
+        $response = $this->get('/auth/google/callback?error=access_denied');
+
+        $response->assertRedirect('/login');
+        $response->assertSessionHas('status');
+        $this->assertGuest();
+    }
+
+    public function test_google_callback_handles_missing_code_without_calling_token_endpoint(): void
+    {
+        Config::set('services.google.client_id', 'mock-google-client-id');
+        Config::set('services.google.client_secret', 'mock-google-client-secret');
+
+        Socialite::shouldReceive('driver')->never();
+
+        $response = $this->get('/auth/google/callback');
+
+        $response->assertRedirect('/login');
+        $response->assertSessionHas('status');
+        $this->assertGuest();
     }
 }

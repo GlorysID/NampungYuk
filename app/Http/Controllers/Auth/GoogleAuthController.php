@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -35,11 +36,36 @@ class GoogleAuthController extends Controller
     /**
      * Obtain the user information from Google.
      */
-    public function callback(): RedirectResponse
+    public function callback(Request $request): RedirectResponse
     {
         $clientId = config('services.google.client_id');
         if (empty($clientId)) {
             return redirect()->route('login')->with('status', 'Konfigurasi Google OAuth belum disetel di .env.');
+        }
+
+        if ($request->filled('error')) {
+            $oauthError = (string) $request->query('error');
+            $oauthDesc = (string) $request->query('error_description', '');
+
+            Log::warning('Google OAuth returned error on callback', [
+                'error' => $oauthError,
+                'error_description' => $oauthDesc,
+            ]);
+
+            $message = $oauthError === 'access_denied'
+                ? 'Login Google dibatalkan atau akses ditolak. Jika aplikasi masih mode Testing di Google Cloud Console, pastikan email Google kamu terdaftar di Test Users.'
+                : 'Gagal masuk dengan Google ('.$oauthError.'). Silakan coba lagi atau gunakan login username/email.';
+
+            return redirect()->route('login')->with('status', $message);
+        }
+
+        if (! $request->filled('code')) {
+            Log::warning('Google OAuth callback dipanggil tanpa parameter code.', [
+                'host' => $request->getHost(),
+            ]);
+
+            return redirect()->route('login')
+                ->with('status', 'Sesi otorisasi Google tidak lengkap. Silakan klik tombol Lanjutkan dengan Google lagi.');
         }
 
         try {
