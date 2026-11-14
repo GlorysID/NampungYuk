@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\FirebaseIdTokenVerifier;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -77,49 +79,15 @@ class GoogleAuthController extends Controller
                 $googleUser = Socialite::driver('google')->stateless()->user();
             }
 
-            $user = User::where('google_id', $googleUser->getId())
-                ->orWhere('email', $googleUser->getEmail())
-                ->first();
-
-            if ($user) {
-                // Update google_id and avatar if not present
-                if (! $user->google_id) {
-                    $user->google_id = $googleUser->getId();
-                }
-                if (! $user->avatar && $googleUser->getAvatar()) {
-                    $user->avatar = $googleUser->getAvatar();
-                }
-                // Google accounts are pre-verified, so verify the email if not already verified
-                if (! $user->email_verified_at) {
-                    $user->email_verified_at = now();
-                }
-                $user->save();
-            } else {
-                // Generate a unique username
-                $baseUsername = Str::slug(explode('@', $googleUser->getEmail())[0], '_');
-                if (empty($baseUsername)) {
-                    $baseUsername = 'dev_'.Str::random(5);
-                }
-
-                $username = $baseUsername;
-                $counter = 1;
-                while (User::where('username', $username)->exists()) {
-                    $username = $baseUsername.'_'.$counter;
-                    $counter++;
-                }
-
-                $user = User::create([
-                    'name' => $googleUser->getName() ?: $username,
-                    'username' => $username,
-                    'email' => $googleUser->getEmail(),
-                    'google_id' => $googleUser->getId(),
-                    'avatar' => $googleUser->getAvatar(),
-                    'password' => null,
-                    'email_verified_at' => now(),
-                ]);
-            }
+            $user = $this->findOrCreateGoogleUser(
+                googleId: (string) $googleUser->getId(),
+                email: (string) $googleUser->getEmail(),
+                name: $googleUser->getName(),
+                avatar: $googleUser->getAvatar(),
+            );
 
             Auth::login($user, true);
+            $request->session()->regenerate();
 
             return redirect()->intended(route('projects.index'))
                 ->with('status', 'Selamat datang, '.$user->name.'! Berhasil masuk dengan Google.');
@@ -129,5 +97,100 @@ class GoogleAuthController extends Controller
             return redirect()->route('login')
                 ->with('status', 'Gagal masuk dengan Google. Silakan coba lagi atau gunakan login username/email.');
         }
+    }
+
+    /**
+     * Authenticate or register a user using a verified Firebase ID token.
+     */
+    public function firebaseLogin(Request $request, FirebaseIdTokenVerifier $verifier): JsonResponse
+    {
+        $validated = $request->validate([
+            'id_token' => ['required', 'string'],
+        ]);
+
+        if (empty(config('services.firebase.project_id'))) {
+            return response()->json([
+                'message' => 'Firebase Auth belum dikonfigurasi di server.',
+            ], 503);
+        }
+
+        try {
+            $claims = $verifier->verify($validated['id_token']);
+
+            $user = $this->findOrCreateGoogleUser(
+                googleId: $claims['google_id'],
+                email: $claims['email'],
+                name: $claims['name'],
+                avatar: $claims['avatar'],
+            );
+
+            Auth::login($user, true);
+            $request->session()->regenerate();
+
+            $welcomeMessage = 'Selamat datang, '.$user->name.'! Berhasil masuk dengan Google.';
+            $request->session()->flash('status', $welcomeMessage);
+
+            return response()->json([
+                'redirect' => $request->session()->pull('url.intended', route('projects.index')),
+                'message' => $welcomeMessage,
+            ]);
+        } catch (Throwable $e) {
+            Log::warning('Firebase Google login gagal: '.$e->getMessage(), [
+                'exception' => get_class($e),
+            ]);
+
+            return response()->json([
+                'message' => 'Token login Google dari Firebase tidak valid atau kedaluwarsa. Silakan coba lagi.',
+            ], 401);
+        }
+    }
+
+    /**
+     * Find an existing user by Google ID or email, or provision a new verified account.
+     */
+    private function findOrCreateGoogleUser(string $googleId, string $email, ?string $name = null, ?string $avatar = null): User
+    {
+        $normalizedEmail = strtolower(trim($email));
+
+        $user = User::where('google_id', $googleId)
+            ->orWhereRaw('LOWER(email) = ?', [$normalizedEmail])
+            ->first();
+
+        if ($user) {
+            if (! $user->google_id) {
+                $user->google_id = $googleId;
+            }
+            if (! $user->avatar && ! empty($avatar)) {
+                $user->avatar = $avatar;
+            }
+            if (! $user->email_verified_at) {
+                $user->email_verified_at = now();
+            }
+            $user->save();
+
+            return $user;
+        }
+
+        $baseUsername = Str::slug(explode('@', $normalizedEmail)[0], '_');
+        if (empty($baseUsername)) {
+            $baseUsername = 'dev_'.Str::random(5);
+        }
+
+        $username = $baseUsername;
+        $counter = 1;
+        while (User::where('username', $username)->exists()) {
+            $username = $baseUsername.'_'.$counter;
+            $counter++;
+        }
+
+        return User::create([
+            'name' => ! empty($name) ? $name : $username,
+            'username' => $username,
+            'email' => $normalizedEmail,
+            'google_id' => $googleId,
+            'avatar' => $avatar,
+            'password' => null,
+            'email_verified_at' => now(),
+        ]);
     }
 }

@@ -1,4 +1,5 @@
 import Alpine from 'alpinejs';
+import { completeFirebaseRedirectIfNeeded, signInWithFirebaseGoogle } from './firebase';
 
 /**
  * Scroll position restore.
@@ -992,6 +993,40 @@ document.addEventListener('alpine:init', () => {
                 this.notifications = this.notifications.map((n) => ({ ...n, read: true }));
             } catch (e) {
                 // ignore
+            }
+        },
+    }));
+});
+
+document.addEventListener('alpine:init', () => {
+    /**
+     * Firebase Auth Google Sign-In button controller.
+     */
+    Alpine.data('firebaseGoogleAuth', ({ endpoint = '', config = {} } = {}) => ({
+        loading: false,
+        error: '',
+
+        async init() {
+            try {
+                await completeFirebaseRedirectIfNeeded({ endpoint, config });
+            } catch (e) {
+                this.error = e?.message || 'Gagal menyelesaikan login Google.';
+            }
+        },
+
+        async login() {
+            if (this.loading) return;
+            this.loading = true;
+            this.error = '';
+
+            try {
+                const res = await signInWithFirebaseGoogle({ endpoint, config });
+                if (res?.redirect) {
+                    return;
+                }
+            } catch (e) {
+                this.error = e?.message || 'Gagal masuk dengan Google. Silakan coba lagi.';
+                this.loading = false;
             }
         },
     }));

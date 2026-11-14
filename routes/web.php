@@ -158,9 +158,12 @@ Route::middleware('guest')->group(function () {
         ->name('verification.resend');
 });
 
-// Google OAuth — harus di luar middleware guest agar callback tidak terblokir
+// Google OAuth & Firebase Google Sign-In — harus di luar middleware guest agar callback tidak terblokir
 Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('auth.google');
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
+Route::post('/auth/firebase/google', [GoogleAuthController::class, 'firebaseLogin'])
+    ->middleware('throttle:15,1')
+    ->name('auth.firebase.google');
 
 Route::post('/login', [LoginController::class, 'store'])->name('login.store');
 
