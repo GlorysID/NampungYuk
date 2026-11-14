@@ -8,6 +8,7 @@ use App\Models\Community;
 use App\Models\CommunityMember;
 use App\Models\CommunityPost;
 use App\Models\Project;
+use App\Models\ProjectBookmark;
 use App\Models\ProjectComment;
 use App\Models\Space;
 use App\Models\SpaceParticipant;
@@ -350,5 +351,75 @@ class BackendSecurityAndSpacesTest extends TestCase
         $spaceResponse = $this->get(route('spaces.show', $space->slug));
         $spaceResponse->assertOk();
         $spaceResponse->assertSee('me: null', false);
+    }
+
+    /**
+     * 8. /feed/latest, relatedProjects on show, and /koleksi hide private or warned projects from non-owners.
+     */
+    public function test_latest_feed_related_projects_and_bookmarks_enforce_visibility(): void
+    {
+        $category = Category::create(['name' => 'Backend', 'slug' => 'backend']);
+        $owner = User::factory()->create();
+        $viewer = User::factory()->create();
+
+        $publicProject = Project::create([
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+            'title' => 'Visible Public Service',
+            'slug' => 'visible-public-service',
+            'tagline' => 'Public tagline',
+            'tech_stacks' => ['Go'],
+            'visibility' => 'public',
+        ]);
+
+        $privateProject = Project::create([
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+            'title' => 'Hidden Private Service',
+            'slug' => 'hidden-private-service',
+            'tagline' => 'Private tagline',
+            'tech_stacks' => ['Go'],
+            'visibility' => 'private',
+            'score' => 99,
+        ]);
+
+        $warnedProject = Project::create([
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+            'title' => 'Hidden Warned Service',
+            'slug' => 'hidden-warned-service',
+            'tagline' => 'Warned tagline',
+            'tech_stacks' => ['Go'],
+            'visibility' => 'public',
+            'is_flagged' => true,
+            'warning_notes' => 'Pelanggaran',
+            'score' => 98,
+        ]);
+
+        // S1: /feed/latest must only expose visible projects
+        $this->getJson(route('projects.latest'))
+            ->assertOk()
+            ->assertSee('Visible Public Service')
+            ->assertDontSee('Hidden Private Service')
+            ->assertDontSee('Hidden Warned Service');
+
+        // S2: relatedProjects on detail page must not leak private or warned projects
+        $this->actingAs($viewer)
+            ->get(route('projects.show', $publicProject->slug))
+            ->assertOk()
+            ->assertDontSee('Hidden Private Service')
+            ->assertDontSee('Hidden Warned Service');
+
+        // S4: /koleksi hides previously bookmarked projects that turned private or warned
+        ProjectBookmark::create(['project_id' => $publicProject->id, 'user_id' => $viewer->id]);
+        ProjectBookmark::create(['project_id' => $privateProject->id, 'user_id' => $viewer->id]);
+        ProjectBookmark::create(['project_id' => $warnedProject->id, 'user_id' => $viewer->id]);
+
+        $this->actingAs($viewer)
+            ->get(route('projects.bookmarks'))
+            ->assertOk()
+            ->assertSee('Visible Public Service')
+            ->assertDontSee('Hidden Private Service')
+            ->assertDontSee('Hidden Warned Service');
     }
 }

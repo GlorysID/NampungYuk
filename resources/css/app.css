@@ -207,6 +207,14 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     box-shadow: 0 0 0 4px var(--primary-soft) !important;
 }
 
+.composer-seamless,
+.composer-seamless:focus,
+.composer-seamless:focus-visible {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
 /* ==========================================================================
    Smooth, unobtrusive scrollbars
    ========================================================================== */

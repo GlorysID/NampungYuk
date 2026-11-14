@@ -141,11 +141,12 @@
                             </svg>
                             <span class="truncate">Permintaan Pengguna</span>
                         </div>
-                        @if(($chatRequests ?? collect())->count() > 0)
-                            <span class="ml-auto text-[11px] font-mono px-1.5 py-0.5 rounded bg-[var(--surface-muted)] text-[var(--text-muted)]">
-                                {{ $chatRequests->count() }}
-                            </span>
-                        @endif
+                        <span x-show="chatRequestsCount > 0"
+                              x-cloak
+                              x-text="chatRequestsCount"
+                              class="ml-auto text-[11px] font-mono px-1.5 py-0.5 rounded bg-[var(--surface-muted)] text-[var(--text-muted)]">
+                            {{ ($chatRequests ?? collect())->count() }}
+                        </span>
                     </button>
 
                     @php $unreadCount = $unreadNotificationsCount ?? 0; @endphp

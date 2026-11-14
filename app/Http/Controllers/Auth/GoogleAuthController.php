@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\InvalidStateException;
 use Throwable;
 
 class GoogleAuthController extends Controller
@@ -43,7 +44,12 @@ class GoogleAuthController extends Controller
 
         try {
             /** @var \Laravel\Socialite\Two\User $googleUser */
-            $googleUser = Socialite::driver('google')->user();
+            try {
+                $googleUser = Socialite::driver('google')->user();
+            } catch (InvalidStateException) {
+                // Fallback ke stateless jika session state hilang saat redirect dari Google (misal: mismatch host 127.0.0.1 vs localhost atau cookie cross-site diblokir browser)
+                $googleUser = Socialite::driver('google')->stateless()->user();
+            }
 
             $user = User::where('google_id', $googleUser->getId())
                 ->orWhere('email', $googleUser->getEmail())
@@ -92,7 +98,7 @@ class GoogleAuthController extends Controller
             return redirect()->intended(route('projects.index'))
                 ->with('status', 'Selamat datang, '.$user->name.'! Berhasil masuk dengan Google.');
         } catch (Throwable $e) {
-            Log::error('Google OAuth callback error: '.$e->getMessage());
+            Log::error('Google OAuth callback error ('.get_class($e).'): '.$e->getMessage().' in '.$e->getFile().':'.$e->getLine());
 
             return redirect()->route('login')
                 ->with('status', 'Gagal masuk dengan Google. Silakan coba lagi atau gunakan login username/email.');

@@ -6,14 +6,22 @@
 @php
     $authUser = auth()->user();
     $isSelf = $authUser && $authUser->id === $user->id;
-    $isFollowing = $authUser ? $authUser->isFollowing($user) : false;
+    $isFollowing = false;
+
+    if ($authUser && ! $isSelf) {
+        if (! request()->attributes->has('auth_following_ids')) {
+            request()->attributes->set('auth_following_ids', array_flip($authUser->followingIds()));
+        }
+
+        $isFollowing = isset(request()->attributes->get('auth_following_ids')[$user->id]);
+    }
 @endphp
 
 @unless($isSelf)
     @auth
         <div x-data="followButton({
                 following: {{ $isFollowing ? 'true' : 'false' }},
-                count: {{ $user->followers()->count() }},
+                count: {{ (int) ($user->followers_count ?? 0) }},
                 url: '{{ route('follow.toggle', $user) }}',
                 username: '{{ $user->username }}'
              })"

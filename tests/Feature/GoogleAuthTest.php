@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\InvalidStateException;
 use Laravel\Socialite\Two\User as SocialiteUser;
 use Mockery;
 use Tests\TestCase;
@@ -88,5 +89,37 @@ class GoogleAuthTest extends TestCase
         $existingUser->refresh();
         $this->assertEquals('google-id-linked-555', $existingUser->google_id);
         $this->assertNotNull($existingUser->email_verified_at);
+    }
+
+    public function test_google_callback_falls_back_to_stateless_when_session_state_is_lost(): void
+    {
+        Config::set('services.google.client_id', 'mock-google-client-id');
+        Config::set('services.google.client_secret', 'mock-google-client-secret');
+
+        $mockGoogleUser = Mockery::mock(SocialiteUser::class);
+        $mockGoogleUser->shouldReceive('getId')->andReturn('google-stateless-123');
+        $mockGoogleUser->shouldReceive('getEmail')->andReturn('stateless@example.com');
+        $mockGoogleUser->shouldReceive('getName')->andReturn('Stateless User');
+        $mockGoogleUser->shouldReceive('getAvatar')->andReturn(null);
+
+        $provider = Mockery::mock();
+        // State verification fails (InvalidStateException)
+        $provider->shouldReceive('user')
+            ->once()
+            ->andThrow(new InvalidStateException);
+        // Fallback to stateless succeeds
+        $provider->shouldReceive('stateless')->once()->andReturnSelf();
+        $provider->shouldReceive('user')->once()->andReturn($mockGoogleUser);
+
+        Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
+
+        $response = $this->get('/auth/google/callback');
+
+        $response->assertRedirect('/');
+        $this->assertAuthenticated();
+        $this->assertDatabaseHas('users', [
+            'email' => 'stateless@example.com',
+            'google_id' => 'google-stateless-123',
+        ]);
     }
 }

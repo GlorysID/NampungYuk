@@ -1,33 +1,21 @@
 @extends('layouts.app')
 
 @section('title', 'Pamerkan Karya Codingan — NampungYuk')
-@section('meta_description', 'Bagikan karya project codingan kamu kepada komunitas developer. Jelaskan arsitektur, tantangan, dan apa yang kamu pelajari.')
+@section('meta_description', 'Bagikan karya project codingan kamu kepada komunitas developer.')
 @section('header_title', 'Pamerkan Karya')
-@section('main_width', 'max-w-none')
-@section('hide_right_rail', '1')
 
 @section('content')
-<div class="space-y-6 max-w-4xl mx-auto"
+<div class="space-y-4 max-w-2xl mx-auto"
      x-data="{
-         currentStep: 1,
-         totalSteps: 5,
-         title: '{{ old('title', '') }}',
-         tagline: '{{ old('tagline', '') }}',
-         categoryId: '{{ old('category_id', '') }}',
-         categoryName: '',
-         projectType: '{{ old('project_type', 'web') }}',
-         status: '{{ old('status', 'beta') }}',
-         thumbnailUrl: '{{ old('thumbnail_url', '') }}',
-         previewImage: '',
-         demoUrl: '{{ old('demo_url', '') }}',
-         githubUrl: '{{ old('github_url', '') }}',
-         prototypeUrl: '{{ old('prototype_url', '') }}',
+         title: @js(old('title', '')),
+         tagline: @js(old('tagline', '')),
+         categoryId: @js(old('category_id', '')),
+         projectType: @js(old('project_type', 'web')),
+         status: @js(old('status', 'beta')),
          techInput: '',
-         techList: {{ json_encode(old('tech_stacks') ? array_filter(array_map('trim', explode(',', old('tech_stacks')))) : ['Laravel', 'TailwindCSS']) }},
-         description: `{{ old('description', '') }}`,
-         challenges: `{{ old('challenges', '') }}`,
-         learnings: `{{ old('learnings', '') }}`,
-         setupInstructions: `{{ old('setup_instructions', '') }}`,
+         techList: @js(old('tech_stacks') ? array_filter(array_map('trim', explode(',', old('tech_stacks')))) : ['Laravel', 'TailwindCSS']),
+         previewImage: '',
+         showLinks: {{ old('demo_url') || old('github_url') ? 'true' : 'false' }},
 
          handleFileSelect(event) {
              const file = event.target.files[0];
@@ -37,8 +25,10 @@
                  this.previewImage = '';
              }
          },
-         get currentThumbnail() {
-             return this.previewImage || this.thumbnailUrl || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80';
+         removeThumbnail() {
+             this.previewImage = '';
+             const input = document.getElementById('thumbnail_input');
+             if (input) input.value = '';
          },
          addTech(tech) {
              const t = (tech || this.techInput).trim();
@@ -53,52 +43,25 @@
          get techStacksJoined() {
              return this.techList.join(', ');
          },
-         canProceed(step) {
-             if (step === 1) {
-                 return this.title.trim().length >= 2 && this.tagline.trim().length >= 3 && this.categoryId !== '';
-             }
-             if (step === 3) {
-                 return this.techList.length > 0;
-             }
-             return true;
-         },
-         goToStep(step) {
-             if (step > this.currentStep && !this.canProceed(this.currentStep)) {
-                 if (window.notify) {
-                     if (this.currentStep === 1) {
-                         if (!this.title.trim() || this.title.trim().length < 2) notify('Judul project minimal 2 karakter.');
-                         else if (!this.tagline.trim() || this.tagline.trim().length < 3) notify('Tagline project minimal 3 karakter.');
-                         else if (!this.categoryId) notify('Pilih kategori project terlebih dahulu.');
-                     } else if (this.currentStep === 3) {
-                         notify('Minimal sertakan 1 teknologi (tech stack).');
-                     } else {
-                         notify('Lengkapi kolom wajib terlebih dahulu.');
-                     }
-                 }
-                 return;
-             }
-             this.currentStep = Math.min(Math.max(step, 1), this.totalSteps);
-             window.scrollTo({ top: 120, behavior: 'smooth' });
-         },
          submitForm(e) {
              if (!this.title.trim() || this.title.trim().length < 2) {
-                 this.goToStep(1);
                  if (window.notify) notify('Judul project wajib diisi (minimal 2 karakter).');
+                 document.getElementById('title')?.focus();
                  return;
              }
              if (!this.tagline.trim() || this.tagline.trim().length < 3) {
-                 this.goToStep(1);
                  if (window.notify) notify('Tagline project wajib diisi (minimal 3 karakter).');
+                 document.getElementById('tagline')?.focus();
                  return;
              }
              if (!this.categoryId) {
-                 this.goToStep(1);
                  if (window.notify) notify('Pilih kategori project terlebih dahulu.');
+                 document.getElementById('category_id')?.focus();
                  return;
              }
              if (!this.techList.length) {
-                 this.goToStep(3);
                  if (window.notify) notify('Minimal sertakan 1 teknologi (tech stack).');
+                 document.getElementById('tech_input')?.focus();
                  return;
              }
              e.target.submit();
@@ -114,64 +77,14 @@
         <span>Kembali ke Feed</span>
     </a>
 
-    <!-- Header Section -->
-    <div class="space-y-1">
-        <h1 class="text-xl sm:text-2xl font-extrabold text-[var(--primary)] tracking-tight">
-            Pamerkan Karya Codingan
-        </h1>
-        <p class="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed">
-            Dokumentasikan karya digitalmu, bagikan teknologi yang digunakan, tantangan yang dihadapi, serta pelajaran berharga untuk developer lain.
-        </p>
-    </div>
-
-    <!-- Progressive Stepper Header -->
-    <nav class="rounded-2xl p-2.5 sm:p-3 bg-[var(--surface)] border border-[var(--border-color)] shadow-xs" aria-label="Tahapan Formulir">
-        <div class="grid grid-cols-5 gap-1 sm:gap-2 text-center text-xs">
-            <button @click="goToStep(1)" type="button" 
-                    :class="currentStep === 1 ? 'text-[var(--primary)] font-bold border-b-2 border-[var(--primary)]' : 'text-[var(--text-muted)] hover:text-[var(--primary)] border-b-2 border-transparent'"
-                    class="py-2 flex flex-col sm:flex-row items-center justify-center gap-1 transition cursor-pointer">
-                <span class="font-mono text-[10px] sm:text-xs">01</span>
-                <span class="hidden sm:inline">Project</span>
-            </button>
-
-            <button @click="goToStep(2)" type="button" 
-                    :class="currentStep === 2 ? 'text-[var(--primary)] font-bold border-b-2 border-[var(--primary)]' : 'text-[var(--text-muted)] hover:text-[var(--primary)] border-b-2 border-transparent'"
-                    class="py-2 flex flex-col sm:flex-row items-center justify-center gap-1 transition cursor-pointer">
-                <span class="font-mono text-[10px] sm:text-xs">02</span>
-                <span class="hidden sm:inline">Showcase</span>
-            </button>
-
-            <button @click="goToStep(3)" type="button" 
-                    :class="currentStep === 3 ? 'text-[var(--primary)] font-bold border-b-2 border-[var(--primary)]' : 'text-[var(--text-muted)] hover:text-[var(--primary)] border-b-2 border-transparent'"
-                    class="py-2 flex flex-col sm:flex-row items-center justify-center gap-1 transition cursor-pointer">
-                <span class="font-mono text-[10px] sm:text-xs">03</span>
-                <span class="hidden sm:inline">Tech</span>
-            </button>
-
-            <button @click="goToStep(4)" type="button" 
-                    :class="currentStep === 4 ? 'text-[var(--primary)] font-bold border-b-2 border-[var(--primary)]' : 'text-[var(--text-muted)] hover:text-[var(--primary)] border-b-2 border-transparent'"
-                    class="py-2 flex flex-col sm:flex-row items-center justify-center gap-1 transition cursor-pointer">
-                <span class="font-mono text-[10px] sm:text-xs">04</span>
-                <span class="hidden sm:inline">Knowledge</span>
-            </button>
-
-            <button @click="goToStep(5)" type="button" 
-                    :class="currentStep === 5 ? 'text-[var(--primary)] font-bold border-b-2 border-[var(--primary)]' : 'text-[var(--text-muted)] hover:text-[var(--primary)] border-b-2 border-transparent'"
-                    class="py-2 flex flex-col sm:flex-row items-center justify-center gap-1 transition cursor-pointer">
-                <span class="font-mono text-[10px] sm:text-xs">05</span>
-                <span class="hidden sm:inline">Preview</span>
-            </button>
-        </div>
-    </nav>
-
     <!-- Error Summary if any -->
     @if ($errors->any())
-        <div class="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs space-y-1.5" role="alert">
+        <div class="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs space-y-1" role="alert">
             <p class="font-bold flex items-center gap-1.5">
                 <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                 </svg>
-                <span>Mohon periksa input berikut:</span>
+                <span>Mohon periksa data berikut:</span>
             </p>
             <ul class="list-disc list-inside ml-5">
                 @foreach ($errors->all() as $error)
@@ -181,550 +94,251 @@
         </div>
     @endif
 
-    <!-- Upload Form -->
-    <form action="{{ route('projects.store') }}" method="POST" enctype="multipart/form-data" novalidate @submit.prevent="submitForm($event)" class="space-y-6">
-        @csrf
+    <!-- Quick Twitter-style Composer Card -->
+    <div class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl p-5 sm:p-6 shadow-xs">
+        <form action="{{ route('projects.store') }}" method="POST" enctype="multipart/form-data" novalidate @submit.prevent="submitForm($event)" class="space-y-4">
+            @csrf
 
-        <!-- Hidden input for tech_stacks bound to Alpine -->
-        <input type="hidden" name="tech_stacks" :value="techStacksJoined">
+            <!-- Hidden inputs -->
+            <input type="hidden" name="tech_stacks" :value="techStacksJoined">
 
-        <!-- ============================================================
-             SECTION 01: PROJECT IDENTITY
-             ============================================================ -->
-        <div x-show="currentStep === 1" class="rounded-2xl p-6 sm:p-8 space-y-5 bg-[var(--surface)] border border-[var(--border-color)] shadow-xs">
-            <div class="border-b border-[var(--border-color)] pb-3">
-                <span class="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400">LANGKAH 01 DARI 05</span>
-                <h2 class="text-base sm:text-lg font-bold text-[var(--primary)]">Identitas Project</h2>
-                <p class="text-xs text-[var(--text-muted)]">Tentukan nama, pesan utama, dan kategori karya codinganmu.</p>
+            <!-- Author header & visibility row -->
+            <div class="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
+                <div class="flex items-center gap-3 min-w-0">
+                    <x-user-avatar :user="Auth::user()" size="sm" />
+                    <div class="min-w-0">
+                        <p class="text-sm font-semibold text-[var(--primary)] truncate">{{ Auth::user()->name }}</p>
+                        <p class="text-[11px] font-mono text-[var(--text-muted)] truncate">{{ '@' . Auth::user()->username }}</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    <select name="visibility" class="text-[11px] font-medium rounded-lg bg-[var(--surface-muted)] text-[var(--primary)] border border-[var(--border-color)] px-2.5 py-1 outline-none">
+                        <option value="public" {{ old('visibility') === 'public' ? 'selected' : '' }}>Publik</option>
+                        <option value="private" {{ old('visibility') === 'private' ? 'selected' : '' }}>Privat</option>
+                    </select>
+
+                    <select name="status" x-model="status" class="text-[11px] font-medium rounded-lg bg-[var(--surface-muted)] text-[var(--primary)] border border-[var(--border-color)] px-2.5 py-1 outline-none">
+                        <option value="beta">Beta</option>
+                        <option value="production">Rilis Publik</option>
+                        <option value="prototype">Prototipe</option>
+                        <option value="idea">Ide</option>
+                    </select>
+                </div>
             </div>
 
-            <!-- Title -->
-            <div class="space-y-1.5">
-                <label for="title" class="flex items-center gap-1 text-xs font-semibold text-[var(--primary)]">
-                    <span>Judul Project</span>
-                    <span class="text-rose-500 font-bold">*</span>
-                </label>
+            <!-- Title Input -->
+            <div class="space-y-1">
                 <input type="text" 
                        name="title" 
                        id="title" 
                        required 
                        maxlength="150"
                        x-model="title"
-                       placeholder="Contoh: KetikCepat.id — Platform Belajar Mengetik Cepat" 
-                       class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] font-medium text-sm outline-none focus:border-[#EAE8E1] focus:ring-1 focus:ring-[#EAE8E1] transition">
-                <p class="text-[11px] text-[var(--text-muted)]">Nama karya yang jelas dan mudah diingat.</p>
+                       placeholder="Apa nama karya codinganmu?" 
+                       class="composer-seamless w-full text-base sm:text-lg font-bold text-[var(--primary)] placeholder:text-[var(--text-muted)] bg-transparent border-0 border-none focus:border-none focus:outline-none focus:ring-0 px-0 outline-none"
+                       style="border: none !important; outline: none !important; box-shadow: none !important;">
+                @error('title') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
             </div>
 
-            <!-- Tagline -->
-            <div class="space-y-1.5">
-                <label for="tagline" class="flex items-center gap-1 text-xs font-semibold text-[var(--primary)]">
-                    <span>Tagline</span>
-                    <span class="text-rose-500 font-bold">*</span>
-                </label>
-                <input type="text" 
-                       name="tagline" 
-                       id="tagline" 
-                       required 
-                       maxlength="255"
-                       x-model="tagline"
-                       placeholder="Contoh: Platform web open-source untuk melatih kecepatan mengetik dengan korpus Bahasa Indonesia" 
-                       class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs sm:text-sm outline-none focus:border-[#EAE8E1] focus:ring-1 focus:ring-[#EAE8E1] transition">
-                <p class="text-[11px] text-[var(--text-muted)]">Jelaskan fungsi atau nilai utama project dalam 1 kalimat ringkas.</p>
+            <!-- Tagline Input -->
+            <div class="space-y-1">
+                <textarea name="tagline" 
+                          id="tagline" 
+                          required 
+                          maxlength="255"
+                          rows="2"
+                          x-model="tagline"
+                          placeholder="Ceritakan ringkas fungsi atau keunggulannya dalam 1-2 kalimat (tagline)..." 
+                          class="composer-seamless w-full text-xs sm:text-sm text-[var(--primary)] placeholder:text-[var(--text-muted)] bg-transparent border-0 border-none focus:border-none focus:outline-none focus:ring-0 px-0 outline-none resize-none leading-relaxed"
+                          style="border: none !important; outline: none !important; box-shadow: none !important;"></textarea>
+                @error('tagline') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
             </div>
 
-            <!-- Category, Type, & Status Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
-                
-                <!-- Category -->
-                <div class="space-y-1.5">
-                    <label for="category_id" class="flex items-center gap-1 text-xs font-semibold text-[var(--primary)]">
-                        <span>Kategori</span>
-                        <span class="text-rose-500 font-bold">*</span>
-                    </label>
+            <!-- Thumbnail Preview if attached -->
+            <template x-if="previewImage">
+                <div class="relative w-full aspect-video max-h-[260px] rounded-xl overflow-hidden border border-[var(--border-color)] bg-[var(--surface-deep)]">
+                    <img :src="previewImage" alt="Preview Thumbnail" class="w-full h-full object-cover">
+                    <button type="button" 
+                            @click="removeThumbnail()"
+                            class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/75 hover:bg-black text-white flex items-center justify-center transition cursor-pointer"
+                            title="Hapus media">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            </template>
+
+            <!-- Metadata Row: Category & Type -->
+            <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-[var(--border-color)]">
+                <!-- Category Select -->
+                <div class="inline-flex items-center gap-1.5">
+                    <label for="category_id" class="text-xs text-[var(--text-muted)] font-medium">Kategori <span class="text-rose-500">*</span>:</label>
                     <select name="category_id" 
                             id="category_id" 
                             required 
                             x-model="categoryId"
-                            class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] text-xs sm:text-sm outline-none focus:border-[#EAE8E1] focus:ring-1 focus:ring-[#EAE8E1] transition">
+                            class="text-xs rounded-lg bg-[var(--surface-muted)] text-[var(--primary)] border border-[var(--border-color)] px-2.5 py-1.5 outline-none focus:border-[var(--primary)] transition">
                         <option value="">-- Pilih Kategori --</option>
                         @foreach($categories as $category)
-                            <option value="{{ $category->id }}">{{ $category->name }}</option>
+                            <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
                         @endforeach
                     </select>
                 </div>
 
                 <!-- Project Type -->
-                <div class="space-y-1.5">
-                    <label for="project_type" class="text-xs font-semibold text-[var(--primary)]">
-                        Tipe Karya
-                    </label>
+                <div class="inline-flex items-center gap-1.5">
+                    <label for="project_type" class="text-xs text-[var(--text-muted)] font-medium">Tipe:</label>
                     <select name="project_type" 
                             id="project_type" 
                             x-model="projectType"
-                            class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] text-xs sm:text-sm outline-none focus:border-[#EAE8E1] focus:ring-1 focus:ring-[#EAE8E1] transition">
-                        <option value="web">Web Application</option>
+                            class="text-xs rounded-lg bg-[var(--surface-muted)] text-[var(--primary)] border border-[var(--border-color)] px-2.5 py-1.5 outline-none focus:border-[var(--primary)] transition">
+                        <option value="web">Web App</option>
                         <option value="mobile">Mobile App</option>
-                        <option value="library_package">Library / Package / SDK</option>
                         <option value="developer_tool">Developer Tool / CLI</option>
-                        <option value="hardware_iot">Hardware / IoT / Embedded</option>
-                        <option value="game">Game / Interactive</option>
+                        <option value="library_package">Library / Package</option>
+                        <option value="game">Game</option>
+                        <option value="hardware_iot">Hardware / IoT</option>
                         <option value="other">Lainnya</option>
                     </select>
                 </div>
+            </div>
 
-                <!-- Status -->
-                <div class="space-y-1.5">
-                    <label for="status" class="text-xs font-semibold text-[var(--primary)]">
-                        Status Rilis
-                    </label>
-                    <select name="status" 
-                            id="status" 
-                            x-model="status"
-                            class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] text-xs sm:text-sm outline-none focus:border-[#EAE8E1] focus:ring-1 focus:ring-[#EAE8E1] transition">
-                        <option value="idea">💡 Ide / Konsep</option>
-                        <option value="prototype">🛠️ Prototipe</option>
-                        <option value="beta">🧪 Beta</option>
-                        <option value="production">🚀 Rilis Publik</option>
-                        <option value="archived">📦 Diarsipkan</option>
-                    </select>
+            <!-- Tech Stack Row -->
+            <div class="space-y-2 pt-2">
+                <div class="flex items-center justify-between text-xs">
+                    <span class="text-[var(--text-muted)] font-medium">Tech Stack <span class="text-rose-500">*</span>:</span>
+                    <span class="text-[11px] font-mono text-[var(--text-faint)]" x-text="techList.length + ' dipilih'"></span>
                 </div>
 
-            </div>
-
-            <!-- Stepper Actions -->
-            <div class="flex justify-end pt-4 border-t border-[var(--border-color)]">
-                <x-button @click="goToStep(2)" type="button" variant="primary" size="md">
-                    <span>Lanjut: Showcase</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                    </svg>
-                </x-button>
-            </div>
-        </div>
-
-        <!-- ============================================================
-             SECTION 02: SHOWCASE & LINKS
-             ============================================================ -->
-        <div x-show="currentStep === 2" class="rounded-2xl p-6 sm:p-8 space-y-5 bg-[var(--surface)] border border-[var(--border-color)] shadow-xs">
-            <div class="border-b border-[var(--border-color)] pb-3">
-                <span class="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400">LANGKAH 02 DARI 05</span>
-                <h2 class="text-base sm:text-lg font-bold text-[var(--primary)]">Visual Showcase & Tautan</h2>
-                <p class="text-xs text-[var(--text-muted)]">Tautkan demo aplikasi, repositori kode, atau tangkapan layar antarmuka.</p>
-            </div>
-
-            <!-- Thumbnail Upload or URL -->
-            <div class="space-y-3">
-                <label class="text-xs font-semibold text-[var(--primary)]">
-                    Tangkapan Layar / Thumbnail Project
-                </label>
-                
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <!-- File Upload -->
-                    <div class="p-4 rounded-xl border border-dashed border-[#242426] text-center space-y-2 bg-[var(--surface-deep)]">
-                        <template x-if="previewImage">
-                            <div class="relative w-full aspect-video max-h-[160px] rounded-lg overflow-hidden border border-[#242426] mb-2 mx-auto">
-                                <img :src="previewImage" alt="Preview Thumbnail" class="w-full h-full object-cover">
-                            </div>
-                        </template>
-                        <template x-if="!previewImage">
-                            <svg class="w-8 h-8 text-[var(--text-faint)] mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
-                        </template>
-                        <p class="text-xs text-[#8E8D86]">Format: PNG, JPG, WebP · maks 5MB per gambar</p>
-                        <input type="file" name="thumbnail" accept="image/*" @change="handleFileSelect($event)" class="text-xs text-[#EAE8E1] w-full">
-                    </div>
-
-                    <!-- URL Alternative -->
-                    <div class="space-y-1.5">
-                        <label for="thumbnail_url" class="text-xs text-[var(--text-muted)]">
-                            Atau gunakan URL Gambar:
-                        </label>
-                        <input type="url" 
-                               name="thumbnail_url" 
-                               id="thumbnail_url"
-                               x-model="thumbnailUrl"
-                               placeholder="https://images.unsplash.com/..." 
-                               class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs outline-none focus:border-[#EAE8E1] focus:ring-1 focus:ring-[#EAE8E1] transition">
-                        <p class="text-[11px] text-[var(--text-muted)]">Jika dikosongkan, gambar ilustrasi developer otomatis digunakan.</p>
-                        <template x-if="thumbnailUrl && !previewImage">
-                            <div class="relative w-full aspect-video max-h-[120px] rounded-lg overflow-hidden border border-[#242426] mt-2">
-                                <img :src="thumbnailUrl" alt="Preview URL" class="w-full h-full object-cover" onerror="this.parentElement.classList.add('hidden')">
-                            </div>
-                        </template>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Additional Gallery Images (multiple upload) -->
-            <div class="space-y-3" x-data="{ gallery: [] }">
-                <label class="text-xs font-semibold text-[var(--primary)] flex items-center gap-1.5">
-                    <span>Galeri Foto Tambahan</span>
-                    <span class="text-[10px] font-normal text-[var(--text-muted)]">(opsional · maks 8 gambar · maks 5MB per gambar · tampil sebagai grid di card)</span>
-                </label>
-
-                <label class="block p-4 rounded-xl border border-dashed border-[#242426] text-center cursor-pointer hover:border-[#EAE8E1] transition bg-[var(--surface-deep)]">
-                    <svg class="w-7 h-7 text-[var(--text-faint)] mx-auto mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
-                    <p class="text-xs text-[#8E8D86]">Klik untuk pilih beberapa gambar sekaligus</p>
-                    <input type="file" name="images[]" accept="image/*" multiple class="hidden"
-                           @change="gallery = Array.from($event.target.files).map(f => ({ url: URL.createObjectURL(f), name: f.name }))">
-                </label>
-
-                <template x-if="gallery.length">
-                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                        <template x-for="(item, i) in gallery" :key="i">
-                            <div class="relative aspect-video rounded-lg overflow-hidden border border-[#242426]">
-                                <img :src="item.url" :alt="item.name" class="w-full h-full object-cover">
-                            </div>
-                        </template>
-                    </div>
-                </template>
-                <p x-show="gallery.length" x-cloak class="text-[11px] text-[var(--text-muted)]" x-text="gallery.length + ' gambar dipilih'"></p>
-                @error('images') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
-                @error('images.*') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
-            </div>
-
-            <!-- Video Showcase (primary video + optional gallery videos) -->
-            <div class="space-y-3 pt-2 border-t border-[var(--border-color)]"
-                 x-data="{ videoName: '', galleryVideos: [] }">
-                <label class="text-xs font-semibold text-[var(--primary)] flex items-center gap-1.5">
-                    <span>Video Demo</span>
-                    <span class="text-[10px] font-normal text-[var(--text-muted)]">(opsional · MP4/WebM/MOV · maks 50MB untuk video)</span>
-                </label>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <!-- Primary video file upload -->
-                    <div class="p-4 rounded-xl border border-dashed border-[#242426] text-center space-y-2 bg-[var(--surface-deep)]">
-                        <template x-if="videoName">
-                            <div class="text-xs text-emerald-600 dark:text-emerald-400 font-mono py-2 flex items-center justify-center gap-1.5">
-                                <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                                <span x-text="videoName" class="truncate max-w-[200px]"></span>
-                            </div>
-                        </template>
-                        <template x-if="!videoName">
-                            <svg class="w-7 h-7 text-[var(--text-faint)] mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                            </svg>
-                        </template>
-                        <p class="text-xs text-[#8E8D86]">Unggah video utama (maks 50MB)</p>
-                        <input type="file" name="video" accept="video/mp4,video/webm,video/ogg,video/quicktime"
-                               @change="videoName = $event.target.files[0] ? $event.target.files[0].name : ''"
-                               class="text-xs text-[#EAE8E1] w-full">
-                    </div>
-
-                    <!-- URL Alternative -->
-                    <div class="space-y-1.5">
-                        <label for="video_url" class="text-xs text-[var(--text-muted)]">Atau gunakan URL Video Eksternal:</label>
-                        <input type="url" name="video_url" id="video_url" value="{{ old('video_url') }}"
-                               placeholder="https://contoh.com/demo.mp4" class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs outline-none focus:border-[#EAE8E1] focus:ring-1 focus:ring-[#EAE8E1] transition">
-                        <p class="text-[11px] text-[var(--text-muted)]">Link video eksternal (.mp4/.webm). Jika file juga diunggah, file yang dipakai.</p>
-                    </div>
-                </div>
-
-                <!-- Additional gallery videos (multiple) -->
-                <div class="space-y-2">
-                    <label class="text-[11px] font-semibold text-[var(--primary)]">Video Tambahan (opsional · maks 4 video)</label>
-                    <label class="block p-3 rounded-xl border border-dashed border-[#242426] text-center cursor-pointer hover:border-[#EAE8E1] transition bg-[var(--surface-deep)]">
-                        <p class="text-xs text-[#8E8D86]">Klik untuk pilih beberapa video sekaligus</p>
-                        <input type="file" name="videos[]" accept="video/mp4,video/webm,video/ogg,video/quicktime" multiple class="hidden"
-                               @change="galleryVideos = Array.from($event.target.files).map(f => f.name)">
-                    </label>
-                    <template x-if="galleryVideos.length">
-                        <ul class="text-[11px] text-[var(--text-muted)] space-y-0.5">
-                            <template x-for="(name, i) in galleryVideos" :key="i">
-                                <li class="flex items-center gap-1.5">
-                                    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                    <span x-text="name" class="truncate"></span>
-                                </li>
-                            </template>
-                        </ul>
+                <!-- Chips container -->
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <template x-for="(tech, index) in techList" :key="index">
+                        <span class="inline-flex items-center gap-1 font-mono text-xs px-2.5 py-1 rounded-md bg-[#161619] dark:bg-[#19191D] text-[#EAE8E1] border border-[#242426]">
+                            <span x-text="'#' + tech"></span>
+                            <button @click="removeTech(index)" type="button" class="text-[var(--text-muted)] hover:text-rose-500 transition cursor-pointer ml-0.5" aria-label="Hapus stack">&times;</button>
+                        </span>
                     </template>
-                    @error('video') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
-                    @error('videos') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
-                    @error('videos.*') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
-                </div>
-            </div>
 
-            <!-- External Links: Live Demo, GitHub, Prototype -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-                
-                <!-- Demo URL -->
-                <div class="space-y-1.5">
-                    <label for="demo_url" class="text-xs font-semibold text-[var(--primary)] flex items-center gap-1.5">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        <span>Live Demo (Opsional)</span>
-                    </label>
-                    <input type="url" 
-                           name="demo_url" 
-                           id="demo_url"
-                           x-model="demoUrl"
-                           placeholder="https://projectkamu.com" 
-                           class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs outline-none focus:border-[#EAE8E1] focus:ring-1 focus:ring-[#EAE8E1] transition">
-                </div>
-
-                <!-- GitHub URL -->
-                <div class="space-y-1.5">
-                    <label for="github_url" class="text-xs font-semibold text-[var(--primary)] flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
-                        </svg>
-                        <span>GitHub Repo (Opsional)</span>
-                    </label>
-                    <input type="url" 
-                           name="github_url" 
-                           id="github_url"
-                           x-model="githubUrl"
-                           placeholder="https://github.com/user/repo" 
-                           class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs outline-none focus:border-[#EAE8E1] focus:ring-1 focus:ring-[#EAE8E1] transition">
-                </div>
-
-                <!-- Prototype URL -->
-                <div class="space-y-1.5">
-                    <label for="prototype_url" class="text-xs font-semibold text-[var(--primary)] flex items-center gap-1.5">
-                        <span class="w-2 h-2 rounded-full bg-purple-500"></span>
-                        <span>Figma / Prototype (Opsional)</span>
-                    </label>
-                    <input type="url" 
-                           name="prototype_url" 
-                           id="prototype_url"
-                           x-model="prototypeUrl"
-                           placeholder="https://figma.com/proto/..." 
-                           class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs outline-none focus:border-[#EAE8E1] focus:ring-1 focus:ring-[#EAE8E1] transition">
-                </div>
-
-            </div>
-
-            <!-- Stepper Actions -->
-            <div class="flex items-center justify-between pt-4 border-t border-[var(--border-color)]">
-                <x-button @click="goToStep(1)" type="button" variant="secondary" size="md">
-                    &larr; Kembali
-                </x-button>
-                <x-button @click="goToStep(3)" type="button" variant="primary" size="md">
-                    <span>Lanjut: Technology</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                    </svg>
-                </x-button>
-            </div>
-        </div>
-
-        <!-- ============================================================
-             SECTION 03: TECHNOLOGY
-             ============================================================ -->
-        <div x-show="currentStep === 3" class="rounded-2xl p-6 sm:p-8 space-y-5 bg-[var(--surface)] border border-[var(--border-color)] shadow-xs">
-            <div class="border-b border-[var(--border-color)] pb-3">
-                <span class="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400">LANGKAH 03 DARI 05</span>
-                <h2 class="text-base sm:text-lg font-bold text-[var(--primary)]">Tech Stacks & Tools</h2>
-                <p class="text-xs text-[var(--text-muted)]">Tentukan bahasa pemrograman, framework, dan tools yang dipakai.</p>
-            </div>
-
-            <div class="space-y-3">
-                <!-- Tag Input Box -->
-                <div class="space-y-1.5">
-                    <label for="tech_input" class="text-xs font-semibold text-[var(--primary)]">
-                        Ketik nama teknologi lalu tekan Enter atau klik Tambah:
-                    </label>
-                    <div class="flex gap-2">
+                    <!-- Quick Input -->
+                    <div class="inline-flex items-center gap-1">
                         <input type="text" 
                                id="tech_input"
                                x-model="techInput"
                                @keydown.enter.prevent="addTech()"
-                               placeholder="Contoh: Laravel, Vue, TailwindCSS, PostgreSQL, Docker..." 
-                               class="flex-1 px-3.5 py-2.5 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] font-mono text-xs outline-none focus:border-[#EAE8E1] focus:ring-1 focus:ring-[#EAE8E1] transition">
-                        <x-button @click="addTech()" type="button" variant="secondary" size="sm" class="shrink-0">
-                            Tambah
-                        </x-button>
+                               placeholder="+ Tambah stack..." 
+                               class="text-xs px-2.5 py-1 rounded-md bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] outline-none focus:border-[#EAE8E1] font-mono w-36">
+                        <button type="button" @click="addTech()" class="text-xs px-2 py-1 rounded-md bg-[var(--surface-muted)] text-[var(--primary)] hover:bg-[var(--surface-hover)] border border-[var(--border-color)] cursor-pointer">
+                            +
+                        </button>
                     </div>
                 </div>
 
-                <!-- Active Chips -->
-                <div class="p-3 rounded-xl bg-[var(--surface-deep)] border border-[#242426] min-h-[52px] flex items-center flex-wrap gap-2">
-                    <template x-for="(tech, index) in techList" :key="index">
-                        <span class="inline-flex items-center gap-1.5 font-mono text-xs px-2.5 py-1 rounded-md bg-[#161619] dark:bg-[#19191D] text-[#EAE8E1] border border-[#242426]">
-                            <span x-text="tech"></span>
-                            <button @click="removeTech(index)" type="button" class="hover:text-rose-600 transition cursor-pointer" aria-label="Hapus tag">&times;</button>
-                        </span>
-                    </template>
-                    <p x-show="techList.length === 0" class="text-xs text-[#8E8D86] italic">
-                        Belum ada teknologi ditambahkan. Minimal sertakan 1 tech stack.
-                    </p>
-                </div>
-
-                <!-- Quick Suggestions -->
-                <div class="space-y-1.5 pt-2">
-                    <span class="text-[11px] font-mono text-[var(--text-muted)]">Pilihan Populer:</span>
-                    <div class="flex flex-wrap gap-1.5">
-                        @foreach(['Laravel', 'Vue.js', 'React', 'TailwindCSS', 'TypeScript', 'Next.js', 'Python', 'Go', 'Flutter', 'PostgreSQL', 'MySQL', 'Docker'] as $suggestion)
-                            <button @click="addTech('{{ $suggestion }}')" 
-                                    type="button" 
-                                    class="tech-pill text-[11px] cursor-pointer">
-                                + {{ $suggestion }}
-                            </button>
-                        @endforeach
-                    </div>
+                <!-- Popular Suggestions -->
+                <div class="flex flex-wrap items-center gap-1 pt-0.5">
+                    <span class="text-[10px] font-mono text-[var(--text-muted)] mr-1">Cepat:</span>
+                    @foreach(['Laravel', 'Vue.js', 'React', 'TailwindCSS', 'TypeScript', 'Next.js', 'Python', 'Go', 'Flutter', 'PostgreSQL', 'Docker'] as $suggestion)
+                        <button @click="addTech('{{ $suggestion }}')" 
+                                type="button" 
+                                class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[var(--surface-deep)] hover:bg-[var(--surface-muted)] text-[var(--text-muted)] hover:text-[var(--primary)] border border-[var(--border-color)] transition cursor-pointer">
+                            + {{ $suggestion }}
+                        </button>
+                    @endforeach
                 </div>
             </div>
 
-            <!-- Stepper Actions -->
-            <div class="flex items-center justify-between pt-4 border-t border-[var(--border-color)]">
-                <x-button @click="goToStep(2)" type="button" variant="secondary" size="md">
-                    &larr; Kembali
-                </x-button>
-                <x-button @click="goToStep(4)" type="button" variant="primary" size="md">
-                    <span>Lanjut: Knowledge</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                    </svg>
-                </x-button>
-            </div>
-        </div>
-
-        <!-- ============================================================
-             SECTION 04: KNOWLEDGE SHARING
-             ============================================================ -->
-        <div x-show="currentStep === 4" class="rounded-2xl p-6 sm:p-8 space-y-5 bg-[var(--surface)] border border-[var(--border-color)] shadow-xs">
-            <div class="border-b border-[var(--border-color)] pb-3">
-                <span class="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400">LANGKAH 04 DARI 05</span>
-                <h2 class="text-base sm:text-lg font-bold text-[var(--primary)]">Knowledge Sharing & How to Run</h2>
-                <p class="text-xs text-[var(--text-muted)]">NampungYuk adalah tempat berbagi pengalaman developer, bukan sekadar etalase.</p>
-            </div>
-
-            <!-- Full Description / About -->
-            <div class="space-y-1.5">
-                <label for="description" class="text-xs font-semibold text-[var(--primary)]">
-                    Tentang Project Ini (Deskripsi Lengkap)
-                </label>
-                <textarea name="description" 
-                          id="description" 
-                          rows="4" 
-                          x-model="description" 
-                          placeholder="Jelaskan latar belakang, arsitektur, atau fitur-fitur penting yang dibangun..." 
-                          class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs sm:text-sm outline-none focus:border-[#EAE8E1] focus:ring-1 focus:ring-[#EAE8E1] transition"></textarea>
-            </div>
-
-            <!-- Challenges -->
-            <div class="space-y-1.5">
-                <label for="challenges" class="text-xs font-semibold text-[var(--primary)] flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                    <span>Tantangan Teknis yang Dihadapi (Challenges)</span>
-                </label>
-                <textarea name="challenges" 
-                          id="challenges" 
-                          rows="3" 
-                          x-model="challenges" 
-                          placeholder="Contoh: Kesulitan saat sinkronisasi state WebSocket real-time, optimasi query N+1..." 
-                          class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs sm:text-sm outline-none focus:border-[#EAE8E1] focus:ring-1 focus:ring-[#EAE8E1] transition"></textarea>
-            </div>
-
-            <!-- Learnings -->
-            <div class="space-y-1.5">
-                <label for="learnings" class="text-xs font-semibold text-[var(--primary)] flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <span>Apa yang Dipelajari & Solusinya (Learnings)</span>
-                </label>
-                <textarea name="learnings" 
-                          id="learnings" 
-                          rows="3" 
-                          x-model="learnings" 
-                          placeholder="Contoh: Belajar mengimplementasikan batch indexing Redis dan pattern event-driven..." 
-                          class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs sm:text-sm outline-none focus:border-[#EAE8E1] focus:ring-1 focus:ring-[#EAE8E1] transition"></textarea>
-            </div>
-
-            <!-- How To Run (Truthful instructions) -->
-            <div class="space-y-1.5">
-                <label for="setup_instructions" class="text-xs font-semibold text-[var(--primary)] flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <span>Cara Menjalankan Project (Opsional — Hanya tampil jika diisi)</span>
-                </label>
-                <textarea name="setup_instructions" 
-                          id="setup_instructions" 
-                          rows="4" 
-                          x-model="setupInstructions" 
-                          placeholder="git clone https://github.com/kamu/project.git&#10;composer install&#10;php artisan migrate&#10;npm install && npm run dev" 
-                          class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] font-mono text-xs outline-none focus:border-[#EAE8E1] focus:ring-1 focus:ring-[#EAE8E1] transition"></textarea>
-                <p class="text-[11px] text-[var(--text-muted)]">Tuliskan langkah-langkah nyata untuk menjalankan project di lokal.</p>
-            </div>
-
-            <!-- Stepper Actions -->
-            <div class="flex items-center justify-between pt-4 border-t border-[var(--border-color)]">
-                <x-button @click="goToStep(3)" type="button" variant="secondary" size="md">
-                    &larr; Kembali
-                </x-button>
-                <x-button @click="goToStep(5)" type="button" variant="primary" size="md">
-                    <span>Lanjut: Preview & Publikasikan</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                    </svg>
-                </x-button>
-            </div>
-        </div>
-
-        <!-- ============================================================
-             SECTION 05: PREVIEW & SUBMIT
-             ============================================================ -->
-        <div x-show="currentStep === 5" class="space-y-6">
-            <div class="rounded-2xl p-6 sm:p-8 space-y-4 bg-[var(--surface)] border border-[var(--border-color)] shadow-xs">
-                <div class="border-b border-[var(--border-color)] pb-3">
-                    <span class="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400">LANGKAH 05 DARI 05</span>
-                    <h2 class="text-base sm:text-lg font-bold text-[var(--primary)]">Pratinjau Publikasi</h2>
-                    <p class="text-xs text-[var(--text-muted)]">Berikut tampilan bagaimana project ini akan terlihat di feed komunitas.</p>
+            <!-- Expandable Links (Live Demo & GitHub) -->
+            <div x-show="showLinks" x-cloak class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <div class="space-y-1">
+                    <label for="demo_url" class="text-xs text-[var(--text-muted)] flex items-center gap-1 font-medium">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        <span>Live Demo (opsional)</span>
+                    </label>
+                    <input type="url" name="demo_url" id="demo_url" value="{{ old('demo_url') }}" placeholder="https://projectmu.com"
+                           class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs outline-none focus:border-[#EAE8E1]">
                 </div>
 
-                <!-- Mockup Preview Card -->
-                <div class="rounded-xl p-4 sm:p-5 space-y-3 bg-[var(--surface-subtle)] border border-[var(--border-color)]">
-                    
-                    <div class="flex items-center justify-between gap-2 text-xs">
-                        <div class="flex items-center gap-2">
-                            <x-user-avatar :user="Auth::user()" size="sm" />
-                            <div>
-                                <span class="font-bold text-[var(--primary)]">{{ Auth::user()->name }}</span>
-                                <span class="text-[var(--text-muted)] text-[11px]">&bull; Baru saja</span>
-                            </div>
-                        </div>
+                <div class="space-y-1">
+                    <label for="github_url" class="text-xs text-[var(--text-muted)] flex items-center gap-1 font-medium">
+                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+                        <span>GitHub Repo (opsional)</span>
+                    </label>
+                    <input type="url" name="github_url" id="github_url" value="{{ old('github_url') }}" placeholder="https://github.com/user/repo"
+                           class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs outline-none focus:border-[#EAE8E1]">
+                </div>
+            </div>
 
-                        <span class="text-[11px] font-mono px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
-                              x-text="status.toUpperCase()"></span>
-                    </div>
-
+            <!-- Optional Knowledge & Setup collapsible details -->
+            <details class="group pt-2 border-t border-[var(--border-color)]">
+                <summary class="text-xs text-[var(--text-muted)] hover:text-[var(--primary)] cursor-pointer select-none flex items-center justify-between py-1 transition">
+                    <span class="font-medium">+ Tambah Cerita Teknis & Cara Setup (opsional)</span>
+                    <svg class="w-4 h-4 transition group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </summary>
+                <div class="space-y-3 pt-3">
                     <div class="space-y-1">
-                        <h3 class="font-bold text-base text-[var(--primary)]" x-text="title || 'Judul Project'"></h3>
-                        <p class="text-xs text-[var(--text-muted)]" x-text="tagline || 'Tagline ringkas project'"></p>
+                        <label for="description" class="text-xs text-[var(--text-muted)] font-medium">Deskripsi Lengkap / Fitur</label>
+                        <textarea name="description" id="description" rows="3" placeholder="Ceritakan fitur utama atau arsitekturnya..."
+                                  class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs outline-none focus:border-[#EAE8E1]">{{ old('description') }}</textarea>
                     </div>
-
-                    <!-- Visual Banner Preview -->
-                    <div class="relative w-full aspect-video max-h-[220px] rounded-lg overflow-hidden border border-[var(--border-color)] bg-[var(--surface-subtle)]">
-                        <img :src="currentThumbnail" alt="Preview Thumbnail" class="w-full h-full object-cover">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                            <label for="challenges" class="text-xs text-[var(--text-muted)] font-medium">Tantangan Teknis</label>
+                            <textarea name="challenges" id="challenges" rows="2" placeholder="Masalah tersulit yang ditemui..."
+                                      class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs outline-none focus:border-[#EAE8E1]">{{ old('challenges') }}</textarea>
+                        </div>
+                        <div class="space-y-1">
+                            <label for="learnings" class="text-xs text-[var(--text-muted)] font-medium">Pelajaran Berharga</label>
+                            <textarea name="learnings" id="learnings" rows="2" placeholder="Solusi atau hal baru yang dipelajari..."
+                                      class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs outline-none focus:border-[#EAE8E1]">{{ old('learnings') }}</textarea>
+                        </div>
                     </div>
-
-                    <!-- Tech chips preview -->
-                    <div class="flex flex-wrap gap-1.5 pt-1">
-                        <template x-for="tech in techList" :key="tech">
-                            <span class="tech-pill text-[11px]">
-                                #<span x-text="tech"></span>
-                            </span>
-                        </template>
+                    <div class="space-y-1">
+                        <label for="setup_instructions" class="text-xs text-[var(--text-muted)] font-medium">Cara Run di Lokal</label>
+                        <textarea name="setup_instructions" id="setup_instructions" rows="2" placeholder="git clone ...&#10;composer install&#10;npm run dev"
+                                  class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] font-mono text-xs outline-none focus:border-[#EAE8E1]">{{ old('setup_instructions') }}</textarea>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <div class="space-y-1">
+                            <label for="prototype_url" class="text-xs text-[var(--text-muted)] font-medium">Figma / Prototype URL</label>
+                            <input type="url" name="prototype_url" id="prototype_url" value="{{ old('prototype_url') }}" placeholder="https://figma.com/proto/..."
+                                   class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs outline-none focus:border-[#EAE8E1]">
+                        </div>
+                        <div class="space-y-1">
+                            <label for="thumbnail_url" class="text-xs text-[var(--text-muted)] font-medium">Atau URL Gambar Eksternal</label>
+                            <input type="url" name="thumbnail_url" id="thumbnail_url" value="{{ old('thumbnail_url') }}" placeholder="https://images.unsplash.com/..."
+                                   class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs outline-none focus:border-[#EAE8E1]">
+                        </div>
                     </div>
                 </div>
+            </details>
 
-                <!-- Final Verification & CTA Button -->
-                <div class="flex items-center justify-between pt-4 border-t border-[var(--border-color)]">
-                    <x-button @click="goToStep(4)" type="button" variant="secondary" size="md">
-                        &larr; Ubah Data
-                    </x-button>
-
-                    <x-button type="submit" variant="primary" size="lg">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+            <!-- Bottom Toolbar: Attachments + Submit -->
+            <div class="flex items-center justify-between pt-3 border-t border-[var(--border-color)]">
+                <div class="flex items-center gap-1">
+                    <!-- Upload Media Button -->
+                    <label class="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--surface-muted)] transition cursor-pointer flex items-center gap-1.5 text-xs select-none" title="Unggah tangkapan layar / thumbnail">
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                         </svg>
-                        <span>Publikasikan Project</span>
-                    </x-button>
+                        <span class="hidden sm:inline font-medium">Foto / Media</span>
+                        <input type="file" id="thumbnail_input" name="thumbnail" accept="image/*" @change="handleFileSelect($event)" class="hidden">
+                    </label>
+
+                    <!-- Toggle Links Button -->
+                    <button type="button" @click="showLinks = !showLinks" 
+                            :class="showLinks ? 'text-[var(--primary)] bg-[var(--surface-muted)]' : 'text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--surface-muted)]'"
+                            class="p-2 rounded-lg transition cursor-pointer flex items-center gap-1.5 text-xs select-none" title="Tautkan Demo / GitHub">
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                        </svg>
+                        <span class="hidden sm:inline font-medium">Link Demo</span>
+                    </button>
                 </div>
+
+                <x-button type="submit" variant="primary" size="md">
+                    <span>Pamerkan Karya</span>
+                </x-button>
             </div>
-        </div>
-
-    </form>
-
+        </form>
+    </div>
 </div>
 @endsection

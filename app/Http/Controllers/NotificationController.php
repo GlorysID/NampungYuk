@@ -17,11 +17,14 @@ class NotificationController extends Controller
     {
         $user = Auth::user();
 
+        // Ambil semua notifikasi (dibaca & belum dibaca) untuk ditampilkan di riwayat
         $notifications = $user->notifications()->paginate(20);
 
-        // Notifikasi TIDAK ditandai dibaca hanya karena halaman dibuka: status
-        // belum-dibaca hanya hilang saat notifikasi itu diklik, atau lewat
-        // tombol "Tandai semua dibaca".
+        // Standar sosmed: saat halaman notifikasi dibuka, badge angka di lonceng & sidebar
+        // langsung hilang (ditandai sudah dilihat/dibaca), tapi riwayat notifikasinya
+        // tetap tersimpan utuh di list.
+        $user->unreadNotifications->markAsRead();
+
         return view('notifications.index', compact('notifications'));
     }
 

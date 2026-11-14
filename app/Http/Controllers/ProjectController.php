@@ -221,7 +221,9 @@ class ProjectController extends Controller
     {
         $since = $request->query('since');
 
-        $query = Project::with(['user', 'category'])->recent();
+        $query = Project::with(['user', 'category'])
+            ->visibleTo(Auth::id())
+            ->recent();
 
         if ($since) {
             $query->where('created_at', '>', $since);
@@ -285,6 +287,7 @@ class ProjectController extends Controller
         $categories = Category::withCount('projects')->get();
 
         $relatedProjects = Project::with(['user', 'category'])
+            ->visibleTo(Auth::id())
             ->where('category_id', $project->category_id)
             ->where('id', '!=', $project->id)
             ->orderByDesc('score')
@@ -855,6 +858,7 @@ class ProjectController extends Controller
         $projectIds = ProjectBookmark::where('user_id', $userId)->pluck('project_id');
 
         $projects = Project::with(['user', 'category'])
+            ->visibleTo($userId)
             ->whereIn('id', $projectIds)
             ->latest()
             ->paginate(12);

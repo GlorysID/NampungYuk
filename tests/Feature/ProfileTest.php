@@ -173,4 +173,26 @@ class ProfileTest extends TestCase
         $user->refresh();
         $this->assertEquals('my_profile', $user->username);
     }
+
+    public function test_user_can_persist_github_url_and_website_url_on_profile_update(): void
+    {
+        $user = User::factory()->create([
+            'username' => 'link_owner',
+            'github_url' => null,
+            'website_url' => null,
+        ]);
+
+        $response = $this->actingAs($user)->put(route('profile.update'), [
+            'name' => 'Link Owner',
+            'username' => 'link_owner',
+            'bio' => 'Bio dengan tautan',
+            'github_url' => 'https://github.com/linkowner',
+            'website_url' => 'https://linkowner.dev',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $user->refresh();
+        $this->assertSame('https://github.com/linkowner', $user->github_url);
+        $this->assertSame('https://linkowner.dev', $user->website_url);
+    }
 }

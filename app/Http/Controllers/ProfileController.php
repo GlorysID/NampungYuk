@@ -54,6 +54,8 @@ class ProfileController extends Controller
             'name' => $data['name'],
             'username' => $data['username'],
             'bio' => $data['bio'] ?? null,
+            ...(array_key_exists('github_url', $data) ? ['github_url' => $data['github_url']] : []),
+            ...(array_key_exists('website_url', $data) ? ['website_url' => $data['website_url']] : []),
             ...(isset($data['avatar']) ? ['avatar' => $data['avatar']] : []),
             ...(isset($data['banner']) ? ['banner' => $data['banner']] : []),
         ];

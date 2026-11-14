@@ -51,14 +51,31 @@
           activeCardIndex: -1,
           showHelpModal: false,
           requestsOpen: false,
-          toast: { show: false, message: '' },
-          init() {
-              window.notify = (msg) => this.notify(msg);
+          chatRequestsCount: {{ ($chatRequests ?? collect())->count() }},
+          toast: {
+              show: {{ (session('status') || session('success') || session('error')) ? 'true' : 'false' }},
+              message: @js(session('status') ?? session('success') ?? session('error') ?? ''),
+              type: '{{ session('success') ? 'success' : (session('error') ? 'error' : 'info') }}',
+              timeout: null
           },
-          notify(msg) {
+          init() {
+              window.notify = (msg, type = 'info') => this.notify(msg, type);
+
+              if (this.toast.show) {
+                  this.toast.timeout = setTimeout(() => {
+                      this.toast.show = false;
+                  }, 3200);
+              }
+          },
+          notify(msg, type = 'info') {
+              if (!msg) return;
+              if (this.toast.timeout) clearTimeout(this.toast.timeout);
               this.toast.message = msg;
+              this.toast.type = type;
               this.toast.show = true;
-              setTimeout(() => { this.toast.show = false; }, 2600);
+              this.toast.timeout = setTimeout(() => {
+                  this.toast.show = false;
+              }, 3200);
           },
           handleKeydown(e) {
               if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
@@ -291,25 +308,31 @@
                                  x-transition:enter="transition ease-out duration-150"
                                  x-transition:enter-start="opacity-0 -translate-y-1"
                                  x-transition:enter-end="opacity-100 translate-y-0"
-                                 class="absolute right-0 mt-2 w-80 bg-[var(--surface)] rounded-xl border border-[var(--border-color)] shadow-xl z-50 overflow-hidden">
-                                <div class="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border-color)]">
+                                 class="absolute right-0 mt-2 w-80 bg-[var(--surface)] rounded-2xl border border-[var(--border-color)] shadow-xl z-50 overflow-hidden">
+                                <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)]">
                                     <span class="hl-label">Notifikasi</span>
-                                    <button @click="markAll()" x-show="unreadCount > 0" type="button" class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+                                    <button @click="markAll()" x-show="unreadCount > 0" type="button" class="text-[11px] font-semibold text-emerald-400 hover:underline cursor-pointer">
                                         Tandai dibaca
                                     </button>
                                 </div>
 
-                                <div class="max-h-96 overflow-y-auto divide-y divide-[#E2DFD7]/60 dark:divide-[#242426]">
+                                <div class="max-h-96 overflow-y-auto divide-y divide-[var(--border-color)]">
                                     <template x-for="n in notifications" :key="n.id">
                                         <a :href="n.data.url || '#'"
-                                           class="flex items-start gap-2.5 px-4 py-3 transition hover:bg-[var(--surface-hover)]"
-                                           :class="!n.read ? 'bg-emerald-500/5 dark:bg-emerald-500/10' : ''">
-                                            <img x-show="n.data.actor_avatar" :src="n.data.actor_avatar" alt="" class="w-8 h-8 rounded-lg object-cover ring-1 ring-[var(--border-color)] shrink-0">
+                                           class="flex items-start gap-3 px-4 py-3 transition hover:bg-[var(--surface-hover)]"
+                                           :class="!n.read ? 'bg-emerald-500/[0.06]' : ''">
+                                            <template x-if="n.data.actor_avatar">
+                                                <img :src="n.data.actor_avatar" alt="" class="w-8 h-8 rounded-full object-cover ring-1 ring-[var(--border-color)] shrink-0 mt-0.5">
+                                            </template>
+                                            <template x-if="!n.data.actor_avatar">
+                                                <span class="w-8 h-8 rounded-full bg-[var(--surface-muted)] border border-[var(--border-color)] text-[var(--primary)] flex items-center justify-center text-xs font-bold shrink-0 mt-0.5"
+                                                      x-text="(n.data.actor_name || 'N').trim().charAt(0).toUpperCase()"></span>
+                                            </template>
                                             <div class="min-w-0 flex-1">
-                                                <p class="text-xs text-[var(--primary)] leading-snug" x-text="n.data.message"></p>
-                                                <p class="text-[11px] font-mono text-[var(--text-muted)] mt-0.5" x-text="n.created_at"></p>
+                                                <p class="text-[13px] text-[var(--primary)] leading-snug" x-text="n.data.message"></p>
+                                                <p class="text-[11px] font-mono text-[var(--text-muted)] mt-1" x-text="n.created_at"></p>
                                             </div>
-                                            <span x-show="!n.read" class="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0"></span>
+                                            <span x-show="!n.read" class="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-2 shrink-0"></span>
                                         </a>
                                     </template>
 
@@ -344,28 +367,31 @@
             <!-- MAIN WORKSPACE CONTENT CONTAINER -->
             <div class="w-full px-4 sm:px-6 py-6 flex-1 flex flex-col justify-between">
                 <div>
-                    @if(session('success'))
-                        <div class="mb-5 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2" role="alert">
-                            <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            <span>{{ session('success') }}</span>
-                        </div>
-                    @endif
-
-                    @if(session('status'))
-                        <div class="mb-5 p-3.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs flex items-center gap-2" role="status">
-                            <svg class="w-4 h-4 text-zinc-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            <span>{{ session('status') }}</span>
-                        </div>
-                    @endif
-
                     <div class="space-y-6">
                         @yield('content')
                     </div>
                 </div>
+
+                @if(View::hasSection('hide_right_rail') && ! View::hasSection('hide_footer'))
+                    <footer class="mt-10 pt-5 border-t border-[var(--border-color)] text-xs text-[var(--text-muted)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <x-logo size="sm" />
+                            <span>&bull;</span>
+                            <span>Platform Showcase Project & Pengalaman Developer</span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                            <a href="{{ route('projects.index') }}" class="hover:text-[var(--primary)] transition">Feed</a>
+                            @auth
+                                <a href="{{ route('projects.create') }}" class="hover:text-[var(--primary)] transition">Pamerkan</a>
+                                <a href="{{ route('projects.bookmarks') }}" class="hover:text-[var(--primary)] transition">Koleksi</a>
+                            @else
+                                <button type="button" @click="window.openAuthModal('login')" class="hover:text-[var(--primary)] transition cursor-pointer">Masuk</button>
+                            @endauth
+                            <button type="button" @click="showHelpModal = true" class="hover:text-[var(--primary)] transition cursor-pointer">Shortcuts (?)</button>
+                            <a href="https://github.com/GlorysID/NampungYuk" target="_blank" rel="noopener noreferrer" class="hover:text-[var(--primary)] transition">GitHub</a>
+                        </div>
+                    </footer>
+                @endif
             </div>
 
         </main>
@@ -701,13 +727,13 @@
                                     <div class="flex items-center gap-2 mt-3">
                                         <button type="button"
                                                 :disabled="busy === {{ $c->id }}"
-                                                @click="busy = {{ $c->id }}; fetch('{{ route('chat.decline', $c->other->username) }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' } }).then(r => { if (r.ok) { items = items.filter(i => i.id !== {{ $c->id }}); window.notify && window.notify('Permintaan ditolak'); } }).finally(() => { busy = null; })"
+                                                @click="busy = {{ $c->id }}; fetch('{{ route('chat.decline', $c->other->username) }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' } }).then(r => { if (r.ok) { items = items.filter(i => i.id !== {{ $c->id }}); chatRequestsCount = items.length; window.notify && window.notify('Permintaan ditolak'); } }).finally(() => { busy = null; })"
                                                 class="flex-1 h-9 rounded-lg text-xs font-semibold border border-rose-500/40 text-rose-400 hover:bg-rose-500/10 disabled:opacity-50 transition cursor-pointer flex items-center justify-center">
                                             Tolak
                                         </button>
                                         <button type="button"
                                                 :disabled="busy === {{ $c->id }}"
-                                                @click="busy = {{ $c->id }}; fetch('{{ route('chat.accept', $c->other->username) }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' } }).then(r => { if (r.ok) { items = items.filter(i => i.id !== {{ $c->id }}); window.notify && window.notify('Permintaan diterima'); } }).finally(() => { busy = null; })"
+                                                @click="busy = {{ $c->id }}; fetch('{{ route('chat.accept', $c->other->username) }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' } }).then(r => { if (r.ok) { items = items.filter(i => i.id !== {{ $c->id }}); chatRequestsCount = items.length; window.notify && window.notify('Permintaan diterima'); } }).finally(() => { busy = null; })"
                                                 class="flex-1 h-9 rounded-lg text-xs font-semibold border border-[var(--border-color)] text-[var(--primary)] hover:bg-[var(--surface-hover)] disabled:opacity-50 transition cursor-pointer flex items-center justify-center">
                                             Terima
                                         </button>
@@ -732,22 +758,60 @@
         </div>
     @endauth
 
-    <!-- FLOATING TOAST NOTIFICATION -->
+    <!-- FLOATING TOP NOTIFICATION BANNER (PHONE PUSH NOTIFICATION STYLE) -->
     <div x-show="toast.show" 
-         x-transition:enter="transition ease-out duration-150"
-         x-transition:enter-start="opacity-0 translate-y-3"
-         x-transition:enter-end="opacity-100 translate-y-0"
-         x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100 translate-y-0"
-         x-transition:leave-end="opacity-0 translate-y-3"
+         x-transition:enter="transition cubic-bezier(0.16, 1, 0.3, 1) duration-300"
+         x-transition:enter-start="-translate-y-14 opacity-0 scale-95"
+         x-transition:enter-end="translate-y-0 opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="translate-y-0 opacity-100 scale-100"
+         x-transition:leave-end="-translate-y-14 opacity-0 scale-95"
          x-cloak
          role="alert"
          aria-live="polite"
-         class="fixed bottom-20 lg:bottom-6 right-6 z-50 flex items-center gap-2 bg-[var(--primary)] text-[var(--primary-text)] px-4 py-2.5 rounded-xl text-xs font-bold border border-[#242426] dark:border-[#E2DFD7] shadow-2xl">
-        <svg class="w-4 h-4 text-emerald-400 dark:text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-        </svg>
-        <span x-text="toast.message"></span>
+         class="fixed top-4 left-1/2 -translate-x-1/2 z-[100] max-w-sm sm:max-w-md w-[calc(100%-2rem)] sm:w-auto pointer-events-none">
+        
+        <div class="pointer-events-auto flex items-center justify-between gap-3 bg-[#121214]/95 backdrop-blur-md text-[#EAE8E1] px-4 py-2.5 rounded-2xl border border-[#242426] shadow-[0_12px_36px_rgba(0,0,0,0.55)] ring-1 ring-white/5">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <!-- Status/Info Icon -->
+                <template x-if="toast.type === 'info'">
+                    <span class="w-6 h-6 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 flex items-center justify-center shrink-0">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </span>
+                </template>
+
+                <!-- Success Icon -->
+                <template x-if="toast.type === 'success'">
+                    <span class="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </span>
+                </template>
+
+                <!-- Error Icon -->
+                <template x-if="toast.type === 'error'">
+                    <span class="w-6 h-6 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center shrink-0">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </span>
+                </template>
+
+                <span class="text-xs sm:text-[13px] font-medium leading-snug break-words" x-text="toast.message">{{ session('status') ?? session('success') ?? session('error') ?? '' }}</span>
+            </div>
+
+            <button type="button" 
+                    @click="toast.show = false" 
+                    class="text-[var(--text-muted)] hover:text-[#EAE8E1] p-1 -mr-1 rounded-lg transition cursor-pointer shrink-0"
+                    aria-label="Tutup notifikasi">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
     </div>
 
     <!-- GLOBAL X-STYLE AUTH MODAL -->
