@@ -439,7 +439,9 @@
                                 <template x-if="active === i">
                                     <span class="w-full h-full flex items-center justify-center">
                                         <template x-if="item.type === 'video'">
-                                            <video :src="item.url" :poster="item.poster || null" controls playsinline preload="metadata"
+                                            <video :src="item.url" :poster="item.poster || null"
+                                                   @if(!auth()->check() || auth()->user()->preference('display.autoplay_media', true)) autoplay muted @endif
+                                                   controls playsinline preload="metadata"
                                                    class="w-full h-full object-contain"></video>
                                         </template>
                                         <template x-if="item.type === 'image'">

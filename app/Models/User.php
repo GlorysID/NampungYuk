@@ -13,7 +13,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 
-#[Fillable(['name', 'username', 'email', 'email_verified_at', 'password', 'avatar', 'banner', 'bio', 'github_url', 'website_url', 'reputation_points', 'google_id', 'is_admin', 'is_banned', 'ban_reason', 'banned_at', 'warning_notes', 'warned_at', 'username_changed_at'])]
+#[Fillable(['name', 'username', 'email', 'email_verified_at', 'password', 'avatar', 'banner', 'bio', 'github_url', 'website_url', 'reputation_points', 'google_id', 'is_admin', 'is_banned', 'ban_reason', 'banned_at', 'warning_notes', 'warned_at', 'username_changed_at', 'preferences'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -35,6 +35,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'banned_at' => 'datetime',
             'warned_at' => 'datetime',
             'username_changed_at' => 'datetime',
+            'preferences' => 'array',
         ];
     }
 
@@ -328,5 +329,151 @@ class User extends Authenticatable implements MustVerifyEmail
     public function repostedProjectIds(): array
     {
         return $this->reposts()->pluck('project_id')->toArray();
+    }
+
+    /**
+     * Users blocked by this account.
+     */
+    public function blockedUsers()
+    {
+        return $this->belongsToMany(
+            User::class,
+            'user_blocks',
+            'blocker_id',
+            'blocked_id'
+        )->withTimestamps();
+    }
+
+    /**
+     * Users that have blocked this account.
+     */
+    public function blockedByUsers()
+    {
+        return $this->belongsToMany(
+            User::class,
+            'user_blocks',
+            'blocked_id',
+            'blocker_id'
+        )->withTimestamps();
+    }
+
+    /**
+     * Check whether this user has blocked the given user.
+     */
+    public function hasBlocked(?User $user): bool
+    {
+        if (! $user || $this->id === $user->id) {
+            return false;
+        }
+
+        return $this->blockedUsers()->whereKey($user->id)->exists();
+    }
+
+    /**
+     * Check whether this user is blocked by the given user.
+     */
+    public function isBlockedBy(?User $user): bool
+    {
+        if (! $user || $this->id === $user->id) {
+            return false;
+        }
+
+        return $user->hasBlocked($this);
+    }
+
+    /**
+     * Return user preferences merged cleanly with sensible defaults.
+     *
+     * @return array{
+     *     privacy: array{dm_policy: string, allow_reposts: bool, discoverable: bool, show_read_receipts: bool},
+     *     notifications: array{new_follower: bool, project_comment: bool, project_repost: bool, new_message: bool, project_uploaded: bool, project_trending: bool},
+     *     display: array{feed_density: string, autoplay_media: bool, keyboard_shortcuts: bool}
+     * }
+     */
+    public function resolvedPreferences(): array
+    {
+        $stored = $this->preferences ?? [];
+
+        return [
+            'privacy' => array_replace([
+                'dm_policy' => 'everyone',
+                'allow_reposts' => true,
+                'discoverable' => true,
+                'show_read_receipts' => true,
+            ], is_array($stored['privacy'] ?? null) ? $stored['privacy'] : []),
+            'notifications' => array_replace([
+                'new_follower' => true,
+                'project_comment' => true,
+                'project_repost' => true,
+                'new_message' => true,
+                'project_uploaded' => true,
+                'project_trending' => true,
+            ], is_array($stored['notifications'] ?? null) ? $stored['notifications'] : []),
+            'display' => array_replace([
+                'feed_density' => 'comfortable',
+                'autoplay_media' => true,
+                'keyboard_shortcuts' => true,
+            ], is_array($stored['display'] ?? null) ? $stored['display'] : []),
+        ];
+    }
+
+    /**
+     * Read a single nested preference key using dot notation.
+     */
+    public function preference(string $key, mixed $default = null): mixed
+    {
+        return data_get($this->resolvedPreferences(), $key, $default);
+    }
+
+    /**
+     * Check whether this user wants a specific notification category.
+     */
+    public function wantsNotification(string $key): bool
+    {
+        return (bool) $this->preference("notifications.{$key}", true);
+    }
+
+    /**
+     * Check whether this user allows direct messages from the given sender.
+     */
+    public function allowsDirectMessageFrom(User $sender): bool
+    {
+        if ($this->hasBlocked($sender) || $this->isBlockedBy($sender)) {
+            return false;
+        }
+
+        if ($this->preference('privacy.dm_policy', 'everyone') === 'following_only') {
+            return $this->isFollowing($sender);
+        }
+
+        return true;
+    }
+
+    /**
+     * Check whether others may repost this user's projects.
+     */
+    public function allowsReposts(): bool
+    {
+        return (bool) $this->preference('privacy.allow_reposts', true);
+    }
+
+    /**
+     * Check whether this user allows appearing in public creator directories.
+     */
+    public function isDiscoverable(): bool
+    {
+        return (bool) $this->preference('privacy.discoverable', true);
+    }
+
+    /**
+     * Scope query to users who allow appearing in public creator directories and search.
+     */
+    public function scopeDiscoverable(Builder $query): Builder
+    {
+        return $query->where(function (Builder $q): void {
+            $q->whereNull('preferences')
+                ->orWhereNull('preferences->privacy->discoverable')
+                ->orWhere('preferences->privacy->discoverable', true);
+        });
     }
 }

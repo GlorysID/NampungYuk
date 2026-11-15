@@ -44,13 +44,15 @@
         }
     </style>
 </head>
-<body class="bg-[var(--bg-app)] text-[var(--primary)] min-h-screen transition-colors duration-150 antialiased selection:bg-[var(--primary)] selection:text-[var(--primary-text)] relative overflow-x-hidden pb-20 lg:pb-0"
+<body data-feed-density="@auth{{ auth()->user()->preference('display.feed_density', 'comfortable') }}@else comfortable @endauth"
+      class="bg-[var(--bg-app)] text-[var(--primary)] min-h-screen transition-colors duration-150 antialiased selection:bg-[var(--primary)] selection:text-[var(--primary-text)] relative overflow-x-hidden pb-20 lg:pb-0"
       x-data="{
           mobileSidebarOpen: false,
           mobileSearchOpen: false,
           activeCardIndex: -1,
           showHelpModal: false,
           requestsOpen: false,
+          shortcutsEnabled: {{ auth()->check() ? (auth()->user()->preference('display.keyboard_shortcuts', true) ? 'true' : 'false') : 'true' }},
           chatRequestsCount: {{ ($chatRequests ?? collect())->count() }},
           toast: {
               show: {{ (session('status') || session('success') || session('error')) ? 'true' : 'false' }},
@@ -85,6 +87,14 @@
                   }
                   return;
               }
+              if (e.key === 'Escape') {
+                  this.showHelpModal = false;
+                  this.requestsOpen = false;
+                  this.mobileSidebarOpen = false;
+                  this.mobileSearchOpen = false;
+                  return;
+              }
+              if (!this.shortcutsEnabled) return;
               if (e.key === '/' || (e.metaKey && e.key === 'k') || (e.ctrlKey && e.key === 'k')) {
                   const searchEl = document.getElementById('nav-search');
                   const mobileSearchEl = document.getElementById('nav-search-mobile');
@@ -101,13 +111,6 @@
               if (e.key === '?') {
                   e.preventDefault();
                   this.showHelpModal = !this.showHelpModal;
-                  return;
-              }
-              if (e.key === 'Escape') {
-                  this.showHelpModal = false;
-                  this.requestsOpen = false;
-                  this.mobileSidebarOpen = false;
-                  this.mobileSearchOpen = false;
                   return;
               }
               const cards = Array.from(document.querySelectorAll('.project-nav-card'));
@@ -269,8 +272,15 @@
                     <x-logo size="sm" :show-text="true" class="inline-flex lg:hidden" />
 
                     <!-- Desktop Context Title: Visible on lg+ -->
-                    <div class="hidden lg:flex items-center gap-2 text-[17px] font-bold tracking-tight text-[var(--primary)] truncate">
-                        @yield('header_title', 'Eksplorasi Karya')
+                    <div class="hidden lg:flex flex-col justify-center min-w-0">
+                        <div class="flex items-center gap-2 text-[17px] font-bold tracking-tight text-[var(--primary)] leading-tight truncate">
+                            @yield('header_title', 'Eksplorasi Karya')
+                        </div>
+                        @hasSection('header_subtitle')
+                            <p class="text-[11px] font-normal text-[var(--text-muted)] leading-tight mt-0.5 truncate">
+                                @yield('header_subtitle')
+                            </p>
+                        @endif
                     </div>
                 </div>
 
@@ -289,7 +299,8 @@
 
                     <!-- User Session Menu -->
                     @auth
-                        <!-- Notification Bell + Dropdown -->
+                        @unless(View::hasSection('hide_header_notifications'))
+                            <!-- Notification Bell + Dropdown -->
                         <div class="relative" x-data="notificationBell({ me: {{ auth()->id() }} })" x-init="init()">
                             <button @click="open = !open; if (open) refresh()"
                                     type="button"
@@ -322,7 +333,7 @@
                                            class="flex items-start gap-3 px-4 py-3 transition hover:bg-[var(--surface-hover)]"
                                            :class="!n.read ? 'bg-emerald-500/[0.06]' : ''">
                                             <template x-if="n.data.actor_avatar">
-                                                <img :src="n.data.actor_avatar" alt="" class="w-8 h-8 rounded-full object-cover ring-1 ring-[var(--border-color)] shrink-0 mt-0.5">
+                                                <img :src="n.data.actor_avatar" alt="" referrerpolicy="no-referrer" class="w-8 h-8 rounded-full object-cover ring-1 ring-[var(--border-color)] shrink-0 mt-0.5">
                                             </template>
                                             <template x-if="!n.data.actor_avatar">
                                                 <span class="w-8 h-8 rounded-full bg-[var(--surface-muted)] border border-[var(--border-color)] text-[var(--primary)] flex items-center justify-center text-xs font-bold shrink-0 mt-0.5"
@@ -348,6 +359,7 @@
                                 </a>
                             </div>
                         </div>
+                        @endunless
                     @else
                         <!-- Guest Actions -->
                         <div class="flex items-center gap-1 sm:gap-2 text-sm shrink-0">
@@ -426,39 +438,28 @@
                     <div class="space-y-4">
                         @if(!empty($defaultRailTrending))
                             <div class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl overflow-hidden">
-                                <div class="px-5 py-3.5 border-b border-[var(--border-color)] flex items-center justify-between">
-                                    <h3 class="text-[15px] font-bold text-[var(--primary)] flex items-center gap-2">
-                                        <svg class="w-[18px] h-[18px] text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-                                        </svg>
+                                <div class="px-4 py-3 border-b border-[var(--border-color)] flex items-center justify-between">
+                                    <h3 class="text-[13px] font-semibold text-[var(--primary)] tracking-tight flex items-center gap-2">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" aria-hidden="true"></span>
                                         <span>Trending Hari Ini</span>
                                     </h3>
-                                    <span class="text-[11px] font-mono text-[var(--text-muted)] uppercase tracking-wider">Top {{ count($defaultRailTrending) }}</span>
+                                    <span class="text-[11px] font-mono text-[var(--text-faint)] uppercase tracking-wider">Top {{ count($defaultRailTrending) }}</span>
                                 </div>
                                 <div class="divide-y divide-[var(--border-color)]">
                                     @foreach($defaultRailTrending as $i => $tp)
                                         <a href="{{ route('projects.show', $tp['slug']) }}"
-                                           class="flex items-center gap-3 px-5 py-3 hover:bg-[var(--surface-hover)] transition-colors group">
-                                            <span class="text-xs font-mono {{ $i < 3 ? 'font-bold text-emerald-600 dark:text-emerald-400' : 'font-medium text-[var(--text-muted)]' }} w-5 shrink-0 text-center">
+                                           class="flex items-start gap-3 px-4 py-3 hover:bg-[var(--surface-hover)] transition-colors group">
+                                            <span class="text-[11.5px] font-mono tabular-nums pt-0.5 w-5 shrink-0 {{ $i < 3 ? 'font-semibold text-emerald-400' : 'text-[var(--text-faint)]' }}">
                                                 {{ sprintf('%02d', $i + 1) }}
                                             </span>
-                                            <span class="w-10 h-10 rounded-lg overflow-hidden bg-[var(--surface-muted)] shrink-0 transition-colors flex items-center justify-center">
-                                                @if(!empty($tp['thumbnail']))
-                                                    <img src="{{ $tp['thumbnail'] }}" alt="" class="w-full h-full object-cover">
-                                                @else
-                                                    <svg class="w-5 h-5 text-[var(--text-faint)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
-                                                    </svg>
-                                                @endif
-                                            </span>
                                             <div class="min-w-0 flex-1">
-                                                <p class="font-semibold text-[13.5px] text-[var(--primary)] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors truncate leading-snug">
+                                                <p class="text-[13px] font-semibold text-[var(--primary)] leading-snug line-clamp-2 group-hover:text-emerald-400 transition-colors">
                                                     {{ $tp['title'] }}
                                                 </p>
-                                                <p class="text-xs font-mono text-[var(--text-muted)] truncate mt-0.5">&#64;{{ $tp['username'] ?? 'anon' }}</p>
+                                                <p class="text-[11.5px] font-mono text-[var(--text-muted)] truncate mt-1">&#64;{{ $tp['username'] ?? 'anon' }}</p>
                                             </div>
-                                            <span class="inline-flex items-center gap-1 shrink-0 text-xs font-mono font-semibold text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors">
-                                                <svg class="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <span class="inline-flex items-center gap-1 shrink-0 px-2 py-0.5 rounded-md bg-[var(--surface-subtle)] border border-[var(--border-color)] text-[11px] font-mono tabular-nums text-[var(--text-secondary)] group-hover:border-[var(--border-strong)] group-hover:text-[var(--primary)] transition-colors mt-0.5">
+                                                <svg class="w-3 h-3 {{ $i < 3 ? 'text-emerald-400' : 'text-[var(--text-muted)]' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/>
                                                 </svg>
                                                 <span>{{ number_format($tp['score'] ?? 0) }}</span>
@@ -467,32 +468,28 @@
                                     @endforeach
                                 </div>
                                 <a href="{{ route('projects.index', ['tab' => 'trend']) }}"
-                                   class="block px-5 py-3 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-[var(--surface-hover)] border-t border-[var(--border-color)] transition-colors">
-                                    Lihat semua trending &rarr;
+                                   class="flex items-center justify-between px-4 py-2.5 border-t border-[var(--border-color)] text-xs font-medium text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--surface-hover)] transition-colors">
+                                    <span>Lihat semua trending</span>
+                                    <span aria-hidden="true">&rarr;</span>
                                 </a>
                             </div>
                         @endif
 
                         @if(isset($sidebarCommunities) && $sidebarCommunities->count() > 0)
                             <div class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl overflow-hidden">
-                                <div class="px-5 py-3.5 border-b border-[var(--border-color)] flex items-center justify-between">
-                                    <h3 class="text-[15px] font-bold text-[var(--primary)] flex items-center gap-2">
-                                        <svg class="w-[18px] h-[18px] text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                        </svg>
-                                        <span>Komunitas Populer</span>
-                                    </h3>
-                                    <a href="{{ route('communities.index') }}" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">Lihat semua</a>
+                                <div class="px-4 py-3 border-b border-[var(--border-color)] flex items-center justify-between">
+                                    <h3 class="text-[13px] font-semibold text-[var(--primary)] tracking-tight">Komunitas Populer</h3>
+                                    <a href="{{ route('communities.index') }}" class="text-[11.5px] font-medium text-[var(--text-muted)] hover:text-emerald-400 transition-colors">Lihat semua</a>
                                 </div>
                                 <div class="divide-y divide-[var(--border-color)]">
                                     @foreach($sidebarCommunities as $comm)
                                         <a href="{{ route('communities.show', $comm->slug) }}"
-                                           class="flex items-center justify-between gap-3 px-5 py-3 hover:bg-[var(--surface-hover)] transition-colors group">
+                                           class="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-[var(--surface-hover)] transition-colors group">
                                             <div class="min-w-0 flex-1">
-                                                <p class="font-semibold text-[13.5px] text-[var(--primary)] group-hover:underline truncate">{{ $comm->name }}</p>
-                                                <p class="text-xs text-[var(--text-muted)] truncate mt-0.5">{{ $comm->members_count }} anggota</p>
+                                                <p class="font-medium text-[13px] text-[var(--primary)] group-hover:text-emerald-400 transition-colors truncate">{{ $comm->name }}</p>
+                                                <p class="text-[11.5px] text-[var(--text-muted)] truncate mt-0.5">{{ $comm->members_count }} anggota</p>
                                             </div>
-                                            <span class="text-xs font-medium text-[var(--text-muted)] group-hover:text-[var(--primary)] shrink-0">&rarr;</span>
+                                            <span class="text-xs text-[var(--text-faint)] group-hover:text-[var(--primary)] shrink-0">&rarr;</span>
                                         </a>
                                     @endforeach
                                 </div>

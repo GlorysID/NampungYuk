@@ -29,6 +29,7 @@
          alt="{{ $displayName }}"
          loading="lazy"
          decoding="async"
+         referrerpolicy="no-referrer"
          {{ $attributes->merge(['class' => "$sizeClasses bg-zinc-100 dark:bg-zinc-900 object-cover ring-1 ring-zinc-200/80 dark:ring-zinc-800 shrink-0"]) }}>
 @else
     <span aria-label="{{ $displayName }}"

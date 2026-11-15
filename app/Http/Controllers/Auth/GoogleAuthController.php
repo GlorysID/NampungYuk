@@ -160,7 +160,8 @@ class GoogleAuthController extends Controller
             if (! $user->google_id) {
                 $user->google_id = $googleId;
             }
-            if (! $user->avatar && ! empty($avatar)) {
+            $hasCustomLocalAvatar = is_string($user->avatar) && str_contains($user->avatar, '/storage/avatars/');
+            if (! $hasCustomLocalAvatar && ! empty($avatar)) {
                 $user->avatar = $avatar;
             }
             if (! $user->email_verified_at) {

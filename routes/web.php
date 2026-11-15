@@ -16,6 +16,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SpaceController;
 use App\Models\Space;
 use Illuminate\Support\Facades\Route;
@@ -64,6 +65,7 @@ Route::get('/feed-fragment/bookmarks', [InfiniteFeedController::class, 'bookmark
 // Developer profile & project showcase (public)
 Route::get('/u/{username}', [ProfileController::class, 'show'])->name('profile.show');
 Route::get('/project/{slug}', [ProjectController::class, 'show'])->name('projects.show');
+Route::get('/project/{project}/comments', [ProjectController::class, 'comments'])->name('projects.comments.index');
 
 // Communities exploration (public read-only)
 Route::get('/komunitas', [CommunityController::class, 'index'])->name('communities.index');
@@ -90,8 +92,20 @@ Route::middleware('auth')->group(function () {
     Route::post('/u/{user:username}/follow', [FollowController::class, 'toggle'])->name('follow.toggle');
 
     // Profile & account settings
+    Route::get('/pengaturan', [SettingsController::class, 'index'])->name('settings.index');
     Route::put('/pengaturan/profil', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/pengaturan/akun', [SettingsController::class, 'updateAccount'])->name('settings.account.update');
+    Route::post('/pengaturan/verifikasi-ulang', [SettingsController::class, 'resendVerification'])->name('settings.verification.resend');
+    Route::get('/pengaturan/ekspor', [SettingsController::class, 'exportData'])->name('settings.export');
+    Route::delete('/pengaturan/akun', [SettingsController::class, 'destroyAccount'])->name('settings.account.destroy');
     Route::put('/pengaturan/keamanan', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    Route::delete('/pengaturan/sesi/{sessionId}', [SettingsController::class, 'destroySession'])->name('settings.sessions.destroy');
+    Route::post('/pengaturan/sesi/keluar-lain', [SettingsController::class, 'destroyOtherSessions'])->name('settings.sessions.destroyOthers');
+    Route::put('/pengaturan/privasi', [SettingsController::class, 'updatePrivacy'])->name('settings.privacy.update');
+    Route::post('/pengaturan/blokir', [SettingsController::class, 'blockUser'])->name('settings.blocks.store');
+    Route::delete('/pengaturan/blokir/{user}', [SettingsController::class, 'unblockUser'])->name('settings.blocks.destroy');
+    Route::put('/pengaturan/notifikasi', [SettingsController::class, 'updateNotifications'])->name('settings.notifications.update');
+    Route::put('/pengaturan/preferensi', [SettingsController::class, 'updatePreferences'])->name('settings.preferences.update');
 
     // Project repost & pin
     Route::post('/project/{project}/repost', [ProjectController::class, 'repost'])->name('projects.repost');

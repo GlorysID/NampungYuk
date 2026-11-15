@@ -155,10 +155,10 @@ class CommunityPostController extends Controller
         $parentId = $data['parent_id'] ?? null;
         if ($parentId) {
             $parent = CommunityPostComment::find($parentId);
-            if ($parent && $parent->user_id && $parent->user_id !== $user->id) {
+            if ($parent && $parent->user && $parent->user_id !== $user->id && $parent->user->wantsNotification('project_comment')) {
                 $parent->user->notify(new CommunityCommentNotification($comment));
             }
-        } elseif ($post->user && $post->user_id !== $user->id) {
+        } elseif ($post->user && $post->user_id !== $user->id && $post->user->wantsNotification('project_comment')) {
             $post->user->notify(new CommunityCommentNotification($comment));
         }
 

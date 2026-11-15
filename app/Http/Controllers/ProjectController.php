@@ -51,6 +51,7 @@ class ProjectController extends Controller
                 ->withCount(['followers', 'projects'])
                 ->search($search)
                 ->whereNull('ban_reason')
+                ->discoverable()
                 ->when($search === null || trim((string) $search) === '', fn ($q) => $q->orderByDesc('reputation_points'))
                 ->when($search !== null && trim((string) $search) !== '', fn ($q) => $q->orderByDesc('reputation_points'))
                 ->paginate(12)
@@ -169,6 +170,8 @@ class ProjectController extends Controller
             $followingIds = $authUser->followingIds();
             $suggestedDevelopers = User::where('id', '!=', $authUser->id)
                 ->whereNotIn('id', $followingIds)
+                ->whereNull('ban_reason')
+                ->discoverable()
                 ->orderByDesc('reputation_points')
                 ->take(3)
                 ->get();
@@ -455,7 +458,9 @@ class ProjectController extends Controller
         if ($project->visibility !== 'private') {
             $followers = $user->followers;
             foreach ($followers as $follower) {
-                $follower->notify(new ProjectUploadedNotification($project));
+                if ($follower->wantsNotification('project_uploaded')) {
+                    $follower->notify(new ProjectUploadedNotification($project));
+                }
             }
             ProjectPublished::dispatch($project);
         }
@@ -720,6 +725,7 @@ class ProjectController extends Controller
             $liked
             && ! $isAuthor
             && $project->user
+            && $project->user->wantsNotification('project_trending')
             && $project->score >= 50
             && $project->score - 1 < 50
         ) {
@@ -732,6 +738,36 @@ class ProjectController extends Controller
             'upvotes' => $project->upvotes_count,
             'downvotes' => 0,
             'user_vote' => $currentVoteType,
+        ]);
+    }
+
+    /**
+     * Fetch comments for a project (used by the X-style media lightbox).
+     */
+    public function comments(Project $project): JsonResponse
+    {
+        if (! $this->isProjectAccessible($project, Auth::user())) {
+            abort(403, 'Anda tidak memiliki akses ke proyek ini.');
+        }
+
+        $comments = $project->comments()
+            ->whereNull('parent_id')
+            ->with('user:id,name,username,avatar')
+            ->latest()
+            ->limit(30)
+            ->get()
+            ->map(fn (ProjectComment $comment) => [
+                'id' => $comment->id,
+                'author' => $comment->user?->name ?? 'Anonim',
+                'username' => $comment->user?->username,
+                'avatar' => $comment->user?->avatar,
+                'content' => $comment->content,
+                'created_at' => $comment->created_at?->diffForHumans() ?? '',
+            ]);
+
+        return response()->json([
+            'comments' => $comments,
+            'comments_count' => $project->comments_count,
         ]);
     }
 
@@ -779,11 +815,11 @@ class ProjectController extends Controller
         // Notifications: reply -> parent author; top-level -> project owner.
         if ($parentId) {
             $parent = ProjectComment::find($parentId);
-            if ($parent && $parent->user_id && $parent->user_id !== $user->id) {
+            if ($parent && $parent->user && $parent->user_id !== $user->id && $parent->user->wantsNotification('project_comment')) {
                 $parent->user->notify(new ProjectCommentNotification($comment, true));
             }
         } else {
-            if ($project->user && $project->user_id !== $user->id) {
+            if ($project->user && $project->user_id !== $user->id && $project->user->wantsNotification('project_comment')) {
                 $project->user->notify(new ProjectCommentNotification($comment, false));
             }
         }
@@ -921,6 +957,15 @@ class ProjectController extends Controller
             $reposted = false;
             $message = 'Repost dibatalkan.';
         } else {
+            if ($project->user && ! $project->user->allowsReposts()) {
+                $denyMessage = 'Pemilik karya menonaktifkan fitur repost untuk karyanya.';
+                if ($request->wantsJson()) {
+                    return response()->json(['message' => $denyMessage], 403);
+                }
+
+                return back()->with('error', $denyMessage);
+            }
+
             ProjectRepost::create([
                 'project_id' => $project->id,
                 'user_id' => $user->id,
@@ -929,8 +974,8 @@ class ProjectController extends Controller
             $reposted = true;
             $message = 'Project berhasil di-repost ke profilmu!';
 
-            // Notify the original author.
-            if ($project->user) {
+            // Notify the original author if enabled in their settings.
+            if ($project->user && $project->user->wantsNotification('project_repost')) {
                 $project->user->notify(new ProjectRepostedNotification($project, $user));
             }
         }

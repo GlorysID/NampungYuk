@@ -170,7 +170,7 @@ class ChatController extends Controller
                 $canSend = false;
             }
 
-            // Mark incoming messages as read, then notify the sender live.
+            // Mark incoming messages as read, then notify the sender live when read receipts are enabled.
             // (Only for accepted chats — a pending request stays "unread" until accepted.)
             if ($conversation->isAccepted()) {
                 $readBefore = $conversation->messages()
@@ -180,7 +180,9 @@ class ChatController extends Controller
                 $upToId = (clone $readBefore)->max('id');
                 $markedCount = (clone $readBefore)->update(['read_at' => now()]);
 
-                if ($markedCount > 0) {
+                /** @var User|null $authUser */
+                $authUser = Auth::user();
+                if ($markedCount > 0 && ($authUser?->preference('privacy.show_read_receipts', true) ?? true)) {
                     broadcast(new MessageRead($conversation->id, $userId, $upToId))->toOthers();
                 }
             }
@@ -199,6 +201,15 @@ class ChatController extends Controller
             $messages = collect();
         }
 
+        // Enforce user blocks and recipient DM privacy policy.
+        /** @var User $auth */
+        $auth = Auth::user();
+        if ($auth->hasBlocked($other) || $auth->isBlockedBy($other)) {
+            $canSend = false;
+        } elseif (! $conversation && ! $other->allowsDirectMessageFrom($auth)) {
+            $canSend = false;
+        }
+
         $hasMore = $messages->count() > self::MESSAGES_PER_PAGE;
         if ($hasMore) {
             $messages = $messages->take(self::MESSAGES_PER_PAGE);
@@ -208,6 +219,7 @@ class ChatController extends Controller
         $suggested = User::where('id', '!=', $userId)
             ->where('id', '!=', $other->id)
             ->where('is_banned', false)
+            ->discoverable()
             ->orderByDesc('reputation_points')
             ->take(6)
             ->get();
@@ -217,6 +229,8 @@ class ChatController extends Controller
         $peopleResults = collect();
         $search = null;
         $conversationId = $conversation?->id;
+        $showReadReceipts = (bool) $auth->preference('privacy.show_read_receipts', true)
+            && (bool) $other->preference('privacy.show_read_receipts', true);
 
         return view('chat.show', compact(
             'other',
@@ -231,7 +245,8 @@ class ChatController extends Controller
             'conversations',
             'requests',
             'peopleResults',
-            'search'
+            'search',
+            'showReadReceipts'
         ));
     }
 
@@ -248,6 +263,21 @@ class ChatController extends Controller
 
         if ($user->id === $auth->id) {
             return response()->json(['message' => 'Tidak bisa mengirim pesan ke diri sendiri.'], 422);
+        }
+
+        if ($auth->hasBlocked($user) || $auth->isBlockedBy($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Obrolan tidak tersedia karena salah satu akun sedang memblokir.',
+            ], 403);
+        }
+
+        $existingConversation = Conversation::findBetween($auth->id, $user->id);
+        if (! $existingConversation && ! $user->allowsDirectMessageFrom($auth)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pengguna ini hanya menerima obrolan dari akun yang mereka ikuti.',
+            ], 403);
         }
 
         $data = $request->validate([
@@ -321,6 +351,10 @@ class ChatController extends Controller
      */
     protected function pushMessageNotification(User $recipient, Message $message): void
     {
+        if (! $recipient->wantsNotification('new_message')) {
+            return;
+        }
+
         $recipient->notifications()
             ->where('type', NewMessageNotification::class)
             ->whereNull('read_at')
@@ -392,13 +426,16 @@ class ChatController extends Controller
             $messages = $messages->take(self::MESSAGES_PER_PAGE);
         }
 
+        $showReadReceipts = (bool) $auth->preference('privacy.show_read_receipts', true)
+            && (bool) $user->preference('privacy.show_read_receipts', true);
+
         $messages = $messages->sortBy('id')->values()->map(fn ($m) => [
             'id' => $m->id,
             'sender_id' => $m->sender_id,
             'body' => $m->body,
             'time' => $m->created_at->format('H:i'),
             'created_at' => $m->created_at->toIso8601String(),
-            'read_at' => $m->read_at?->toIso8601String(),
+            'read_at' => $showReadReceipts ? $m->read_at?->toIso8601String() : null,
             'edited_at' => $m->edited_at?->toIso8601String(),
         ]);
 

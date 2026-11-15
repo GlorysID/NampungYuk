@@ -266,29 +266,27 @@
         @auth
             @if(isset($suggestedDevelopers) && $suggestedDevelopers->count() > 0)
                 <div class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl overflow-hidden">
-                    <div class="px-5 py-3.5 border-b border-[var(--border-color)] flex items-center justify-between">
-                        <h3 class="text-[15px] font-bold text-[var(--primary)] flex items-center gap-2">
-                            <svg class="w-[18px] h-[18px] text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
-                            </svg>
-                            <span>Untuk Diikuti</span>
-                        </h3>
-                        <a href="{{ route('projects.index', ['view' => 'people']) }}" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">Lihat semua</a>
+                    <div class="px-4 py-3 border-b border-[var(--border-color)] flex items-center justify-between">
+                        <h3 class="text-[13px] font-semibold text-[var(--primary)] tracking-tight">Untuk Diikuti</h3>
+                        <a href="{{ route('projects.index', ['view' => 'people']) }}"
+                           class="text-[11.5px] font-medium text-[var(--text-muted)] hover:text-emerald-400 transition-colors">
+                            Lihat semua
+                        </a>
                     </div>
 
                     <div class="divide-y divide-[var(--border-color)]">
                         @foreach($suggestedDevelopers as $dev)
-                            <div class="flex items-center justify-between gap-3 px-5 py-3 hover:bg-[var(--surface-hover)] transition-colors">
-                                <a href="{{ route('profile.show', $dev->username) }}" class="flex items-center gap-3 min-w-0 group flex-1">
+                            <div class="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-[var(--surface-hover)] transition-colors">
+                                <a href="{{ route('profile.show', $dev->username) }}" class="flex items-center gap-2.5 min-w-0 group flex-1">
                                     <x-user-avatar :user="$dev" size="sm" />
                                     <div class="min-w-0">
-                                        <p class="font-semibold text-[13.5px] text-[var(--primary)] group-hover:underline transition truncate">
+                                        <p class="font-medium text-[13px] text-[var(--primary)] group-hover:text-emerald-400 transition-colors truncate leading-tight">
                                             {{ $dev->name }}
                                         </p>
-                                        <p class="text-xs font-mono text-[var(--text-muted)] truncate">&#64;{{ $dev->username }}</p>
+                                        <p class="text-[11.5px] font-mono text-[var(--text-muted)] truncate mt-0.5">&#64;{{ $dev->username }}</p>
                                     </div>
                                 </a>
-                                <x-follow-button :user="$dev" size="sm" />
+                                <x-follow-button :user="$dev" size="sm" variant="subtle" />
                             </div>
                         @endforeach
                     </div>
@@ -296,65 +294,80 @@
             @endif
         @endauth
 
-        <!-- BLOCK 2: Trending Projects Today -->
-        <div class="bg-[var(--surface)] rounded-2xl overflow-hidden">
-            <h2 class="text-xl font-extrabold text-[var(--primary)] px-4 py-3 tracking-tight">
-                Trending Hari Ini
-            </h2>
+        <!-- BLOCK 1: Trending Projects Today -->
+        <div class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl overflow-hidden">
+            <div class="px-4 py-3 border-b border-[var(--border-color)] flex items-center justify-between">
+                <h3 class="text-[13px] font-semibold text-[var(--primary)] tracking-tight flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" aria-hidden="true"></span>
+                    <span>Trending Hari Ini</span>
+                </h3>
+                <span class="text-[11px] font-mono text-[var(--text-faint)] uppercase tracking-wider">Top {{ $trendingToday->count() }}</span>
+            </div>
 
-            <div>
+            <div class="divide-y divide-[var(--border-color)]">
                 @forelse($trendingToday as $i => $tp)
                     <a href="{{ route('projects.show', $tp->slug) }}"
-                       class="block px-4 py-3 hover:bg-white/[0.03] transition-colors">
-                        <p class="text-[13px] text-[var(--text-muted)] truncate">
-                            Trending &middot; #{{ $i + 1 }}
-                        </p>
-                        <p class="text-[15px] font-bold text-[var(--primary)] leading-snug truncate mt-0.5">
-                            {{ $tp->title }}
-                        </p>
-                        <p class="text-[13px] text-[var(--text-muted)] truncate mt-1">
-                            <span class="font-mono">&#64;{{ $tp->user?->username ?? 'anon' }}</span>
-                            &middot;
-                            <svg class="inline-block w-3 h-3 align-[-2px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       class="flex items-start gap-3 px-4 py-3 hover:bg-[var(--surface-hover)] transition-colors group">
+                        <span class="text-[11.5px] font-mono tabular-nums pt-0.5 w-5 shrink-0 {{ $i < 3 ? 'font-semibold text-emerald-400' : 'text-[var(--text-faint)]' }}">
+                            {{ sprintf('%02d', $i + 1) }}
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-[13px] font-semibold text-[var(--primary)] leading-snug line-clamp-2 group-hover:text-emerald-400 transition-colors">
+                                {{ $tp->title }}
+                            </p>
+                            <div class="mt-1 flex items-center gap-1.5 text-[11.5px] text-[var(--text-muted)] min-w-0">
+                                <span class="font-mono truncate">&#64;{{ $tp->user?->username ?? 'anon' }}</span>
+                                @if($tp->category)
+                                    <span class="text-[var(--text-faint)] shrink-0">&middot;</span>
+                                    <span class="truncate shrink-0 text-[var(--text-faint)]">{{ $tp->category->name }}</span>
+                                @endif
+                            </div>
+                        </div>
+                        <span class="inline-flex items-center gap-1 shrink-0 px-2 py-0.5 rounded-md bg-[var(--surface-subtle)] border border-[var(--border-color)] text-[11px] font-mono tabular-nums text-[var(--text-secondary)] group-hover:border-[var(--border-strong)] group-hover:text-[var(--primary)] transition-colors mt-0.5">
+                            <svg class="w-3 h-3 {{ $i < 3 ? 'text-emerald-400' : 'text-[var(--text-muted)]' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/>
                             </svg>
-                            <span class="font-mono">{{ number_format($tp->score) }}</span> upvote
-                        </p>
+                            <span>{{ number_format($tp->score) }}</span>
+                        </span>
                     </a>
                 @empty
-                    <p class="px-4 py-6 text-center text-xs text-[var(--text-muted)]">Belum ada project trending hari ini.</p>
+                    <p class="px-4 py-6 text-center text-xs text-[var(--text-muted)]">Belum ada karya trending hari ini.</p>
                 @endforelse
             </div>
 
             <a href="{{ route('projects.index', ['tab' => 'trend']) }}"
-               class="block px-4 py-3.5 text-sm font-normal text-emerald-400 hover:bg-white/[0.03] transition-colors">
-                Tampilkan lebih banyak
+               class="flex items-center justify-between px-4 py-2.5 border-t border-[var(--border-color)] text-xs font-medium text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--surface-hover)] transition-colors">
+                <span>Lihat semua trending</span>
+                <span aria-hidden="true">&rarr;</span>
             </a>
         </div>
 
-        <!-- BLOCK: Sedang Hangat Dibicarakan (most commented) -->
-        <div class="bg-[var(--surface)] rounded-2xl overflow-hidden">
-            <h2 class="text-xl font-extrabold text-[var(--primary)] px-4 py-3 tracking-tight">
-                Sedang Hangat Dibicarakan
-            </h2>
+        <!-- BLOCK 2: Topik Hangat (hot tech hashtags) -->
+        <div class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl overflow-hidden">
+            <div class="px-4 py-3 border-b border-[var(--border-color)] flex items-center justify-between">
+                <h3 class="text-[13px] font-semibold text-[var(--primary)] tracking-tight">Topik Hangat</h3>
+                <span class="text-[11px] font-mono text-[var(--text-faint)] uppercase tracking-wider">Tech</span>
+            </div>
 
-            <div>
+            <div class="divide-y divide-[var(--border-color)]">
                 @forelse($hotHashtags as $tag => $count)
                     <a href="{{ route('projects.index', ['tech' => $tag]) }}"
                        title="#{{ $tag }} ({{ $count }} karya)"
-                       class="block px-4 py-3 hover:bg-white/[0.03] transition-colors">
-                        <p class="text-[13px] text-[var(--text-muted)] truncate">
-                            Topik &middot; #{{ $loop->iteration }}
-                        </p>
-                        <p class="text-[15px] font-bold text-[var(--primary)] leading-snug truncate mt-0.5">
-                            #{{ $tag }}
-                        </p>
-                        <p class="text-[13px] text-[var(--text-muted)] truncate mt-1">
-                            <span class="font-mono">{{ number_format($count) }}</span> karya
-                        </p>
+                       class="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-[var(--surface-hover)] transition-colors group">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <span class="text-[11px] font-mono tabular-nums text-[var(--text-faint)] w-4 shrink-0">
+                                {{ sprintf('%02d', $loop->iteration) }}
+                            </span>
+                            <span class="text-[13px] font-medium text-[var(--primary)] group-hover:text-emerald-400 transition-colors truncate">
+                                <span class="text-[var(--text-faint)] mr-0.5">#</span>{{ $tag }}
+                            </span>
+                        </div>
+                        <span class="text-[11px] font-mono tabular-nums text-[var(--text-muted)] shrink-0">
+                            {{ number_format($count) }} karya
+                        </span>
                     </a>
                 @empty
-                    <p class="px-4 py-6 text-center text-xs text-[var(--text-muted)]">Belum ada hashtag hangat.</p>
+                    <p class="px-4 py-6 text-center text-xs text-[var(--text-muted)]">Belum ada topik hangat.</p>
                 @endforelse
             </div>
         </div>

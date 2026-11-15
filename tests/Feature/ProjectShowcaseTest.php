@@ -688,4 +688,44 @@ class ProjectShowcaseTest extends TestCase
         $user->refresh();
         $this->assertTrue(Hash::check('old-password-123', $user->password));
     }
+
+    public function test_project_comments_endpoint_returns_comments_for_public_and_forbids_private(): void
+    {
+        $owner = User::factory()->create();
+        $commenter = User::factory()->create();
+        $category = Category::create(['name' => 'Tools', 'slug' => 'tools']);
+
+        $publicProject = Project::create([
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+            'title' => 'Public Tool',
+            'slug' => 'public-tool',
+            'tagline' => 'Public tagline',
+            'visibility' => 'public',
+        ]);
+
+        ProjectComment::create([
+            'project_id' => $publicProject->id,
+            'user_id' => $commenter->id,
+            'content' => 'Keren banget fiturnya!',
+        ]);
+        $publicProject->update(['comments_count' => 1]);
+
+        $this->getJson(route('projects.comments.index', $publicProject))
+            ->assertOk()
+            ->assertJsonPath('comments_count', 1)
+            ->assertJsonPath('comments.0.content', 'Keren banget fiturnya!');
+
+        $privateProject = Project::create([
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+            'title' => 'Secret Tool',
+            'slug' => 'secret-tool',
+            'tagline' => 'Private tagline',
+            'visibility' => 'private',
+        ]);
+
+        $this->getJson(route('projects.comments.index', $privateProject))
+            ->assertForbidden();
+    }
 }

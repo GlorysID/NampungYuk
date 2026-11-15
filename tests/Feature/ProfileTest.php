@@ -7,6 +7,8 @@ use App\Models\Project;
 use App\Models\ProjectComment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class ProfileTest extends TestCase
@@ -194,5 +196,251 @@ class ProfileTest extends TestCase
         $user->refresh();
         $this->assertSame('https://github.com/linkowner', $user->github_url);
         $this->assertSame('https://linkowner.dev', $user->website_url);
+    }
+
+    public function test_owner_can_search_own_posts_on_profile_including_pinned_and_private_projects(): void
+    {
+        $user = User::factory()->create(['username' => 'search_owner']);
+        $category = Category::create(['name' => 'Backend', 'slug' => 'backend']);
+
+        Project::create([
+            'user_id' => $user->id,
+            'category_id' => $category->id,
+            'title' => 'Pinned Laravel API',
+            'slug' => 'pinned-laravel-api',
+            'tagline' => 'REST API cepat',
+            'description' => 'Service API dengan Laravel',
+            'tech_stacks' => ['Laravel'],
+            'is_pinned' => true,
+        ]);
+
+        Project::create([
+            'user_id' => $user->id,
+            'category_id' => $category->id,
+            'title' => 'Private Laravel Tool',
+            'slug' => 'private-laravel-tool',
+            'tagline' => 'Internal',
+            'description' => 'Tool internal Laravel',
+            'tech_stacks' => ['Laravel'],
+            'is_flagged' => true,
+        ]);
+
+        Project::create([
+            'user_id' => $user->id,
+            'category_id' => $category->id,
+            'title' => 'Aplikasi Flutter Chat',
+            'slug' => 'aplikasi-flutter-chat',
+            'tagline' => 'Mobile app',
+            'description' => 'Chat real-time mobile',
+            'tech_stacks' => ['Flutter'],
+        ]);
+
+        Cache::forget('rail:trending_projects_v2');
+
+        $response = $this->actingAs($user)
+            ->get(route('profile.show', ['username' => $user->username, 'q' => 'Laravel']));
+
+        $response->assertOk()
+            ->assertSee('id="profile-search-form"', false)
+            ->assertSee('Pinned Laravel API')
+            ->assertSee('Private Laravel Tool')
+            ->assertViewHas('pinnedProjects', fn ($pinned) => $pinned->isEmpty())
+            ->assertViewHas('projects', function ($projects) {
+                $titles = $projects->pluck('title')->all();
+
+                return in_array('Pinned Laravel API', $titles, true)
+                    && in_array('Private Laravel Tool', $titles, true)
+                    && ! in_array('Aplikasi Flutter Chat', $titles, true);
+            });
+    }
+
+    public function test_profile_search_hides_flagged_projects_from_other_visitors(): void
+    {
+        Cache::forget('rail:trending_projects_v2');
+
+        $owner = User::factory()->create(['username' => 'flagged_owner']);
+        $visitor = User::factory()->create(['username' => 'normal_visitor']);
+        $category = Category::create(['name' => 'Tools', 'slug' => 'tools']);
+
+        Project::create([
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+            'title' => 'Karya Publik Rahasia',
+            'slug' => 'karya-publik-rahasia',
+            'tagline' => 'Terbuka',
+            'description' => 'Aman dilihat semua orang',
+            'tech_stacks' => ['PHP'],
+        ]);
+
+        $flagged = Project::create([
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+            'title' => 'Proyek Peringatan Rahasia',
+            'slug' => 'proyek-peringatan-rahasia',
+            'tagline' => 'Privat',
+            'description' => 'Tidak boleh bocor',
+            'tech_stacks' => ['PHP'],
+            'is_flagged' => true,
+        ]);
+
+        ProjectComment::create([
+            'project_id' => $flagged->id,
+            'user_id' => $owner->id,
+            'content' => 'Komentar Rahasia di proyek flagged',
+        ]);
+
+        $this->actingAs($visitor)
+            ->get(route('profile.show', ['username' => $owner->username, 'q' => 'Rahasia']))
+            ->assertOk()
+            ->assertSee('Karya Publik Rahasia')
+            ->assertDontSee('Proyek Peringatan Rahasia')
+            ->assertDontSee('Komentar Rahasia di proyek flagged');
+    }
+
+    public function test_profile_search_filters_reposts_and_preserves_active_tab(): void
+    {
+        $owner = User::factory()->create(['username' => 'repost_searcher']);
+        $author = User::factory()->create(['username' => 'author_lain']);
+        $category = Category::create(['name' => 'Systems', 'slug' => 'systems']);
+
+        $rustProject = Project::create([
+            'user_id' => $author->id,
+            'category_id' => $category->id,
+            'title' => 'Compiler Rust Mini',
+            'slug' => 'compiler-rust-mini',
+            'tagline' => 'Parser cepat',
+            'description' => 'Dibuat pakai Rust',
+            'tech_stacks' => ['Rust'],
+        ]);
+
+        $phpProject = Project::create([
+            'user_id' => $author->id,
+            'category_id' => $category->id,
+            'title' => 'Dashboard PHP Klasik',
+            'slug' => 'dashboard-php-klasik',
+            'tagline' => 'Admin panel',
+            'description' => 'Dibuat pakai PHP',
+            'tech_stacks' => ['PHP'],
+        ]);
+
+        $owner->reposts()->create(['project_id' => $rustProject->id]);
+        $owner->reposts()->create(['project_id' => $phpProject->id]);
+
+        Cache::forget('rail:trending_projects_v2');
+
+        $response = $this->actingAs($owner)->get(route('profile.show', [
+            'username' => $owner->username,
+            'q' => 'Rust',
+            'tab' => 'reposts',
+        ]));
+
+        $response->assertOk()
+            ->assertSee("activeTab: 'reposts'", false)
+            ->assertSee('Compiler Rust Mini')
+            ->assertViewHas('repostedProjects', function ($reposts) {
+                $titles = $reposts->pluck('title')->all();
+
+                return in_array('Compiler Rust Mini', $titles, true)
+                    && ! in_array('Dashboard PHP Klasik', $titles, true);
+            });
+    }
+
+    public function test_settings_page_requires_authentication_and_renders_security_section(): void
+    {
+        $this->get(route('settings.index'))
+            ->assertRedirect(route('projects.index'))
+            ->assertSessionHas('auth_required', true);
+
+        $user = User::factory()->create(['username' => 'pengguna_uji']);
+
+        $this->actingAs($user)
+            ->get(route('settings.index'))
+            ->assertOk()
+            ->assertSee('Pengaturan Akun')
+            ->assertSee('Keamanan')
+            ->assertSee(route('profile.password.update'), false)
+            ->assertSee(route('settings.index'), false);
+    }
+
+    public function test_user_can_update_password_from_settings_and_requires_valid_current_password(): void
+    {
+        $user = User::factory()->create([
+            'password' => 'password-lama-123',
+        ]);
+
+        $this->actingAs($user)
+            ->from(route('settings.index'))
+            ->put(route('profile.password.update'), [
+                'current_password' => 'salah-banget',
+                'password' => 'password-baru-456',
+                'password_confirmation' => 'password-baru-456',
+            ])
+            ->assertRedirect(route('settings.index'))
+            ->assertSessionHasErrors('current_password');
+
+        $this->actingAs($user)
+            ->from(route('settings.index'))
+            ->put(route('profile.password.update'), [
+                'current_password' => 'password-lama-123',
+                'password' => 'password-baru-456',
+                'password_confirmation' => 'password-baru-456',
+            ])
+            ->assertRedirect(route('settings.index'))
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success');
+
+        $this->assertTrue(Hash::check('password-baru-456', $user->fresh()->password));
+    }
+
+    public function test_google_user_without_password_can_set_initial_password_on_settings(): void
+    {
+        $googleUser = User::factory()->create([
+            'password' => null,
+            'google_id' => 'google-uid-999',
+        ]);
+
+        $this->actingAs($googleUser)
+            ->get(route('settings.index'))
+            ->assertOk()
+            ->assertDontSee('name="current_password"', false)
+            ->assertSee('Buat Password Akun');
+
+        $this->actingAs($googleUser)
+            ->from(route('settings.index'))
+            ->put(route('profile.password.update'), [
+                'password' => 'sandi-awal-789',
+                'password_confirmation' => 'sandi-awal-789',
+            ])
+            ->assertRedirect(route('settings.index'))
+            ->assertSessionHasNoErrors();
+
+        $this->assertTrue(Hash::check('sandi-awal-789', $googleUser->fresh()->password));
+    }
+
+    public function test_profile_edit_modal_uses_x_style_and_no_longer_contains_password_form(): void
+    {
+        $user = User::factory()->create(['username' => 'kreator_x']);
+        $category = Category::create(['name' => 'Web', 'slug' => 'web']);
+
+        Project::create([
+            'user_id' => $user->id,
+            'category_id' => $category->id,
+            'title' => 'Satu Postingan Profil',
+            'slug' => 'satu-postingan-profil',
+            'tagline' => 'Tes count header',
+            'description' => 'Deskripsi singkat',
+            'tech_stacks' => ['Laravel'],
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('profile.show', $user->username))
+            ->assertOk()
+            ->assertSee('1 postingan')
+            ->assertSee('composer-seamless', false)
+            ->assertDontSee('aria-label="Notifikasi"', false)
+            ->assertSee('Edit profil')
+            ->assertSee(route('profile.update'), false)
+            ->assertSee(route('settings.index'), false)
+            ->assertDontSee(route('profile.password.update'), false);
     }
 }

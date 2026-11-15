@@ -286,6 +286,71 @@ class GoogleAuthTest extends TestCase
             ->assertSee('name="csrf-token"', false);
     }
 
+    public function test_firebase_google_login_syncs_latest_google_avatar_and_preserves_custom_local_avatar(): void
+    {
+        Cache::flush();
+        Config::set('services.firebase.project_id', 'nampungyuk-test');
+
+        [$privateKey, $jwks] = $this->createMockFirebaseKeySet('kid-avatar-1');
+        Http::fake([
+            'https://www.googleapis.com/service_accounts/v1/jwk/*' => Http::response($jwks, 200),
+        ]);
+
+        // 1. User with an older Google avatar should sync to the new Google avatar on login
+        $externalAvatarUser = User::factory()->create([
+            'email' => 'sync.avatar@example.com',
+            'google_id' => 'google-sync-1',
+            'avatar' => 'https://lh3.googleusercontent.com/old-avatar.jpg',
+        ]);
+
+        $tokenNewAvatar = $this->signMockFirebaseToken($privateKey, 'kid-avatar-1', [
+            'iss' => 'https://securetoken.google.com/nampungyuk-test',
+            'aud' => 'nampungyuk-test',
+            'sub' => 'firebase-uid-sync-1',
+            'email' => 'sync.avatar@example.com',
+            'email_verified' => true,
+            'picture' => 'https://lh3.googleusercontent.com/new-avatar.jpg',
+            'firebase' => [
+                'identities' => [
+                    'google.com' => ['google-sync-1'],
+                ],
+                'sign_in_provider' => 'google.com',
+            ],
+        ]);
+
+        $this->postJson(route('auth.firebase.google'), ['id_token' => $tokenNewAvatar])
+            ->assertOk();
+
+        $this->assertSame('https://lh3.googleusercontent.com/new-avatar.jpg', $externalAvatarUser->fresh()->avatar);
+
+        // 2. User with a custom uploaded local avatar keeps their uploaded avatar
+        $customAvatarUser = User::factory()->create([
+            'email' => 'custom.avatar@example.com',
+            'google_id' => 'google-custom-2',
+            'avatar' => '/storage/avatars/custom-upload.webp',
+        ]);
+
+        $tokenForCustomUser = $this->signMockFirebaseToken($privateKey, 'kid-avatar-1', [
+            'iss' => 'https://securetoken.google.com/nampungyuk-test',
+            'aud' => 'nampungyuk-test',
+            'sub' => 'firebase-uid-custom-2',
+            'email' => 'custom.avatar@example.com',
+            'email_verified' => true,
+            'picture' => 'https://lh3.googleusercontent.com/should-not-overwrite.jpg',
+            'firebase' => [
+                'identities' => [
+                    'google.com' => ['google-custom-2'],
+                ],
+                'sign_in_provider' => 'google.com',
+            ],
+        ]);
+
+        $this->postJson(route('auth.firebase.google'), ['id_token' => $tokenForCustomUser])
+            ->assertOk();
+
+        $this->assertSame('/storage/avatars/custom-upload.webp', $customAvatarUser->fresh()->avatar);
+    }
+
     /**
      * Provide a deterministic test-only RSA-2048 keypair and JWK set for testing RS256 ID tokens.
      *

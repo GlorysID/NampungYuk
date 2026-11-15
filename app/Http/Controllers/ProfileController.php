@@ -89,14 +89,32 @@ class ProfileController extends Controller
     }
 
     /**
+     * Display the authenticated user's account settings page.
+     */
+    public function settings(Request $request): View
+    {
+        return view('settings.index', [
+            'user' => $request->user(),
+        ]);
+    }
+
+    /**
      * Update user password.
      */
     public function updatePassword(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'current_password' => ['required', 'current_password'],
+        $user = $request->user();
+        $hasExistingPassword = filled($user->password);
+
+        $rules = [
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ], [
+        ];
+
+        if ($hasExistingPassword) {
+            $rules['current_password'] = ['required', 'current_password'];
+        }
+
+        $validated = $request->validate($rules, [
             'current_password.required' => 'Password saat ini wajib diisi.',
             'current_password.current_password' => 'Password saat ini yang Anda masukkan salah.',
             'password.required' => 'Password baru wajib diisi.',
@@ -104,55 +122,73 @@ class ProfileController extends Controller
             'password.min' => 'Password baru minimal 8 karakter.',
         ]);
 
-        $user = $request->user();
         $user->update([
             'password' => Hash::make($validated['password']),
         ]);
 
-        return back()->with('success', 'Password akun Anda berhasil diperbarui!');
+        $message = $hasExistingPassword
+            ? 'Password akun Anda berhasil diperbarui!'
+            : 'Password akun berhasil dibuat!';
+
+        return back()
+            ->with('success', $message)
+            ->with('settings_tab', 'keamanan');
     }
 
     /**
      * Display the specified user's public profile.
      */
-    public function show(string $username): View
+    public function show(Request $request, string $username): View
     {
         $user = User::where('username', $username)->firstOrFail();
 
         $currentUserId = auth()->id();
         $isOwner = $currentUserId === $user->id;
         $isAdmin = auth()->user()?->is_admin ?? false;
+        $search = trim((string) $request->query('q', ''));
 
         // Only the owner or admin sees private and warned projects.
         $viewerId = ($isOwner || $isAdmin) ? $currentUserId : null;
 
-        $allProjects = $user->projects()
-            ->with(['category', 'user', 'repostedFrom'])
-            ->visibleTo($viewerId)
-            ->latest()
-            ->get();
-
-        // Pinned projects appear first, only surfaced on the owner's view order.
-        $pinnedProjects = $user->pinnedProjects()
-            ->with(['category', 'user', 'repostedFrom'])
-            ->visibleTo($viewerId)
-            ->get();
+        // Pinned projects appear first, only surfaced when not actively filtering.
+        $pinnedProjects = $search === ''
+            ? $user->pinnedProjects()
+                ->with(['category', 'user', 'repostedFrom'])
+                ->visibleTo($viewerId)
+                ->get()
+            : collect();
 
         $pinnedIds = $pinnedProjects->pluck('id')->all();
 
-        $projects = $user->projects()
+        $projectsQuery = $user->projects()
             ->with(['category', 'user', 'repostedFrom'])
             ->visibleTo($viewerId)
-            ->whereNotIn('id', $pinnedIds)
+            ->search($search);
+
+        if ($search === '' && ! empty($pinnedIds)) {
+            $projectsQuery->whereNotIn('id', $pinnedIds);
+        }
+
+        $projects = $projectsQuery
             ->latest()
-            ->paginate(10);
+            ->paginate(10)
+            ->withQueryString();
 
         // Only show comments the viewer may see — i.e. comments on projects
         // that are still visible (a warned/private project must not leak its
         // title through the owner's activity feed).
-        $comments = $user->comments()
+        $commentsQuery = $user->comments()
             ->with('project')
-            ->whereHas('project', fn ($q) => $q->visibleTo($viewerId))
+            ->whereHas('project', fn ($q) => $q->visibleTo($viewerId));
+
+        if ($search !== '') {
+            $commentsQuery->where(function ($q) use ($search) {
+                $q->where('content', 'like', "%{$search}%")
+                    ->orWhereHas('project', fn ($pq) => $pq->where('title', 'like', "%{$search}%"));
+            });
+        }
+
+        $comments = $commentsQuery
             ->latest()
             ->take(20)
             ->get();
@@ -165,7 +201,13 @@ class ProfileController extends Controller
 
         // Likes tab is only shown to the owner.
         $likedProjects = $isOwner
-            ? $user->likedProjects()->with(['category', 'user', 'repostedFrom'])->latest('project_votes.created_at')->paginate(10, ['*'], 'likes')
+            ? $user->likedProjects()
+                ->with(['category', 'user', 'repostedFrom'])
+                ->visibleTo($viewerId)
+                ->search($search)
+                ->latest('project_votes.created_at')
+                ->paginate(10, ['*'], 'likes')
+                ->withQueryString()
             : collect();
 
         $totalLikes = $isOwner ? $user->likedProjects()->count() : 0;
@@ -174,8 +216,10 @@ class ProfileController extends Controller
         $repostedProjects = $user->repostedProjects()
             ->with(['category', 'user', 'repostedFrom'])
             ->visibleTo($viewerId)
+            ->search($search)
             ->latest('project_reposts.created_at')
-            ->paginate(10, ['*'], 'reposts');
+            ->paginate(10, ['*'], 'reposts')
+            ->withQueryString();
 
         $totalReposts = $user->reposts()->count();
 
@@ -206,7 +250,8 @@ class ProfileController extends Controller
             'userRepostedIds',
             'followersCount',
             'followingCount',
-            'isOwner'
+            'isOwner',
+            'search'
         ));
     }
 }

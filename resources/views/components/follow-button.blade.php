@@ -1,6 +1,7 @@
 @props([
     'user',
     'size' => 'md', // 'sm', 'md'
+    'variant' => 'solid', // 'solid', 'subtle'
 ])
 
 @php
@@ -36,10 +37,10 @@
                     :disabled="loading"
                     :class="following
                         ? (hoverUnfollow
-                            ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-300 dark:border-rose-800'
+                            ? 'bg-rose-950/40 text-rose-400 border border-rose-800'
                             : 'bg-transparent text-[var(--primary)] border border-[var(--border-strong)] hover:border-[var(--primary)]')
-                        : 'bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--primary-text)] font-bold border border-transparent shadow-xs'"
-                    class="inline-flex items-center justify-center gap-1.5 font-semibold transition active:scale-[0.98] disabled:opacity-60 cursor-pointer {{ $size === 'sm' ? 'h-8 px-3 text-xs rounded-lg' : 'h-10 px-4 text-sm rounded-xl' }}">
+                        : '{{ $variant === 'subtle' ? 'bg-transparent hover:bg-[var(--surface-hover)] text-[var(--primary)] border border-[var(--border-color)] hover:border-[var(--border-strong)] font-semibold' : 'bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--primary-text)] font-bold border border-transparent shadow-xs' }}'"
+                    class="inline-flex items-center justify-center gap-1.5 font-semibold transition active:scale-[0.98] disabled:opacity-60 cursor-pointer {{ $size === 'sm' ? 'h-7 px-3 text-xs rounded-full' : 'h-10 px-4 text-sm rounded-xl' }}">
                 <span x-show="following && hoverUnfollow" x-cloak x-text="'Berhenti mengikuti'"></span>
                 <span x-show="!following || !hoverUnfollow" style="display: inline;" x-text="following ? 'Mengikuti' : 'Ikuti'"></span>
             </button>
@@ -67,7 +68,7 @@
     @else
         <button type="button"
                 @click="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"
-                class="inline-flex items-center justify-center gap-1.5 font-bold bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--primary-text)] border border-transparent shadow-xs transition active:scale-[0.98] cursor-pointer {{ $size ==='sm' ?'h-8 px-3 text-xs rounded-lg' :'h-10 px-4 text-sm rounded-xl' }}">
+                class="inline-flex items-center justify-center gap-1.5 transition active:scale-[0.98] cursor-pointer {{ $variant === 'subtle' ? 'bg-transparent hover:bg-[var(--surface-hover)] text-[var(--primary)] border border-[var(--border-color)] hover:border-[var(--border-strong)] font-semibold' : 'font-bold bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--primary-text)] border border-transparent shadow-xs' }} {{ $size === 'sm' ? 'h-7 px-3 text-xs rounded-full' : 'h-10 px-4 text-sm rounded-xl' }}">
             <span>Ikuti</span>
         </button>
     @endauth

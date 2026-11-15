@@ -33,6 +33,7 @@ class SearchController extends Controller
                 $people = User::query()
                     ->search($term)
                     ->whereNull('ban_reason')
+                    ->discoverable()
                     ->orderByDesc('reputation_points')
                     ->paginate(20)
                     ->withQueryString();
@@ -62,6 +63,7 @@ class SearchController extends Controller
                 $people = User::query()
                     ->search($term)
                     ->whereNull('ban_reason')
+                    ->discoverable()
                     ->orderByDesc('reputation_points')
                     ->take(3)
                     ->get();

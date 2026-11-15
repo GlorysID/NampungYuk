@@ -34,6 +34,15 @@ class FollowController extends Controller
             return back()->with('error', 'Tidak bisa mengikuti diri sendiri.');
         }
 
+        if ($authUser->hasBlocked($user) || $authUser->isBlockedBy($user)) {
+            $blockMessage = 'Interaksi follow tidak tersedia karena salah satu akun memblokir.';
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $blockMessage], 403);
+            }
+
+            return back()->with('error', $blockMessage);
+        }
+
         $isFollowing = $authUser->following()->whereKey($user->id)->exists();
 
         if ($isFollowing) {
@@ -45,8 +54,10 @@ class FollowController extends Controller
             $nowFollowing = true;
             $message = 'Kamu sekarang mengikuti @'.$user->username;
 
-            // Notify the followed user.
-            $user->notify(new NewFollowerNotification($authUser));
+            // Notify the followed user when notification preference is enabled.
+            if ($user->wantsNotification('new_follower')) {
+                $user->notify(new NewFollowerNotification($authUser));
+            }
         }
 
         if ($request->wantsJson()) {

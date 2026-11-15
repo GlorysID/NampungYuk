@@ -68,13 +68,30 @@
          }
      }">
 
-    <!-- Back to Feed Link -->
-    <a href="{{ route('projects.index') }}" 
+    @php
+        $prevUrl = url()->previous();
+        $prevHost = parse_url($prevUrl, PHP_URL_HOST);
+        $prevPath = (string) (parse_url($prevUrl, PHP_URL_PATH) ?? '');
+        $currentPath = (string) (parse_url(url()->current(), PHP_URL_PATH) ?? '');
+        $sameOrigin = $prevUrl
+            && ($prevHost === null || strcasecmp((string) $prevHost, (string) request()->getHost()) === 0)
+            && $prevPath !== $currentPath;
+        $backUrl = $sameOrigin ? $prevUrl : route('projects.index');
+        $backLabel = match (true) {
+            str_starts_with($prevPath, '/@') && $sameOrigin => 'Kembali ke Profil',
+            str_starts_with($prevPath, '/komunitas') && $sameOrigin => 'Kembali ke Komunitas',
+            $sameOrigin && $prevPath !== '/' => 'Kembali',
+            default => 'Kembali ke Feed',
+        };
+    @endphp
+
+    <!-- Contextual Back Link -->
+    <a href="{{ $backUrl }}"
        class="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--primary)] transition font-medium">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
         </svg>
-        <span>Kembali ke Feed</span>
+        <span>{{ $backLabel }}</span>
     </a>
 
     <!-- Error Summary if any -->

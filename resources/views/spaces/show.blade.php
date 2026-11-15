@@ -99,7 +99,7 @@
                     <div class="flex flex-col items-center gap-2 p-3 rounded-2xl bg-[var(--surface-subtle)] border border-[var(--border-color)] text-center shadow-xs">
                         <div class="relative">
                             @if($space->host && $space->host->avatar)
-                                <img src="{{ $space->host->avatar }}" alt="{{ $space->host->name }}" class="w-14 h-14 rounded-2xl object-cover ring-2 ring-[var(--primary)]">
+                                <img src="{{ $space->host->avatar }}" alt="{{ $space->host->name }}" referrerpolicy="no-referrer" class="w-14 h-14 rounded-2xl object-cover ring-2 ring-[var(--primary)]">
                             @else
                                 <div class="w-14 h-14 rounded-2xl bg-[var(--primary)] text-[var(--primary-text)] flex items-center justify-center font-bold text-lg ring-2 ring-[var(--primary)]">
                                     {{ mb_substr($space->host?->name ?? 'H', 0, 1) }}
@@ -124,7 +124,7 @@
                     @foreach($participants->where('id', '!=', $space->host_id) as $part)
                         <div x-show="!peers.some(p => Number(p.id) === {{ (int) $part->id }})" class="flex flex-col items-center gap-2 p-3 rounded-2xl bg-[var(--surface-subtle)] border border-[var(--border-color)] text-center shadow-xs">
                             @if($part->avatar)
-                                <img src="{{ $part->avatar }}" alt="{{ $part->name }}" class="w-14 h-14 rounded-2xl object-cover border border-[var(--border-color)]">
+                                <img src="{{ $part->avatar }}" alt="{{ $part->name }}" referrerpolicy="no-referrer" class="w-14 h-14 rounded-2xl object-cover border border-[var(--border-color)]">
                             @else
                                 <div class="w-14 h-14 rounded-2xl bg-[var(--surface-muted-flat)] text-[var(--primary)] flex items-center justify-center font-bold text-lg border border-[var(--border-color)]">
                                     {{ mb_substr($part->name, 0, 1) }}

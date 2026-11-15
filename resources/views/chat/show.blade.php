@@ -8,13 +8,14 @@
 
 @section('content')
 @php
+    $showReadReceipts = $showReadReceipts ?? true;
     $seed = $messages->map(fn ($m) => [
         'id' => $m->id,
         'sender_id' => $m->sender_id,
         'body' => $m->body,
         'time' => $m->created_at->format('H:i'),
         'created_at' => $m->created_at->toIso8601String(),
-        'read_at' => $m->read_at?->toIso8601String(),
+        'read_at' => $showReadReceipts ? $m->read_at?->toIso8601String() : null,
         'edited_at' => $m->edited_at?->toIso8601String(),
     ])->values();
 @endphp

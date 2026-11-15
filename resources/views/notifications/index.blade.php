@@ -2,6 +2,7 @@
 
 @section('title', 'Notifikasi — NampungYuk')
 @section('header_title', 'Notifikasi')
+@section('hide_header_notifications', '1')
 
 @section('content')
 @php

@@ -3,11 +3,23 @@
 @section('title', $user->name . ' (@' . $user->username . ') — NampungYuk')
 @section('meta_description', $user->bio ?: 'Lihat karya project codingan dan kontribusi ' . $user->name . ' di NampungYuk.')
 @section('header_title', '@' . $user->username)
+@section('header_subtitle', number_format($totalProjects) . ' postingan')
+@section('hide_header_notifications', true)
 
 @section('content')
 @php
-    $initialTab = request('tab') === 'likes' && $isOwner ? 'likes'
-                : (request('tab') === 'comments' ? 'comments' : 'projects');
+    $search = $search ?? '';
+    $hasSearch = $search !== '';
+    $initialTab = match (request('tab')) {
+        'likes' => $isOwner ? 'likes' : 'projects',
+        'comments' => 'comments',
+        'reposts' => 'reposts',
+        default => 'projects',
+    };
+    $clearSearchUrl = route('profile.show', array_filter([
+        'username' => $user->username,
+        'tab' => $initialTab !== 'projects' ? $initialTab : null,
+    ]));
 @endphp
 
 <div class="space-y-5" x-data="{ activeTab: '{{ $initialTab }}', editOpen: {{ $errors->any() && $isOwner ? 'true' : 'false' }} }">
@@ -359,7 +371,7 @@
                 class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
             <span>Karya</span>
-            <span class="text-xs font-mono px-2 py-0.5 rounded" :class="activeTab === 'projects' ? 'bg-white/20 dark:bg-black/20 text-[var(--primary-text)]' : 'bg-[var(--surface-muted)] text-[var(--text-muted)]'">{{ $totalProjects }}</span>
+            <span class="text-xs font-mono px-2 py-0.5 rounded" :class="activeTab === 'projects' ? 'bg-white/20 dark:bg-black/20 text-[var(--primary-text)]' : 'bg-[var(--surface-muted)] text-[var(--text-muted)]'">{{ $hasSearch ? $projects->total() : $totalProjects }}</span>
         </button>
 
         <button @click="activeTab = 'comments'"
@@ -375,7 +387,7 @@
                 class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
             <span>Repost</span>
-            <span class="text-xs font-mono px-2 py-0.5 rounded" :class="activeTab === 'reposts' ? 'bg-white/20 dark:bg-black/20 text-[var(--primary-text)]' : 'bg-[var(--surface-muted)] text-[var(--text-muted)]'">{{ $totalReposts }}</span>
+            <span class="text-xs font-mono px-2 py-0.5 rounded" :class="activeTab === 'reposts' ? 'bg-white/20 dark:bg-black/20 text-[var(--primary-text)]' : 'bg-[var(--surface-muted)] text-[var(--text-muted)]'">{{ $hasSearch ? $repostedProjects->total() : $totalReposts }}</span>
         </button>
 
         @if($isOwner)
@@ -384,10 +396,46 @@
                     class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
                 <span>Disukai</span>
-                <span class="text-xs font-mono px-2 py-0.5 rounded" :class="activeTab === 'likes' ? 'bg-white/20 dark:bg-black/20 text-[var(--primary-text)]' : 'bg-[var(--surface-muted)] text-[var(--text-muted)]'">{{ $totalLikes }}</span>
+                <span class="text-xs font-mono px-2 py-0.5 rounded" :class="activeTab === 'likes' ? 'bg-white/20 dark:bg-black/20 text-[var(--primary-text)]' : 'bg-[var(--surface-muted)] text-[var(--text-muted)]'">{{ $hasSearch && method_exists($likedProjects, 'total') ? $likedProjects->total() : $totalLikes }}</span>
             </button>
         @endif
     </div>
+
+    <!-- ===================== PROFILE POST SEARCH BAR ===================== -->
+    <form method="GET"
+          action="{{ route('profile.show', $user->username) }}"
+          id="profile-search-form"
+          class="space-y-2">
+        <input type="hidden" name="tab" :value="activeTab">
+        <div class="flex items-center gap-2 rounded-xl bg-[var(--surface)] border border-[var(--border-color)] focus-within:border-[var(--border-strong)] px-3.5 py-2 shadow-xs transition">
+            <svg class="w-4 h-4 text-[var(--text-muted)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
+            </svg>
+            <input type="text"
+                   id="profile-search-input"
+                   name="q"
+                   value="{{ $search }}"
+                   placeholder="{{ $isOwner ? 'Cari postingan atau karya kamu (judul, deskripsi, tech stack)...' : 'Cari postingan @'.$user->username.'...' }}"
+                   aria-label="{{ $isOwner ? 'Cari postingan sendiri' : 'Cari postingan @'.$user->username }}"
+                   class="composer-seamless appearance-none flex-1 min-w-0 bg-transparent border-0 text-sm text-[var(--primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-0">
+            @if($hasSearch)
+                <a href="{{ $clearSearchUrl }}"
+                   class="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--primary)] px-2 py-1 rounded-lg hover:bg-[var(--surface-muted)] transition shrink-0">
+                    Reset
+                </a>
+            @endif
+            <button type="submit"
+                    class="px-3 py-1.5 rounded-lg bg-[var(--primary)] text-[var(--primary-text)] text-xs font-semibold hover:opacity-90 transition cursor-pointer shrink-0">
+                Cari
+            </button>
+        </div>
+
+        @if($hasSearch)
+            <p class="text-xs text-[var(--text-muted)] px-1">
+                Menampilkan hasil pencarian untuk <span class="font-semibold text-[var(--primary)]">"{{ $search }}"</span> di profil ini.
+            </p>
+        @endif
+    </form>
 
     <!-- ===================== TAB: PROJECTS ===================== -->
     <div x-show="activeTab === 'projects'" class="space-y-4">
@@ -398,7 +446,11 @@
             @endphp
             <x-project-card :project="$project" :initial-vote="$initialVote" :is-bookmarked="$isBookmarked" :is-owner="$isOwner" :is-reposted="in_array($project->id, $userRepostedIds ?? [])" />
         @empty
-            <x-empty-state title="Belum ada karya codingan" description="Developer ini belum mempublikasikan project ke NampungYuk." />
+            @if($hasSearch)
+                <x-empty-state title="Postingan tidak ditemukan" :description="'Tidak ada karya yang cocok dengan kata kunci &quot;' . e($search) . '&quot;.'" />
+            @else
+                <x-empty-state title="Belum ada karya codingan" description="Developer ini belum mempublikasikan project ke NampungYuk." />
+            @endif
         @endforelse
 
         @if($projects->hasPages())
@@ -418,7 +470,11 @@
             @endphp
             <x-project-card :project="$project" :initial-vote="$initialVote" :is-bookmarked="$isBookmarked" :is-reposted="true" uid="repost" />
         @empty
-            <x-empty-state title="Belum ada repost" description="Project yang dibagikan ulang akan muncul di sini." />
+            @if($hasSearch)
+                <x-empty-state title="Repost tidak ditemukan" :description="'Tidak ada repost yang cocok dengan kata kunci &quot;' . e($search) . '&quot;.'" />
+            @else
+                <x-empty-state title="Belum ada repost" description="Project yang dibagikan ulang akan muncul di sini." />
+            @endif
         @endforelse
 
         @if($repostedProjects->hasPages())
@@ -432,7 +488,11 @@
             @forelse($likedProjects as $project)
                 <x-project-card :project="$project" :initial-vote="'up'" uid="like" />
             @empty
-                <x-empty-state title="Belum ada yang disukai" description="Project yang kamu upvote akan muncul di sini." />
+                @if($hasSearch)
+                    <x-empty-state title="Tidak ada hasil" :description="'Tidak ada karya yang disukai yang cocok dengan kata kunci &quot;' . e($search) . '&quot;.'" />
+                @else
+                    <x-empty-state title="Belum ada yang disukai" description="Project yang kamu upvote akan muncul di sini." />
+                @endif
             @endforelse
 
             @if(method_exists($likedProjects, 'hasPages') && $likedProjects->hasPages())
@@ -459,19 +519,25 @@
                 <p class="text-xs sm:text-sm text-[var(--primary-hover)] leading-relaxed">"{{ $comment->content }}"</p>
             </div>
         @empty
-            <x-empty-state title="Belum ada ulasan" description="Developer ini belum memberikan komentar pada project lain." />
+            @if($hasSearch)
+                <x-empty-state title="Diskusi tidak ditemukan" :description="'Tidak ada komentar yang cocok dengan kata kunci &quot;' . e($search) . '&quot;.'" />
+            @else
+                <x-empty-state title="Belum ada ulasan" description="Developer ini belum memberikan komentar pada project lain." />
+            @endif
         @endforelse
     </div>
 
-    <!-- ===================== EDIT PROFILE MODAL ===================== -->
+    <!-- ===================== EDIT PROFILE MODAL (X-STYLE) ===================== -->
     @if($isOwner)
         <div x-show="editOpen" x-cloak
-             class="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto bg-black/60 backdrop-blur-xs"
-             @click.self="editOpen = false"
-             @keydown.escape.window="editOpen = false"
-             role="dialog" aria-modal="true"
+             class="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-0 sm:p-4 overflow-y-auto bg-black/65 backdrop-blur-xs"
+             @click.self="if (!crop.open) editOpen = false"
+             @keydown.escape.window="if (crop.open) { cancelCrop(); } else { editOpen = false; }"
+             role="dialog" aria-modal="true" aria-label="Edit profil"
              x-data="{
-                preview: null, bannerPreview: null,
+                preview: null,
+                bannerPreview: null,
+                bioLen: {{ mb_strlen((string) old('bio', $user->bio ?? '')) }},
                 crop: { open: false, tag: 'avatar', file: null, url: null, scale: 1, x: 0, y: 0, drag: false, sx: 0, sy: 0, ox: 0, oy: 0, natW: 0, natH: 0, fw: 0, fh: 0 },
                 startCrop(file, tag) {
                     if (!file) return;
@@ -522,196 +588,174 @@
                     if (c.tag === 'avatar') this.preview = previewUrl; else this.bannerPreview = previewUrl;
                     this.crop.open = false;
                 },
-                cancelCrop() { this.crop.open = false; },
-                modalTab: '{{ $errors->has('current_password') || $errors->has('password') ? 'password' : 'profile' }}'
+                cancelCrop() { this.crop.open = false; }
              }">
-            <div class="rounded-2xl w-full max-w-lg my-6 bg-[var(--surface)] border border-[var(--border-color)] shadow-2xl overflow-hidden"
+            <div class="w-full sm:max-w-[600px] min-h-screen sm:min-h-0 sm:max-h-[90vh] sm:rounded-2xl bg-[var(--surface)] sm:border border-[var(--border-color)] shadow-2xl overflow-hidden flex flex-col"
                  x-transition:enter="transition ease-out duration-150"
                  x-transition:enter-start="opacity-0 scale-95"
                  x-transition:enter-end="opacity-100 scale-100">
 
-                <!-- Modal header & tabs -->
-                <div class="flex items-center justify-between px-5 py-3 border-b border-[var(--border-color)]">
-                    <div class="flex items-center gap-4">
-                        <button type="button" @click="modalTab = 'profile'"
-                                :class="modalTab === 'profile' ? 'text-[var(--primary)] font-bold border-b-2 border-[var(--primary)]' : 'text-[var(--text-muted)] hover:text-[var(--primary)]'"
-                                class="pb-1 text-xs transition font-semibold cursor-pointer">
-                            Edit Profil
-                        </button>
-                        <button type="button" @click="modalTab = 'password'"
-                                :class="modalTab === 'password' ? 'text-[var(--primary)] font-bold border-b-2 border-[var(--primary)]' : 'text-[var(--text-muted)] hover:text-[var(--primary)]'"
-                                class="pb-1 text-xs transition font-semibold cursor-pointer">
-                            Keamanan & Password
-                        </button>
-                    </div>
-                    <button type="button" @click="editOpen = false" class="text-[#908F88] hover:text-[var(--primary)] transition cursor-pointer">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
-
-                <form x-show="modalTab === 'profile'" method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="px-5 py-4 space-y-4 max-h-[75vh] overflow-y-auto">
+                <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="flex flex-col flex-1 min-h-0">
                     @csrf
                     @method('PUT')
 
-                    <!-- Banner upload -->
-                    <div class="space-y-2">
-                        <p class="text-xs font-semibold text-[var(--primary)]">Banner Profil</p>
-                        <label class="relative block h-24 rounded-xl overflow-hidden border border-[var(--border-color)] cursor-pointer group">
-                            <img x-show="bannerPreview" :src="bannerPreview" class="absolute inset-0 w-full h-full object-cover" alt="">
-                            <div x-show="!bannerPreview" class="absolute inset-0 bg-[var(--surface-subtle)] flex items-center justify-center">
-                                <span class="text-[11px] font-mono text-[var(--text-muted)]">Klik untuk unggah banner</span>
-                            </div>
-                            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition flex items-center justify-center">
-                                <span class="opacity-0 group-hover:opacity-100 transition text-white text-[11px] font-semibold flex items-center gap-1">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                    Ganti banner
-                                </span>
-                            </div>
-                            <input type="file" accept="image/*" class="hidden"
-                                   @change="startCrop($event.target.files[0], 'banner')">
-                            <input type="file" x-ref="bannerInput" name="banner" class="hidden">
-                        </label>
-                        <p class="text-[10px] text-[var(--text-muted)]">JPG, PNG, WEBP · maks 5MB per gambar · kamu bisa pilih bagian foto setelah upload.</p>
-                        @error('banner') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
+                    <!-- X-style sticky top bar: Close + Title on left, Simpan pill on right -->
+                    <div class="flex items-center justify-between gap-4 px-4 py-3 border-b border-[var(--border-color)] bg-[var(--surface)]/95 backdrop-blur-sm shrink-0">
+                        <div class="flex items-center gap-5 min-w-0">
+                            <button type="button" @click="editOpen = false" aria-label="Tutup edit profil"
+                                    class="w-8 h-8 rounded-full flex items-center justify-center text-[var(--primary)] hover:bg-[var(--surface-hover)] transition cursor-pointer shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                            <h2 class="text-base font-bold tracking-tight text-[var(--primary)] truncate">Edit profil</h2>
+                        </div>
+                        <button type="submit"
+                                class="rounded-full px-4 py-1.5 text-xs font-bold bg-[var(--primary)] text-[var(--primary-text)] hover:opacity-90 transition cursor-pointer shrink-0">
+                            Simpan
+                        </button>
                     </div>
 
-                    <!-- Avatar + name/username -->
-                    <div class="flex items-center gap-4">
-                        <img x-show="preview || {{ $user->avatar ? 'true' : 'false' }}"
-                             :src="preview || '{{ $user->avatar }}'"
-                             alt="{{ $user->name }}"
-                             class="w-16 h-16 rounded-full object-cover ring-1 ring-[var(--border-color)] shrink-0">
-                        <span x-show="!(preview || {{ $user->avatar ? 'true' : 'false' }})"
-                              class="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold bg-[var(--primary)] text-[var(--primary-text)] ring-1 ring-[var(--border-color)] shrink-0">{{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}</span>
-                        <div class="flex-1 space-y-1.5">
-                            <label for="avatar" class="btn-secondary text-xs py-1.5 px-3 cursor-pointer inline-flex">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                <span>Ganti avatar</span>
+                    <!-- Scrollable X-style body -->
+                    <div class="flex-1 overflow-y-auto">
+                        <!-- Full-bleed banner with centered camera trigger -->
+                        <div class="relative h-40 sm:h-48 w-full bg-[var(--surface-subtle)] overflow-hidden">
+                            <img x-show="bannerPreview || {{ $user->banner ? 'true' : 'false' }}"
+                                 :src="bannerPreview || '{{ $user->banner }}'"
+                                 class="w-full h-full object-cover" alt="Banner profil">
+                            <div class="absolute inset-0 bg-black/35 flex items-center justify-center">
+                                <label for="banner-file-input"
+                                       title="Ubah foto sampul"
+                                       class="w-11 h-11 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition cursor-pointer backdrop-blur-xs">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    </svg>
+                                </label>
+                                <input type="file" id="banner-file-input" accept="image/*" class="hidden"
+                                       @change="startCrop($event.target.files[0], 'banner'); $event.target.value = ''">
+                                <input type="file" x-ref="bannerInput" name="banner" class="hidden">
+                            </div>
+                        </div>
+
+                        <!-- Overlapping avatar (bottom-left of banner) -->
+                        <div class="px-4 -mt-12 mb-3 relative z-10 flex items-end justify-between gap-3">
+                            <div class="relative w-24 h-24 rounded-full ring-4 ring-[var(--surface)] bg-[var(--surface-subtle)] overflow-hidden shrink-0">
+                                <img x-show="preview || {{ $user->avatar ? 'true' : 'false' }}"
+                                     :src="preview || '{{ $user->avatar }}'"
+                                     alt="{{ $user->name }}"
+                                     referrerpolicy="no-referrer"
+                                     class="w-full h-full object-cover">
+                                <span x-show="!(preview || {{ $user->avatar ? 'true' : 'false' }})"
+                                      class="w-full h-full flex items-center justify-center text-2xl font-bold bg-[var(--primary)] text-[var(--primary-text)]">{{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}</span>
+                                <label for="avatar"
+                                       title="Ubah foto profil"
+                                       class="absolute inset-0 bg-black/40 hover:bg-black/55 flex items-center justify-center transition cursor-pointer">
+                                    <span class="w-10 h-10 rounded-full bg-black/60 text-white flex items-center justify-center">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        </svg>
+                                    </span>
+                                </label>
                                 <input type="file" id="avatar" accept="image/*" class="hidden"
-                                       @change="startCrop($event.target.files[0], 'avatar')">
+                                       @change="startCrop($event.target.files[0], 'avatar'); $event.target.value = ''">
                                 <input type="file" x-ref="avatarInput" name="avatar" class="hidden">
-                            </label>
-                            <p class="text-[10px] text-[var(--text-muted)]">Maks 5MB per gambar · kamu bisa pilih bagian foto setelah upload.</p>
-                            @error('avatar') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div class="space-y-1">
-                            <label for="name" class="text-xs font-semibold text-[var(--primary)]">Nama Lengkap</label>
-                            <input type="text" id="name" name="name" value="{{ old('name', $user->name) }}" class="ny-input text-sm">
-                            @error('name') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
-                        </div>
-                        <div class="space-y-1">
-                            <label for="username" class="text-xs font-semibold text-[var(--primary)]">Username</label>
-                            <div class="relative">
-                                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] font-mono text-sm pointer-events-none select-none">@</span>
-                                <input type="text"
-                                       id="username"
-                                       name="username"
-                                       value="{{ old('username', $user->username) }}"
-                                       placeholder="username"
-                                       @if (! $user->canChangeUsername()) readonly @endif
-                                       class="ny-input text-sm font-mono !pl-9 @if (! $user->canChangeUsername()) !bg-[#EFECE6] dark:!bg-[#161619] !text-[#6E6D67] cursor-not-allowed select-none @endif">
                             </div>
-                            @if (! $user->canChangeUsername())
-                                <p class="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5 mt-1 leading-snug">
-                                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                    <span>Hanya bisa diubah 7 hari sekali. Tersedia lagi dalam <strong>{{ $user->daysUntilNextUsernameChange() }} hari</strong> ({{ $user->nextAllowedUsernameChangeDate()?->translatedFormat('d F Y') }}).</span>
-                                </p>
-                            @else
-                                <p class="text-[10px] text-[var(--text-muted)]">Catatan: Username hanya dapat diubah 1 kali setiap 7 hari.</p>
-                            @endif
-                            @error('username') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
-                        </div>
-                    </div>
 
-                    <div class="space-y-1">
-                        <div class="flex items-center justify-between">
-                            <label for="bio" class="text-xs font-semibold text-[var(--primary)]">Bio</label>
-                            <span class="text-[10px] font-mono text-[var(--text-muted)]">maks 280</span>
-                        </div>
-                        <textarea id="bio" name="bio" rows="3" maxlength="280" class="ny-input text-sm resize-none" placeholder="Ceritakan spesialisasimu...">{{ old('bio', $user->bio) }}</textarea>
-                        @error('bio') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
-                    </div>
-
-                    <!-- Dynamic profile links (link-in-bio), max 6 -->
-                    <div class="space-y-2 pt-1 border-t border-[var(--border-color)]"
-                         x-data="{ links: {{ Illuminate\Support\Js::from($user->links->map(fn($l) => ['label' => $l->label, 'url' => $l->url])->values()) }} }">
-                        <div class="flex items-center justify-between">
-                            <label class="text-xs font-semibold text-[var(--primary)]">Link Profil</label>
-                            <span class="text-[10px] text-[var(--text-muted)]" x-text="links.length + '/6'"></span>
+                            <p class="text-[11px] text-[var(--text-muted)] pb-1">Maks 5MB · klik kamera untuk crop foto</p>
                         </div>
 
-                        <template x-for="(link, i) in links" :key="i">
-                            <div class="flex items-center gap-2">
-                                <input type="text" :name="'links[' + i + '][label]'" x-model="link.label"
-                                       placeholder="Keterangan (mis. Portfolio)" maxlength="40"
-                                       class="ny-input text-xs !w-32 shrink-0">
-                                <input type="url" :name="'links[' + i + '][url]'" x-model="link.url"
-                                       placeholder="https://..." class="ny-input text-xs flex-1 min-w-0">
-                                <button type="button" @click="links.splice(i, 1)"
-                                        class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-[#908F88] hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer"
-                                        title="Hapus link">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        <div class="px-4 pb-6 space-y-4">
+                            @error('banner') <p class="text-rose-400 text-xs">{{ $message }}</p> @enderror
+                            @error('avatar') <p class="text-rose-400 text-xs">{{ $message }}</p> @enderror
+
+                            <!-- Nama field (X-style outlined box) -->
+                            <div class="rounded-xl border border-[var(--border-color)] focus-within:border-[var(--primary)] bg-[var(--surface)] px-3.5 py-2 transition">
+                                <label for="name" class="block text-[11px] font-medium text-[var(--text-muted)]">Nama</label>
+                                <input type="text" id="name" name="name" maxlength="255"
+                                       value="{{ old('name', $user->name) }}"
+                                       class="composer-seamless appearance-none w-full bg-transparent border-0 p-0 pt-0.5 text-sm text-[var(--primary)] focus:outline-none focus:ring-0">
+                            </div>
+                            @error('name') <p class="text-rose-400 text-xs -mt-2">{{ $message }}</p> @enderror
+
+                            <!-- Username field -->
+                            <div class="space-y-1">
+                                <div class="rounded-xl border border-[var(--border-color)] focus-within:border-[var(--primary)] px-3.5 py-2 transition @if (! $user->canChangeUsername()) bg-[var(--surface-subtle)] opacity-75 @else bg-[var(--surface)] @endif">
+                                    <label for="username" class="block text-[11px] font-medium text-[var(--text-muted)]">Username</label>
+                                    <div class="flex items-center gap-1 pt-0.5">
+                                        <span class="text-sm font-mono text-[var(--text-muted)] select-none">@</span>
+                                        <input type="text"
+                                               id="username"
+                                               name="username"
+                                               value="{{ old('username', $user->username) }}"
+                                               placeholder="username"
+                                               @if (! $user->canChangeUsername()) readonly @endif
+                                               class="composer-seamless appearance-none w-full bg-transparent border-0 p-0 text-sm font-mono text-[var(--primary)] focus:outline-none focus:ring-0 @if (! $user->canChangeUsername()) text-[var(--text-muted)] cursor-not-allowed select-none @endif">
+                                    </div>
+                                </div>
+                                @if (! $user->canChangeUsername())
+                                    <p class="text-[11px] text-amber-400 flex items-center gap-1.5 px-1 leading-snug">
+                                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <span>Hanya bisa diubah 7 hari sekali. Tersedia lagi dalam <strong>{{ $user->daysUntilNextUsernameChange() }} hari</strong> ({{ $user->nextAllowedUsernameChangeDate()?->translatedFormat('d F Y') }}).</span>
+                                    </p>
+                                @else
+                                    <p class="text-[11px] text-[var(--text-muted)] px-1">Username dapat diubah maksimal 1 kali setiap 7 hari.</p>
+                                @endif
+                                @error('username') <p class="text-rose-400 text-xs px-1">{{ $message }}</p> @enderror
+                            </div>
+
+                            <!-- Bio field (X-style outlined box with live counter) -->
+                            <div class="rounded-xl border border-[var(--border-color)] focus-within:border-[var(--primary)] bg-[var(--surface)] px-3.5 py-2 transition">
+                                <div class="flex items-center justify-between">
+                                    <label for="bio" class="text-[11px] font-medium text-[var(--text-muted)]">Bio</label>
+                                    <span class="text-[11px] font-mono text-[var(--text-muted)]" x-text="bioLen + '/280'"></span>
+                                </div>
+                                <textarea id="bio" name="bio" rows="3" maxlength="280"
+                                          @input="bioLen = $event.target.value.length"
+                                          placeholder="Ceritakan apa yang sedang kamu bangun..."
+                                          class="composer-seamless appearance-none w-full bg-transparent border-0 p-0 pt-1 text-sm text-[var(--primary)] placeholder:text-[var(--text-faint)] resize-none focus:outline-none focus:ring-0">{{ old('bio', $user->bio) }}</textarea>
+                            </div>
+                            @error('bio') <p class="text-rose-400 text-xs -mt-2">{{ $message }}</p> @enderror
+
+                            <!-- Dynamic profile links (link-in-bio), max 6 -->
+                            <div class="space-y-2.5 pt-2 border-t border-[var(--border-color)]"
+                                 x-data="{ links: {{ Illuminate\Support\Js::from($user->links->map(fn($l) => ['label' => $l->label, 'url' => $l->url])->values()) }} }">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-semibold text-[var(--primary)]">Tautan Profil</span>
+                                    <span class="text-[11px] font-mono text-[var(--text-muted)]" x-text="links.length + '/6'"></span>
+                                </div>
+
+                                <template x-for="(link, i) in links" :key="i">
+                                    <div class="flex items-center gap-2">
+                                        <input type="text" :name="'links[' + i + '][label]'" x-model="link.label"
+                                               placeholder="Label (mis. GitHub)" maxlength="40"
+                                               class="ny-input text-xs !w-32 shrink-0">
+                                        <input type="url" :name="'links[' + i + '][url]'" x-model="link.url"
+                                               placeholder="https://..." class="ny-input text-xs flex-1 min-w-0">
+                                        <button type="button" @click="links.splice(i, 1)"
+                                                class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[var(--text-muted)] hover:text-rose-400 hover:bg-[var(--surface-hover)] transition cursor-pointer"
+                                                title="Hapus link">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </button>
+                                    </div>
+                                </template>
+
+                                <button type="button" @click="if (links.length < 6) links.push({ label: '', url: '' })"
+                                        :disabled="links.length >= 6"
+                                        class="btn-secondary text-xs py-1.5 px-3 disabled:opacity-40 cursor-pointer">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                    <span>Tambah Link</span>
                                 </button>
+                                @error('links') <p class="text-rose-400 text-xs">{{ $message }}</p> @enderror
+                                @error('links.*.url') <p class="text-rose-400 text-xs">Pastikan semua URL valid.</p> @enderror
                             </div>
-                        </template>
-
-                        <button type="button" @click="if (links.length < 6) links.push({ label: '', url: '' })"
-                                :disabled="links.length >= 6"
-                                class="btn-secondary text-xs py-1.5 px-3 disabled:opacity-40 cursor-pointer">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                            <span>Tambah Link</span>
-                        </button>
-                        @error('links') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
-                        @error('links.*.url') <p class="text-rose-500 text-[11px]">Pastikan semua URL valid.</p> @enderror
-                    </div>
-
-                    <div class="flex items-center justify-end gap-2 pt-1 border-t border-[var(--border-color)] mt-2">
-                        <button type="button" @click="editOpen = false" class="btn-secondary text-xs py-2 px-4 cursor-pointer">Batal</button>
-                        <button type="submit" class="btn-primary text-xs py-2 px-4 cursor-pointer">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            <span>Simpan</span>
-                        </button>
-                    </div>
-                </form>
-
-                <!-- Password update form -->
-                <form x-show="modalTab === 'password'" x-cloak method="POST" action="{{ route('profile.password.update') }}" class="px-5 py-4 space-y-4 max-h-[75vh] overflow-y-auto">
-                    @csrf
-                    @method('PUT')
-
-                    <div class="space-y-1">
-                        <label for="current_password" class="text-xs font-semibold text-[var(--primary)]">Password Saat Ini <span class="text-rose-500">*</span></label>
-                        <input type="password" id="current_password" name="current_password" autocomplete="current-password" required placeholder="Masukkan password saat ini" class="ny-input text-xs w-full">
-                        @error('current_password') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div class="space-y-1">
-                        <label for="new_password" class="text-xs font-semibold text-[var(--primary)]">Password Baru <span class="text-rose-500">*</span></label>
-                        <input type="password" id="new_password" name="password" autocomplete="new-password" required minlength="8" placeholder="Minimal 8 karakter" class="ny-input text-xs w-full">
-                        @error('password') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div class="space-y-1">
-                        <label for="new_password_confirmation" class="text-xs font-semibold text-[var(--primary)]">Konfirmasi Password Baru <span class="text-rose-500">*</span></label>
-                        <input type="password" id="new_password_confirmation" name="password_confirmation" autocomplete="new-password" required minlength="8" placeholder="Ulangi password baru" class="ny-input text-xs w-full">
-                    </div>
-
-                    <div class="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border-color)]">
-                        <button type="button" @click="editOpen = false" class="btn-secondary text-xs py-2 px-4 cursor-pointer">Batal</button>
-                        <button type="submit" class="btn-primary text-xs py-2 px-4 cursor-pointer">
-                            Simpan Password Baru
-                        </button>
+                        </div>
                     </div>
                 </form>
             </div>
 
             <!-- CROP OVERLAY -->
             <div x-show="crop.open" x-cloak
-                 class="fixed inset-0 z-[60] bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-4"
-                 @keydown.escape.window="cancelCrop()">
+                 class="fixed inset-0 z-[60] bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-4">
                 <div class="w-full max-w-md space-y-4">
                     <p class="text-center text-xs text-white/70">Seret gambar untuk mengatur posisi · gunakan tombol zoom untuk memperbesar</p>
 
@@ -747,7 +791,7 @@
 
                     <div class="flex items-center justify-center gap-2 pt-1">
                         <button type="button" @click="cancelCrop()" class="btn-secondary text-xs py-2 px-4 cursor-pointer">Batal</button>
-                        <button type="submit" @click="applyCrop()" class="btn-primary text-xs py-2 px-4 cursor-pointer">
+                        <button type="button" @click="applyCrop()" class="btn-primary text-xs py-2 px-4 cursor-pointer">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                             <span>Terapkan</span>
                         </button>
