@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -212,7 +213,7 @@ class SettingsController extends Controller
     /**
      * Update privacy and social safety preferences.
      */
-    public function updatePrivacy(Request $request): RedirectResponse
+    public function updatePrivacy(Request $request): RedirectResponse|JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
@@ -234,6 +235,10 @@ class SettingsController extends Controller
 
         $user->update(['preferences' => $prefs]);
 
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Pengaturan privasi diperbarui.']);
+        }
+
         return redirect()
             ->route('settings.index', ['tab' => 'privasi'])
             ->with('success', 'Pengaturan privasi dan keamanan sosial diperbarui.');
@@ -242,7 +247,7 @@ class SettingsController extends Controller
     /**
      * Block a user by username.
      */
-    public function blockUser(Request $request): RedirectResponse
+    public function blockUser(Request $request): RedirectResponse|JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
@@ -257,20 +262,31 @@ class SettingsController extends Controller
         $target = User::where('username', $cleanUsername)->first();
 
         if (! $target) {
-            return redirect()
-                ->route('settings.index', ['tab' => 'privasi'])
-                ->withErrors(['block_username' => "Akun @{$cleanUsername} tidak ditemukan."]);
+            $message = "Akun @{$cleanUsername} tidak ditemukan.";
+
+            return $request->wantsJson()
+                ? response()->json(['message' => $message], 422)
+                : redirect()->route('settings.index', ['tab' => 'privasi'])->withErrors(['block_username' => $message]);
         }
 
         if ($target->id === $user->id) {
-            return redirect()
-                ->route('settings.index', ['tab' => 'privasi'])
-                ->withErrors(['block_username' => 'Kamu tidak bisa memblokir akun sendiri.']);
+            $message = 'Kamu tidak bisa memblokir akun sendiri.';
+
+            return $request->wantsJson()
+                ? response()->json(['message' => $message], 422)
+                : redirect()->route('settings.index', ['tab' => 'privasi'])->withErrors(['block_username' => $message]);
         }
 
         $user->blockedUsers()->syncWithoutDetaching([$target->id]);
         $user->following()->detach($target->id);
         $target->following()->detach($user->id);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'message' => "@{$target->username} berhasil diblokir.",
+                'user' => ['id' => $target->id, 'username' => $target->username],
+            ]);
+        }
 
         return redirect()
             ->route('settings.index', ['tab' => 'privasi'])
@@ -280,19 +296,25 @@ class SettingsController extends Controller
     /**
      * Unblock a previously blocked user.
      */
-    public function unblockUser(Request $request, User $user): RedirectResponse
+    public function unblockUser(Request $request, User $user): RedirectResponse|JsonResponse
     {
         $request->user()->blockedUsers()->detach($user->id);
 
+        $message = "Blokir untuk @{$user->username} telah dibuka.";
+
+        if ($request->wantsJson()) {
+            return response()->json(['message' => $message]);
+        }
+
         return redirect()
             ->route('settings.index', ['tab' => 'privasi'])
-            ->with('success', "Blokir untuk @{$user->username} telah dibuka.");
+            ->with('success', $message);
     }
 
     /**
      * Update granular notification preferences.
      */
-    public function updateNotifications(Request $request): RedirectResponse
+    public function updateNotifications(Request $request): RedirectResponse|JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
@@ -309,37 +331,43 @@ class SettingsController extends Controller
 
         $user->update(['preferences' => $prefs]);
 
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Preferensi notifikasi disimpan.']);
+        }
+
         return redirect()
             ->route('settings.index', ['tab' => 'notifikasi'])
             ->with('success', 'Preferensi notifikasi berhasil disimpan.');
     }
 
     /**
-     * Update feed density, media autoplay, and keyboard shortcut preferences.
+     * Update media autoplay and keyboard shortcut preferences.
      */
-    public function updatePreferences(Request $request): RedirectResponse
+    public function updatePreferences(Request $request): RedirectResponse|JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
 
-        $validated = $request->validate([
-            'feed_density' => ['required', Rule::in(['comfortable', 'compact'])],
+        $request->validate([
             'autoplay_media' => ['nullable', 'boolean'],
             'keyboard_shortcuts' => ['nullable', 'boolean'],
         ]);
 
         $prefs = $user->resolvedPreferences();
         $prefs['display'] = [
-            'feed_density' => $validated['feed_density'],
             'autoplay_media' => $request->boolean('autoplay_media'),
             'keyboard_shortcuts' => $request->boolean('keyboard_shortcuts'),
         ];
 
         $user->update(['preferences' => $prefs]);
 
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Preferensi media dan pintasan disimpan.']);
+        }
+
         return redirect()
             ->route('settings.index', ['tab' => 'tampilan'])
-            ->with('success', 'Preferensi feed dan pintasan berhasil disimpan.');
+            ->with('success', 'Preferensi media dan pintasan berhasil disimpan.');
     }
 
     /**

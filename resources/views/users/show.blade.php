@@ -320,26 +320,42 @@
 
             <!-- ===== STAT TERMINAL BAR ===== -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-px mt-5 rounded-xl overflow-hidden border border-[var(--border-color)] bg-[var(--border-color)]">
-                <div class="bg-[var(--surface)] px-4 py-3">
-                    <p class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] font-mono">Reputasi</p>
-                    <p class="text-xl sm:text-2xl font-bold text-[var(--primary)] mt-0.5 flex items-center gap-1.5 font-mono">
-                        <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
-                        <span>{{ number_format($user->reputation_points) }}</span>
+
+                {{-- Statis: angka saja, sengaja tanpa affordance klik --}}
+                <div class="bg-[var(--surface)] px-4 py-3.5">
+                    <p class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] font-mono">
+                        <svg class="w-3 h-3 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
+                        <span>Reputasi</span>
+                    </p>
+                    <p class="mt-1.5 text-xl sm:text-2xl font-bold text-[var(--primary)] font-mono leading-none">
+                        {{ number_format($user->reputation_points) }}
                         <span class="sr-only">{{ number_format($user->reputation_points) }} Poin Reputasi</span>
                     </p>
                 </div>
-                <div class="bg-[var(--surface)] px-4 py-3">
-                    <p class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] font-mono">Karya</p>
-                    <p class="text-xl sm:text-2xl font-bold text-[var(--primary)] mt-0.5 font-mono">{{ $totalProjects }}</p>
+                <div class="bg-[var(--surface)] px-4 py-3.5">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] font-mono">Karya</p>
+                    <p class="mt-1.5 text-xl sm:text-2xl font-bold text-[var(--primary)] font-mono leading-none">{{ $totalProjects }}</p>
                 </div>
-                <div class="bg-[var(--surface)] px-4 py-3">
-                    <p class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] font-mono">Pengikut</p>
-                    <p class="text-xl sm:text-2xl font-bold text-[var(--primary)] mt-0.5 font-mono">{{ number_format($followersCount) }}</p>
-                </div>
-                <div class="bg-[var(--surface)] px-4 py-3">
-                    <p class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] font-mono">Mengikuti</p>
-                    <p class="text-xl sm:text-2xl font-bold text-[var(--primary)] mt-0.5 font-mono">{{ number_format($followingCount) }}</p>
-                </div>
+
+                {{-- Dapat diklik: chevron selalu tampak (affordance mobile), hover + aksen emerald --}}
+                <a href="{{ route('profile.followers', $user->username) }}"
+                   class="group relative block bg-[var(--surface)] px-4 py-3.5 hover:bg-[var(--surface-hover)] transition-colors focus-visible:outline-offset-0">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] font-mono">Pengikut</p>
+                    <p class="mt-1.5 flex items-center justify-between gap-2">
+                        <span class="text-xl sm:text-2xl font-bold text-[var(--primary)] font-mono leading-none">{{ number_format($followersCount) }}</span>
+                        <svg class="w-3.5 h-3.5 shrink-0 text-[var(--text-muted)] transition group-hover:translate-x-0.5 group-hover:text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                    </p>
+                    <span class="absolute inset-x-0 bottom-0 h-0.5 bg-emerald-500 origin-left scale-x-0 group-hover:scale-x-100 transition-transform"></span>
+                </a>
+                <a href="{{ route('profile.following', $user->username) }}"
+                   class="group relative block bg-[var(--surface)] px-4 py-3.5 hover:bg-[var(--surface-hover)] transition-colors focus-visible:outline-offset-0">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] font-mono">Mengikuti</p>
+                    <p class="mt-1.5 flex items-center justify-between gap-2">
+                        <span class="text-xl sm:text-2xl font-bold text-[var(--primary)] font-mono leading-none">{{ number_format($followingCount) }}</span>
+                        <svg class="w-3.5 h-3.5 shrink-0 text-[var(--text-muted)] transition group-hover:translate-x-0.5 group-hover:text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                    </p>
+                    <span class="absolute inset-x-0 bottom-0 h-0.5 bg-emerald-500 origin-left scale-x-0 group-hover:scale-x-100 transition-transform"></span>
+                </a>
             </div>
 
             <p class="text-xs font-mono text-[var(--text-muted)] mt-3.5">

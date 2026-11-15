@@ -64,6 +64,8 @@ Route::get('/feed-fragment/bookmarks', [InfiniteFeedController::class, 'bookmark
 
 // Developer profile & project showcase (public)
 Route::get('/u/{username}', [ProfileController::class, 'show'])->name('profile.show');
+Route::get('/u/{username}/pengikut', [ProfileController::class, 'followers'])->name('profile.followers');
+Route::get('/u/{username}/mengikuti', [ProfileController::class, 'following'])->name('profile.following');
 Route::get('/project/{slug}', [ProjectController::class, 'show'])->name('projects.show');
 Route::get('/project/{project}/comments', [ProjectController::class, 'comments'])->name('projects.comments.index');
 

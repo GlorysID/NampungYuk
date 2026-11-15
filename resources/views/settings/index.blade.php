@@ -26,7 +26,7 @@
         ['id' => 'keamanan', 'label' => 'Keamanan & Sesi', 'desc' => 'Password, Google login & perangkat aktif', 'keywords' => 'keamanan password sandi sesi perangkat login'],
         ['id' => 'privasi', 'label' => 'Privasi & Blokir', 'desc' => 'Kontrol DM, repost, direktori & blokir', 'keywords' => 'privasi dm obrolan pesan blokir repost direktori'],
         ['id' => 'notifikasi', 'label' => 'Notifikasi', 'desc' => 'Filter aktivitas, komentar & pesan', 'keywords' => 'notifikasi lonceng pengikut komentar pesan repost'],
-        ['id' => 'tampilan', 'label' => 'Preferensi & Pintasan', 'desc' => 'Kepadatan feed, autoplay & shortcut', 'keywords' => 'tampilan feed kepadatan autoplay keyboard pintasan shortcut'],
+        ['id' => 'tampilan', 'label' => 'Preferensi & Pintasan', 'desc' => 'Autoplay & shortcut', 'keywords' => 'tampilan feed autoplay keyboard pintasan shortcut'],
     ];
 @endphp
 
@@ -44,6 +44,39 @@
          matchesFilter(keywords) {
              const q = this.search.trim().toLowerCase();
              return !q || keywords.toLowerCase().includes(q);
+         },
+         blockBusy: null,
+         blockRemoved: [],
+         blockToast: { show: false, message: '', type: 'success', timeout: null },
+         flashBlock(message, type = 'success') {
+             clearTimeout(this.blockToast.timeout);
+             this.blockToast.message = message;
+             this.blockToast.type = type;
+             this.blockToast.show = true;
+             this.blockToast.timeout = setTimeout(() => { this.blockToast.show = false; }, 4000);
+         },
+         async unblockUser(id, username) {
+             if (this.blockBusy) { return; }
+             this.blockBusy = id;
+             try {
+                 const res = await fetch('{{ url('/pengaturan/blokir') }}/' + id, {
+                     method: 'POST',
+                     headers: {
+                         'Accept': 'application/json',
+                         'X-Requested-With': 'XMLHttpRequest',
+                         'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                     },
+                     body: new URLSearchParams({ _method: 'DELETE', _token: '{{ csrf_token() }}' }),
+                 });
+                 const data = await res.json().catch(() => ({}));
+                 if (!res.ok) { throw new Error(data.message || 'Gagal membuka blokir. Coba lagi.'); }
+                 this.blockRemoved = [...this.blockRemoved, id];
+                 this.flashBlock(data.message || ('Blokir untuk @' + username + ' telah dibuka.'));
+             } catch (e) {
+                 this.flashBlock(e.message || 'Gagal membuka blokir. Coba lagi.', 'error');
+             } finally {
+                 this.blockBusy = null;
+             }
          }
      }">
 
@@ -524,6 +557,7 @@
                                 <label class="flex items-start gap-3 p-3.5 rounded-xl border border-[var(--border-color)] bg-[var(--surface-subtle)] cursor-pointer hover:border-[var(--border-strong)] has-[:checked]:border-emerald-500/50 has-[:checked]:bg-[var(--surface)] transition">
                                     <input type="radio" name="dm_policy" value="everyone"
                                            @checked($privacy['dm_policy'] === 'everyone')
+                                           onchange="nySettingSave(this)"
                                            class="mt-0.5 accent-emerald-500">
                                     <div>
                                         <p class="text-xs font-semibold text-[var(--primary)]">Semua Orang</p>
@@ -533,6 +567,7 @@
                                 <label class="flex items-start gap-3 p-3.5 rounded-xl border border-[var(--border-color)] bg-[var(--surface-subtle)] cursor-pointer hover:border-[var(--border-strong)] has-[:checked]:border-emerald-500/50 has-[:checked]:bg-[var(--surface)] transition">
                                     <input type="radio" name="dm_policy" value="following_only"
                                            @checked($privacy['dm_policy'] === 'following_only')
+                                           onchange="nySettingSave(this)"
                                            class="mt-0.5 accent-emerald-500">
                                     <div>
                                         <p class="text-xs font-semibold text-[var(--primary)]">Hanya yang Saya Ikuti</p>
@@ -555,7 +590,7 @@
                                         <p class="text-[11px] text-[var(--text-muted)] mt-0.5">{{ $toggle['desc'] }}</p>
                                     </div>
                                     <span class="relative inline-flex items-center shrink-0">
-                                        <input type="checkbox" name="{{ $toggle['name'] }}" value="1" @checked($toggle['checked']) class="sr-only peer">
+                                        <input type="checkbox" name="{{ $toggle['name'] }}" value="1" @checked($toggle['checked']) onchange="nySettingSave(this)" class="sr-only peer">
                                         <span class="w-10 h-[22px] rounded-full bg-[var(--surface-subtle)] border border-[var(--border-strong)] peer-checked:bg-emerald-500 peer-checked:border-emerald-500 transition-colors duration-150 peer-focus-visible:ring-2 peer-focus-visible:ring-emerald-400/50"></span>
                                         <span class="absolute left-[3px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[var(--text-muted)] peer-checked:bg-[#0B0B0D] peer-checked:translate-x-[18px] transition-all duration-150 pointer-events-none shadow-xs"></span>
                                     </span>
@@ -596,8 +631,12 @@
                         @error('block_username') <p class="text-rose-400 text-xs">{{ $message }}</p> @enderror
 
                         <div class="divide-y divide-[var(--border-color)] border-t border-[var(--border-color)]">
-                            @forelse($blockedUsers as $blocked)
-                                <div class="py-3 flex items-center justify-between gap-3">
+                            @foreach($blockedUsers as $blocked)
+                                <div x-show="!blockRemoved.includes({{ $blocked->id }})"
+                                     x-transition:leave="transition ease-in duration-150"
+                                     x-transition:leave-start="opacity-100"
+                                     x-transition:leave-end="opacity-0"
+                                     class="py-3 flex items-center justify-between gap-3">
                                     <div class="flex items-center gap-3 min-w-0">
                                         <x-user-avatar :user="$blocked" size="sm" class="shrink-0" />
                                         <div class="min-w-0">
@@ -605,17 +644,23 @@
                                             <p class="text-[11px] font-mono text-[var(--text-muted)] truncate">&#64;{{ $blocked->username }}</p>
                                         </div>
                                     </div>
-                                    <form method="POST" action="{{ route('settings.blocks.destroy', $blocked) }}" class="shrink-0">
+                                    <form method="POST"
+                                          action="{{ route('settings.blocks.destroy', $blocked) }}"
+                                          class="shrink-0"
+                                          @submit.prevent="unblockUser({{ $blocked->id }}, '{{ addslashes($blocked->username) }}')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn-secondary text-xs py-1.5 px-3 cursor-pointer">
-                                            Buka Blokir
+                                        <button type="submit"
+                                                :disabled="blockBusy === {{ $blocked->id }}"
+                                                class="btn-secondary text-xs py-1.5 px-3 cursor-pointer disabled:opacity-60 disabled:cursor-wait">
+                                            <span x-text="blockBusy === {{ $blocked->id }} ? 'Membuka...' : 'Buka Blokir'">Buka Blokir</span>
                                         </button>
                                     </form>
                                 </div>
-                            @empty
-                                <p class="pt-3 text-xs text-[var(--text-muted)]">Belum ada akun yang kamu blokir.</p>
-                            @endforelse
+                            @endforeach
+                            <p x-show="blockRemoved.length >= {{ $blockedUsers->count() }}"
+                               x-cloak
+                               class="pt-3 text-xs text-[var(--text-muted)]">Belum ada akun yang kamu blokir.</p>
                         </div>
                     </div>
                 </section>
@@ -656,6 +701,7 @@
                                                name="{{ $item['key'] }}"
                                                value="1"
                                                @checked($notifPrefs[$item['key']])
+                                               onchange="nySettingSave(this)"
                                                class="sr-only peer">
                                         <span class="w-10 h-[22px] rounded-full bg-[var(--surface-subtle)] border border-[var(--border-strong)] peer-checked:bg-emerald-500 peer-checked:border-emerald-500 transition-colors duration-150 peer-focus-visible:ring-2 peer-focus-visible:ring-emerald-400/50"></span>
                                         <span class="absolute left-[3px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[var(--text-muted)] peer-checked:bg-[#0B0B0D] peer-checked:translate-x-[18px] transition-all duration-150 pointer-events-none shadow-xs"></span>
@@ -678,36 +724,12 @@
                 <section class="rounded-2xl bg-[var(--surface)] border border-[var(--border-color)] overflow-hidden">
                     <div class="px-5 py-3.5 border-b border-[var(--border-color)]">
                         <h2 class="text-sm font-bold text-[var(--primary)]">Preferensi Feed &amp; Navigasi</h2>
-                        <p class="text-xs text-[var(--text-muted)] mt-0.5">Sesuaikan kepadatan konten, pemutaran media, dan pintasan keyboard di ruang kerja.</p>
+                        <p class="text-xs text-[var(--text-muted)] mt-0.5">Atur pemutaran media dan pintasan keyboard di ruang kerja.</p>
                     </div>
 
                     <form method="POST" action="{{ route('settings.preferences.update') }}" class="p-5 space-y-5">
                         @csrf
                         @method('PUT')
-
-                        <div class="space-y-2.5">
-                            <p class="text-xs font-semibold text-[var(--primary)]">Kepadatan Feed</p>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <label class="flex items-start gap-3 p-3.5 rounded-xl border border-[var(--border-color)] bg-[var(--surface-subtle)] cursor-pointer hover:border-[var(--border-strong)] has-[:checked]:border-emerald-500/50 has-[:checked]:bg-[var(--surface)] transition">
-                                    <input type="radio" name="feed_density" value="comfortable"
-                                           @checked($display['feed_density'] === 'comfortable')
-                                           class="mt-0.5 accent-emerald-500">
-                                    <div>
-                                        <p class="text-xs font-semibold text-[var(--primary)]">Nyaman (Default)</p>
-                                        <p class="text-[11px] text-[var(--text-muted)] mt-0.5">Jarak kartu lega dengan pratinjau media lengkap.</p>
-                                    </div>
-                                </label>
-                                <label class="flex items-start gap-3 p-3.5 rounded-xl border border-[var(--border-color)] bg-[var(--surface-subtle)] cursor-pointer hover:border-[var(--border-strong)] has-[:checked]:border-emerald-500/50 has-[:checked]:bg-[var(--surface)] transition">
-                                    <input type="radio" name="feed_density" value="compact"
-                                           @checked($display['feed_density'] === 'compact')
-                                           class="mt-0.5 accent-emerald-500">
-                                    <div>
-                                        <p class="text-xs font-semibold text-[var(--primary)]">Ringkas (Compact)</p>
-                                        <p class="text-[11px] text-[var(--text-muted)] mt-0.5">Menampilkan lebih banyak baris informasi dalam satu layar.</p>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
 
                         <div class="divide-y divide-[var(--border-color)] border-t border-[var(--border-color)]">
                             @foreach([
@@ -720,7 +742,7 @@
                                         <p class="text-[11px] text-[var(--text-muted)] mt-0.5">{{ $toggle['desc'] }}</p>
                                     </div>
                                     <span class="relative inline-flex items-center shrink-0">
-                                        <input type="checkbox" name="{{ $toggle['name'] }}" value="1" @checked($toggle['checked']) class="sr-only peer">
+                                        <input type="checkbox" name="{{ $toggle['name'] }}" value="1" @checked($toggle['checked']) onchange="nySettingSave(this)" class="sr-only peer">
                                         <span class="w-10 h-[22px] rounded-full bg-[var(--surface-subtle)] border border-[var(--border-strong)] peer-checked:bg-emerald-500 peer-checked:border-emerald-500 transition-colors duration-150 peer-focus-visible:ring-2 peer-focus-visible:ring-emerald-400/50"></span>
                                         <span class="absolute left-[3px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[var(--text-muted)] peer-checked:bg-[#0B0B0D] peer-checked:translate-x-[18px] transition-all duration-150 pointer-events-none shadow-xs"></span>
                                     </span>
@@ -758,6 +780,26 @@
                     </div>
                 </section>
             </div>
+        </div>
+    </div>
+
+    <!-- Unblock toast: in-place feedback, no reload / no scroll jump -->
+    <div class="fixed left-1/2 -translate-x-1/2 bottom-20 lg:bottom-6 z-[45] w-max max-w-[92vw] pointer-events-none"
+         role="status"
+         aria-live="polite">
+        <div x-show="blockToast.show"
+             x-cloak
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 translate-y-3"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 translate-y-3"
+             :class="blockToast.type === 'error'
+                 ? 'border-rose-500/40 text-rose-400'
+                 : 'border-[var(--border-strong)] text-[var(--primary)]'"
+             class="pointer-events-auto flex items-center gap-2 rounded-xl bg-[var(--surface-hover)] backdrop-blur-md border px-4 py-2.5 text-xs font-semibold shadow-[var(--shadow-lift)]">
+            <span x-text="blockToast.message"></span>
         </div>
     </div>
 </div>

@@ -116,6 +116,29 @@ class SettingsTest extends TestCase
             ->assertJsonPath('success', true);
     }
 
+    public function test_saved_dm_policy_survives_reload_of_settings_page(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->put(route('settings.privacy.update'), [
+                'dm_policy' => 'following_only',
+                'allow_reposts' => '1',
+                // discoverable and show_read_receipts intentionally unchecked
+            ])
+            ->assertRedirect(route('settings.index', ['tab' => 'privasi']));
+
+        $fresh = $user->fresh();
+        $this->assertSame('following_only', $fresh->preference('privacy.dm_policy'));
+        $this->assertTrue((bool) $fresh->preference('privacy.allow_reposts'));
+        $this->assertFalse((bool) $fresh->preference('privacy.discoverable'));
+
+        $this->actingAs($fresh)
+            ->get(route('settings.index', ['tab' => 'privasi']))
+            ->assertOk()
+            ->assertViewHas('preferences', fn (array $prefs) => $prefs['privacy']['dm_policy'] === 'following_only');
+    }
+
     public function test_blocking_user_detaches_follow_blocks_chat_and_can_be_unblocked(): void
     {
         $blocker = User::factory()->create(['username' => 'pemblokir']);
@@ -198,21 +221,75 @@ class SettingsTest extends TestCase
         Notification::assertNotSentTo($recipient, NewFollowerNotification::class);
     }
 
-    public function test_user_can_save_feed_and_shortcut_preferences(): void
+    public function test_user_can_save_media_and_shortcut_preferences(): void
     {
         $user = User::factory()->create();
 
         $this->actingAs($user)
             ->put(route('settings.preferences.update'), [
-                'feed_density' => 'compact',
-                // autoplay_media and keyboard_shortcuts unchecked
+                'autoplay_media' => '1',
+                // keyboard_shortcuts unchecked
             ])
             ->assertRedirect(route('settings.index', ['tab' => 'tampilan']));
 
         $fresh = $user->fresh();
-        $this->assertSame('compact', $fresh->preference('display.feed_density'));
-        $this->assertFalse((bool) $fresh->preference('display.autoplay_media'));
+        $this->assertTrue((bool) $fresh->preference('display.autoplay_media'));
         $this->assertFalse((bool) $fresh->preference('display.keyboard_shortcuts'));
+    }
+
+    public function test_toggle_endpoints_answer_json_without_redirecting(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->putJson(route('settings.privacy.update'), ['dm_policy' => 'following_only'])
+            ->assertOk()
+            ->assertJsonStructure(['message']);
+
+        $this->actingAs($user)
+            ->putJson(route('settings.notifications.update'), ['new_follower' => '1'])
+            ->assertOk()
+            ->assertJsonStructure(['message']);
+
+        $this->actingAs($user)
+            ->putJson(route('settings.preferences.update'), ['keyboard_shortcuts' => '1'])
+            ->assertOk()
+            ->assertJsonStructure(['message']);
+
+        $fresh = $user->fresh();
+        $this->assertSame('following_only', $fresh->preference('privacy.dm_policy'));
+        $this->assertTrue($fresh->wantsNotification('new_follower'));
+        $this->assertTrue((bool) $fresh->preference('display.keyboard_shortcuts'));
+    }
+
+    public function test_block_and_unblock_endpoints_answer_json_for_in_place_actions(): void
+    {
+        $user = User::factory()->create();
+        $target = User::factory()->create(['username' => 'sasaran_blokir']);
+
+        $this->actingAs($user)
+            ->postJson(route('settings.blocks.store'), ['username' => '@sasaran_blokir'])
+            ->assertOk()
+            ->assertJsonPath('user.username', 'sasaran_blokir')
+            ->assertJsonStructure(['message', 'user' => ['id', 'username']]);
+
+        $this->assertTrue($user->fresh()->hasBlocked($target));
+
+        $this->actingAs($user)
+            ->deleteJson(route('settings.blocks.destroy', $target))
+            ->assertOk()
+            ->assertJsonStructure(['message']);
+
+        $this->assertFalse($user->fresh()->hasBlocked($target));
+
+        $this->actingAs($user)
+            ->postJson(route('settings.blocks.store'), ['username' => 'tidak_ada_orangnya'])
+            ->assertStatus(422)
+            ->assertJsonStructure(['message']);
+
+        $this->actingAs($user)
+            ->postJson(route('settings.blocks.store'), ['username' => $user->username])
+            ->assertStatus(422);
     }
 
     public function test_user_can_delete_account_permanently_with_confirmation(): void

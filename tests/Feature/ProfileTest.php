@@ -443,4 +443,23 @@ class ProfileTest extends TestCase
             ->assertSee(route('settings.index'), false)
             ->assertDontSee(route('profile.password.update'), false);
     }
+
+    public function test_profile_lists_followers_and_following_on_their_own_pages(): void
+    {
+        $target = User::factory()->create(['username' => 'pemilik_profil']);
+        $follower = User::factory()->create(['username' => 'pengikut_setia']);
+        $target->followers()->attach($follower->id);
+
+        $this->get(route('profile.followers', $target->username))
+            ->assertOk()
+            ->assertSee('pengikut_setia', false);
+
+        $this->get(route('profile.following', $target->username))
+            ->assertOk()
+            ->assertDontSee('pengikut_setia', false);
+
+        $this->get(route('profile.following', $follower->username))
+            ->assertOk()
+            ->assertSee('pemilik_profil', false);
+    }
 }

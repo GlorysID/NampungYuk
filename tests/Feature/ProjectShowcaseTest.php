@@ -90,6 +90,30 @@ class ProjectShowcaseTest extends TestCase
         $this->assertDatabaseMissing('projects', ['title' => 'Guest Tool']);
     }
 
+    public function test_project_card_menu_offers_block_only_for_other_users(): void
+    {
+        $category = Category::create(['name' => 'Web Apps', 'slug' => 'web-apps']);
+        $author = User::factory()->create(['username' => 'pemilik_karya']);
+        $viewer = User::factory()->create(['username' => 'pengunjung']);
+
+        Project::factory()->create([
+            'user_id' => $author->id,
+            'category_id' => $category->id,
+            'title' => 'Karya Orang Lain',
+            'slug' => 'karya-orang-lain',
+        ]);
+
+        $this->actingAs($viewer)
+            ->get(route('projects.index'))
+            ->assertOk()
+            ->assertSee('Blokir @pemilik_karya', false);
+
+        $this->actingAs($author)
+            ->get(route('projects.index'))
+            ->assertOk()
+            ->assertDontSee('Blokir @pemilik_karya', false);
+    }
+
     public function test_authenticated_user_can_upload_project_with_knowledge_fields(): void
     {
         $user = User::factory()->create();

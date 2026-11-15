@@ -1,6 +1,6 @@
 <div class="h-full flex flex-col px-4 pb-3 select-none bg-[var(--surface-invert)] relative">
     <!-- Brand Header -->
-    <div class="h-12 px-3 mb-1 border-b border-[var(--border-color)]/60 flex items-center shrink-0">
+    <div class="h-[65px] px-3 mb-1 flex items-center shrink-0">
         <x-logo size="md" :show-tagline="false" />
     </div>
 
@@ -276,67 +276,9 @@
             </div>
         @endif
 
-        <!-- Live Spaces Radar & Primary CTA (auth only) -->
+        <!-- Primary CTA (auth only) -->
         @auth
-            @php
-                $liveSpacesCount = (int) ($sidebarLiveSpaces['count'] ?? 0);
-                $featuredSpace = $sidebarLiveSpaces['featured'] ?? null;
-            @endphp
-            <div class="mt-auto pt-3">
-                @if($liveSpacesCount > 0 && is_array($featuredSpace))
-                    <div class="rounded-xl bg-[var(--surface)] border border-emerald-500/30 hover:border-emerald-500/50 transition-colors p-3 space-y-2">
-                        <div class="flex items-center justify-between gap-2">
-                            <span class="inline-flex items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-400">
-                                <span class="relative flex h-2 w-2" aria-hidden="true">
-                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
-                                </span>
-                                <span>Live Space</span>
-                            </span>
-                            <span class="text-[11px] font-mono tabular-nums text-[var(--text-muted)]">
-                                {{ $featuredSpace['participants_count'] }} hadir{{ $liveSpacesCount > 1 ? ' · +' . ($liveSpacesCount - 1) : '' }}
-                            </span>
-                        </div>
-                        <a href="{{ route('spaces.show', $featuredSpace['slug']) }}" class="block group">
-                            <p class="text-[13px] font-semibold text-[var(--primary)] group-hover:text-emerald-400 transition-colors truncate">
-                                {{ $featuredSpace['title'] }}
-                            </p>
-                            <div class="mt-1 flex items-center justify-between gap-2 text-[11.5px] text-[var(--text-muted)]">
-                                <span class="font-mono truncate">&#64;{{ $featuredSpace['host'] }}</span>
-                                <span class="text-emerald-400 font-medium shrink-0">Gabung &rarr;</span>
-                            </div>
-                        </a>
-                    </div>
-                @else
-                    <div class="rounded-xl bg-[var(--surface)]/65 border border-[var(--border-color)]/80 hover:border-[var(--border-strong)] transition-colors p-3 space-y-2">
-                        <div class="flex items-center justify-between gap-2">
-                            <span class="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--text-faint)]">
-                                <span class="w-1.5 h-1.5 rounded-full bg-[var(--text-faint)]" aria-hidden="true"></span>
-                                <span>Live Spaces</span>
-                            </span>
-                            <button type="button"
-                                    @click="showHelpModal = true"
-                                    title="Pintasan keyboard (?)"
-                                    class="inline-flex items-center gap-1 text-[10.5px] text-[var(--text-faint)] hover:text-[var(--primary)] transition-colors cursor-pointer">
-                                <kbd class="px-1.5 py-0.5 text-[10px] font-mono rounded bg-[var(--surface-subtle)] border border-[var(--border-color)] text-[var(--primary)] leading-none">?</kbd>
-                            </button>
-                        </div>
-                        <a href="{{ route('spaces.index') }}" class="flex items-center justify-between gap-2 group">
-                            <div class="min-w-0">
-                                <p class="text-[12.5px] font-medium text-[var(--primary)] group-hover:text-emerald-400 transition-colors truncate">
-                                    Belum ada ruang live
-                                </p>
-                                <p class="text-[11px] text-[var(--text-muted)] truncate">
-                                    Mulai diskusi audio/video
-                                </p>
-                            </div>
-                            <span class="text-xs text-[var(--text-muted)] group-hover:text-emerald-400 shrink-0 transition-colors">&rarr;</span>
-                        </a>
-                    </div>
-                @endif
-            </div>
-
-            <div class="sticky bottom-0 z-10 bg-[var(--surface-invert)] pt-2.5 pb-2 border-t border-[var(--border-color)]/70">
+            <div class="mt-auto sticky bottom-0 z-10 bg-[var(--surface-invert)] pt-2.5 pb-2 border-t border-[var(--border-color)]/70">
                 <a href="{{ route('projects.create') }}"
                    class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-[var(--primary)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)] font-bold h-12 px-4 text-[15px] transition active:scale-[0.98] cursor-pointer shadow-xs">
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
@@ -435,15 +377,15 @@
 
                 <button type="button"
                         @click="userMenuOpen = !userMenuOpen"
-                        class="w-full flex items-center justify-between gap-2.5 px-3 py-2 rounded-xl border border-[var(--border-color)]/80 bg-[var(--surface)]/70 hover:bg-[var(--surface)] hover:border-[var(--border-strong)] transition text-left cursor-pointer group">
-                    <div class="flex items-center gap-2.5 min-w-0">
-                        <x-user-avatar :user="Auth::user()" size="sm" class="shrink-0" />
+                        class="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl border border-[var(--border-color)]/80 bg-[var(--surface)]/70 hover:bg-[var(--surface)] hover:border-[var(--border-strong)] transition text-left cursor-pointer group">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <x-user-avatar :user="Auth::user()" size="md" class="shrink-0" />
                         <div class="min-w-0">
-                            <p class="text-[13px] font-semibold text-[var(--primary)] truncate leading-tight">{{ Auth::user()->name }}</p>
-                            <p class="text-[11px] font-mono text-[var(--text-muted)] truncate mt-0.5">&#64;{{ Auth::user()->username }}</p>
+                            <p class="text-[14px] font-semibold text-[var(--primary)] truncate leading-tight">{{ Auth::user()->name }}</p>
+                            <p class="text-[11.5px] font-mono text-[var(--text-muted)] truncate mt-0.5">&#64;{{ Auth::user()->username }}</p>
                         </div>
                     </div>
-                    <svg class="w-4 h-4 text-[var(--text-faint)] group-hover:text-[var(--primary)] shrink-0 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-[18px] h-[18px] text-[var(--text-faint)] group-hover:text-[var(--primary)] shrink-0 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 9l4-4 4 4m0 6l-4 4-4-4"/>
                     </svg>
                 </button>

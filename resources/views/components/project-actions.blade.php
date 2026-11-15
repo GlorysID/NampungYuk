@@ -144,6 +144,15 @@
                             <span>Laporkan Project</span>
                         </button>
                     @endif
+
+                    @if(auth()->id() !== $project->user_id && $project->user)
+                        <button @click.stop="window.openBlockUserModal ? window.openBlockUserModal({ username: '{{ $project->user->username }}', name: '{{ addslashes($project->user->name) }}' }) : null; menuOpen = false"
+                                type="button"
+                                class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-amber-400 hover:bg-amber-500/10 transition cursor-pointer border-t border-[var(--border-color)]">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                            <span>Blokir {{ '@'.$project->user->username }}</span>
+                        </button>
+                    @endif
                 @else
                     <div class="border-t border-[var(--border-color)]"></div>
                     <button @click.stop="if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }"

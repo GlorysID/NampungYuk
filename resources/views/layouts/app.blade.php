@@ -44,8 +44,7 @@
         }
     </style>
 </head>
-<body data-feed-density="@auth{{ auth()->user()->preference('display.feed_density', 'comfortable') }}@else comfortable @endauth"
-      class="bg-[var(--bg-app)] text-[var(--primary)] min-h-screen transition-colors duration-150 antialiased selection:bg-[var(--primary)] selection:text-[var(--primary-text)] relative overflow-x-hidden pb-20 lg:pb-0"
+<body class="bg-[var(--bg-app)] text-[var(--primary)] min-h-screen transition-colors duration-150 antialiased selection:bg-[var(--primary)] selection:text-[var(--primary-text)] relative overflow-x-hidden pb-20 lg:pb-0"
       x-data="{
           mobileSidebarOpen: false,
           mobileSearchOpen: false,
@@ -816,6 +815,9 @@
 
     <!-- GLOBAL REPORT MODAL -->
     <x-report-modal />
+
+    <!-- GLOBAL BLOCK USER MODAL + UNDO SNACKBAR -->
+    <x-block-user-modal />
 
     <!-- GLOBAL ADMIN: WARN PROJECT MODAL -->
     <x-admin-warn-project-modal />

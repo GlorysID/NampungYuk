@@ -47,7 +47,23 @@ import { completeFirebaseRedirectIfNeeded, signInWithFirebaseGoogle } from './fi
         history.scrollRestoration = 'manual';
     }
 
-    // Save the current scroll position right before navigating to another page.
+    // Save the current scroll position right before the page goes away.
+    const savePosition = () => {
+        if (window.__nySkipSave) return;
+
+        const currentUrl = new URL(window.location.href);
+        if (isFilterable(currentUrl)) return;
+
+        const store = readStore();
+        store[path()] = { y: window.scrollY, pages: window.__nyFeedPageCount?.() ?? 1, pending: true };
+        writeStore(store);
+    };
+
+    // pagehide covers link navigation, back/forward, reload, and tab close.
+    window.addEventListener('pagehide', savePosition);
+
+    // Clicking a link to the page you are already on means "start over": drop the
+    // remembered feed state so the reload lands on a fresh first page.
     document.addEventListener('click', (e) => {
         const link = e.target.closest('a[href]');
         if (!link) return;
@@ -56,15 +72,29 @@ import { completeFirebaseRedirectIfNeeded, signInWithFirebaseGoogle } from './fi
         if (link.hasAttribute('data-no-scroll-save')) return;
 
         const url = new URL(link.href, window.location.origin);
-        // Only remember when leaving the current page for a different path.
-        if (url.pathname + url.search === path()) return;
-
-        // Never remember a filtered/search context — those should open at the top.
-        if (isFilterable(url)) return;
+        if (url.pathname + url.search !== path()) return;
 
         const store = readStore();
-        store[path()] = { y: window.scrollY, pending: true };
+        delete store[path()];
         writeStore(store);
+
+        // pagehide still fires for this navigation; keep it from writing the
+        // old position straight back.
+        window.__nySkipSave = true;
+    });
+
+    // Feed restore reads the saved entry synchronously (before window.load).
+    window.__nyFeedState = () => readStore()[path()] ?? null;
+
+    // Back/forward cache restores the live DOM without a load event, so the stored
+    // offset is the only reliable way back to where the visitor was.
+    window.addEventListener('pageshow', (e) => {
+        if (! e.persisted) return;
+
+        const entry = window.__nyFeedState?.();
+        if (entry && typeof entry.y === 'number') {
+            window.scrollTo({ top: entry.y, behavior: 'instant' });
+        }
     });
 
     // Restore on load only for the *same* non-filtered context we left.
@@ -73,6 +103,11 @@ import { completeFirebaseRedirectIfNeeded, signInWithFirebaseGoogle } from './fi
 
         // Fresh filter/search navigation → always start from the top.
         if (isFilterable(currentUrl)) {
+            return;
+        }
+
+        // The infinite feed rebuilds its pages itself and restores the offset last.
+        if (window.__nyFeedRestoring) {
             return;
         }
 
@@ -106,11 +141,26 @@ document.addEventListener('alpine:init', () => {
         loading: false,
         done: false,
         observer: null,
+        pages: 1,
 
         init() {
             this.done = ! this.nextUrl;
-            if (this.done) return;
+            window.__nyFeedPageCount = () => this.pages;
 
+            // Coming back to the feed: rebuild the pages the visitor had already
+            // loaded, then return to the same offset. Restoring the offset on a
+            // single-page feed lands mid-list and reads as "reset to the top".
+            const saved = window.__nyFeedState?.();
+            if (saved && saved.pending && saved.pages > 1) {
+                window.__nyFeedRestoring = true;
+                this.restore(saved);
+                return;
+            }
+
+            this.observe();
+        },
+
+        observe() {
             const sentinel = this.$refs.sentinel;
             if (sentinel && 'IntersectionObserver' in window) {
                 this.observer = new IntersectionObserver((entries) => {
@@ -118,6 +168,21 @@ document.addEventListener('alpine:init', () => {
                 }, { rootMargin: '400px 0px' });
                 this.observer.observe(sentinel);
             }
+        },
+
+        async restore(saved) {
+            this.observer?.disconnect();
+
+            while (this.pages < saved.pages && ! this.done) {
+                await this.loadMore();
+            }
+
+            requestAnimationFrame(() => {
+                window.scrollTo({ top: saved.y, behavior: 'instant' });
+                setTimeout(() => window.scrollTo({ top: saved.y, behavior: 'instant' }), 60);
+            });
+
+            this.observe();
         },
 
         async loadMore() {
@@ -138,6 +203,8 @@ document.addEventListener('alpine:init', () => {
                     // Execute nothing; cards are Alpine-initialized by Alpine automatically.
                     while (temp.firstChild) container.appendChild(temp.firstChild);
                 }
+
+                this.pages = Math.max(this.pages, page);
 
                 if (page >= last) {
                     this.done = true;
@@ -1034,6 +1101,63 @@ document.addEventListener('alpine:init', () => {
 
 window.Alpine = Alpine;
 Alpine.start();
+
+/**
+ * Save a settings form in place (no page reload) and surface the result as a toast.
+ * Used by the toggles/radios in /pengaturan so flipping a switch never reloads the page.
+ * Saves per form are queued so a fast double toggle can't land out of order.
+ */
+const settingsSaveQueue = new WeakMap();
+
+/**
+ * Display preferences are baked into the page on render (Alpine root state, autoplay
+ * attributes), so a saved toggle must also be applied live or the user sees no change.
+ */
+const applyDisplaySetting = (input) => {
+    if (input.name === 'keyboard_shortcuts') {
+        const root = window.Alpine?.$data?.(document.body) ?? document.body._x_dataStack?.[0];
+        if (root) {
+            root.shortcutsEnabled = input.checked;
+        }
+    }
+};
+
+window.nySettingSave = (input) => {
+    const form = input.form;
+
+    const send = async () => {
+        try {
+            const res = await fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+                body: new FormData(form),
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                input.checked = !input.checked;
+                window.notify?.(data.message || 'Gagal menyimpan pengaturan.', 'error');
+                return;
+            }
+
+            applyDisplaySetting(input);
+            window.notify?.(data.message || 'Pengaturan disimpan.', 'success');
+        } catch (error) {
+            input.checked = !input.checked;
+            window.notify?.('Gagal menyimpan pengaturan. Cek koneksi kamu.', 'error');
+        }
+    };
+
+    const queued = (settingsSaveQueue.get(form) ?? Promise.resolve()).then(send);
+    settingsSaveQueue.set(form, queued);
+
+    return queued;
+};
 
 /**
  * Echo exposes an expressive API for subscribing to channels and listening

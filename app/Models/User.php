@@ -387,7 +387,7 @@ class User extends Authenticatable implements MustVerifyEmail
      * @return array{
      *     privacy: array{dm_policy: string, allow_reposts: bool, discoverable: bool, show_read_receipts: bool},
      *     notifications: array{new_follower: bool, project_comment: bool, project_repost: bool, new_message: bool, project_uploaded: bool, project_trending: bool},
-     *     display: array{feed_density: string, autoplay_media: bool, keyboard_shortcuts: bool}
+     *     display: array{autoplay_media: bool, keyboard_shortcuts: bool}
      * }
      */
     public function resolvedPreferences(): array
@@ -410,7 +410,6 @@ class User extends Authenticatable implements MustVerifyEmail
                 'project_trending' => true,
             ], is_array($stored['notifications'] ?? null) ? $stored['notifications'] : []),
             'display' => array_replace([
-                'feed_density' => 'comfortable',
                 'autoplay_media' => true,
                 'keyboard_shortcuts' => true,
             ], is_array($stored['display'] ?? null) ? $stored['display'] : []),

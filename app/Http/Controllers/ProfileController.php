@@ -254,4 +254,34 @@ class ProfileController extends Controller
             'search'
         ));
     }
+
+    /**
+     * List the accounts following this user.
+     */
+    public function followers(string $username): View
+    {
+        return $this->followList($username, 'followers');
+    }
+
+    /**
+     * List the accounts this user follows.
+     */
+    public function following(string $username): View
+    {
+        return $this->followList($username, 'following');
+    }
+
+    /**
+     * Shared renderer for the follower / following directory.
+     */
+    private function followList(string $username, string $mode): View
+    {
+        $user = User::where('username', $username)->firstOrFail();
+
+        $people = $user->{$mode}()
+            ->orderByDesc('follows.created_at')
+            ->paginate(24);
+
+        return view('users.follows', compact('user', 'people', 'mode'));
+    }
 }

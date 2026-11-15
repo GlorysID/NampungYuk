@@ -9,7 +9,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class SpaceController extends Controller
@@ -53,8 +52,6 @@ class SpaceController extends Controller
             'role' => 'host',
             'is_muted' => false,
         ]);
-
-        Cache::forget('sidebar:live_spaces_v1');
 
         return redirect()->route('spaces.show', $space->slug);
     }
@@ -113,8 +110,6 @@ class SpaceController extends Controller
             ['role' => 'listener', 'is_muted' => true]
         );
 
-        Cache::forget('sidebar:live_spaces_v1');
-
         broadcast(new SpaceSignal($space->id, $user->id, null, 'join', ['name' => $user->name]))->toOthers();
 
         if ($request->wantsJson()) {
@@ -137,7 +132,6 @@ class SpaceController extends Controller
         }
 
         SpaceParticipant::where('space_id', $space->id)->where('user_id', $user->id)->delete();
-        Cache::forget('sidebar:live_spaces_v1');
         broadcast(new SpaceSignal($space->id, $user->id, null, 'leave', ['name' => $user->name]))->toOthers();
 
         if ($request->wantsJson()) {
@@ -160,7 +154,6 @@ class SpaceController extends Controller
         }
 
         $space->update(['status' => 'ended', 'ended_at' => now()]);
-        Cache::forget('sidebar:live_spaces_v1');
         broadcast(new SpaceSignal($space->id, $user->id, null, 'leave', ['ended' => true]));
 
         return redirect()->route('spaces.index')->with('success', 'Space diakhiri.');

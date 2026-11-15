@@ -7,7 +7,6 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\Project;
 use App\Models\Report;
-use App\Models\Space;
 use App\Models\User;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -108,37 +107,12 @@ class AppServiceProvider extends ServiceProvider
                         ->all())
                     : [];
 
-                $sidebarLiveSpaces = Schema::hasTable('spaces')
-                    ? Cache::remember('sidebar:live_spaces_v1', 30, function () {
-                        $liveCount = Space::where('status', 'live')->count();
-                        $featured = $liveCount > 0
-                            ? Space::with('host:id,name,username')
-                                ->withCount('participants')
-                                ->where('status', 'live')
-                                ->latest('started_at')
-                                ->first()
-                            : null;
-
-                        return [
-                            'count' => $liveCount,
-                            'featured' => $featured ? [
-                                'title' => $featured->title,
-                                'slug' => $featured->slug,
-                                'type' => $featured->type,
-                                'host' => $featured->host?->username ?? 'host',
-                                'participants_count' => (int) $featured->participants_count,
-                            ] : null,
-                        ];
-                    })
-                    : ['count' => 0, 'featured' => null];
-
                 $cached = [
                     'sidebarCommunities' => $communities,
                     'pendingReportsCount' => $pendingReportsCount,
                     'unreadNotificationsCount' => $unreadNotificationsCount,
                     'chatRequests' => $chatRequests,
                     'defaultRailTrending' => $defaultRailTrending,
-                    'sidebarLiveSpaces' => $sidebarLiveSpaces,
                 ];
 
                 if ($request) {

@@ -50,7 +50,7 @@
             $isFollowingTab = ($tab ?? '') === 'following';
             $isForYouTab = ! $isFollowingTab;
         @endphp
-        <div class="flex items-center h-[53px]">
+        <div class="flex items-center h-16">
             <!-- Tab 1: Untuk Anda -->
             <a href="{{ route('projects.index') }}"
                class="flex-1 h-full flex items-center justify-center hover:bg-white/[0.03] transition relative cursor-pointer">
