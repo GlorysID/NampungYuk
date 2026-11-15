@@ -32,27 +32,6 @@ class SettingsTest extends TestCase
             ->assertSee('Unduh Arsip Data Anda');
     }
 
-    public function test_user_can_update_email_and_resets_verification(): void
-    {
-        $user = User::factory()->create([
-            'email' => 'lama@example.com',
-            'email_verified_at' => now(),
-            'password' => 'rahasia-123',
-        ]);
-
-        $this->actingAs($user)
-            ->put(route('settings.account.update'), [
-                'email' => 'baru@example.com',
-                'current_password' => 'rahasia-123',
-            ])
-            ->assertRedirect(route('settings.index', ['tab' => 'akun']))
-            ->assertSessionHas('success');
-
-        $fresh = $user->fresh();
-        $this->assertSame('baru@example.com', $fresh->email);
-        $this->assertNull($fresh->email_verified_at);
-    }
-
     public function test_user_can_export_personal_archive_json(): void
     {
         $user = User::factory()->create(['username' => 'exporter']);

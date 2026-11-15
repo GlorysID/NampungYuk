@@ -216,49 +216,34 @@
                     </div>
                 </section>
 
-                <!-- Email Update Form -->
+                <!-- Email Address -->
                 <section class="rounded-2xl bg-[var(--surface)] border border-[var(--border-color)] overflow-hidden">
                     <div class="px-5 py-3.5 border-b border-[var(--border-color)]">
                         <h2 class="text-sm font-bold text-[var(--primary)]">Alamat Email</h2>
-                        <p class="text-xs text-[var(--text-muted)] mt-0.5">Mengubah alamat email akan meminta verifikasi ulang ke alamat baru.</p>
+                        <p class="text-xs text-[var(--text-muted)] mt-0.5">Mengubah alamat email akan mengirim kode verifikasi ke alamat baru.</p>
                     </div>
 
-                    <form method="POST" action="{{ route('settings.account.update') }}" class="p-5 space-y-4">
-                        @csrf
-                        @method('PUT')
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div class="space-y-1.5">
-                                <label for="account_email" class="block text-xs font-semibold text-[var(--primary)]">Email Baru</label>
-                                <input type="email"
-                                       id="account_email"
-                                       name="email"
-                                       value="{{ old('email', $user->email) }}"
-                                       required
-                                       class="ny-input text-sm w-full">
-                                @error('email') <p class="text-rose-400 text-xs">{{ $message }}</p> @enderror
+                    <div class="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="min-w-0">
+                            <p class="text-sm font-mono text-[var(--primary)] truncate">{{ $user->email }}</p>
+                            <div class="mt-1.5">
+                                @if($user->hasVerifiedEmail())
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                        Terverifikasi
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                                        Belum Terverifikasi
+                                    </span>
+                                @endif
                             </div>
-
-                            @if($hasPassword)
-                                <div class="space-y-1.5">
-                                    <label for="account_current_password" class="block text-xs font-semibold text-[var(--primary)]">Password Saat Ini</label>
-                                    <input type="password"
-                                           id="account_current_password"
-                                           name="current_password"
-                                           autocomplete="current-password"
-                                           required
-                                           placeholder="Konfirmasi perubahan email"
-                                           class="ny-input text-sm w-full">
-                                </div>
-                            @endif
                         </div>
-
-                        <div class="pt-2 flex justify-end border-t border-[var(--border-color)]">
-                            <button type="submit" class="btn-primary text-xs py-2 px-4 cursor-pointer">
-                                Simpan Email
-                            </button>
-                        </div>
-                    </form>
+                        <a href="{{ route('settings.email.edit') }}" class="btn-secondary text-xs py-2 px-4 shrink-0 self-start sm:self-auto">
+                            Ubah Email
+                        </a>
+                    </div>
                 </section>
 
                 <!-- Export Data Archive -->
@@ -385,93 +370,24 @@
                         </p>
                     </div>
 
-                    <form method="POST"
-                          action="{{ route('profile.password.update') }}"
-                          x-data="{ showCurrent: false, showNew: false, showConfirm: false }"
-                          class="p-5 space-y-4">
-                        @csrf
-                        @method('PUT')
-
-                        @if($hasPassword)
-                            <div class="space-y-1.5">
-                                <label for="current_password" class="block text-xs font-semibold text-[var(--primary)]">
-                                    Password Saat Ini <span class="text-rose-500">*</span>
-                                </label>
-                                <div class="relative">
-                                    <input :type="showCurrent ? 'text' : 'password'"
-                                           id="current_password"
-                                           name="current_password"
-                                           autocomplete="current-password"
-                                           required
-                                           placeholder="Masukkan password saat ini"
-                                           class="ny-input text-sm w-full pr-10">
-                                    <button type="button"
-                                            @click="showCurrent = !showCurrent"
-                                            aria-label="Tampilkan atau sembunyikan password saat ini"
-                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--primary)] transition cursor-pointer">
-                                        <svg x-show="!showCurrent" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                        <svg x-show="showCurrent" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
-                                    </button>
-                                </div>
-                                @error('current_password') <p class="text-rose-400 text-xs">{{ $message }}</p> @enderror
-                            </div>
-                        @endif
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div class="space-y-1.5">
-                                <label for="new_password" class="block text-xs font-semibold text-[var(--primary)]">
-                                    Password Baru <span class="text-rose-500">*</span>
-                                </label>
-                                <div class="relative">
-                                    <input :type="showNew ? 'text' : 'password'"
-                                           id="new_password"
-                                           name="password"
-                                           autocomplete="new-password"
-                                           required
-                                           minlength="8"
-                                           placeholder="Minimal 8 karakter"
-                                           class="ny-input text-sm w-full pr-10">
-                                    <button type="button"
-                                            @click="showNew = !showNew"
-                                            aria-label="Tampilkan atau sembunyikan password baru"
-                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--primary)] transition cursor-pointer">
-                                        <svg x-show="!showNew" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                        <svg x-show="showNew" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
-                                    </button>
-                                </div>
-                                @error('password') <p class="text-rose-400 text-xs">{{ $message }}</p> @enderror
-                            </div>
-
-                            <div class="space-y-1.5">
-                                <label for="new_password_confirmation" class="block text-xs font-semibold text-[var(--primary)]">
-                                    Konfirmasi Password Baru <span class="text-rose-500">*</span>
-                                </label>
-                                <div class="relative">
-                                    <input :type="showConfirm ? 'text' : 'password'"
-                                           id="new_password_confirmation"
-                                           name="password_confirmation"
-                                           autocomplete="new-password"
-                                           required
-                                           minlength="8"
-                                           placeholder="Ulangi password baru"
-                                           class="ny-input text-sm w-full pr-10">
-                                    <button type="button"
-                                            @click="showConfirm = !showConfirm"
-                                            aria-label="Tampilkan atau sembunyikan konfirmasi password baru"
-                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--primary)] transition cursor-pointer">
-                                        <svg x-show="!showConfirm" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                        <svg x-show="showConfirm" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
-                                    </button>
-                                </div>
+                    <div class="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="min-w-0">
+                            <p class="text-xs font-semibold text-[var(--primary)]">
+                                {{ $hasPassword ? 'Password akun sudah aktif' : 'Password belum disetel' }}
+                            </p>
+                            <p class="text-[11px] text-[var(--text-muted)] mt-0.5">
+                                {{ $hasPassword ? 'Masuk memakai username atau email serta password.' : 'Saat ini akun hanya bisa masuk lewat Google.' }}
+                            </p>
+                            <div class="mt-2">
+                                <span class="px-2.5 py-1 rounded-full text-[11px] font-medium border {{ $hasPassword ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-[var(--surface-subtle)] text-[var(--text-muted)] border-[var(--border-color)]' }}">
+                                    {{ $hasPassword ? 'Aktif' : 'Belum Disetel' }}
+                                </span>
                             </div>
                         </div>
-
-                        <div class="pt-2 flex items-center justify-end border-t border-[var(--border-color)]">
-                            <button type="submit" class="btn-primary text-xs py-2.5 px-5 cursor-pointer">
-                                {{ $hasPassword ? 'Simpan Password Baru' : 'Buat Password Akun' }}
-                            </button>
-                        </div>
-                    </form>
+                        <a href="{{ route('settings.password.edit') }}" class="btn-primary text-xs py-2.5 px-5 shrink-0 self-start sm:self-auto">
+                            {{ $hasPassword ? 'Ubah Password' : 'Buat Password' }}
+                        </a>
+                    </div>
                 </section>
 
                 <!-- Active Browser & Device Sessions -->

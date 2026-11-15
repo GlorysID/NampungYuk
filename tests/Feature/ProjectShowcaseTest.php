@@ -741,8 +741,12 @@ class ProjectShowcaseTest extends TestCase
             'password' => Hash::make('old-password-123'),
         ]);
 
-        $response = $this->actingAs($user)->put(route('profile.password.update'), [
-            'current_password' => 'old-password-123',
+        // Staged flow: verify the current password first, then set the new one.
+        $this->actingAs($user)
+            ->post(route('settings.password.verify'), ['current_password' => 'old-password-123'])
+            ->assertRedirect(route('settings.password.edit'));
+
+        $response = $this->actingAs($user)->post(route('settings.password.update'), [
             'password' => 'new-secret-password-456',
             'password_confirmation' => 'new-secret-password-456',
         ]);
@@ -760,10 +764,8 @@ class ProjectShowcaseTest extends TestCase
             'password' => Hash::make('old-password-123'),
         ]);
 
-        $response = $this->actingAs($user)->put(route('profile.password.update'), [
+        $response = $this->actingAs($user)->post(route('settings.password.verify'), [
             'current_password' => 'wrong-current-password',
-            'password' => 'new-secret-password-456',
-            'password_confirmation' => 'new-secret-password-456',
         ]);
 
         $response->assertSessionHasErrors(['current_password']);

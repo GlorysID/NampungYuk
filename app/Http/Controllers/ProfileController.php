@@ -10,7 +10,6 @@ use App\Models\User;
 use App\Services\MediaOptimizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
@@ -96,43 +95,6 @@ class ProfileController extends Controller
         return view('settings.index', [
             'user' => $request->user(),
         ]);
-    }
-
-    /**
-     * Update user password.
-     */
-    public function updatePassword(Request $request): RedirectResponse
-    {
-        $user = $request->user();
-        $hasExistingPassword = filled($user->password);
-
-        $rules = [
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ];
-
-        if ($hasExistingPassword) {
-            $rules['current_password'] = ['required', 'current_password'];
-        }
-
-        $validated = $request->validate($rules, [
-            'current_password.required' => 'Password saat ini wajib diisi.',
-            'current_password.current_password' => 'Password saat ini yang Anda masukkan salah.',
-            'password.required' => 'Password baru wajib diisi.',
-            'password.confirmed' => 'Konfirmasi password baru tidak cocok.',
-            'password.min' => 'Password baru minimal 8 karakter.',
-        ]);
-
-        $user->update([
-            'password' => Hash::make($validated['password']),
-        ]);
-
-        $message = $hasExistingPassword
-            ? 'Password akun Anda berhasil diperbarui!'
-            : 'Password akun berhasil dibuat!';
-
-        return back()
-            ->with('success', $message)
-            ->with('settings_tab', 'keamanan');
     }
 
     /**

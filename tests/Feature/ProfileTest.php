@@ -358,7 +358,7 @@ class ProfileTest extends TestCase
             ->assertOk()
             ->assertSee('Pengaturan Akun')
             ->assertSee('Keamanan')
-            ->assertSee(route('profile.password.update'), false)
+            ->assertSee(route('settings.password.edit'), false)
             ->assertSee(route('settings.index'), false);
     }
 
@@ -368,24 +368,35 @@ class ProfileTest extends TestCase
             'password' => 'password-lama-123',
         ]);
 
+        // Wrong current password is rejected at the verification step.
         $this->actingAs($user)
-            ->from(route('settings.index'))
-            ->put(route('profile.password.update'), [
-                'current_password' => 'salah-banget',
-                'password' => 'password-baru-456',
-                'password_confirmation' => 'password-baru-456',
-            ])
-            ->assertRedirect(route('settings.index'))
+            ->from(route('settings.password.edit'))
+            ->post(route('settings.password.verify'), ['current_password' => 'salah-banget'])
             ->assertSessionHasErrors('current_password');
 
+        // Updating without verification keeps the old password and blocks the change.
         $this->actingAs($user)
-            ->from(route('settings.index'))
-            ->put(route('profile.password.update'), [
-                'current_password' => 'password-lama-123',
+            ->from(route('settings.password.edit'))
+            ->post(route('settings.password.update'), [
                 'password' => 'password-baru-456',
                 'password_confirmation' => 'password-baru-456',
             ])
-            ->assertRedirect(route('settings.index'))
+            ->assertRedirect(route('settings.password.edit'))
+            ->assertSessionHas('error');
+
+        $this->assertTrue(Hash::check('password-lama-123', $user->fresh()->password));
+
+        // Verify, then update.
+        $this->actingAs($user)
+            ->post(route('settings.password.verify'), ['current_password' => 'password-lama-123'])
+            ->assertRedirect(route('settings.password.edit'));
+
+        $this->actingAs($user)
+            ->post(route('settings.password.update'), [
+                'password' => 'password-baru-456',
+                'password_confirmation' => 'password-baru-456',
+            ])
+            ->assertRedirect(route('settings.index', ['tab' => 'keamanan']))
             ->assertSessionHasNoErrors()
             ->assertSessionHas('success');
 
@@ -400,18 +411,17 @@ class ProfileTest extends TestCase
         ]);
 
         $this->actingAs($googleUser)
-            ->get(route('settings.index'))
+            ->get(route('settings.password.edit'))
             ->assertOk()
             ->assertDontSee('name="current_password"', false)
             ->assertSee('Buat Password Akun');
 
         $this->actingAs($googleUser)
-            ->from(route('settings.index'))
-            ->put(route('profile.password.update'), [
+            ->post(route('settings.password.update'), [
                 'password' => 'sandi-awal-789',
                 'password_confirmation' => 'sandi-awal-789',
             ])
-            ->assertRedirect(route('settings.index'))
+            ->assertRedirect(route('settings.index', ['tab' => 'keamanan']))
             ->assertSessionHasNoErrors();
 
         $this->assertTrue(Hash::check('sandi-awal-789', $googleUser->fresh()->password));
@@ -441,7 +451,7 @@ class ProfileTest extends TestCase
             ->assertSee('Edit profil')
             ->assertSee(route('profile.update'), false)
             ->assertSee(route('settings.index'), false)
-            ->assertDontSee(route('profile.password.update'), false);
+            ->assertDontSee(route('settings.password.edit'), false);
     }
 
     public function test_profile_lists_followers_and_following_on_their_own_pages(): void

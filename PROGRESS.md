@@ -265,6 +265,24 @@ Rencana remediasi:
 - [ ] Wave 2: chat Spaces (Reverb) atau tandai coming soon, tab report komunitas, halaman error dark, dokumentasi `artisan dev`/`queue:work`/`reverb:start`.
 - [ ] Wave 3: daftar follower/following, edit/hapus komunitas + kick member, OG/sitemap, kontras `--text-faint`, `aria-label` tombol ikon.
 
+## 3c. Milestone 13: Keamanan Akun — verifikasi email, password bertahap, OTP (16 Nov 2026)
+
+Alur lama (form email + password inline di `/pengaturan`, reset password lewat link token) diganti alur bertahap berbasis kode 6 digit lewat email.
+
+- **Infrastruktur**: `app/Services/SecurityCodes.php` (kode 6 digit di-hash di cache, TTL 15 menit, maks 5 percobaan, sekali pakai; `send()` balik `null` kalau mailer gagal supaya controller bisa kasih error, bukan 500), `app/Mail/SecurityCodeMail.php` + `resources/views/mail/security-code.blade.php` (inline style, aman untuk email client). Mailer = bawaan Laravel (Symfony Mailer) via SMTP, **tanpa dependency baru**; `.env.example` sudah preset Gmail (`MAIL_MAILER=log` untuk dev, `smtp.gmail.com:587` + app password untuk produksi).
+- **Ganti email** (`/pengaturan/email` → `/pengaturan/email/kode`): kode dikirim ke alamat BARU, email lama tetap aktif sampai kode diverifikasi; verifikasi menulis `email` + `email_verified_at` sekaligus. Form email inline di tab Akun dihapus, route `settings.account.update` + `SettingsController@updateAccount` dihapus.
+- **Ganti password bertahap** (`/pengaturan/keamanan/password`): langkah 1 konfirmasi password sekarang (`settings.password.verify`) atau kode email kalau lupa, langkah 2 password baru (`settings.password.update`). Guard server: update ditolak kalau sesi belum terverifikasi (`password_change.verified_at`, 15 menit). Akun Google (`password` null) langsung ke form "Buat Password". Form password inline lama + route `profile.password.update` + `ProfileController@updatePassword` dihapus.
+- **Lupa password saat login** (`/lupa-password` → `/lupa-password/kode`): kode ke email akun → kode benar = `Auth::login` dan mendarat di feed; `email_verified_at` diisi kalau masih null. `PasswordResetController` + view `auth/reset-password.blade.php` (alur link token) dihapus; nama route `password.request`/`password.email` dipertahankan agar link "Lupa password?" di halaman login tetap jalan.
+- **Prompt akun Google**: login Google tanpa password mem-flash `password_prompt`; `layouts/app.blade.php` menampilkan banner non-blocking "Buat Password" / "Nanti aja".
+- **Test**: `tests/Feature/EmailChangeTest.php` (7), `tests/Feature/PasswordChangeTest.php` (11); `SettingsTest`/`ProfileTest`/`ProjectShowcaseTest` dialihkan ke alur baru. Full suite **229 test (951 assertion) passed**, Pint clean, `npm run build` exit 0. E2E manual di dev: `POST /lupa-password` → kode dibaca dari `storage/logs/laravel.log` → `POST /lupa-password/kode` → mendarat di `/` dengan sesi login.
+- Sisa untuk produksi: isi `MAIL_USERNAME` + `MAIL_PASSWORD` (app password Gmail 16 digit) dan set `MAIL_MAILER=smtp`; selama `log`, email hanya masuk `storage/logs/laravel.log`.
+
+## 3d. Pemadatan halaman detail karya (16 Nov 2026)
+
+- `<article>` di `resources/views/projects/show.blade.php`: **1423px → 1066px (-25%)** pada viewport 1064px (kolom artikel tetap 710px).
+- Media `aspect-video max-h-[260px]` + `object-cover` (crop disetujui user, gaya cover), strip thumbnail 80px → 53px, padding hero/section `p-6/8` → `p-4/5`, judul 26px → `text-xl/2xl` (jadi 1 baris), body 14.5px + `max-w-[68ch]`, tombol aksi tetap 40px.
+- Proyek multi-media: ~1503px → 1065px. Sisa tinggi didominasi teks deskripsi (202px) + media 260px + padding minimum.
+
 ---
 
 ## 4. Backlog Masa Depan (Rekomendasi Lanjutan)

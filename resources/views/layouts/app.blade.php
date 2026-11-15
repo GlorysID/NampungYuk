@@ -53,6 +53,7 @@
           requestsOpen: false,
           shortcutsEnabled: {{ auth()->check() ? (auth()->user()->preference('display.keyboard_shortcuts', true) ? 'true' : 'false') : 'true' }},
           chatRequestsCount: {{ ($chatRequests ?? collect())->count() }},
+          passwordPrompt: {{ session('password_prompt') ? 'true' : 'false' }},
           toast: {
               show: {{ (session('status') || session('success') || session('error')) ? 'true' : 'false' }},
               message: @js(session('status') ?? session('success') ?? session('error') ?? ''),
@@ -373,6 +374,31 @@
                 </div>
 
             </header>
+            @endif
+
+            <!-- ONE-TIME PASSWORD PROMPT (Google-only accounts, non-blocking) -->
+            @if (session('password_prompt'))
+                <div x-show="passwordPrompt"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 -translate-y-1"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="w-full border-b border-[var(--border-color)] bg-[var(--surface)]">
+                    <div class="px-4 sm:px-6 py-3 flex flex-wrap items-center gap-3">
+                        <span class="w-9 h-9 rounded-full bg-[var(--surface-subtle)] border border-[var(--border-color)] text-[var(--text-muted)] flex items-center justify-center shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-[13px] font-semibold text-[var(--primary)]">Akun ini masuk lewat Google dan belum punya password</p>
+                            <p class="text-[12px] text-[var(--text-muted)] mt-0.5">Buat password supaya kamu juga bisa masuk memakai email.</p>
+                        </div>
+                        <a href="{{ route('settings.password.edit') }}" class="btn-primary text-xs py-2 px-4 shrink-0">Buat Password</a>
+                        <button type="button"
+                                @click="passwordPrompt = false"
+                                class="text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--primary)] transition cursor-pointer shrink-0">
+                            Nanti aja
+                        </button>
+                    </div>
+                </div>
             @endif
 
             <!-- MAIN WORKSPACE CONTENT CONTAINER -->

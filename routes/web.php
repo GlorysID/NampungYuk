@@ -3,15 +3,17 @@
 use App\Http\Controllers\AdminModerationController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Auth\PasswordOtpController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\CommunityPostController;
+use App\Http\Controllers\EmailChangeController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\InfiniteFeedController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PasswordChangeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
@@ -96,11 +98,24 @@ Route::middleware('auth')->group(function () {
     // Profile & account settings
     Route::get('/pengaturan', [SettingsController::class, 'index'])->name('settings.index');
     Route::put('/pengaturan/profil', [ProfileController::class, 'update'])->name('profile.update');
-    Route::put('/pengaturan/akun', [SettingsController::class, 'updateAccount'])->name('settings.account.update');
     Route::post('/pengaturan/verifikasi-ulang', [SettingsController::class, 'resendVerification'])->name('settings.verification.resend');
     Route::get('/pengaturan/ekspor', [SettingsController::class, 'exportData'])->name('settings.export');
     Route::delete('/pengaturan/akun', [SettingsController::class, 'destroyAccount'])->name('settings.account.destroy');
-    Route::put('/pengaturan/keamanan', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+
+    // Email change: 6-digit code is emailed to the NEW address before anything is written
+    Route::get('/pengaturan/email', [EmailChangeController::class, 'edit'])->name('settings.email.edit');
+    Route::post('/pengaturan/email', [EmailChangeController::class, 'sendCode'])->name('settings.email.send')->middleware('throttle:5,1');
+    Route::get('/pengaturan/email/kode', [EmailChangeController::class, 'showCodeForm'])->name('settings.email.code');
+    Route::post('/pengaturan/email/kode', [EmailChangeController::class, 'verifyCode'])->name('settings.email.verify')->middleware('throttle:5,1');
+    Route::post('/pengaturan/email/kirim-ulang', [EmailChangeController::class, 'resend'])->name('settings.email.resend')->middleware('throttle:5,1');
+
+    // Password change: staged, current password (or an emailed code) is verified first
+    Route::get('/pengaturan/keamanan/password', [PasswordChangeController::class, 'edit'])->name('settings.password.edit');
+    Route::post('/pengaturan/keamanan/password/verifikasi', [PasswordChangeController::class, 'verifyCurrent'])->name('settings.password.verify')->middleware('throttle:5,1');
+    Route::post('/pengaturan/keamanan/password', [PasswordChangeController::class, 'update'])->name('settings.password.update')->middleware('throttle:5,1');
+    Route::post('/pengaturan/keamanan/lupa-sandi', [PasswordChangeController::class, 'sendCode'])->name('settings.password.forgot')->middleware('throttle:5,1');
+    Route::get('/pengaturan/keamanan/lupa-sandi/kode', [PasswordChangeController::class, 'showCodeForm'])->name('settings.password.forgot.code');
+    Route::post('/pengaturan/keamanan/lupa-sandi/kode', [PasswordChangeController::class, 'verifyCode'])->name('settings.password.forgot.verify')->middleware('throttle:5,1');
     Route::delete('/pengaturan/sesi/{sessionId}', [SettingsController::class, 'destroySession'])->name('settings.sessions.destroy');
     Route::post('/pengaturan/sesi/keluar-lain', [SettingsController::class, 'destroyOtherSessions'])->name('settings.sessions.destroyOthers');
     Route::put('/pengaturan/privasi', [SettingsController::class, 'updatePrivacy'])->name('settings.privacy.update');
@@ -158,11 +173,11 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [RegisterController::class, 'store'])->name('register.store')->middleware('throttle:5,1');
     Route::get('/login', [LoginController::class, 'create'])->name('login');
 
-    // Password reset
-    Route::get('/lupa-password', [PasswordResetController::class, 'request'])->name('password.request');
-    Route::post('/lupa-password', [PasswordResetController::class, 'email'])->name('password.email')->middleware('throttle:5,1');
-    Route::get('/reset-password/{token}', [PasswordResetController::class, 'reset'])->name('password.reset');
-    Route::post('/reset-password', [PasswordResetController::class, 'update'])->name('password.update');
+    // Password recovery: 6-digit code instead of a reset link
+    Route::get('/lupa-password', [PasswordOtpController::class, 'showEmailForm'])->name('password.request');
+    Route::post('/lupa-password', [PasswordOtpController::class, 'sendCode'])->name('password.email')->middleware('throttle:5,1');
+    Route::get('/lupa-password/kode', [PasswordOtpController::class, 'showCodeForm'])->name('password.code');
+    Route::post('/lupa-password/kode', [PasswordOtpController::class, 'verifyCode'])->name('password.code.verify')->middleware('throttle:5,1');
 
     // Email verification
     Route::get('/email/verifikasi', [VerifyEmailController::class, 'notice'])->name('verification.notice');

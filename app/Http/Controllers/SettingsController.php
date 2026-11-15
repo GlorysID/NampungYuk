@@ -47,56 +47,6 @@ class SettingsController extends Controller
     }
 
     /**
-     * Update basic account contact details (email).
-     */
-    public function updateAccount(Request $request): RedirectResponse
-    {
-        /** @var User $user */
-        $user = $request->user();
-        $hasPassword = filled($user->password);
-
-        $rules = [
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
-        ];
-
-        if ($hasPassword) {
-            $rules['current_password'] = ['required', 'current_password'];
-        }
-
-        $validated = $request->validate($rules, [
-            'email.required' => 'Alamat email wajib diisi.',
-            'email.email' => 'Format alamat email tidak valid.',
-            'email.unique' => 'Alamat email ini sudah digunakan oleh akun lain.',
-            'current_password.required' => 'Masukkan password saat ini untuk mengonfirmasi perubahan email.',
-            'current_password.current_password' => 'Password saat ini tidak cocok.',
-        ]);
-
-        $newEmail = strtolower(trim($validated['email']));
-        $emailChanged = $newEmail !== strtolower($user->email);
-
-        if ($emailChanged) {
-            $user->forceFill([
-                'email' => $newEmail,
-                'email_verified_at' => null,
-            ])->save();
-
-            try {
-                $user->sendEmailVerificationNotification();
-            } catch (\Throwable) {
-                // Email mailer may be unconfigured in local dev; keep email update intact.
-            }
-
-            return redirect()
-                ->route('settings.index', ['tab' => 'akun'])
-                ->with('success', 'Email berhasil diperbarui! Silakan cek inbox untuk verifikasi ulang.');
-        }
-
-        return redirect()
-            ->route('settings.index', ['tab' => 'akun'])
-            ->with('status', 'Tidak ada perubahan pada alamat email.');
-    }
-
-    /**
      * Resend email verification link from settings.
      */
     public function resendVerification(Request $request): RedirectResponse

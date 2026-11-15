@@ -89,6 +89,10 @@ class GoogleAuthController extends Controller
             Auth::login($user, true);
             $request->session()->regenerate();
 
+            if (! filled($user->password)) {
+                $request->session()->flash('password_prompt', true);
+            }
+
             return redirect()->intended(route('projects.index'))
                 ->with('status', 'Selamat datang, '.$user->name.'! Berhasil masuk dengan Google.');
         } catch (Throwable $e) {
@@ -126,6 +130,10 @@ class GoogleAuthController extends Controller
 
             Auth::login($user, true);
             $request->session()->regenerate();
+
+            if (! filled($user->password)) {
+                $request->session()->flash('password_prompt', true);
+            }
 
             $welcomeMessage = 'Selamat datang, '.$user->name.'! Berhasil masuk dengan Google.';
             $request->session()->flash('status', $welcomeMessage);
