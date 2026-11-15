@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\User;
+use App\Rules\SafeUrl;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ProfileUpdateRequest extends FormRequest
@@ -40,11 +41,11 @@ class ProfileUpdateRequest extends FormRequest
                 },
             ],
             'bio' => ['nullable', 'string', 'max:280'],
-            'github_url' => ['nullable', 'url', 'max:255'],
-            'website_url' => ['nullable', 'url', 'max:255'],
+            'github_url' => ['nullable', 'max:255', new SafeUrl],
+            'website_url' => ['nullable', 'max:255', new SafeUrl],
             'links' => ['nullable', 'array', 'max:6'],
             'links.*.label' => ['nullable', 'string', 'max:40'],
-            'links.*.url' => ['nullable', 'url', 'max:255'],
+            'links.*.url' => ['nullable', 'max:255', new SafeUrl],
             'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:2048'],
             'banner' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:4096'],
         ];

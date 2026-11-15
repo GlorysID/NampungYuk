@@ -15,6 +15,7 @@ use App\Notifications\ProjectCommentNotification;
 use App\Notifications\ProjectRepostedNotification;
 use App\Notifications\ProjectTrendingNotification;
 use App\Notifications\ProjectUploadedNotification;
+use App\Rules\SafeUrl;
 use App\Services\MediaOptimizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -22,11 +23,22 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ProjectController extends Controller
 {
     public function __construct(private MediaOptimizer $media) {}
+
+    /**
+     * Validation rules for externally-linked URLs (rendered as href/src).
+     *
+     * @return array<int, mixed>
+     */
+    private function linkRules(): array
+    {
+        return ['nullable', 'max:255', new SafeUrl];
+    }
 
     /**
      * Display project showcase feed.
@@ -39,11 +51,6 @@ class ProjectController extends Controller
         $techFilter = $request->query('tech');
         $search = $request->query('q') ?? $request->query('search');
         $scopedUsername = $request->query('u'); // when searching within a profile page
-
-        // Memerlukan login untuk melihat feed berdasarkan kategori kodingan atau filter teknologi
-        if (($categorySlug || $techFilter) && ! Auth::check()) {
-            return redirect()->route('projects.index')->with('auth_required', true);
-        }
 
         // People search: same query box, results are accounts instead of projects.
         if ($view === 'people') {
@@ -337,15 +344,15 @@ class ProjectController extends Controller
             'challenges' => ['nullable', 'string'],
             'learnings' => ['nullable', 'string'],
             'setup_instructions' => ['nullable', 'string'],
-            'demo_url' => ['nullable', 'url', 'max:255'],
-            'github_url' => ['nullable', 'url', 'max:255'],
-            'prototype_url' => ['nullable', 'url', 'max:255'],
+            'demo_url' => $this->linkRules(),
+            'github_url' => $this->linkRules(),
+            'prototype_url' => $this->linkRules(),
             'thumbnail' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:4096'],
-            'thumbnail_url' => ['nullable', 'url', 'max:255'],
+            'thumbnail_url' => $this->linkRules(),
             'images' => ['nullable', 'array', 'max:8'],
             'images.*' => ['image', 'mimes:jpeg,png,jpg,webp,gif', 'max:4096'],
             'video' => ['nullable', 'file', 'mimes:mp4,webm,ogg,mov,m4v', 'max:25600'],
-            'video_url' => ['nullable', 'url', 'max:255'],
+            'video_url' => $this->linkRules(),
             'videos' => ['nullable', 'array', 'max:4'],
             'videos.*' => ['file', 'mimes:mp4,webm,ogg,mov,m4v', 'max:25600'],
         ]);
@@ -504,15 +511,15 @@ class ProjectController extends Controller
             'challenges' => ['nullable', 'string'],
             'learnings' => ['nullable', 'string'],
             'setup_instructions' => ['nullable', 'string'],
-            'demo_url' => ['nullable', 'url', 'max:255'],
-            'github_url' => ['nullable', 'url', 'max:255'],
-            'prototype_url' => ['nullable', 'url', 'max:255'],
+            'demo_url' => $this->linkRules(),
+            'github_url' => $this->linkRules(),
+            'prototype_url' => $this->linkRules(),
             'thumbnail' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:4096'],
-            'thumbnail_url' => ['nullable', 'url', 'max:255'],
+            'thumbnail_url' => $this->linkRules(),
             'images' => ['nullable', 'array', 'max:8'],
             'images.*' => ['image', 'mimes:jpeg,png,jpg,webp,gif', 'max:4096'],
             'video' => ['nullable', 'file', 'mimes:mp4,webm,ogg,mov,m4v', 'max:25600'],
-            'video_url' => ['nullable', 'url', 'max:255'],
+            'video_url' => $this->linkRules(),
             'videos' => ['nullable', 'array', 'max:4'],
             'videos.*' => ['file', 'mimes:mp4,webm,ogg,mov,m4v', 'max:25600'],
         ]);
@@ -778,7 +785,10 @@ class ProjectController extends Controller
     {
         $validated = $request->validate([
             'content' => ['required', 'string', 'max:1000'],
-            'parent_id' => ['nullable', 'exists:project_comments,id'],
+            'parent_id' => [
+                'nullable',
+                Rule::exists('project_comments', 'id')->where('project_id', $project->id),
+            ],
         ]);
 
         /** @var User|null $user */

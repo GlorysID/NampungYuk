@@ -33,7 +33,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/obrolan/pesan/{message}', [ChatController::class, 'destroyMessage'])->name('chat.message.destroy');
     Route::patch('/obrolan/pesan/{message}', [ChatController::class, 'editMessage'])->name('chat.message.edit');
     Route::get('/obrolan/{user:username}', [ChatController::class, 'show'])->name('chat.show');
-    Route::post('/obrolan/{user:username}/kirim', [ChatController::class, 'send'])->name('chat.send');
+    Route::post('/obrolan/{user:username}/kirim', [ChatController::class, 'send'])->name('chat.send')->middleware('throttle:30,1');
     Route::post('/obrolan/{user:username}/mengetik', [ChatController::class, 'typing'])->name('chat.typing');
     Route::get('/obrolan/{user:username}/lama', [ChatController::class, 'older'])->name('chat.older');
     Route::post('/obrolan/{user:username}/terima', [ChatController::class, 'accept'])->name('chat.accept');
@@ -51,7 +51,7 @@ Route::bind('space', function (string $value) {
 Route::get('/spaces', [SpaceController::class, 'index'])->name('spaces.index');
 Route::get('/spaces/{slug}', [SpaceController::class, 'show'])->name('spaces.show');
 Route::middleware('auth')->group(function () {
-    Route::post('/spaces', [SpaceController::class, 'store'])->name('spaces.store');
+    Route::post('/spaces', [SpaceController::class, 'store'])->name('spaces.store')->middleware('throttle:10,1');
     Route::post('/spaces/{space}/join', [SpaceController::class, 'join'])->name('spaces.join');
     Route::post('/spaces/{space}/leave', [SpaceController::class, 'leave'])->name('spaces.leave');
     Route::post('/spaces/{space}/end', [SpaceController::class, 'end'])->name('spaces.end');
@@ -82,8 +82,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/project/{project:slug}', [ProjectController::class, 'destroy'])->name('projects.destroy');
 
     // Project interactions
-    Route::post('/project/{project}/vote', [ProjectController::class, 'vote'])->name('projects.vote');
-    Route::post('/project/{project}/comment', [ProjectController::class, 'comment'])->name('projects.comment');
+    Route::post('/project/{project}/vote', [ProjectController::class, 'vote'])->name('projects.vote')->middleware('throttle:30,1');
+    Route::post('/project/{project}/comment', [ProjectController::class, 'comment'])->name('projects.comment')->middleware('throttle:10,1');
     Route::delete('/project/komentar/{comment}', [ProjectController::class, 'destroyComment'])->name('projects.comment.destroy');
     Route::post('/project/{project}/bookmark', [ProjectController::class, 'bookmark'])->name('projects.bookmark');
     Route::get('/koleksi', [ProjectController::class, 'bookmarks'])->name('projects.bookmarks');
@@ -118,12 +118,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/notifikasi/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
 
     // Communities (member actions)
-    Route::post('/komunitas', [CommunityController::class, 'store'])->name('communities.store');
+    Route::post('/komunitas', [CommunityController::class, 'store'])->name('communities.store')->middleware('throttle:10,1');
     Route::post('/komunitas/{community:slug}/join', [CommunityController::class, 'toggleJoin'])->name('communities.join');
-    Route::post('/komunitas/{community:slug}/post', [CommunityPostController::class, 'store'])->name('communities.post');
+    Route::post('/komunitas/{community:slug}/post', [CommunityPostController::class, 'store'])->name('communities.post')->middleware('throttle:10,1');
     Route::post('/komunitas/{community:slug}/moderator/{user}', [CommunityController::class, 'toggleModerator'])->name('communities.moderator');
     Route::post('/community-post/{post}/vote', [CommunityPostController::class, 'vote'])->name('communities.post.vote');
-    Route::post('/community-post/{post}/comment', [CommunityPostController::class, 'comment'])->name('communities.post.comment');
+    Route::post('/community-post/{post}/comment', [CommunityPostController::class, 'comment'])->name('communities.post.comment')->middleware('throttle:10,1');
 
     // Community moderation
     Route::post('/community-post/{post}/pin', [CommunityPostController::class, 'togglePin'])->name('communities.post.pin');
@@ -131,7 +131,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/community-post/{post}', [CommunityPostController::class, 'destroy'])->name('communities.post.destroy');
 
     // User reporting
-    Route::post('/laporan', [ReportController::class, 'store'])->name('reports.store');
+    Route::post('/laporan', [ReportController::class, 'store'])->name('reports.store')->middleware('throttle:10,1');
 });
 
 // Admin Moderation routes
@@ -153,7 +153,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
 Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
-    Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
+    Route::post('/register', [RegisterController::class, 'store'])->name('register.store')->middleware('throttle:5,1');
     Route::get('/login', [LoginController::class, 'create'])->name('login');
 
     // Password reset

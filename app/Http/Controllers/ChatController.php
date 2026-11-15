@@ -61,6 +61,20 @@ class ChatController extends Controller
             ->orderByDesc('updated_at')
             ->get();
 
+        // A block severs the history: hide those conversations before any message is read.
+        /** @var User|null $viewer */
+        $viewer = Auth::user();
+        $blockedIds = $viewer
+            ? $viewer->blockedUsers()->pluck('users.id')
+                ->merge($viewer->blockedByUsers()->pluck('users.id'))
+                ->all()
+            : [];
+
+        $all = $all
+            ->reject(fn (Conversation $c) => in_array($c->user_one_id, $blockedIds, true)
+                || in_array($c->user_two_id, $blockedIds, true))
+            ->values();
+
         $conversationIds = $all->pluck('id');
 
         // Batch load latest message per conversation (avoids N+1)
@@ -147,6 +161,12 @@ class ChatController extends Controller
             abort(404);
         }
 
+        /** @var User $auth */
+        $auth = Auth::user();
+        if ($auth->hasBlocked($other) || $auth->isBlockedBy($other)) {
+            abort(403, 'Obrolan tidak tersedia karena salah satu akun memblokir.');
+        }
+
         // Never create a conversation just by viewing. If none exists yet, the
         // chat starts empty — the first message will establish pending/accepted.
         $conversation = Conversation::findBetween($userId, $other->id);
@@ -201,12 +221,8 @@ class ChatController extends Controller
             $messages = collect();
         }
 
-        // Enforce user blocks and recipient DM privacy policy.
-        /** @var User $auth */
-        $auth = Auth::user();
-        if ($auth->hasBlocked($other) || $auth->isBlockedBy($other)) {
-            $canSend = false;
-        } elseif (! $conversation && ! $other->allowsDirectMessageFrom($auth)) {
+        // Recipient DM privacy policy (blocks are enforced before any message read).
+        if (! $conversation && ! $other->allowsDirectMessageFrom($auth)) {
             $canSend = false;
         }
 
@@ -405,6 +421,13 @@ class ChatController extends Controller
 
         if ($user->id === $auth->id) {
             return response()->json(['message' => 'Invalid.'], 422);
+        }
+
+        if ($auth->hasBlocked($user) || $auth->isBlockedBy($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Obrolan tidak tersedia karena salah satu akun sedang memblokir.',
+            ], 403);
         }
 
         $beforeId = (int) $request->query('before', 0);

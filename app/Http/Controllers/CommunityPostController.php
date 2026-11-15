@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class CommunityPostController extends Controller
 {
@@ -138,7 +139,10 @@ class CommunityPostController extends Controller
 
         $data = $request->validate([
             'content' => ['required', 'string', 'max:1000'],
-            'parent_id' => ['nullable', 'exists:community_post_comments,id'],
+            'parent_id' => [
+                'nullable',
+                Rule::exists('community_post_comments', 'id')->where('community_post_id', $post->id),
+            ],
         ]);
 
         $comment = CommunityPostComment::create([

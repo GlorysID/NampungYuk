@@ -245,6 +245,23 @@ Dokumen ini mencatat riwayat investigasi, keputusan arsitektur, overhaul UI/UX, 
 - [x] Penyeragaman desain rail kanan (`projects/index.blade.php`, `layouts/app.blade.php`): menyamakan surface/border & header ringkas di seluruh kartu (`Untuk Diikuti`, `Trending Hari Ini`, `Topik Hangat`, `Komunitas Populer`), memakai tombol `Ikuti` `variant="subtle"`, menghilangkan teks repetitif `Trending · #N`, memberi 2 baris pada judul trending (`line-clamp-2`) dengan index monospace `01..05` dan badge upvote di kanan, serta merapikan `Topik Hangat` menjadi baris 1-baris dengan jumlah karya tabular.
 - [x] Pemolesan sidebar kiri (`partials/sidebar.blade.php`, `AppServiceProvider.php`, `SpaceController.php`): padding horizontal lebih lapang (`px-4`), hairline pemisah header logo & antar grup nav, label grup Geist Mono halus, item nav `h-11` bergaya Token Harbor (`rounded-xl bg-[var(--surface)] border-[var(--border-color)]` + dot emerald kanan tanpa garis vertikal menempel di sudut), widget **Live Spaces Radar** real-time (dengan cache `sidebar:live_spaces_v1` yang otomatis di-invalidate saat Space dimulai/diikuti/ditinggalkan/diakhiri) di atas CTA `Pamer Kodingan`, kartu profil bawah berbingkai (`rounded-xl border`), dan menu dropdown profil yang serasi.
 
+## 3b. Milestone 12: Audit Gap Komprehensif & Remediasi Keamanan (15 Nov 2026)
+
+Audit 3 jalur (fitur, keamanan, ops/UX) atas 99 route. Temuan yang dibuktikan langsung:
+
+- **XSS skema URL (tinggi)**: `javascript://x%0Aalert(1)` lolos rule `url` Laravel; dirender sebagai `href` di `users/show.blade.php:310` dan `projects/show.blade.php:241,251,261`. Sumber: `ProfileUpdateRequest.php:41-47`, `ProjectController.php:340,507`.
+- **Register tanpa throttle**: `routes/web.php:156` + email verifikasi langsung → email bombing.
+- **Blokir tidak memutus chat**: `ChatController.php:191` memuat pesan sebelum cek blok; `older()` (`:399-447`) tanpa cek sama sekali.
+- **`parent_id` komentar lintas thread**: `ProjectController.php:781`, `CommunityPostController.php:139-147` hanya `exists:...id`.
+- **Tamu diblok di filter kategori/tech**: `ProjectController.php:44-46` (melanggar aturan guest flow).
+- **Fitur setengah jadi**: chat Spaces hanya array Alpine (`spaces/show.blade.php:196`, `app.js:281-315` tanpa cabang `chat`); report `community_post` dihitung di badge tapi tak pernah di-query (`AdminModerationController.php:29` vs `:34-44`); role speaker/listener hanya di schema.
+- **Ops**: tidak ada `resources/views/errors/*`; queue worker + Reverb tidak terdokumentasi di README; suite SQLite-only; path `/storage/` hardcoded.
+
+Rencana remediasi:
+- [x] Wave 1 (selesai): rule `App\Rules\SafeUrl` (hanya http/https, tolak control char) dipakai di `ProfileUpdateRequest` (github/website/links) dan `ProjectController::linkRules()` (demo/github/prototype/thumbnail/video url) — `javascript://x%0Aalert(1)` sekarang ditolak. `throttle` ditambah di `register.store` (5/menit) + 8 endpoint tulis (`chat.send` & `projects.vote` 30/menit, sisanya 10/menit); `spaces.join`/`signal` sengaja tanpa throttle karena ICE candidate. Blokir user kini memutus `show()` (403), `older()` (403 JSON), dan inbox `inboxData()`. `parent_id` komentar di-scope ke `project_id`/`community_post_id` pemiliknya. Guard tamu di filter kategori/tech dihapus (sesuai aturan guest flow), dengan test yang memastikan proyek privat/flagged/warning tetap tersembunyi. Verifikasi: Laravel Pint `passed`, `208` test (`831` assertions) passed, 0 gagal.
+- [ ] Wave 2: chat Spaces (Reverb) atau tandai coming soon, tab report komunitas, halaman error dark, dokumentasi `artisan dev`/`queue:work`/`reverb:start`.
+- [ ] Wave 3: daftar follower/following, edit/hapus komunitas + kick member, OG/sitemap, kontras `--text-faint`, `aria-label` tombol ikon.
+
 ---
 
 ## 4. Backlog Masa Depan (Rekomendasi Lanjutan)

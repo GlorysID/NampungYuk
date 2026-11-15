@@ -326,7 +326,76 @@ class ProjectShowcaseTest extends TestCase
         $resp3->assertSee('WPU Course Portal');
     }
 
-    public function test_user_can_filter_by_category(): void
+    public function test_guest_can_filter_by_category_without_seeing_private_or_warned_projects(): void
+    {
+        $cat1 = Category::create(['name' => 'Web App', 'slug' => 'web-app']);
+        $cat2 = Category::create(['name' => 'Mobile App', 'slug' => 'mobile-app']);
+
+        $public = Project::create([
+            'category_id' => $cat1->id,
+            'title' => 'Web Laravel',
+            'slug' => 'web-laravel',
+            'tagline' => 'Web keren',
+            'tech_stacks' => ['Laravel'],
+        ]);
+
+        $otherCategory = Project::create([
+            'category_id' => $cat2->id,
+            'title' => 'Mobile Flutter',
+            'slug' => 'mobile-flutter',
+            'tagline' => 'App flutter',
+            'tech_stacks' => ['Flutter'],
+        ]);
+
+        $private = Project::create([
+            'category_id' => $cat1->id,
+            'title' => 'Web Privat',
+            'slug' => 'web-privat',
+            'tagline' => 'Rahasia',
+            'tech_stacks' => ['Laravel'],
+            'visibility' => 'private',
+        ]);
+
+        $warned = Project::create([
+            'category_id' => $cat1->id,
+            'title' => 'Web Peringatan',
+            'slug' => 'web-peringatan',
+            'tagline' => 'Kena warning',
+            'tech_stacks' => ['Laravel'],
+            'warning_notes' => 'Melanggar aturan komunitas',
+        ]);
+
+        $flagged = Project::create([
+            'category_id' => $cat1->id,
+            'title' => 'Web Ditandai',
+            'slug' => 'web-ditandai',
+            'tagline' => 'Kena flag',
+            'tech_stacks' => ['Laravel'],
+            'is_flagged' => true,
+        ]);
+
+        // Guests browse freely — filtering no longer opens the login modal.
+        $guestResponse = $this->get('/?kategori=web-app');
+        $guestResponse->assertStatus(200);
+
+        $guestIds = $guestResponse->viewData('projects')->pluck('id');
+        $this->assertTrue($guestIds->contains($public->id));
+        $this->assertFalse($guestIds->contains($otherCategory->id));
+        $this->assertFalse($guestIds->contains($private->id));
+        $this->assertFalse($guestIds->contains($warned->id));
+        $this->assertFalse($guestIds->contains($flagged->id));
+
+        $guestTechResponse = $this->get('/?tech=Laravel');
+        $guestTechResponse->assertStatus(200);
+
+        $guestTechIds = $guestTechResponse->viewData('projects')->pluck('id');
+        $this->assertTrue($guestTechIds->contains($public->id));
+        $this->assertFalse($guestTechIds->contains($private->id));
+        $this->assertFalse($guestTechIds->contains($warned->id));
+        $this->assertFalse($guestTechIds->contains($flagged->id));
+    }
+
+    public function test_authenticated_user_can_filter_by_category(): void
     {
         $cat1 = Category::create(['name' => 'Web App', 'slug' => 'web-app']);
         $cat2 = Category::create(['name' => 'Mobile App', 'slug' => 'mobile-app']);
@@ -347,16 +416,6 @@ class ProjectShowcaseTest extends TestCase
             'tech_stacks' => ['Flutter'],
         ]);
 
-        // Guest is bounced back to the feed with the login modal open
-        $guestResponse = $this->get('/?kategori=web-app');
-        $guestResponse->assertRedirect(route('projects.index'));
-        $guestResponse->assertSessionHas('auth_required');
-
-        $guestTechResponse = $this->get('/?tech=Flutter');
-        $guestTechResponse->assertRedirect(route('projects.index'));
-        $guestTechResponse->assertSessionHas('auth_required');
-
-        // Authenticated user can filter
         $user = User::factory()->create();
         $response = $this->actingAs($user)->get('/?kategori=web-app');
         $response->assertStatus(200);
