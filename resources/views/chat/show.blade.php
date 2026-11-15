@@ -54,7 +54,8 @@
                  otherName: '{{ addslashes($other->name) }}',
                  isPending: {{ $isPending ? 'true' : 'false' }},
                  canSend: {{ $canSend ? 'true' : 'false' }},
-                 canRespond: {{ $canRespond ? 'true' : 'false' }}
+                 canRespond: {{ $canRespond ? 'true' : 'false' }},
+                 blockedByPolicy: {{ $blockedByPolicy ? 'true' : 'false' }}
              })">
             {{-- Message request banner (reactive - ALWAYS kept in DOM for Echo updates) --}}
             <div x-show="isPending" x-cloak class="mb-3 p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shrink-0"
@@ -224,7 +225,8 @@
                 </form>
                 <div x-show="!canSend" x-cloak class="p-3 border-t border-[var(--border-color)] shrink-0 text-center text-xs text-[var(--text-muted)] bg-[var(--surface-subtle)]">
                     <span x-show="canRespond">Terima permintaan pesan di atas untuk mulai membalas.</span>
-                    <span x-show="!canRespond">Menunggu {{ $other->name }} menerima permintaan pesanmu.</span>
+                    <span x-show="blockedByPolicy"><strong>{{ $other->name }}</strong> hanya menerima obrolan dari akun yang mereka ikuti. Kamu belum termasuk.</span>
+                    <span x-show="!canRespond && !blockedByPolicy">Menunggu <strong>{{ $other->name }}</strong> menerima permintaan pesanmu.</span>
                 </div>
             </div>
         </div>

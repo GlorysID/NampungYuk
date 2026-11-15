@@ -222,7 +222,9 @@ class ChatController extends Controller
         }
 
         // Recipient DM privacy policy (blocks are enforced before any message read).
-        if (! $conversation && ! $other->allowsDirectMessageFrom($auth)) {
+        // Only gates a brand-new thread: an existing one keeps working.
+        $blockedByPolicy = ! $conversation && ! $other->allowsDirectMessageFrom($auth);
+        if ($blockedByPolicy) {
             $canSend = false;
         }
 
@@ -258,6 +260,7 @@ class ChatController extends Controller
             'isPending',
             'canRespond',
             'canSend',
+            'blockedByPolicy',
             'conversations',
             'requests',
             'peopleResults',

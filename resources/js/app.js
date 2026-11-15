@@ -405,13 +405,14 @@ document.addEventListener('alpine:init', () => {
     /**
      * Chat room: send messages and receive them live via Echo (Reverb).
      */
-    Alpine.data('chatRoom', ({ conversationId, me, sendUrl, typingUrl, olderUrl, deleteUrl, editUrl, otherName, isPending = false, canSend = true, canRespond = false }) => ({
+    Alpine.data('chatRoom', ({ conversationId, me, sendUrl, typingUrl, olderUrl, deleteUrl, editUrl, otherName, isPending = false, canSend = true, canRespond = false, blockedByPolicy = false }) => ({
         draft: '',
         sending: false,
         // Gate state (mirrors the server-rendered flags; updated live after a send).
         isPending,
         canSend,
         canRespond,
+        blockedByPolicy,
         otherName,
         // Unified, chronologically-ordered message list (server + live, deduped by id).
         messages: window.__chatSeed || [],

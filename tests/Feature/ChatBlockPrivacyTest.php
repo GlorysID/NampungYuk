@@ -66,4 +66,52 @@ class ChatBlockPrivacyTest extends TestCase
             ->assertStatus(200)
             ->assertDontSee('KODE-RAHASIA-TERAKHIR');
     }
+
+    /**
+     * `following_only` refuses the thread outright (no pending request), so the
+     * locked composer must not promise a request that will never exist.
+     */
+    public function test_following_only_policy_refuses_a_new_thread_and_says_why(): void
+    {
+        $recipient = User::factory()->create();
+        $sender = User::factory()->create();
+
+        $this->actingAs($recipient)
+            ->putJson(route('settings.privacy.update'), ['dm_policy' => 'following_only'])
+            ->assertOk();
+
+        $this->actingAs($sender)
+            ->get('/obrolan/'.$recipient->username)
+            ->assertStatus(200)
+            ->assertSee('blockedByPolicy: true', false)
+            ->assertSee('hanya menerima obrolan dari akun yang mereka ikuti', false);
+
+        $this->actingAs($sender)
+            ->get(route('profile.show', $recipient->username))
+            ->assertStatus(200)
+            ->assertSee('hanya menerima pesan dari akun yang mereka ikuti', false);
+
+        $this->actingAs($sender)
+            ->postJson('/obrolan/'.$recipient->username.'/kirim', ['body' => 'halo'])
+            ->assertStatus(403);
+
+        $this->assertDatabaseCount('conversations', 0);
+    }
+
+    public function test_existing_thread_keeps_working_after_switching_to_following_only(): void
+    {
+        $recipient = User::factory()->create();
+        $sender = User::factory()->create();
+
+        Conversation::between($recipient->id, $sender->id);
+
+        $this->actingAs($recipient)
+            ->putJson(route('settings.privacy.update'), ['dm_policy' => 'following_only'])
+            ->assertOk();
+
+        $this->actingAs($sender)
+            ->postJson('/obrolan/'.$recipient->username.'/kirim', ['body' => 'masih bisa kirim'])
+            ->assertOk()
+            ->assertJsonPath('success', true);
+    }
 }

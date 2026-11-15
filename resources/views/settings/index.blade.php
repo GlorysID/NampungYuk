@@ -477,7 +477,7 @@
                                            class="mt-0.5 accent-emerald-500">
                                     <div>
                                         <p class="text-xs font-semibold text-[var(--primary)]">Semua Orang</p>
-                                        <p class="text-[11px] text-[var(--text-muted)] mt-0.5">Pengguna yang tidak kamu ikuti akan masuk sebagai permintaan pesan.</p>
+                                        <p class="text-[11px] text-[var(--text-muted)] mt-0.5">Siapa pun bisa memulai obrolan. Akun yang belum kamu ikuti masuk sebagai permintaan pesan.</p>
                                     </div>
                                 </label>
                                 <label class="flex items-start gap-3 p-3.5 rounded-xl border border-[var(--border-color)] bg-[var(--surface-subtle)] cursor-pointer hover:border-[var(--border-strong)] has-[:checked]:border-emerald-500/50 has-[:checked]:bg-[var(--surface)] transition">
@@ -487,7 +487,7 @@
                                            class="mt-0.5 accent-emerald-500">
                                     <div>
                                         <p class="text-xs font-semibold text-[var(--primary)]">Hanya yang Saya Ikuti</p>
-                                        <p class="text-[11px] text-[var(--text-muted)] mt-0.5">Hanya akun yang kamu follow yang bisa memulai obrolan baru.</p>
+                                        <p class="text-[11px] text-[var(--text-muted)] mt-0.5">Hanya akun yang kamu ikuti yang bisa memulai obrolan. Akun lain ditolak, bukan jadi permintaan pesan.</p>
                                     </div>
                                 </label>
                             </div>

@@ -284,6 +284,12 @@ Alur lama (form email + password inline di `/pengaturan`, reset password lewat l
 - Media `aspect-video max-h-[260px]` + `object-cover` (crop disetujui user, gaya cover), strip thumbnail 80px → 53px, padding hero/section `p-6/8` → `p-4/5`, judul 26px → `text-xl/2xl` (jadi 1 baris), body 14.5px + `max-w-[68ch]`, tombol aksi tetap 40px.
 - Proyek multi-media: ~1503px → 1065px. Sisa tinggi didominasi teks deskripsi (202px) + media 260px + padding minimum.
 
+## 3e. Klarifikasi gerbang obrolan (16 Nov 2026)
+
+- Dua lapis DM yang selama ini tercampur jadi satu copy: (1) `privacy.dm_policy` — `following_only` **menolak** (403, tanpa baris `conversations`, tanpa request), (2) gerbang follow `Conversation::gateStatusFor()` — penerima follow pengirim = langsung, kalau tidak = *permintaan pesan*.
+- Yang diperbaiki: `chat/show.blade.php` dapat flag baru `$blockedByPolicy` (tetap reaktif Alpine `x-show`, tidak di-`@if` sesuai `.ai/rules/chat.md`) sehingga composer terkunci tidak lagi bohong "Menunggu ... menerima permintaan pesanmu"; tooltip tombol "Pesan" di `users/show.blade.php` kini membedakan "belum mengikutimu (jadi permintaan)" vs "hanya menerima dari akun yang mereka ikuti"; copy opsi di Setelan → Privasi ikut diperjelas; `.ai/rules/controllers.md` dikoreksi dari "mutual follow" (salah) ke satu arah + lapisan kebijakan.
+- Verifikasi: `ChatBlockPrivacyTest` +2 test (penolakan + copy, dan thread lama tetap jalan setelah pindah ke `following_only`). Full suite **231 test (962 assertion) passed**, Pint clean, `npm run build` exit 0.
+
 ---
 
 ## 4. Backlog Masa Depan (Rekomendasi Lanjutan)
