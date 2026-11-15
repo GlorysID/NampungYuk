@@ -276,6 +276,7 @@ Alur lama (form email + password inline di `/pengaturan`, reset password lewat l
 - **Prompt akun Google**: login Google tanpa password mem-flash `password_prompt`; `layouts/app.blade.php` menampilkan banner non-blocking "Buat Password" / "Nanti aja".
 - **Test**: `tests/Feature/EmailChangeTest.php` (7), `tests/Feature/PasswordChangeTest.php` (11); `SettingsTest`/`ProfileTest`/`ProjectShowcaseTest` dialihkan ke alur baru. Full suite **229 test (951 assertion) passed**, Pint clean, `npm run build` exit 0. E2E manual di dev: `POST /lupa-password` → kode dibaca dari `storage/logs/laravel.log` → `POST /lupa-password/kode` → mendarat di `/` dengan sesi login.
 - Sisa untuk produksi: isi `MAIL_USERNAME` + `MAIL_PASSWORD` (app password Gmail 16 digit) dan set `MAIL_MAILER=smtp`; selama `log`, email hanya masuk `storage/logs/laravel.log`.
+- **SMTP Gmail aktif di dev (16 Nov 2026)**: `MAIL_MAILER=smtp`, `MAIL_HOST=smtp.gmail.com`, `MAIL_PORT=587`, `MAIL_SCHEME=null`, `MAIL_USERNAME` = `MAIL_FROM_ADDRESS`. Jangan set `MAIL_SCHEME=tls` — Symfony Mailer menolaknya (`UnsupportedSchemeException`), STARTTLS di port 587 otomatis. Pakai `MAIL_SCHEME=smtps` kalau pindah ke port 465. Terverifikasi kirim nyata lewat `Mail::raw` dan lewat `SecurityCodes::send()` (mailable `SecurityCodeMail`) — dua-duanya sukses tanpa error di `storage/logs/laravel.log`.
 
 ## 3d. Pemadatan halaman detail karya (16 Nov 2026)
 
