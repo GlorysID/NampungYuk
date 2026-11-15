@@ -4,6 +4,7 @@
 @section('header_title', $hasPassword ? 'Ubah Password' : 'Buat Password')
 @section('header_subtitle', '@' . $user->username)
 @section('main_width', 'max-w-none')
+@section('hide_right_rail', '1')
 
 @section('content')
     <div class="max-w-2xl mx-auto space-y-5">
