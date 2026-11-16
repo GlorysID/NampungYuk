@@ -63,9 +63,16 @@ class ProjectShowcaseTest extends TestCase
             ->assertRedirect(route('projects.index'))
             ->assertSessionHas('auth_required');
 
-        $this->get(route('projects.index'))
-            ->assertOk()
-            ->assertSee("window.openAuthModal('login');", false);
+        $feed = $this->get(route('projects.index'));
+        $feed->assertOk()
+            ->assertSee("window.openAuthModal('login');", false)
+            ->assertSee('Library Mantap');
+
+        // Card detail link untuk tamu memicu modal login, bukan navigasi.
+        $this->assertMatchesRegularExpression(
+            '/card-detail-link[^>]*@click\.prevent="window\.openAuthModal\(\'login\'\)"/',
+            $feed->getContent()
+        );
 
         // Authenticated user can view detail
         $authResponse = $this->actingAs($creator)->get('/project/'.$project->slug);
