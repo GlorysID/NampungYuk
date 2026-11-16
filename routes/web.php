@@ -68,7 +68,8 @@ Route::get('/feed-fragment/bookmarks', [InfiniteFeedController::class, 'bookmark
 Route::get('/u/{username}', [ProfileController::class, 'show'])->name('profile.show');
 Route::get('/u/{username}/pengikut', [ProfileController::class, 'followers'])->name('profile.followers');
 Route::get('/u/{username}/mengikuti', [ProfileController::class, 'following'])->name('profile.following');
-Route::get('/project/{slug}', [ProjectController::class, 'show'])->name('projects.show');
+// Detail karya khusus pengguna login: tamu dikembalikan ke halaman asal + modal login (AGENTS.md "Aturan Alur Tamu").
+Route::get('/project/{slug}', [ProjectController::class, 'show'])->middleware('auth')->name('projects.show');
 Route::get('/project/{project}/comments', [ProjectController::class, 'comments'])->name('projects.comments.index');
 
 // Communities exploration (public read-only)

@@ -8,7 +8,7 @@
 ])
 
 <article class="project-nav-card bg-[var(--surface)] border border-[var(--border-color)] hover:border-[var(--border-strong)] rounded-2xl p-5 transition relative mb-4 last:mb-0 space-y-3.5 group cursor-pointer"
-         @click="if (! $event.target.closest('a, button, input, textarea, select, [data-no-card-nav]')) { window.location.href = '{{ route('projects.show', $project->slug) }}'; }"
+         @click="if (! $event.target.closest('a, button, input, textarea, select, [data-no-card-nav]')) { $el.querySelector('.card-detail-link')?.click(); }"
          x-data="{
              score: {{ $project->score }},
              userVote: '{{ $initialVote }}',
@@ -213,7 +213,7 @@
     <!-- 2. Title & Tagline -->
     <div class="space-y-1.5">
         <h2 class="text-[17.5px] sm:text-[19px] font-bold text-[var(--primary)] leading-snug tracking-[-0.015em] group-hover:text-emerald-300 transition-colors">
-            <a href="{{ route('projects.show', $project->slug) }}" class="card-detail-link focus-visible:rounded">
+            <a href="{{ route('projects.show', $project->slug) }}" class="card-detail-link focus-visible:rounded" @guest @click.prevent="window.openAuthModal('login')" @endguest>
                 {{ $project->title }}
             </a>
         </h2>

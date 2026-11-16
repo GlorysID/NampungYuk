@@ -38,7 +38,7 @@ class ProjectShowcaseTest extends TestCase
         $response->assertSee('Web App');
     }
 
-    public function test_guest_can_view_project_detail(): void
+    public function test_guest_is_sent_back_with_login_modal_when_opening_project_detail(): void
     {
         $category = Category::create(['name' => 'Open Source', 'slug' => 'open-source']);
         $creator = User::factory()->create(['name' => 'Rian Creator']);
@@ -57,10 +57,15 @@ class ProjectShowcaseTest extends TestCase
             'status' => 'production',
         ]);
 
-        // Guest can view project detail without login wall
-        $guestResponse = $this->get('/project/'.$project->slug);
-        $guestResponse->assertStatus(200);
-        $guestResponse->assertSee('Library Mantap');
+        // Guest is bounced back to where they clicked, with the login modal open
+        $this->from(route('projects.index'))
+            ->get('/project/'.$project->slug)
+            ->assertRedirect(route('projects.index'))
+            ->assertSessionHas('auth_required');
+
+        $this->get(route('projects.index'))
+            ->assertOk()
+            ->assertSee("window.openAuthModal('login');", false);
 
         // Authenticated user can view detail
         $authResponse = $this->actingAs($creator)->get('/project/'.$project->slug);

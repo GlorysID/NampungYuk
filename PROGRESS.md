@@ -299,6 +299,14 @@ Alur lama (form email + password inline di `/pengaturan`, reset password lewat l
 - Jejak: `.ai/rules/views.md` + satu aturan baru — `@php(...)` inline merusak blok `@php ... @endphp` di file yang sama (bikin view 500 `Undefined variable`).
 - Verifikasi: `RegistrationTest` kini menguji `from(url('/'))` → redirect balik + banner tampil; full suite **231 test (966 assertion) passed**, Pint clean.
 
+## 3g. Detail karya khusus pengguna login (17 Nov 2026)
+
+- `routes/web.php`: `projects.show` (`/project/{slug}`) sekarang `->middleware('auth')`. Tamu yang membukanya tidak dilempar ke halaman login full screen — `bootstrap/app.php` `redirectGuestsTo()` (sudah ada) mengembalikan mereka ke halaman asal/feed yang sama-host (anti-loop untuk /login, /register, dan URL yang sama) sambil `flash('auth_required', true)`; `layouts/app.blade.php` lalu memanggil `window.openAuthModal('login')` di `DOMContentLoaded`.
+- `components/project-card.blade.php`: klik di area kartu (media/judul) kini meneruskan ke `.card-detail-link` (`$el.querySelector('.card-detail-link')?.click()`), dan anchor itu punya `@guest @click.prevent="window.openAuthModal('login')"` — jadi tamu dapat modal langsung tanpa request bolak-balik, sementara pengguna login tetap navigasi normal.
+- Yang TETAP publik: feed (`/`), profil (`/u/{username}`), kategori, tech-pill, komunitas, dan fragment `projects.comments.index` (dipakai kartu feed, harus tetap terbuka untuk tamu).
+- `AGENTS.md` "Aturan Alur Tamu" diperbarui: dulu melarang membajak klik baca tamu ke detail karya, sekarang detail karya memang login-only. Test lama `test_guest_can_view_project_detail` diganti `test_guest_is_sent_back_with_login_modal_when_opening_project_detail` (assert redirect + `auth_required` + opener modal tampil).
+- Verifikasi: full suite **232 test (973 assertion) passed**, Pint clean.
+
 ---
 
 ## 4. Backlog Masa Depan (Rekomendasi Lanjutan)

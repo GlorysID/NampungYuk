@@ -42,7 +42,7 @@ Platform mengadopsi estetika **Token Harbor**. Aplikasi ini **dark mode only** â
   - Tombol Utama / CTA: Blok solid Warm Stone `#EAE8E1` dengan teks hitam tebal `#0B0B0D`
 - **Light Mode**: SUDAH DIHAPUS. `<html class="dark">` di-hardcode; jangan menambahkan kembali toggle tema, `localStorage.theme`, atau `prefers-color-scheme`. Palet light yang tersisa di blok `:root` `app.css` adalah dead code yang sengaja dibiarkan.
 - **Tipografi**: Font murni **Geist** (sans) dan **Geist Mono** (monospace).
-- **Aturan Alur Tamu (Guest Flow)**: Dilarang membajak klik baca tamu (klik judul karya, profil kreator, komentar, kategori, atau tech-pill). Tamu bebas menjelajah; modal login hanya dipicu untuk aksi tulis/interaksi (upvote, bookmark, repost, komentar, chat).
+- **Aturan Alur Tamu (Guest Flow)**: Halaman **detail karya (`/project/{slug}`) khusus pengguna login** â€” route `projects.show` memakai `middleware('auth')`, jadi tamu yang membukanya dikembalikan ke halaman asal/feed dengan modal login terbuka (`session('auth_required')`), bukan halaman login full screen. Selain itu tamu bebas menjelajah (feed, profil kreator, kategori, tech-pill, komunitas); modal login hanya dipicu untuk aksi tulis/interaksi (upvote, bookmark, repost, komentar, chat).
 - **Semantik Skor**: Gunakan panah **Upvote (`^`)** secara seragam di seluruh platform untuk metrik apresiasi karya dan postingan.
 
 ---
