@@ -345,13 +345,24 @@
                             </span>
                         </div>
 
+                        @php
+                            $googleConnected = filled($user->google_id) || $user->hasVerifiedEmail();
+                        @endphp
                         <div class="px-5 py-3.5 flex items-center justify-between gap-4">
                             <div>
                                 <p class="text-xs font-semibold text-[var(--primary)]">Google Sign-In</p>
-                                <p class="text-[11px] text-[var(--text-muted)] mt-0.5">Masuk instan satu klik dengan akun Google terverifikasi.</p>
+                                <p class="text-[11px] text-[var(--text-muted)] mt-0.5">
+                                    @if ($user->google_id)
+                                        Masuk instan satu klik dengan akun Google terverifikasi.
+                                    @elseif ($googleConnected)
+                                        Email akun ini sudah terverifikasi, jadi tersambung otomatis begitu kamu masuk dengan Google.
+                                    @else
+                                        Verifikasi email akunmu dulu supaya bisa tersambung otomatis dengan Google.
+                                    @endif
+                                </p>
                             </div>
-                            <span class="px-2.5 py-1 rounded-full text-[11px] font-medium border {{ $user->google_id ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-[var(--surface-subtle)] text-[var(--text-muted)] border-[var(--border-color)]' }}">
-                                {{ $user->google_id ? 'Terhubung' : 'Tidak Terhubung' }}
+                            <span class="px-2.5 py-1 rounded-full text-[11px] font-medium border {{ $googleConnected ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-[var(--surface-subtle)] text-[var(--text-muted)] border-[var(--border-color)]' }}">
+                                {{ $googleConnected ? 'Terhubung' : 'Tidak Terhubung' }}
                             </span>
                         </div>
                     </div>

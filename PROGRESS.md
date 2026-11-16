@@ -290,6 +290,15 @@ Alur lama (form email + password inline di `/pengaturan`, reset password lewat l
 - Yang diperbaiki: `chat/show.blade.php` dapat flag baru `$blockedByPolicy` (tetap reaktif Alpine `x-show`, tidak di-`@if` sesuai `.ai/rules/chat.md`) sehingga composer terkunci tidak lagi bohong "Menunggu ... menerima permintaan pesanmu"; tooltip tombol "Pesan" di `users/show.blade.php` kini membedakan "belum mengikutimu (jadi permintaan)" vs "hanya menerima dari akun yang mereka ikuti"; copy opsi di Setelan → Privasi ikut diperjelas; `.ai/rules/controllers.md` dikoreksi dari "mutual follow" (salah) ke satu arah + lapisan kebijakan.
 - Verifikasi: `ChatBlockPrivacyTest` +2 test (penolakan + copy, dan thread lama tetap jalan setelah pindah ke `following_only`). Full suite **231 test (962 assertion) passed**, Pint clean, `npm run build` exit 0.
 
+## 3f. Registrasi kembali ke modal + status Google (16 Nov 2026)
+
+- `RegisterController::store` tidak lagi melempar ke halaman login full screen: `redirect()->back(fallback: route('login'))`, jadi pengguna mendarat kembali di halaman tempat modal dibuka (redirect itu ada sejak commit `bb426c7`, bukan regresi).
+- `components/auth-modal.blade.php`: modal auto-buka saat `session('unverified_email')` ada, dan di dalamnya muncul banner hijau `session('status')` ("Registrasi berhasil! ...") + tombol "Kirim Ulang Email" (pakai `route('verification.notice')`) — sebelumnya pesan itu hanya terlihat di halaman login full screen.
+- Login manual memang sudah "langsung masuk" sejak dulu (`LoginController@store` → `intended(url('/'))`, tanpa halaman perantara). Yang membuat kesan beda hanya registrasi di atas.
+- Kartu "Google Sign-In" di `settings/index.blade.php`: badge kini hijau **Terhubung** kalau `google_id` terisi **atau** email sudah terverifikasi (akun manual tersambung otomatis oleh `GoogleAuthController::findOrCreateGoogleUser()` saat masuk dengan Google), plus satu baris penjelas sesuai kondisinya.
+- Jejak: `.ai/rules/views.md` + satu aturan baru — `@php(...)` inline merusak blok `@php ... @endphp` di file yang sama (bikin view 500 `Undefined variable`).
+- Verifikasi: `RegistrationTest` kini menguji `from(url('/'))` → redirect balik + banner tampil; full suite **231 test (966 assertion) passed**, Pint clean.
+
 ---
 
 ## 4. Backlog Masa Depan (Rekomendasi Lanjutan)

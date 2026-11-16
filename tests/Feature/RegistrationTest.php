@@ -43,10 +43,17 @@ class RegistrationTest extends TestCase
     {
         Notification::fake();
 
-        $response = $this->post(route('register.store'), $this->registrationData());
+        $response = $this->from(url('/'))->post(route('register.store'), $this->registrationData());
 
-        $response->assertRedirect(route('login'));
+        $response->assertRedirect(url('/'));
         $response->assertSessionHas('status');
+        $response->assertSessionHas('unverified_email', 'budi@example.com');
+
+        // The page that opened the modal re-renders it with the outcome banner.
+        $this->get(url('/'))
+            ->assertOk()
+            ->assertSee('Registrasi berhasil!', false)
+            ->assertSee('Kirim Ulang Email', false);
 
         $this->assertDatabaseHas('users', [
             'name' => 'Budi Santoso',
@@ -61,6 +68,19 @@ class RegistrationTest extends TestCase
         $this->assertTrue(Hash::check('password123', $user->password));
 
         Notification::assertSentTo($user, VerifyEmail::class);
+    }
+
+    public function test_registering_from_the_full_page_form_shows_the_outcome_there(): void
+    {
+        Notification::fake();
+
+        $this->from(route('register'))
+            ->post(route('register.store'), $this->registrationData())
+            ->assertRedirect(route('register'));
+
+        $this->get(route('register'))
+            ->assertOk()
+            ->assertSee('Registrasi berhasil!', false);
     }
 
     public function test_duplicate_email_is_rejected(): void

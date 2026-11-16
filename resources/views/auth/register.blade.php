@@ -140,6 +140,14 @@
                     </a>
                 </div>
 
+                <!-- Registration outcome (kept on this page instead of bouncing to /login) -->
+                @if (session('status'))
+                    <div class="mt-7 mb-5 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-[13px] flex items-start gap-2.5">
+                        <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span>{{ session('status') }}</span>
+                    </div>
+                @endif
+
                 <!-- Social OAuth Button: Google -->
                 <div>
                     <x-google-auth-button />

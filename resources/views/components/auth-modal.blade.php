@@ -1,5 +1,5 @@
 <div x-data="{
-        open: {{ ($errors->has('login') || $errors->has('name') || $errors->has('username') || $errors->has('email') || $errors->has('password')) ? 'true' : 'false' }},
+        open: {{ ($errors->has('login') || $errors->has('name') || $errors->has('username') || $errors->has('email') || $errors->has('password') || session('unverified_email')) ? 'true' : 'false' }},
         tab: '{{ ($errors->has('name') || $errors->has('username') || ($errors->has('password') && (old('name') || old('username')))) ? 'register' : 'login' }}',
         showPassword: false,
         showRegPassword: false,
@@ -147,7 +147,24 @@
 
                 <!-- Inner Form Container -->
                 <div class="w-full max-w-[420px] mx-auto">
-                    
+
+                    @if (session('unverified_email'))
+                        <div class="mb-5 space-y-2.5">
+                            @if (session('status'))
+                                <div class="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-[13px] flex items-start gap-2.5">
+                                    <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <span>{{ session('status') }}</span>
+                                </div>
+                            @endif
+                            <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-500/25 flex items-center justify-between gap-2">
+                                <span class="text-[12px] text-amber-800 dark:text-amber-300">Belum terima link aktivasi?</span>
+                                <a href="{{ route('verification.notice', ['email' => session('unverified_email')]) }}" class="text-[12px] font-bold text-[var(--primary)] hover:underline">
+                                    Kirim Ulang Email &rarr;
+                                </a>
+                            </div>
+                        </div>
+                    @endif
+
                     <!-- Form Title & Subtitle -->
                     <div>
                         <h2 class="text-[26px] sm:text-[28px] font-bold tracking-tight text-[var(--primary)] leading-tight"
