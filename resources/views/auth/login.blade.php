@@ -142,9 +142,13 @@
 
                 <!-- Status alert if redirected -->
                 @if (session('status'))
-                    <div class="mb-4 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-[13px] flex items-center gap-2.5">
-                        <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <span>{{ session('status') }}</span>
+                    @php
+                        $statusMsg = (string) session('status');
+                        $isStatusError = \Illuminate\Support\Str::contains($statusMsg, ['Gagal', 'dibatalkan', 'belum aktif', 'belum disetel', 'tidak lengkap']);
+                    @endphp
+                    <div class="mb-4 p-3.5 rounded-xl border text-[13px] flex items-center gap-2.5 {{ $isStatusError ? 'bg-rose-500/10 border-rose-500/30 text-rose-300' : 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-500/20 text-emerald-800 dark:text-emerald-300' }}">
+                        <svg class="w-4 h-4 shrink-0 {{ $isStatusError ? 'text-rose-400' : 'text-emerald-600 dark:text-emerald-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span>{{ $statusMsg }}</span>
                     </div>
                 @endif
 

@@ -231,6 +231,10 @@ class CommunityPostController extends Controller
             abort(403);
         }
 
+        foreach ($post->images ?? [] as $img) {
+            $this->media->deleteStoredFile(is_string($img) ? $img : null);
+        }
+
         $post->delete();
 
         if ($community && $community->posts_count > 0) {

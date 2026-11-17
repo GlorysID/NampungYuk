@@ -12,7 +12,37 @@
 @section('header')
     <header class="sticky top-0 z-20 bg-[var(--bg-app)]/85 backdrop-blur-md border-b border-[var(--border-color)]">
         <!-- MOBILE TOP BAR (< lg only) -->
-        <div class="lg:hidden h-14 px-4 flex items-center justify-between border-b border-[var(--border-color)]">
+        <div class="lg:hidden h-14 px-4 flex items-center justify-between border-b border-[var(--border-color)] relative">
+            <!-- MOBILE SEARCH OVERLAY -->
+            <div x-show="mobileSearchOpen"
+                 x-cloak
+                 @keydown.escape.window="mobileSearchOpen = false"
+                 x-transition:enter="transition ease-out duration-150"
+                 x-transition:enter-start="opacity-0 scale-[0.99]"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-100"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-[0.99]"
+                 class="absolute inset-0 z-30 px-3 flex items-center bg-[var(--bg-app)]/95 backdrop-blur-md gap-2 border-b border-[var(--border-color)]">
+                <form action="{{ url('/cari') }}" method="GET" class="flex-1 relative flex items-center">
+                    <svg class="w-4 h-4 text-[var(--text-muted)] absolute left-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <input type="text"
+                           id="nav-search-mobile"
+                           name="q"
+                           value="{{ request('q') }}"
+                           placeholder="Cari karya, akun, atau komunitas..."
+                           aria-label="Cari karya, akun, atau komunitas"
+                           class="w-full pl-9 pr-8 py-2 text-sm bg-[var(--surface-muted-flat)] border border-[var(--border-color)] rounded-lg text-[var(--primary)] placeholder-[var(--text-muted)] outline-none focus:border-[var(--primary)]">
+                </form>
+                <button type="button"
+                        @click="mobileSearchOpen = false"
+                        class="px-2.5 py-1 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--primary)] shrink-0">
+                    Batal
+                </button>
+            </div>
+
             <div class="flex items-center gap-2.5">
                 <button @click="mobileSidebarOpen = true"
                         type="button"
@@ -34,12 +64,18 @@
                     </svg>
                 </button>
                 @auth
+                    @php
+                        $mobileUnreadCount = auth()->user()->unreadNotifications()->count();
+                    @endphp
                     <a href="{{ route('notifications.index') }}"
                        class="relative w-9 h-9 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--surface-hover)] transition"
                        aria-label="Notifikasi">
                         <svg class="w-[19px] h-[19px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                         </svg>
+                        @if($mobileUnreadCount > 0)
+                            <span class="hl-badge-dot">{{ $mobileUnreadCount > 9 ? '9+' : $mobileUnreadCount }}</span>
+                        @endif
                     </a>
                 @endauth
             </div>

@@ -7,194 +7,30 @@
     'uid' => 'p',
 ])
 
+@php
+    $gallery = $project->galleryImages();
+    $galleryCount = count($gallery);
+@endphp
+
 <article class="project-nav-card bg-[var(--surface)] border border-[var(--border-color)] hover:border-[var(--border-strong)] rounded-2xl p-5 transition relative mb-4 last:mb-0 space-y-3.5 group cursor-pointer"
          @click="if (! $event.target.closest('a, button, input, textarea, select, [data-no-card-nav]')) { $el.querySelector('.card-detail-link')?.click(); }"
-         x-data="{
+         x-data="projectCard({
              score: {{ $project->score }},
-             userVote: '{{ $initialVote }}',
+             userVote: @js($initialVote ?? ''),
              isBookmarked: {{ $isBookmarked ? 'true' : 'false' }},
              isReposted: {{ $isReposted ? 'true' : 'false' }},
              repostsCount: {{ $project->reposts_count }},
-             isVoting: false,
-             isBookmarking: false,
-             isReposting: false,
-             lightboxOpen: false,
-             lightboxIndex: 0,
-             lightboxSidebar: true,
              commentsCount: {{ $project->comments_count }},
-             comments: [],
-             commentsLoaded: false,
-             commentsLoading: false,
-             newComment: '',
-             isSubmittingComment: false,
-             gallery: {{ Illuminate\Support\Js::from($project->galleryImages()) }},
-             openLightbox(i) {
-                 this.lightboxIndex = i;
-                 this.lightboxOpen = true;
-                 this.loadComments();
-             },
-             async loadComments() {
-                 if (this.commentsLoaded || this.commentsLoading) return;
-                 this.commentsLoading = true;
-                 try {
-                     const res = await fetch('{{ route('projects.comments.index', $project) }}', {
-                         headers: { 'Accept': 'application/json' }
-                     });
-                     if (res.ok) {
-                         const data = await res.json();
-                         this.comments = data.comments || [];
-                         if (typeof data.comments_count === 'number') {
-                             this.commentsCount = data.comments_count;
-                         }
-                         this.commentsLoaded = true;
-                     }
-                 } catch (e) {
-                     // Silent fallback: user can still open full project page
-                 } finally {
-                     this.commentsLoading = false;
-                 }
-             },
-             async submitComment() {
-                 @guest
-                     if (window.openAuthModal) { window.openAuthModal('login'); return; }
-                 @endguest
-                 const content = this.newComment.trim();
-                 if (!content || this.isSubmittingComment) return;
-                 this.isSubmittingComment = true;
-                 try {
-                     const res = await fetch('{{ route('projects.comment', $project) }}', {
-                         method: 'POST',
-                         headers: {
-                             'Content-Type': 'application/json',
-                             'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                             'Accept': 'application/json'
-                         },
-                         body: JSON.stringify({ content })
-                     });
-                     if (res.status === 401) {
-                         if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }
-                         return;
-                     }
-                     const data = await res.json();
-                     if (data.success && data.comment) {
-                         this.comments.unshift(data.comment);
-                         this.commentsCount = data.comments_count ?? (this.commentsCount + 1);
-                         this.newComment = '';
-                         this.commentsLoaded = true;
-                         if (window.notify) notify('Komentar terkirim!');
-                     } else if (window.notify) {
-                         notify(data.message || 'Gagal mengirim komentar.');
-                     }
-                 } catch (e) {
-                     if (window.notify) notify('Gagal mengirim komentar.');
-                 } finally {
-                     this.isSubmittingComment = false;
-                 }
-             },
-             async repost() {
-                 @guest
-                     if (window.openAuthModal) { window.openAuthModal('login'); return; }
-                 @endguest
-                 if (this.isReposting) return;
-                 this.isReposting = true;
-                 try {
-                     const res = await fetch('{{ route('projects.repost', $project) }}', {
-                         method: 'POST',
-                         headers: {
-                             'Content-Type': 'application/json',
-                             'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                             'Accept': 'application/json'
-                         }
-                     });
-                     if (res.status === 401) {
-                         if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }
-                         return;
-                     }
-                     const data = await res.json();
-                     if (data.success) {
-                         this.isReposted = data.reposted;
-                         this.repostsCount = data.reposts_count;
-                         if (window.notify) notify(data.message);
-                     } else if (window.notify) {
-                         notify(data.message || 'Gagal repost.');
-                     }
-                 } catch(e) {
-                     if (window.notify) notify('Gagal repost.');
-                 } finally {
-                     this.isReposting = false;
-                 }
-             },
-             async vote(type) {
-                 @guest
-                     if (window.openAuthModal) { window.openAuthModal('login'); return; }
-                 @endguest
-                 if (this.isVoting) return;
-                 this.isVoting = true;
-                 try {
-                     const res = await fetch('{{ route('projects.vote', $project) }}', {
-                         method: 'POST',
-                         headers: {
-                             'Content-Type': 'application/json',
-                             'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                             'Accept': 'application/json'
-                         },
-                         body: JSON.stringify({ type })
-                     });
-                     if (res.status === 401) {
-                         if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }
-                         return;
-                     }
-                     const data = await res.json();
-                     if (data.success) {
-                         this.score = data.score;
-                         this.userVote = data.user_vote;
-                         if (window.notify) {
-                             notify(type === 'up' ? 'Upvoted! Terima kasih atas apresiasimu.' : 'Feedback tercatat.');
-                         }
-                     }
-                 } catch(e) {
-                     if (window.notify) notify('Gagal memberikan vote');
-                 } finally {
-                     this.isVoting = false;
-                 }
-             },
-             async toggleBookmark() {
-                 @guest
-                     if (window.openAuthModal) { window.openAuthModal('login'); return; }
-                 @endguest
-                 if (this.isBookmarking) return;
-                 this.isBookmarking = true;
-                 try {
-                     const res = await fetch('{{ route('projects.bookmark', $project) }}', {
-                         method: 'POST',
-                         headers: {
-                             'Content-Type': 'application/json',
-                             'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                             'Accept': 'application/json'
-                         }
-                     });
-                     if (res.status === 401) {
-                         if (window.openAuthModal) { window.openAuthModal('login'); } else { window.location.href = '{{ route('login') }}'; }
-                         return;
-                     }
-                     const data = await res.json();
-                     if (data.success) {
-                         this.isBookmarked = data.bookmarked;
-                         if (window.notify) {
-                             notify(this.isBookmarked ? 'Proyek disimpan ke Koleksi!' : 'Dihapus dari Koleksi.');
-                         }
-                     }
-                 } catch(e) {
-                     if (window.notify) notify('Gagal menyimpan bookmark');
-                 } finally {
-                     this.isBookmarking = false;
-                 }
-             },
-             copyLink() {
-                 navigator.clipboard.writeText('{{ route('projects.show', $project->slug) }}');
-                 if (window.notify) notify('Tautan project berhasil disalin!');
-             }
-         }">
+             gallery: @js($gallery),
+             isGuest: {{ auth()->guest() ? 'true' : 'false' }},
+             loginUrl: @js(route('login')),
+             showUrl: @js(route('projects.show', $project->slug)),
+             commentsUrl: @js(route('projects.comments.index', $project)),
+             commentUrl: @js(route('projects.comment', $project)),
+             repostUrl: @js(route('projects.repost', $project)),
+             voteUrl: @js(route('projects.vote', $project)),
+             bookmarkUrl: @js(route('projects.bookmark', $project)),
+         })">
 
     @if($project->isRepost())
         <div class="flex items-center gap-1.5 text-[11px] font-medium text-[var(--text-muted)] pb-2 border-b border-[var(--border-color)]/60">
@@ -241,7 +77,6 @@
     </div>
 
     <!-- 3. Full-Width Gallery Media Showcase -->
-    @php $gallery = $project->galleryImages(); $galleryCount = count($gallery); @endphp
     @if($galleryCount > 0)
         <div class="group/media relative block w-full overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-app)] ring-1 ring-inset ring-white/[0.05]">
             @if($galleryCount === 1)
@@ -367,7 +202,7 @@
             <div class="relative flex-1 flex flex-col min-w-0 min-h-0 bg-black">
                 <!-- Top controls -->
                 <div class="flex items-center justify-between px-4 pt-3 pb-1 shrink-0 z-10">
-                    <button type="button" @click="lightboxOpen = false" title="Tutup (Esc)"
+                    <button type="button" @click="lightboxOpen = false" title="Tutup (Esc)" aria-label="Tutup lightbox"
                             class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
@@ -379,6 +214,7 @@
                         </template>
                         <button type="button" @click="lightboxSidebar = !lightboxSidebar"
                                 :title="lightboxSidebar ? 'Sembunyikan panel info' : 'Tampilkan panel info'"
+                                aria-label="Toggle panel info lightbox"
                                 class="hidden lg:flex w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white items-center justify-center transition cursor-pointer">
                             <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': !lightboxSidebar }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
@@ -395,10 +231,12 @@
                     <template x-if="gallery.length > 1">
                         <div>
                             <button type="button" @click="lightboxIndex = (lightboxIndex - 1 + gallery.length) % gallery.length"
+                                    aria-label="Gambar sebelumnya"
                                     class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 border border-white/15 text-white flex items-center justify-center transition cursor-pointer">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                             </button>
                             <button type="button" @click="lightboxIndex = (lightboxIndex + 1) % gallery.length"
+                                    aria-label="Gambar berikutnya"
                                     class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 border border-white/15 text-white flex items-center justify-center transition cursor-pointer">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                             </button>

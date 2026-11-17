@@ -231,6 +231,7 @@ document.addEventListener('alpine:init', () => {
         const spaceId = config.spaceId;
         const routeKey = config.spaceSlug || config.spaceId;
         const me = config.me;
+        const myName = config.myName || 'Kamu';
         const type = config.type;
         const signalUrl = config.signalUrl;
         const isHost = !!config.isHost;
@@ -245,11 +246,23 @@ document.addEventListener('alpine:init', () => {
             pcs: {},
             pendingIce: {},
             channel: null,
+            chatOpen: true,
+            spaceMsgs: [],
+            draft: '',
+            ended: false,
 
             async init() {
                 if (isJoined) {
                     this.subscribeChannel();
                 }
+            },
+
+            async sendChat() {
+                const text = (this.draft || '').trim();
+                if (! text) return;
+                this.spaceMsgs.push({ name: myName, text, mine: true });
+                this.draft = '';
+                await this.send('chat', null, { text });
             },
 
             subscribeChannel() {
@@ -374,7 +387,27 @@ document.addEventListener('alpine:init', () => {
                 } else {
                     (this.pendingIce[from] = this.pendingIce[from] || []).push(e.payload);
                 }
+            } else if (e.kind === 'chat') {
+                this.spaceMsgs.push({
+                    name: e.payload?.name || 'Peserta',
+                    text: e.payload?.text || '',
+                    mine: false,
+                });
             } else if (e.kind === 'leave') {
+                if (e.payload?.ended) {
+                    try { this.localStream?.getTracks().forEach((t) => t.stop()); } catch (err) {}
+                    Object.values(this.pcs).forEach((pc) => pc.close());
+                    this.pcs = {};
+                    this.peers = [];
+                    this.joined = false;
+                    this.ended = true;
+                    if (this.channel) {
+                        window.Echo?.leave('space.' + spaceId);
+                        this.channel = null;
+                    }
+                    if (window.notify) window.notify('Space telah diakhiri oleh host.');
+                    return;
+                }
                 this.pcs[from]?.close();
                 delete this.pcs[from];
                 this.peers = this.peers.filter((p) => p.id !== from);
@@ -1096,6 +1129,213 @@ document.addEventListener('alpine:init', () => {
                 this.error = e?.message || 'Gagal masuk dengan Google. Silakan coba lagi.';
                 this.loading = false;
             }
+        },
+    }));
+
+    /**
+     * Project showcase card state & lightbox interactions.
+     */
+    Alpine.data('projectCard', (config) => ({
+        score: config.score ?? 0,
+        userVote: config.userVote ?? '',
+        isBookmarked: !!config.isBookmarked,
+        isReposted: !!config.isReposted,
+        repostsCount: config.repostsCount ?? 0,
+        isVoting: false,
+        isBookmarking: false,
+        isReposting: false,
+        lightboxOpen: false,
+        lightboxIndex: 0,
+        lightboxSidebar: true,
+        commentsCount: config.commentsCount ?? 0,
+        comments: [],
+        commentsLoaded: false,
+        commentsLoading: false,
+        newComment: '',
+        isSubmittingComment: false,
+        gallery: Array.isArray(config.gallery) ? config.gallery : [],
+
+        requireAuth() {
+            if (! config.isGuest) return false;
+            if (window.openAuthModal) {
+                window.openAuthModal('login');
+            } else if (config.loginUrl) {
+                window.location.href = config.loginUrl;
+            }
+            return true;
+        },
+
+        handleUnauthorized() {
+            if (window.openAuthModal) {
+                window.openAuthModal('login');
+            } else if (config.loginUrl) {
+                window.location.href = config.loginUrl;
+            }
+        },
+
+        openLightbox(i) {
+            this.lightboxIndex = i;
+            this.lightboxOpen = true;
+            this.loadComments();
+        },
+
+        async loadComments() {
+            if (this.commentsLoaded || this.commentsLoading) return;
+            this.commentsLoading = true;
+            try {
+                const res = await fetch(config.commentsUrl, {
+                    headers: { 'Accept': 'application/json' },
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    this.comments = data.comments || [];
+                    if (typeof data.comments_count === 'number') {
+                        this.commentsCount = data.comments_count;
+                    }
+                    this.commentsLoaded = true;
+                }
+            } catch (e) {
+                // Silent fallback: user can still open full project page
+            } finally {
+                this.commentsLoading = false;
+            }
+        },
+
+        async submitComment() {
+            if (this.requireAuth()) return;
+            const content = this.newComment.trim();
+            if (! content || this.isSubmittingComment) return;
+            this.isSubmittingComment = true;
+            try {
+                const res = await fetch(config.commentUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content ?? '',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ content }),
+                });
+                if (res.status === 401) {
+                    this.handleUnauthorized();
+                    return;
+                }
+                const data = await res.json();
+                if (data.success && data.comment) {
+                    this.comments.unshift(data.comment);
+                    this.commentsCount = data.comments_count ?? (this.commentsCount + 1);
+                    this.newComment = '';
+                    this.commentsLoaded = true;
+                    if (window.notify) notify('Komentar terkirim!');
+                } else if (window.notify) {
+                    notify(data.message || 'Gagal mengirim komentar.');
+                }
+            } catch (e) {
+                if (window.notify) notify('Gagal mengirim komentar.');
+            } finally {
+                this.isSubmittingComment = false;
+            }
+        },
+
+        async repost() {
+            if (this.requireAuth()) return;
+            if (this.isReposting) return;
+            this.isReposting = true;
+            try {
+                const res = await fetch(config.repostUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content ?? '',
+                        'Accept': 'application/json',
+                    },
+                });
+                if (res.status === 401) {
+                    this.handleUnauthorized();
+                    return;
+                }
+                const data = await res.json();
+                if (data.success) {
+                    this.isReposted = data.reposted;
+                    this.repostsCount = data.reposts_count;
+                    if (window.notify) notify(data.message);
+                } else if (window.notify) {
+                    notify(data.message || 'Gagal repost.');
+                }
+            } catch (e) {
+                if (window.notify) notify('Gagal repost.');
+            } finally {
+                this.isReposting = false;
+            }
+        },
+
+        async vote(type) {
+            if (this.requireAuth()) return;
+            if (this.isVoting) return;
+            this.isVoting = true;
+            try {
+                const res = await fetch(config.voteUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content ?? '',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ type }),
+                });
+                if (res.status === 401) {
+                    this.handleUnauthorized();
+                    return;
+                }
+                const data = await res.json();
+                if (data.success) {
+                    this.score = data.score;
+                    this.userVote = data.user_vote;
+                    if (window.notify) {
+                        notify(type === 'up' ? 'Upvoted! Terima kasih atas apresiasimu.' : 'Feedback tercatat.');
+                    }
+                }
+            } catch (e) {
+                if (window.notify) notify('Gagal memberikan vote');
+            } finally {
+                this.isVoting = false;
+            }
+        },
+
+        async toggleBookmark() {
+            if (this.requireAuth()) return;
+            if (this.isBookmarking) return;
+            this.isBookmarking = true;
+            try {
+                const res = await fetch(config.bookmarkUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content ?? '',
+                        'Accept': 'application/json',
+                    },
+                });
+                if (res.status === 401) {
+                    this.handleUnauthorized();
+                    return;
+                }
+                const data = await res.json();
+                if (data.success) {
+                    this.isBookmarked = data.bookmarked;
+                    if (window.notify) {
+                        notify(this.isBookmarked ? 'Proyek disimpan ke Koleksi!' : 'Dihapus dari Koleksi.');
+                    }
+                }
+            } catch (e) {
+                if (window.notify) notify('Gagal menyimpan bookmark');
+            } finally {
+                this.isBookmarking = false;
+            }
+        },
+
+        copyLink() {
+            navigator.clipboard.writeText(config.showUrl);
+            if (window.notify) notify('Tautan project berhasil disalin!');
         },
     }));
 });

@@ -48,6 +48,7 @@ class GoogleAuthTest extends TestCase
         $response = $this->get('/auth/google/callback?code=mock-oauth-code');
 
         $response->assertRedirect('/');
+        $response->assertSessionHas('password_prompt', true);
         $this->assertAuthenticated();
 
         $user = User::where('email', 'tester.google@example.com')->first();
@@ -84,6 +85,7 @@ class GoogleAuthTest extends TestCase
         $response = $this->get('/auth/google/callback?code=mock-oauth-code');
 
         $response->assertRedirect('/');
+        $response->assertSessionMissing('password_prompt');
         $this->assertAuthenticatedAs($existingUser);
 
         // Verify no duplicate user was created
@@ -119,6 +121,7 @@ class GoogleAuthTest extends TestCase
         $response = $this->get('/auth/google/callback?code=mock-oauth-code');
 
         $response->assertRedirect('/');
+        $response->assertSessionHas('password_prompt', true);
         $this->assertAuthenticated();
         $this->assertDatabaseHas('users', [
             'email' => 'stateless@example.com',

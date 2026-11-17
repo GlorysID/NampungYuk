@@ -160,7 +160,7 @@ class SpaceController extends Controller
     }
 
     /**
-     * WebRTC signaling relay (offer / answer / ice) to a specific peer.
+     * WebRTC signaling & live chat relay within a space.
      */
     public function signal(Request $request, Space|string $space): JsonResponse
     {
@@ -172,20 +172,42 @@ class SpaceController extends Controller
         }
 
         $data = $request->validate([
-            'to' => ['required', 'integer'],
-            'kind' => ['required', 'in:offer,answer,ice'],
+            'to' => ['nullable', 'integer'],
+            'kind' => ['required', 'in:offer,answer,ice,chat'],
             'payload' => ['required', 'array'],
         ]);
 
         $isSenderParticipant = SpaceParticipant::where('space_id', $space->id)
             ->where('user_id', $user->id)
-            ->exists();
+            ->exists() || (int) $space->host_id === (int) $user->id;
+
+        if (! $isSenderParticipant) {
+            abort(403, 'Hanya peserta aktif yang dapat bertukar sinyal.');
+        }
+
+        if ($data['kind'] === 'chat') {
+            $text = trim((string) ($data['payload']['text'] ?? ''));
+            if ($text === '') {
+                return response()->json(['message' => 'Pesan tidak boleh kosong.'], 422);
+            }
+
+            broadcast(new SpaceSignal($space->id, $user->id, null, 'chat', [
+                'name' => $user->name,
+                'text' => mb_substr($text, 0, 500),
+            ]))->toOthers();
+
+            return response()->json(['success' => true]);
+        }
+
+        if (empty($data['to'])) {
+            return response()->json(['message' => 'Target peserta wajib diisi.'], 422);
+        }
 
         $isRecipientParticipant = SpaceParticipant::where('space_id', $space->id)
             ->where('user_id', $data['to'])
             ->exists();
 
-        if (! $isSenderParticipant || ! $isRecipientParticipant) {
+        if (! $isRecipientParticipant) {
             abort(403, 'Hanya peserta aktif yang dapat bertukar sinyal.');
         }
 

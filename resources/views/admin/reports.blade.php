@@ -154,7 +154,7 @@
                                 @elseif($reportable instanceof \App\Models\ProjectComment)
                                     <h3 class="text-sm font-bold text-[var(--primary)]">
                                         <span>Komentar: </span>
-                                        <span class="font-normal">{{ Str::limit($reportable->body, 90) }}</span>
+                                        <span class="font-normal">{{ Str::limit($reportable->content ?? $reportable->body, 90) }}</span>
                                     </h3>
                                     <p class="text-xs text-[var(--text-muted)]">
                                         Author: <a href="{{ route('profile.show', $reportable->user->username) }}" target="_blank" class="font-medium text-[var(--primary)] hover:underline">&#64;{{ $reportable->user->username }}</a>

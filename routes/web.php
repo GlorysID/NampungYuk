@@ -81,26 +81,26 @@ Route::get('/feed-fragment/community/{community:slug}', [InfiniteFeedController:
 Route::middleware('auth')->group(function () {
     // Project lifecycle (upload, edit, update, delete)
     Route::get('/unggah', [ProjectController::class, 'create'])->name('projects.create');
-    Route::post('/unggah', [ProjectController::class, 'store'])->name('projects.store');
+    Route::post('/unggah', [ProjectController::class, 'store'])->name('projects.store')->middleware('throttle:10,1');
     Route::get('/project/{project:slug}/edit', [ProjectController::class, 'edit'])->name('projects.edit');
-    Route::put('/project/{project:slug}', [ProjectController::class, 'update'])->name('projects.update');
+    Route::put('/project/{project:slug}', [ProjectController::class, 'update'])->name('projects.update')->middleware('throttle:10,1');
     Route::delete('/project/{project:slug}', [ProjectController::class, 'destroy'])->name('projects.destroy');
 
     // Project interactions
     Route::post('/project/{project}/vote', [ProjectController::class, 'vote'])->name('projects.vote')->middleware('throttle:30,1');
     Route::post('/project/{project}/comment', [ProjectController::class, 'comment'])->name('projects.comment')->middleware('throttle:10,1');
     Route::delete('/project/komentar/{comment}', [ProjectController::class, 'destroyComment'])->name('projects.comment.destroy');
-    Route::post('/project/{project}/bookmark', [ProjectController::class, 'bookmark'])->name('projects.bookmark');
+    Route::post('/project/{project}/bookmark', [ProjectController::class, 'bookmark'])->name('projects.bookmark')->middleware('throttle:30,1');
     Route::get('/koleksi', [ProjectController::class, 'bookmarks'])->name('projects.bookmarks');
 
     // Social graph: follow / unfollow
-    Route::post('/u/{user:username}/follow', [FollowController::class, 'toggle'])->name('follow.toggle');
+    Route::post('/u/{user:username}/follow', [FollowController::class, 'toggle'])->name('follow.toggle')->middleware('throttle:30,1');
 
     // Profile & account settings
     Route::get('/pengaturan', [SettingsController::class, 'index'])->name('settings.index');
     Route::put('/pengaturan/profil', [ProfileController::class, 'update'])->name('profile.update');
-    Route::post('/pengaturan/verifikasi-ulang', [SettingsController::class, 'resendVerification'])->name('settings.verification.resend');
-    Route::get('/pengaturan/ekspor', [SettingsController::class, 'exportData'])->name('settings.export');
+    Route::post('/pengaturan/verifikasi-ulang', [SettingsController::class, 'resendVerification'])->name('settings.verification.resend')->middleware('throttle:6,1');
+    Route::get('/pengaturan/ekspor', [SettingsController::class, 'exportData'])->name('settings.export')->middleware('throttle:6,1');
     Route::delete('/pengaturan/akun', [SettingsController::class, 'destroyAccount'])->name('settings.account.destroy');
 
     // Email change: 6-digit code is emailed to the NEW address before anything is written
@@ -126,7 +126,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/pengaturan/preferensi', [SettingsController::class, 'updatePreferences'])->name('settings.preferences.update');
 
     // Project repost & pin
-    Route::post('/project/{project}/repost', [ProjectController::class, 'repost'])->name('projects.repost');
+    Route::post('/project/{project}/repost', [ProjectController::class, 'repost'])->name('projects.repost')->middleware('throttle:30,1');
     Route::post('/project/{project}/pin', [ProjectController::class, 'togglePin'])->name('projects.pin');
 
     // Notifications
@@ -137,10 +137,10 @@ Route::middleware('auth')->group(function () {
 
     // Communities (member actions)
     Route::post('/komunitas', [CommunityController::class, 'store'])->name('communities.store')->middleware('throttle:10,1');
-    Route::post('/komunitas/{community:slug}/join', [CommunityController::class, 'toggleJoin'])->name('communities.join');
+    Route::post('/komunitas/{community:slug}/join', [CommunityController::class, 'toggleJoin'])->name('communities.join')->middleware('throttle:30,1');
     Route::post('/komunitas/{community:slug}/post', [CommunityPostController::class, 'store'])->name('communities.post')->middleware('throttle:10,1');
     Route::post('/komunitas/{community:slug}/moderator/{user}', [CommunityController::class, 'toggleModerator'])->name('communities.moderator');
-    Route::post('/community-post/{post}/vote', [CommunityPostController::class, 'vote'])->name('communities.post.vote');
+    Route::post('/community-post/{post}/vote', [CommunityPostController::class, 'vote'])->name('communities.post.vote')->middleware('throttle:30,1');
     Route::post('/community-post/{post}/comment', [CommunityPostController::class, 'comment'])->name('communities.post.comment')->middleware('throttle:10,1');
 
     // Community moderation

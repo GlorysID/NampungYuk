@@ -8,6 +8,7 @@ use App\Models\CommunityPost;
 use App\Models\CommunityPostVote;
 use App\Models\Space;
 use App\Models\User;
+use App\Rules\SafeUrl;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -190,7 +191,7 @@ class CommunityController extends Controller
             'description' => ['nullable', 'string', 'max:500'],
             'rules' => ['nullable', 'string', 'max:1000'],
             'visibility' => ['nullable', 'in:public,private'],
-            'icon' => ['nullable', 'url', 'max:255'],
+            'icon' => ['nullable', 'string', 'max:255', new SafeUrl],
         ]);
 
         $baseSlug = Str::slug($data['name']);

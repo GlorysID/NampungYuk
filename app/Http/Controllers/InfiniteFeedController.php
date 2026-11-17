@@ -27,7 +27,7 @@ class InfiniteFeedController extends Controller
         $techFilter = $request->query('tech');
         $search = $request->query('q') ?? $request->query('search');
 
-        $query = Project::with(['user', 'category'])->visibleTo(Auth::id())->search($search);
+        $query = Project::with(['user', 'category', 'repostedFrom'])->visibleTo(Auth::id())->search($search);
 
         if ($categorySlug) {
             $query->whereHas('category', fn ($q) => $q->where('slug', $categorySlug));
@@ -60,9 +60,10 @@ class InfiniteFeedController extends Controller
         $projects = $query->paginate(12)->withQueryString();
 
         $userId = Auth::id();
-        $userBookmarkedIds = $userId ? ProjectBookmark::where('user_id', $userId)->pluck('project_id')->toArray() : [];
-        $userVotes = $userId ? ProjectVote::where('user_id', $userId)->pluck('type', 'project_id')->toArray() : [];
-        $userRepostedIds = $userId ? ProjectRepost::where('user_id', $userId)->pluck('project_id')->toArray() : [];
+        $visibleProjectIds = $projects->pluck('id');
+        $userBookmarkedIds = $userId ? ProjectBookmark::where('user_id', $userId)->whereIn('project_id', $visibleProjectIds)->pluck('project_id')->toArray() : [];
+        $userVotes = $userId ? ProjectVote::where('user_id', $userId)->whereIn('project_id', $visibleProjectIds)->pluck('type', 'project_id')->toArray() : [];
+        $userRepostedIds = $userId ? ProjectRepost::where('user_id', $userId)->whereIn('project_id', $visibleProjectIds)->pluck('project_id')->toArray() : [];
 
         return response()
             ->view('feeds._project-items', compact('projects', 'userBookmarkedIds', 'userVotes', 'userRepostedIds'))
@@ -172,17 +173,24 @@ class InfiniteFeedController extends Controller
         }
 
         $projectIds = ProjectBookmark::where('user_id', $userId)->pluck('project_id');
-        $projects = Project::with(['user', 'category'])
+        $projects = Project::with(['user', 'category', 'repostedFrom'])
             ->visibleTo($userId)
             ->whereIn('id', $projectIds)
             ->latest()
             ->paginate(12);
-        $userBookmarkedIds = $projectIds->toArray();
-        $userVotes = ProjectVote::where('user_id', $userId)->pluck('type', 'project_id')->toArray();
+        $pageProjectIds = $projects->pluck('id');
+        $userBookmarkedIds = $pageProjectIds->toArray();
+        $userVotes = ProjectVote::where('user_id', $userId)
+            ->whereIn('project_id', $pageProjectIds)
+            ->pluck('type', 'project_id')
+            ->toArray();
+        $userRepostedIds = ProjectRepost::where('user_id', $userId)
+            ->whereIn('project_id', $pageProjectIds)
+            ->pluck('project_id')
+            ->toArray();
 
         return response()
-            ->view('feeds._project-items', compact('projects', 'userBookmarkedIds', 'userVotes'))
-            ->with('userRepostedIds', [])
+            ->view('feeds._project-items', compact('projects', 'userBookmarkedIds', 'userVotes', 'userRepostedIds'))
             ->header('X-Page', $projects->currentPage())
             ->header('X-Last-Page', $projects->lastPage());
     }

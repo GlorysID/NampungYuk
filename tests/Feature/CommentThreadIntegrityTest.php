@@ -134,4 +134,55 @@ class CommentThreadIntegrityTest extends TestCase
             'content' => 'Balasan valid',
         ]);
     }
+
+    public function test_deleting_project_comment_deletes_multi_level_descendants_and_updates_count(): void
+    {
+        $owner = User::factory()->create();
+        $commenter = User::factory()->create();
+        $category = Category::firstOrCreate(['slug' => 'web-app'], ['name' => 'Web App']);
+
+        $project = Project::create([
+            'user_id' => $owner->id,
+            'category_id' => $category->id,
+            'title' => 'Proyek Nested Comment',
+            'slug' => 'proyek-nested-comment',
+            'tagline' => 'Testing nested comment deletion',
+            'tech_stacks' => ['Laravel'],
+            'visibility' => 'public',
+            'comments_count' => 3,
+        ]);
+
+        $root = ProjectComment::create([
+            'project_id' => $project->id,
+            'user_id' => $commenter->id,
+            'content' => 'Komentar level 1',
+        ]);
+
+        $child = ProjectComment::create([
+            'project_id' => $project->id,
+            'user_id' => $owner->id,
+            'parent_id' => $root->id,
+            'content' => 'Balasan level 2',
+        ]);
+
+        $grandchild = ProjectComment::create([
+            'project_id' => $project->id,
+            'user_id' => $commenter->id,
+            'parent_id' => $child->id,
+            'content' => 'Balasan level 3',
+        ]);
+
+        $this->actingAs($commenter)
+            ->deleteJson(route('projects.comment.destroy', $root))
+            ->assertOk()
+            ->assertJson([
+                'success' => true,
+                'comments_count' => 0,
+            ]);
+
+        $this->assertDatabaseMissing('project_comments', ['id' => $root->id]);
+        $this->assertDatabaseMissing('project_comments', ['id' => $child->id]);
+        $this->assertDatabaseMissing('project_comments', ['id' => $grandchild->id]);
+        $this->assertSame(0, (int) $project->fresh()->comments_count);
+    }
 }

@@ -2,7 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\Community;
+use App\Models\CommunityPost;
 use App\Models\Project;
+use App\Models\Report;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -216,5 +219,41 @@ class AdminModerationTest extends TestCase
         $searchResponse->assertStatus(200);
         $searchResponse->assertSee('Charlie Delta');
         $searchResponse->assertDontSee('Echo Foxtrot');
+    }
+
+    public function test_admin_moderation_projects_tab_displays_community_post_reports(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $author = User::factory()->create();
+        $reporter = User::factory()->create();
+
+        $community = Community::create([
+            'owner_id' => $author->id,
+            'name' => 'Komunitas Audit',
+            'topic' => 'Laravel',
+            'slug' => 'komunitas-audit',
+            'visibility' => 'public',
+        ]);
+
+        $post = CommunityPost::create([
+            'community_id' => $community->id,
+            'user_id' => $author->id,
+            'type' => 'discussion',
+            'content' => 'Postingan komunitas yang dilaporkan untuk audit',
+        ]);
+
+        Report::create([
+            'reporter_id' => $reporter->id,
+            'reportable_type' => CommunityPost::class,
+            'reportable_id' => $post->id,
+            'reason' => 'spam',
+            'notes' => 'Mengandung tautan spam',
+            'status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.reports.index', ['tab' => 'projects']));
+
+        $response->assertOk();
+        $response->assertSee('Postingan komunitas yang dilaporkan untuk audit');
     }
 }

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Auth;
 
 class Project extends Model
 {
@@ -130,7 +131,19 @@ class Project extends Model
     {
         $isAdmin = false;
         if ($viewerId) {
-            $isAdmin = (bool) User::where('id', $viewerId)->value('is_admin');
+            if (Auth::check() && (int) Auth::id() === (int) $viewerId) {
+                $isAdmin = (bool) Auth::user()->is_admin;
+            } else {
+                $reqKey = '_ny_admin_viewer_'.$viewerId;
+                if (app()->bound('request') && request()->attributes->has($reqKey)) {
+                    $isAdmin = (bool) request()->attributes->get($reqKey);
+                } else {
+                    $isAdmin = (bool) User::where('id', $viewerId)->value('is_admin');
+                    if (app()->bound('request')) {
+                        request()->attributes->set($reqKey, $isAdmin);
+                    }
+                }
+            }
         }
 
         if ($isAdmin) {

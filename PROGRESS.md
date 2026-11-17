@@ -307,6 +307,25 @@ Alur lama (form email + password inline di `/pengaturan`, reset password lewat l
 - `AGENTS.md` "Aturan Alur Tamu" diperbarui: dulu melarang membajak klik baca tamu ke detail karya, sekarang detail karya memang login-only. Test lama `test_guest_can_view_project_detail` diganti `test_guest_is_sent_back_with_login_modal_when_opening_project_detail` (assert redirect + `auth_required` + opener modal tampil + anchor kartu tamu tetap punya `@click.prevent="window.openAuthModal('login')"`).
 - Verifikasi: full suite **232 test (975 assertion) passed**, Pint clean. Catatan environment: `php artisan boost:mcp` mengunci file compiled view di `storage/framework/views` → suite dijalankan dengan `VIEW_COMPILED_PATH` diarahkan ke folder temp (race `rename(): Access is denied` hilang).
 
+## 3h. Remediasi Audit Lanjutan — UI, Admin, Spaces, Performa & Halaman Error (17 Nov 2026)
+
+- **UI Mobile, Modal Laporan, Edit Proyek & Alert Login**:
+  - `resources/views/projects/index.blade.php`: memulihkan overlay pencarian mobile (`#nav-search-mobile`) pada header override beranda serta menambahkan badge angka unread di ikon lonceng mobile.
+  - `resources/views/components/report-modal.blade.php`: memperbaiki markup tag `</form>` dan tombol submit duplikat, serta menambahkan pilihan alasan `other` (Lainnya).
+  - `resources/views/projects/edit.blade.php`: menghapus emoji pada dropdown status, menambahkan kontrol `visibility` (`public`/`private`) serta `project_type`, dan mengikat state Alpine-nya.
+  - `resources/views/auth/login.blade.php`: membedakan rendering `session('status')` bernuansa error/batal Google OAuth memakai warna rose (bukan emerald).
+- **Moderasi Admin, Pembersihan Storage & Spaces Realtime**:
+  - `app/Http/Controllers/AdminModerationController.php` & `resources/views/admin/reports.blade.php`: menampilkan laporan `CommunityPost` di tab `projects` serta memperbaiki atribut komentar (`$reportable->content ?? $reportable->body`).
+  - `app/Services/MediaOptimizer.php`: menambahkan `deleteStoredFile()` dan `deleteProjectMedia()`, lalu menerapkannya saat ganti thumbnail/video di `ProjectController::update()`, hapus proyek (`ProjectController::destroy()`, `AdminModerationController::destroyProject()`), hapus post komunitas (`CommunityPostController::destroy()`, `AdminModerationController::destroyCommunityPost()`), dan hapus akun (`AdminModerationController::destroyUser()`).
+  - `app/Http/Controllers/SpaceController.php`, `resources/js/app.js`, `resources/views/spaces/show.blade.php`: menyambungkan obrolan Space melalui sinyal Reverb `kind=chat` (beserta validasi peserta aktif) serta menangani sinyal `leave` dengan `ended: true` untuk menutup stream dan meninggalkan room.
+- **Diet HTML, Optimasi Query, SafeUrl & Rate Limiting**:
+  - `resources/js/app.js` & `resources/views/components/project-card.blade.php`: memindahkan logika interaktif kartu proyek ke `Alpine.data('projectCard')`, memanggil `galleryImages()` sekali per kartu, dan menambahkan `aria-label` pada kontrol lightbox.
+  - `app/Models/Project.php`, `ProjectController.php`, `InfiniteFeedController.php`, `resources/views/projects/bookmarks.blade.php`: caching per-request pengecekan `is_admin` di `scopeVisibleTo()`, eager load `repostedFrom`, penghapusan dead query `$recentReviews`, scoping `ProjectBookmark`/`ProjectVote`/`ProjectRepost` ke ID proyek halaman aktif, penghapusan komentar bersarang multi-level di `destroyComment()`, tombol `Jelajahi Feed` tampil di mobile, serta pengiriman `:is-reposted` pada koleksi tersimpan.
+  - `app/Http/Controllers/CommunityController.php` & `routes/web.php`: memakai `App\Rules\SafeUrl` untuk field `icon` komunitas dan menambahkan middleware `throttle` pada endpoint tulis/upload/ekspor/verifikasi yang sebelumnya belum dibatasi.
+- **Halaman Error Kustom & Test Baru**:
+  - Membuat template error Token Harbor dark-mode (`resources/views/errors/minimal.blade.php`, `403`, `404`, `419`, `429`, `500`).
+  - Menambah pengujian di `AdminModerationTest`, `BackendSecurityAndSpacesTest`, `CommentThreadIntegrityTest`, dan `GoogleAuthTest`.
+
 ---
 
 ## 4. Backlog Masa Depan (Rekomendasi Lanjutan)

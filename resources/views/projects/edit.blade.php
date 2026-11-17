@@ -17,6 +17,7 @@
          categoryName: '',
          projectType: '{{ old('project_type', $project->project_type ?? 'web') }}',
          status: '{{ old('status', $project->status ?? 'beta') }}',
+         visibility: '{{ old('visibility', $project->visibility ?? 'public') }}',
          thumbnailUrl: '{{ old('thumbnail_url', $project->thumbnail) }}',
          previewImage: '',
          demoUrl: '{{ old('demo_url', $project->demo_url ?? '') }}',
@@ -203,11 +204,38 @@
                         Status Pengembangan
                     </label>
                     <select name="status" id="status" x-model="status" class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] text-xs sm:text-sm outline-none focus:border-[#EAE8E1] focus:ring-1 focus:ring-[#EAE8E1] transition">
-                        <option value="idea">💡 Ide / Konsep</option>
-                        <option value="prototype">🛠️ Prototype</option>
-                        <option value="beta">🧪 Beta Testing</option>
-                        <option value="production">🚀 Production / Rilis Publik</option>
-                        <option value="archived">📦 Archived</option>
+                        <option value="idea">Ide / Konsep</option>
+                        <option value="prototype">Prototype</option>
+                        <option value="beta">Beta Testing</option>
+                        <option value="production">Production / Rilis Publik</option>
+                        <option value="archived">Archived</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label for="visibility" class="text-xs font-semibold text-[var(--primary)]">
+                        Visibilitas Karya
+                    </label>
+                    <select name="visibility" id="visibility" x-model="visibility" class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] text-xs sm:text-sm outline-none focus:border-[#EAE8E1] focus:ring-1 focus:ring-[#EAE8E1] transition">
+                        <option value="public">Publik — Tampil di Feed &amp; Pencarian</option>
+                        <option value="private">Privat — Hanya Saya</option>
+                    </select>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label for="project_type" class="text-xs font-semibold text-[var(--primary)]">
+                        Tipe Project
+                    </label>
+                    <select name="project_type" id="project_type" x-model="projectType" class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] text-xs sm:text-sm outline-none focus:border-[#EAE8E1] focus:ring-1 focus:ring-[#EAE8E1] transition">
+                        <option value="web">Web App</option>
+                        <option value="mobile">Mobile App</option>
+                        <option value="cli">CLI Tool</option>
+                        <option value="api">API / Backend</option>
+                        <option value="library">Library / Package</option>
+                        <option value="design">Design / UI Kit</option>
+                        <option value="other">Lainnya</option>
                     </select>
                 </div>
             </div>

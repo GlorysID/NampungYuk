@@ -95,7 +95,7 @@ class ProjectController extends Controller
             ]);
         }
 
-        $query = Project::with(['user', 'category'])
+        $query = Project::with(['user', 'category', 'repostedFrom'])
             ->visibleTo(Auth::id())
             ->search($search);
 
@@ -184,24 +184,20 @@ class ProjectController extends Controller
                 ->get();
         }
 
-        // 4. Recent Discussions
-        $recentReviews = ProjectComment::with(['user', 'project'])
-            ->whereHas('project')
-            ->latest()
-            ->take(3)
-            ->get();
+        $recentReviews = collect();
 
         $userId = Auth::id();
+        $visibleProjectIds = $projects->pluck('id');
         $userBookmarkedIds = $userId
-            ? ProjectBookmark::where('user_id', $userId)->pluck('project_id')->toArray()
+            ? ProjectBookmark::where('user_id', $userId)->whereIn('project_id', $visibleProjectIds)->pluck('project_id')->toArray()
             : [];
 
         $userVotes = $userId
-            ? ProjectVote::where('user_id', $userId)->pluck('type', 'project_id')->toArray()
+            ? ProjectVote::where('user_id', $userId)->whereIn('project_id', $visibleProjectIds)->pluck('type', 'project_id')->toArray()
             : [];
 
         $userRepostedIds = $userId
-            ? ProjectRepost::where('user_id', $userId)->pluck('project_id')->toArray()
+            ? ProjectRepost::where('user_id', $userId)->whereIn('project_id', $visibleProjectIds)->pluck('project_id')->toArray()
             : [];
 
         return view('projects.index', compact(
@@ -529,9 +525,13 @@ class ProjectController extends Controller
         // Handle thumbnail
         $thumbnailPath = $project->thumbnail;
         if ($request->hasFile('thumbnail')) {
+            $this->media->deleteStoredFile($project->thumbnail);
             $path = $this->media->storeImage($request->file('thumbnail'), 'thumbnails', 'thumb');
             $thumbnailPath = '/storage/'.$path;
         } elseif (! empty($validated['thumbnail_url'])) {
+            if ($validated['thumbnail_url'] !== $project->thumbnail && $validated['thumbnail_url'] !== $project->getRawOriginal('thumbnail')) {
+                $this->media->deleteStoredFile($project->thumbnail);
+            }
             $thumbnailPath = $validated['thumbnail_url'];
         }
 
@@ -549,10 +549,16 @@ class ProjectController extends Controller
         $videoPath = $project->video;
         $videoPosterPath = $project->video_poster;
         if ($request->hasFile('video')) {
+            $this->media->deleteStoredFile($project->video);
+            $this->media->deleteStoredFile($project->video_poster);
             $optimized = $this->media->storeVideo($request->file('video'), 'project-videos');
             $videoPath = '/storage/'.$optimized['path'];
             $videoPosterPath = $optimized['poster'] ? '/storage/'.$optimized['poster'] : null;
         } elseif (! empty($validated['video_url'])) {
+            if ($validated['video_url'] !== $project->video && $validated['video_url'] !== $project->getRawOriginal('video')) {
+                $this->media->deleteStoredFile($project->video);
+                $this->media->deleteStoredFile($project->video_poster);
+            }
             $videoPath = $validated['video_url'];
         }
 
@@ -616,6 +622,8 @@ class ProjectController extends Controller
         $categoryId = $project->category_id;
         $username = Auth::user()->username;
 
+        $this->media->deleteProjectMedia($project);
+
         // Cascade delete relations
         $project->comments()->delete();
         $project->votes()->delete();
@@ -653,11 +661,23 @@ class ProjectController extends Controller
             abort(403, 'Anda tidak memiliki izin untuk menghapus komentar ini.');
         }
 
-        // Calculate total comments deleted (parent + replies)
-        $deletedCount = 1 + $comment->replies()->count();
+        // Calculate total comments deleted (parent + all nested descendant replies)
+        $allDescendantIds = [];
+        $currentLevelIds = [$comment->id];
+        while (! empty($currentLevelIds)) {
+            $childIds = ProjectComment::whereIn('parent_id', $currentLevelIds)->pluck('id')->all();
+            if (empty($childIds)) {
+                break;
+            }
+            $allDescendantIds = array_merge($allDescendantIds, $childIds);
+            $currentLevelIds = $childIds;
+        }
 
-        // Delete nested replies first if any
-        $comment->replies()->delete();
+        $deletedCount = 1 + count($allDescendantIds);
+
+        if (! empty($allDescendantIds)) {
+            ProjectComment::whereIn('id', $allDescendantIds)->delete();
+        }
         $comment->delete();
 
         if ($project) {
@@ -903,17 +923,25 @@ class ProjectController extends Controller
 
         $projectIds = ProjectBookmark::where('user_id', $userId)->pluck('project_id');
 
-        $projects = Project::with(['user', 'category'])
+        $projects = Project::with(['user', 'category', 'repostedFrom'])
             ->visibleTo($userId)
             ->whereIn('id', $projectIds)
             ->latest()
             ->paginate(12);
 
         $categories = Category::withCount('projects')->get();
-        $userBookmarkedIds = $projectIds->toArray();
-        $userVotes = ProjectVote::where('user_id', $userId)->pluck('type', 'project_id')->toArray();
+        $pageProjectIds = $projects->pluck('id');
+        $userBookmarkedIds = $pageProjectIds->toArray();
+        $userVotes = ProjectVote::where('user_id', $userId)
+            ->whereIn('project_id', $pageProjectIds)
+            ->pluck('type', 'project_id')
+            ->toArray();
+        $userRepostedIds = ProjectRepost::where('user_id', $userId)
+            ->whereIn('project_id', $pageProjectIds)
+            ->pluck('project_id')
+            ->toArray();
 
-        return view('projects.bookmarks', compact('projects', 'categories', 'userBookmarkedIds', 'userVotes'));
+        return view('projects.bookmarks', compact('projects', 'categories', 'userBookmarkedIds', 'userVotes', 'userRepostedIds'));
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Project;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -269,5 +270,40 @@ class MediaOptimizer
         exec(escapeshellarg($path).' -version 2>&1', $out, $code);
 
         return $code === 0;
+    }
+
+    /**
+     * Delete a locally stored file if the given URL or path points to /storage/.
+     */
+    public function deleteStoredFile(?string $urlOrPath, string $disk = 'public'): void
+    {
+        if (! $urlOrPath || ! str_contains($urlOrPath, '/storage/')) {
+            return;
+        }
+
+        $relativePath = explode('/storage/', $urlOrPath, 2)[1] ?? '';
+        $relativePath = ltrim(strtok($relativePath, '?'), '/');
+
+        if ($relativePath !== '') {
+            Storage::disk($disk)->delete($relativePath);
+        }
+    }
+
+    /**
+     * Delete all locally stored media assets belonging to a project.
+     */
+    public function deleteProjectMedia(Project $project, string $disk = 'public'): void
+    {
+        $this->deleteStoredFile($project->thumbnail, $disk);
+        $this->deleteStoredFile($project->video, $disk);
+        $this->deleteStoredFile($project->video_poster, $disk);
+
+        foreach ($project->images ?? [] as $image) {
+            $this->deleteStoredFile(is_string($image) ? $image : null, $disk);
+        }
+
+        foreach ($project->videos ?? [] as $video) {
+            $this->deleteStoredFile(is_string($video) ? $video : null, $disk);
+        }
     }
 }

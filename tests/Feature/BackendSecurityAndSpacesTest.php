@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Events\ProjectPublished;
+use App\Events\SpaceSignal;
 use App\Models\Category;
 use App\Models\Community;
 use App\Models\CommunityMember;
@@ -421,5 +422,71 @@ class BackendSecurityAndSpacesTest extends TestCase
             ->assertSee('Visible Public Service')
             ->assertDontSee('Hidden Private Service')
             ->assertDontSee('Hidden Warned Service');
+    }
+
+    /**
+     * 9. Creating a community rejects javascript: scheme on icon URL.
+     */
+    public function test_community_creation_rejects_javascript_icon_url(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('communities.store'), [
+                'name' => 'Komunitas Uji XSS',
+                'topic' => 'Keamanan',
+                'icon' => 'javascript:alert(1)',
+            ])
+            ->assertSessionHasErrors('icon');
+
+        $this->assertDatabaseMissing('communities', ['name' => 'Komunitas Uji XSS']);
+    }
+
+    /**
+     * 10. Space chat signal succeeds for active participants and forbids non-participants.
+     */
+    public function test_space_chat_signal_succeeds_for_participant_and_forbids_non_participant(): void
+    {
+        Event::fake([SpaceSignal::class]);
+
+        $host = User::factory()->create();
+        $participant = User::factory()->create();
+        $outsider = User::factory()->create();
+
+        $space = Space::create([
+            'host_id' => $host->id,
+            'title' => 'Ruang Diskusi Live',
+            'type' => 'audio',
+            'status' => 'live',
+        ]);
+
+        SpaceParticipant::create([
+            'space_id' => $space->id,
+            'user_id' => $participant->id,
+            'role' => 'listener',
+            'is_muted' => true,
+        ]);
+
+        $this->actingAs($outsider)
+            ->postJson(route('spaces.signal', $space), [
+                'kind' => 'chat',
+                'payload' => ['text' => 'Menyusup ke ruang'],
+            ])
+            ->assertStatus(403);
+
+        $this->actingAs($participant)
+            ->postJson(route('spaces.signal', $space), [
+                'kind' => 'chat',
+                'payload' => ['text' => 'Halo semuanya'],
+            ])
+            ->assertOk()
+            ->assertJson(['success' => true]);
+
+        Event::assertDispatched(SpaceSignal::class, function (SpaceSignal $event) use ($space, $participant): bool {
+            return $event->spaceId === $space->id
+                && $event->from === $participant->id
+                && $event->kind === 'chat'
+                && ($event->payload['text'] ?? null) === 'Halo semuanya';
+        });
     }
 }

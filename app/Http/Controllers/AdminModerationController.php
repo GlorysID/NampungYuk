@@ -7,6 +7,7 @@ use App\Models\CommunityPost;
 use App\Models\Project;
 use App\Models\Report;
 use App\Models\User;
+use App\Services\MediaOptimizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -32,7 +33,7 @@ class AdminModerationController extends Controller
         $allUsersCount = User::count();
 
         $projectReports = Report::with(['reporter', 'reportable.user'])
-            ->where('reportable_type', Project::class)
+            ->whereIn('reportable_type', [Project::class, CommunityPost::class])
             ->latest()
             ->paginate(15, ['*'], 'p_page')
             ->withQueryString();
@@ -164,6 +165,8 @@ class AdminModerationController extends Controller
                 'resolved_at' => now(),
             ]);
 
+        app(MediaOptimizer::class)->deleteProjectMedia($project);
+
         $project->delete();
 
         if ($categoryId) {
@@ -195,6 +198,10 @@ class AdminModerationController extends Controller
                 'resolved_by' => $request->user()->id,
                 'resolved_at' => now(),
             ]);
+
+        foreach ($post->images ?? [] as $img) {
+            app(MediaOptimizer::class)->deleteStoredFile(is_string($img) ? $img : null);
+        }
 
         $post->delete();
 
@@ -331,6 +338,9 @@ class AdminModerationController extends Controller
             }
         }
         $user->communityPosts()->delete();
+        $media = app(MediaOptimizer::class);
+        $media->deleteStoredFile($user->getRawOriginal('avatar'));
+        $media->deleteStoredFile($user->getRawOriginal('banner'));
         $user->delete();
 
         return redirect()->route('projects.index')->with('status', "Akun @{$username} dan seluruh datanya telah berhasil dihapus total oleh Admin.");

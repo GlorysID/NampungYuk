@@ -121,6 +121,14 @@
                                 <span class="text-[11px] text-[var(--text-muted)]">Demo diarahkan ke situs jebakan atau tidak berfungsi sama sekali.</span>
                             </div>
                         </label>
+
+                        <label class="flex items-center gap-3 p-3 rounded-xl border border-[var(--border-color)] hover:bg-[var(--surface-subtle)] cursor-pointer transition text-xs select-none">
+                            <input type="radio" name="reason" value="other" x-model="reason" class="text-[var(--primary)] focus:ring-[#0B0B0D]">
+                            <div>
+                                <span class="font-semibold block text-[var(--primary)]">Lainnya</span>
+                                <span class="text-[11px] text-[var(--text-muted)]">Pelanggaran pedoman komunitas lainnya yang belum tercantum di atas.</span>
+                            </div>
+                        </label>
                     </div>
                 </div>
 
@@ -142,13 +150,6 @@
                             class="btn-secondary text-xs py-2 px-4 cursor-pointer">
                         Batal
                     </button>
-                    <button type="submit" 
-                            class="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition shadow-xs flex items-center gap-1.5 active:scale-95 cursor-pointer">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                        <span>Kirim Laporan</span>
-                    </button>
-                </div>
-            </form>
                     <button type="submit" 
                             class="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition shadow-xs flex items-center gap-1.5 active:scale-95 cursor-pointer">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>

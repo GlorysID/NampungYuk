@@ -26,7 +26,7 @@
         </div>
 
         <a href="{{ route('projects.index') }}" 
-           class="px-3.5 py-2 rounded-xl border border-[var(--border-color)] bg-[var(--surface-muted)] hover:bg-[var(--surface-chip-hover)] text-[var(--primary)] text-xs font-semibold hidden sm:inline-flex items-center gap-1.5 transition">
+           class="px-3.5 py-2 rounded-xl border border-[var(--border-color)] bg-[var(--surface-muted)] hover:bg-[var(--surface-chip-hover)] text-[var(--primary)] text-xs font-semibold inline-flex items-center gap-1.5 transition shrink-0">
             <span>Jelajahi Feed</span>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
@@ -43,8 +43,9 @@
             @forelse($projects as $project)
                 @php
                     $initialVote = $userVotes[$project->id] ?? null;
+                    $isReposted = in_array($project->id, $userRepostedIds ?? []);
                 @endphp
-                <x-project-card :project="$project" :initial-vote="$initialVote" :is-bookmarked="true" />
+                <x-project-card :project="$project" :initial-vote="$initialVote" :is-bookmarked="true" :is-reposted="$isReposted" />
             @empty
                 <x-empty-state 
                     title="Belum ada project yang disimpan" 
