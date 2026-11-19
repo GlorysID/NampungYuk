@@ -9,7 +9,7 @@
     </div>
 
     <!-- Middle Nav Section (Scrollable on short screens) -->
-    <div class="flex-1 min-h-0 overflow-y-auto no-scrollbar pt-2.5 pb-1 flex flex-col gap-3.5 {{ $compact ? 'w-full items-center' : '' }}">
+    <div class="flex-1 min-h-0 overflow-y-auto no-scrollbar pt-2.5 pb-3 flex flex-col gap-3.5 {{ $compact ? 'w-full items-center' : '' }}">
         @php
             $isSearchNav = request()->routeIs('search.*');
             $isPeopleNav = request()->routeIs('projects.index') && request('view') === 'people';
@@ -447,26 +447,6 @@
             </div>
         @endif
 
-        <!-- Primary CTA (auth only) -->
-        @auth
-            <div class="mt-auto sticky bottom-0 z-10 bg-[var(--surface-invert)] pt-2.5 pb-2 border-t border-[var(--border-color)]/70 {{ $compact ? 'w-full flex justify-center' : '' }}">
-                @if($compact)
-                    <a href="{{ route('projects.create') }}"
-                       title="Pamer Kodingan"
-                       aria-label="Pamer Kodingan"
-                       class="w-12 h-12 inline-flex items-center justify-center rounded-full bg-[var(--primary)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)] transition active:scale-95 cursor-pointer shadow-xs">
-                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                    </a>
-                @else
-                    <a href="{{ route('projects.create') }}"
-                       class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-[var(--primary)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)] font-bold h-12 px-4 text-[15px] transition active:scale-[0.98] cursor-pointer shadow-xs">
-                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                        <span>Pamer Kodingan</span>
-                    </a>
-                @endif
-            </div>
-        @endauth
-
         <!-- Guest auth actions & promo card (menyambung langsung di bawah nav, tidak mentok ke dasar layar) -->
         @guest
             @unless($compact)
@@ -511,9 +491,24 @@
         @endguest
     </div>
 
-    <!-- Bottom: pinned user profile (authenticated only) -->
+    <!-- Bottom: Primary CTA + pinned user profile (authenticated only) -->
     @auth
-        <div class="shrink-0 pt-2 {{ $compact ? 'w-full flex justify-center' : '' }}">
+        <div class="shrink-0 pt-2.5 border-t border-[var(--border-color)]/70 flex flex-col gap-2.5 {{ $compact ? 'w-full items-center' : '' }}">
+            @if($compact)
+                <a href="{{ route('projects.create') }}"
+                   title="Pamer Kodingan"
+                   aria-label="Pamer Kodingan"
+                   class="w-12 h-12 inline-flex items-center justify-center rounded-full bg-[var(--primary)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)] transition active:scale-95 cursor-pointer shadow-xs">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                </a>
+            @else
+                <a href="{{ route('projects.create') }}"
+                   class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-[var(--primary)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)] font-bold h-12 px-4 text-[15px] transition active:scale-[0.98] cursor-pointer shadow-xs">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                    <span>Pamer Kodingan</span>
+                </a>
+            @endif
+
             <div class="relative w-full" x-data="{ userMenuOpen: false }">
                 <div x-show="userMenuOpen"
                      @click.outside="userMenuOpen = false"

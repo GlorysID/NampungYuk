@@ -387,8 +387,22 @@
         @else
             <!-- TAB: DISKUSI -->
             @if($community->welcome_message && $isMember)
-                <div x-data="{ shown: false }"
-                     x-init="try { shown = localStorage.getItem('ny_comm_welcome_{{ $community->id }}') !== '1'; } catch (e) { shown = true; }"
+                <div x-data="{
+                         shown: false,
+                         init() {
+                             try {
+                                 this.shown = localStorage.getItem('ny_comm_welcome_{{ $community->id }}') !== '1';
+                             } catch (e) {
+                                 this.shown = true;
+                             }
+                         },
+                         dismiss() {
+                             this.shown = false;
+                             try {
+                                 localStorage.setItem('ny_comm_welcome_{{ $community->id }}', '1');
+                             } catch (e) {}
+                         }
+                     }"
                      x-show="shown"
                      x-cloak
                      class="p-4 rounded-2xl bg-[var(--surface)] border border-emerald-500/25 flex items-start justify-between gap-3">
@@ -397,7 +411,7 @@
                         <p class="text-sm text-[var(--primary)] leading-relaxed whitespace-pre-line">{{ $community->welcome_message }}</p>
                     </div>
                     <button type="button"
-                            @click="shown = false; try { localStorage.setItem('ny_comm_welcome_{{ $community->id }}', '1'); } catch (e) {} "
+                            @click="dismiss()"
                             aria-label="Tutup pesan sambutan"
                             class="text-xs text-[var(--text-muted)] hover:text-[var(--primary)] px-2 py-1 rounded-lg hover:bg-[var(--surface-hover)] shrink-0 cursor-pointer">
                         Tutup

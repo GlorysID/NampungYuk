@@ -871,18 +871,18 @@
         </div>
     @endauth
 
-    <!-- FLOATING TOP NOTIFICATION BANNER (PHONE PUSH NOTIFICATION STYLE) -->
+    <!-- FLOATING BOTTOM NOTIFICATION BANNER -->
     <div x-show="toast.show" 
          x-transition:enter="transition cubic-bezier(0.16, 1, 0.3, 1) duration-300"
-         x-transition:enter-start="-translate-y-14 opacity-0 scale-95"
+         x-transition:enter-start="translate-y-4 opacity-0 scale-95"
          x-transition:enter-end="translate-y-0 opacity-100 scale-100"
          x-transition:leave="transition ease-in duration-200"
          x-transition:leave-start="translate-y-0 opacity-100 scale-100"
-         x-transition:leave-end="-translate-y-14 opacity-0 scale-95"
+         x-transition:leave-end="translate-y-4 opacity-0 scale-95"
          x-cloak
          role="alert"
          aria-live="polite"
-         class="fixed top-4 left-1/2 -translate-x-1/2 z-[100] max-w-sm sm:max-w-md w-[calc(100%-2rem)] sm:w-auto pointer-events-none">
+         class="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-[100] max-w-sm sm:max-w-md w-[calc(100%-2rem)] sm:w-auto pointer-events-none">
         
         <div class="pointer-events-auto flex items-center justify-between gap-3 bg-[#121214]/95 backdrop-blur-md text-[#EAE8E1] px-4 py-2.5 rounded-2xl border border-[#242426] shadow-[0_12px_36px_rgba(0,0,0,0.55)] ring-1 ring-white/5">
             <div class="flex items-center gap-2.5 min-w-0">

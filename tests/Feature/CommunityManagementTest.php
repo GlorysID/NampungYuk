@@ -465,4 +465,20 @@ class CommunityManagementTest extends TestCase
 
         $this->assertDatabaseMissing('communities', ['id' => $community->id]);
     }
+
+    public function test_welcome_message_renders_valid_alpine_handler_for_members(): void
+    {
+        $owner = User::factory()->create();
+        $community = $this->makeCommunity($owner, [
+            'welcome_message' => 'Selamat datang developer di komunitas ini!',
+        ]);
+
+        $this->actingAs($owner)
+            ->get(route('communities.show', $community->slug))
+            ->assertOk()
+            ->assertSee('Pesan Sambutan')
+            ->assertSee('Selamat datang developer di komunitas ini!')
+            ->assertSee('dismiss()', false)
+            ->assertDontSee('x-init="try', false);
+    }
 }
