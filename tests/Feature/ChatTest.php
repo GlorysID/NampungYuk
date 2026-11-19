@@ -2,11 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Events\MessageRead;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
 use App\Notifications\NewMessageNotification;
+use Illuminate\Broadcasting\BroadcastException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 class ChatTest extends TestCase
@@ -275,5 +278,124 @@ class ChatTest extends TestCase
             ->get('/')
             ->assertOk()
             ->assertSee('unreadChatCount: 0', false);
+    }
+
+    public function test_sync_endpoint_returns_new_messages_typing_state_and_read_receipts(): void
+    {
+        [$a, $b] = $this->pair();
+
+        // A starts typing before any conversation exists (should not create a conversation row).
+        $this->actingAs($a)
+            ->postJson('/obrolan/'.$b->username.'/mengetik', ['typing' => true])
+            ->assertOk();
+
+        $this->actingAs($b)
+            ->getJson('/obrolan/'.$a->username.'/sync?after=0')
+            ->assertOk()
+            ->assertJsonPath('typing', true)
+            ->assertJsonPath('conversation', null);
+
+        // A sends a message -> clears typing state immediately.
+        $sent = $this->actingAs($a)
+            ->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo realtime!'])
+            ->assertOk();
+        $msgId = $sent->json('message.id');
+
+        // B syncs -> gets the new message, typing is false, and message is marked read.
+        $this->actingAs($b)
+            ->getJson('/obrolan/'.$a->username.'/sync?after=0')
+            ->assertOk()
+            ->assertJsonPath('typing', false)
+            ->assertJsonCount(1, 'messages')
+            ->assertJsonPath('messages.0.id', $msgId)
+            ->assertJsonPath('messages.0.body', 'Halo realtime!');
+
+        // A syncs -> sees read_up_to_id matching the message B just read.
+        $this->actingAs($a)
+            ->getJson('/obrolan/'.$b->username.'/sync?after='.$msgId)
+            ->assertOk()
+            ->assertJsonPath('read_up_to_id', $msgId);
+    }
+
+    public function test_mark_read_endpoint_and_typing_bubble_markup(): void
+    {
+        [$a, $b] = $this->pair();
+
+        $this->actingAs($a)
+            ->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Cek read receipt'])
+            ->assertOk();
+
+        $this->actingAs($b)
+            ->postJson('/obrolan/'.$a->username.'/baca')
+            ->assertOk()
+            ->assertJsonPath('marked', 1);
+
+        $this->actingAs($b)
+            ->get('/obrolan/'.$a->username)
+            ->assertOk()
+            ->assertSee('ny-typing-dot', false)
+            ->assertSee('syncUrl:', false)
+            ->assertSee('readUrl:', false);
+    }
+
+    public function test_chat_requests_do_not_500_when_broadcaster_throws(): void
+    {
+        [$a, $b] = $this->pair();
+
+        $this->actingAs($a)
+            ->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Pesan sebelum reverb mati'])
+            ->assertOk();
+
+        // Force BroadcastFactory / events to throw BroadcastException as happens when Reverb is offline.
+        Event::listen(
+            MessageRead::class,
+            static fn () => throw new BroadcastException('Connection timed out')
+        );
+
+        $this->actingAs($b)
+            ->get('/obrolan/'.$a->username)
+            ->assertOk();
+    }
+
+    public function test_chat_intro_card_renders_follow_button_with_live_state(): void
+    {
+        $a = User::factory()->create();
+        $b = User::factory()->create([
+            'github_url' => 'https://github.com/bagus-dev',
+            'website_url' => 'javascript:alert(1)',
+        ]);
+
+        $this->actingAs($a)
+            ->get('/obrolan/'.$b->username)
+            ->assertOk()
+            ->assertSee('followButton({', false)
+            ->assertSee(route('follow.toggle', $b), false)
+            ->assertSee('following: false', false)
+            ->assertSee('Lihat Profil')
+            ->assertSee('https://github.com/bagus-dev', false)
+            ->assertDontSee('javascript:alert(1)', false)
+            ->assertDontSee('Mengikutimu');
+
+        $b->following()->attach($a->id);
+
+        $this->actingAs($a)
+            ->get('/obrolan/'.$b->username)
+            ->assertOk()
+            ->assertSee('mutual: false', false)
+            ->assertSee('Mengikutimu');
+
+        $this->actingAs($a)
+            ->postJson(route('follow.toggle', $b))
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('following', true)
+            ->assertJsonPath('followers_count', 1);
+
+        $this->actingAs($a)
+            ->get('/obrolan/'.$b->username)
+            ->assertOk()
+            ->assertSee('following: true', false)
+            ->assertSee('mutual: true', false)
+            ->assertSee('Teman');
     }
 }

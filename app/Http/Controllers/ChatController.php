@@ -14,7 +14,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
+use Throwable;
 
 class ChatController extends Controller
 {
@@ -209,7 +212,7 @@ class ChatController extends Controller
                 /** @var User|null $authUser */
                 $authUser = Auth::user();
                 if ($markedCount > 0 && ($authUser?->preference('privacy.show_read_receipts', true) ?? true)) {
-                    broadcast(new MessageRead($conversation->id, $userId, $upToId))->toOthers();
+                    $this->safeBroadcast(new MessageRead($conversation->id, $userId, $upToId), toOthers: true);
                 }
             }
 
@@ -262,6 +265,8 @@ class ChatController extends Controller
         $conversationId = $conversation?->id;
         $showReadReceipts = (bool) $auth->preference('privacy.show_read_receipts', true)
             && (bool) $other->preference('privacy.show_read_receipts', true);
+        $iFollowOther = $auth->isFollowing($other);
+        $otherFollowsMe = $other->isFollowing($auth);
 
         return view('chat.show', compact(
             'other',
@@ -278,7 +283,9 @@ class ChatController extends Controller
             'requests',
             'peopleResults',
             'search',
-            'showReadReceipts'
+            'showReadReceipts',
+            'iFollowOther',
+            'otherFollowsMe'
         ));
     }
 
@@ -346,8 +353,9 @@ class ChatController extends Controller
         $conversation->update(['last_message_at' => now()]);
 
         $message->load('sender');
-        broadcast(new MessageSent($message))->toOthers();
-        broadcast(new InboxUpdated($user->id, $message));
+        Cache::forget($this->typingCacheKey($auth->id, $user->id));
+        $this->safeBroadcast(new MessageSent($message), toOthers: true);
+        $this->safeBroadcast(new InboxUpdated($user->id, $message));
 
         // Drop a database notification so the bell dropdown shows the message.
         // Throttle: replace any existing unread "new_message" notification for
@@ -398,7 +406,8 @@ class ChatController extends Controller
     }
 
     /**
-     * Broadcast a typing indicator (no persistence).
+     * Broadcast a typing indicator (no persistence) and cache it briefly so
+     * clients can also receive typing state even when Reverb is offline.
      */
     public function typing(Request $request, User $user): JsonResponse
     {
@@ -407,22 +416,194 @@ class ChatController extends Controller
             return response()->json(['success' => false], 401);
         }
 
+        if ($auth->hasBlocked($user) || $auth->isBlockedBy($user)) {
+            return response()->json(['success' => false], 403);
+        }
+
         $typing = (bool) $request->boolean('typing', true);
 
         // Never create a conversation just for a typing ping.
         $conversation = Conversation::findBetween($auth->id, $user->id);
-        if (! $conversation) {
-            return response()->json(['success' => true]);
+
+        // Don't leak typing into a pending request the recipient hasn't accepted,
+        // or when the initiator already sent their single opener.
+        if ($conversation && $conversation->isPending()) {
+            if ($conversation->initiator_id !== $auth->id || $conversation->messages()->exists()) {
+                return response()->json(['success' => true]);
+            }
         }
 
-        // Don't leak typing into a pending request the recipient hasn't accepted.
-        if ($conversation->isPending() && $conversation->initiator_id !== $auth->id) {
-            return response()->json(['success' => true]);
+        $cacheKey = $this->typingCacheKey($auth->id, $user->id);
+        if ($typing) {
+            Cache::put($cacheKey, true, now()->addSeconds(5));
+        } else {
+            Cache::forget($cacheKey);
         }
 
-        broadcast(new UserTyping($conversation->id, $auth->id, $auth->name, $typing))->toOthers();
+        $this->safeBroadcast(
+            new UserTyping($conversation?->id ?? 0, $auth->id, $auth->name, $typing, $user->id),
+            toOthers: true
+        );
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Lightweight realtime sync endpoint (new messages, typing indicator, read receipts).
+     * Acts as automatic fallback when WebSocket / Reverb is not connected.
+     */
+    public function sync(Request $request, User $user): JsonResponse
+    {
+        $auth = Auth::user();
+        if (! $auth) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        if ($user->id === $auth->id) {
+            return response()->json(['message' => 'Invalid.'], 422);
+        }
+
+        if ($auth->hasBlocked($user) || $auth->isBlockedBy($user)) {
+            return response()->json(['success' => false], 403);
+        }
+
+        $afterId = max(0, (int) $request->query('after', 0));
+        $conversation = Conversation::findBetween($auth->id, $user->id);
+        $isTyping = (bool) Cache::get($this->typingCacheKey($user->id, $auth->id), false);
+
+        if (! $conversation) {
+            return response()->json([
+                'success' => true,
+                'conversation' => null,
+                'messages' => [],
+                'typing' => $isTyping,
+                'read_up_to_id' => null,
+            ]);
+        }
+
+        $isPending = $conversation->isPending();
+        $isInitiator = (int) $conversation->initiator_id === (int) $auth->id;
+        $canRespond = $isPending && ! $isInitiator;
+        $canSend = ! $isPending || ($isInitiator && ! $conversation->messages()->exists());
+
+        $showReadReceipts = (bool) $auth->preference('privacy.show_read_receipts', true)
+            && (bool) $user->preference('privacy.show_read_receipts', true);
+
+        if ($conversation->isAccepted()) {
+            $unreadQuery = $conversation->messages()
+                ->where('sender_id', '!=', $auth->id)
+                ->whereNull('read_at');
+
+            $upToId = (clone $unreadQuery)->max('id');
+            $marked = (clone $unreadQuery)->update(['read_at' => now()]);
+
+            if ($marked > 0 && $auth->preference('privacy.show_read_receipts', true)) {
+                $this->safeBroadcast(new MessageRead($conversation->id, $auth->id, $upToId), toOthers: true);
+            }
+        }
+
+        $newMessages = $conversation->messages()
+            ->with('sender:id,name')
+            ->where('id', '>', $afterId)
+            ->orderBy('id')
+            ->take(50)
+            ->get()
+            ->map(fn (Message $m) => [
+                'id' => $m->id,
+                'sender_id' => $m->sender_id,
+                'sender_name' => $m->sender?->name,
+                'body' => $m->body,
+                'time' => $m->created_at->format('H:i'),
+                'created_at' => $m->created_at->toIso8601String(),
+                'read_at' => $showReadReceipts ? $m->read_at?->toIso8601String() : null,
+                'edited_at' => $m->edited_at?->toIso8601String(),
+            ])
+            ->values();
+
+        $readUpToId = $showReadReceipts
+            ? $conversation->messages()
+                ->where('sender_id', $auth->id)
+                ->whereNotNull('read_at')
+                ->max('id')
+            : null;
+
+        return response()->json([
+            'success' => true,
+            'conversation' => [
+                'id' => $conversation->id,
+                'status' => $conversation->status,
+                'can_send' => $canSend,
+                'can_respond' => $canRespond,
+            ],
+            'messages' => $newMessages,
+            'typing' => $isTyping,
+            'read_up_to_id' => $readUpToId,
+        ]);
+    }
+
+    /**
+     * Mark incoming messages in an active accepted conversation as read and broadcast receipt.
+     */
+    public function markRead(Request $request, User $user): JsonResponse
+    {
+        $auth = Auth::user();
+        if (! $auth || $user->id === $auth->id) {
+            return response()->json(['success' => false], 401);
+        }
+
+        if ($auth->hasBlocked($user) || $auth->isBlockedBy($user)) {
+            return response()->json(['success' => false], 403);
+        }
+
+        $conversation = Conversation::findBetween($auth->id, $user->id);
+        if (! $conversation || ! $conversation->isAccepted()) {
+            return response()->json(['success' => true, 'marked' => 0]);
+        }
+
+        $unreadQuery = $conversation->messages()
+            ->where('sender_id', '!=', $auth->id)
+            ->whereNull('read_at');
+
+        $upToId = (clone $unreadQuery)->max('id');
+        $marked = (clone $unreadQuery)->update(['read_at' => now()]);
+
+        if ($marked > 0 && $auth->preference('privacy.show_read_receipts', true)) {
+            $this->safeBroadcast(new MessageRead($conversation->id, $auth->id, $upToId), toOthers: true);
+        }
+
+        return response()->json(['success' => true, 'marked' => $marked]);
+    }
+
+    protected function typingCacheKey(int $senderId, int $recipientId): string
+    {
+        return "chat:typing:{$senderId}:{$recipientId}";
+    }
+
+    /**
+     * Broadcast an event immediately without letting an offline Reverb server
+     * break the HTTP response.
+     */
+    protected function safeBroadcast(object $event, bool $toOthers = false): void
+    {
+        $isReverb = config('broadcasting.default') === 'reverb';
+        if ($isReverb && Cache::get('chat:reverb_offline', false)) {
+            return;
+        }
+
+        try {
+            $pending = broadcast($event);
+            if ($toOthers) {
+                $pending->toOthers();
+            }
+            // PendingBroadcast dispatches inside __destruct(); force destruction
+            // inside try so BroadcastException is caught instead of bubbling out.
+            unset($pending);
+        } catch (Throwable $e) {
+            if ($isReverb) {
+                Cache::put('chat:reverb_offline', true, now()->addSeconds(10));
+            }
+            Log::debug('Chat broadcast skipped: '.$e->getMessage());
+        }
     }
 
     /**
@@ -546,7 +727,7 @@ class ChatController extends Controller
         ]);
 
         $message->load('sender');
-        broadcast(new MessageSent($message))->toOthers();
+        $this->safeBroadcast(new MessageSent($message), toOthers: true);
 
         return response()->json([
             'success' => true,

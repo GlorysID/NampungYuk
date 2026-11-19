@@ -644,6 +644,27 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
     border-color: color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
+/* Instagram-style bouncing typing indicator dots */
+@keyframes ny-typing-wave {
+    0%, 60%, 100% {
+        transform: translateY(0);
+        opacity: 0.4;
+    }
+    30% {
+        transform: translateY(-4px);
+        opacity: 1;
+    }
+}
+
+.ny-typing-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background-color: var(--text-muted);
+    display: inline-block;
+    animation: ny-typing-wave 1.15s ease-in-out infinite;
+}
+
 /* Motion reduction */
 @media (prefers-reduced-motion: reduce) {
     *, ::before, ::after {

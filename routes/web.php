@@ -37,6 +37,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/obrolan/{user:username}', [ChatController::class, 'show'])->name('chat.show');
     Route::post('/obrolan/{user:username}/kirim', [ChatController::class, 'send'])->name('chat.send')->middleware('throttle:30,1');
     Route::post('/obrolan/{user:username}/mengetik', [ChatController::class, 'typing'])->name('chat.typing');
+    Route::get('/obrolan/{user:username}/sync', [ChatController::class, 'sync'])->name('chat.sync');
+    Route::post('/obrolan/{user:username}/baca', [ChatController::class, 'markRead'])->name('chat.read');
     Route::get('/obrolan/{user:username}/lama', [ChatController::class, 'older'])->name('chat.older');
     Route::post('/obrolan/{user:username}/terima', [ChatController::class, 'accept'])->name('chat.accept');
     Route::post('/obrolan/{user:username}/tolak', [ChatController::class, 'decline'])->name('chat.decline');

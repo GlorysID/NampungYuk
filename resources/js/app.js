@@ -438,7 +438,9 @@ document.addEventListener('alpine:init', () => {
     /**
      * Chat room: send messages and receive them live via Echo (Reverb).
      */
-    Alpine.data('chatRoom', ({ conversationId, me, sendUrl, typingUrl, olderUrl, deleteUrl, editUrl, otherName, isPending = false, canSend = true, canRespond = false, blockedByPolicy = false }) => ({
+    Alpine.data('chatRoom', ({ conversationId, me, otherId = null, sendUrl, typingUrl, syncUrl = '', readUrl = '', olderUrl, deleteUrl, editUrl, otherName, isPending = false, canSend = true, canRespond = false, blockedByPolicy = false }) => ({
+        conversationId,
+        otherId,
         draft: '',
         sending: false,
         // Gate state (mirrors the server-rendered flags; updated live after a send).
@@ -450,11 +452,16 @@ document.addEventListener('alpine:init', () => {
         // Unified, chronologically-ordered message list (server + live, deduped by id).
         messages: window.__chatSeed || [],
         typing: false,
-        typingTimer: null,
+        remoteTypingTimer: null,
+        localTypingTimer: null,
         lastTypingPing: 0,
+        localTypingSent: false,
         loadingOlder: false,
         hasMore: Boolean(window.__chatHasMore),
         echo: null,
+        subscribedConvId: null,
+        syncTimer: null,
+        syncing: false,
         // Inline edit state.
         editingId: null,
         editDraft: '',
@@ -467,32 +474,172 @@ document.addEventListener('alpine:init', () => {
 
             this.$nextTick(() => this.scrollBottom());
 
-            // No conversation row yet (first-ever message) — nothing to subscribe to.
-            if (!window.Echo || !conversationId) return;
+            const echo = window.Echo || null;
+            if (true) {
+                if (this.conversationId) {
+                    this.subscribeConversation(this.conversationId);
+                }
 
-            this.echo = window.Echo.private('conversation.' + conversationId);
+                if (echo && me) {
+                    const userChannel = echo.private('App.Models.User.' + me);
+
+                    // Catch first-ever message or messages arriving before conversationId existed.
+                    userChannel.listen('.inbox.updated', (e) => {
+                        if (!e || Number(e.sender_id) === Number(me)) return;
+                        if (this.otherId && Number(e.sender_id) !== Number(this.otherId)) return;
+
+                        if (e.conversation_id) {
+                            this.subscribeConversation(e.conversation_id);
+                        }
+                        if (e.id) {
+                            this.setRemoteTyping(false);
+                            this.upsert(e);
+                            this.$nextTick(() => this.scrollBottom());
+                            this.markReadNow();
+                        }
+                    });
+
+                    // Catch live typing even before the first message creates a conversation row.
+                    userChannel.listen('.user.typing', (e) => {
+                        if (!e || Number(e.user_id) === Number(me)) return;
+                        if (this.otherId && Number(e.user_id) !== Number(this.otherId)) return;
+                        this.setRemoteTyping(Boolean(e.typing));
+                    });
+
+                    const conn = echo.connector?.pusher?.connection;
+                    if (conn && typeof conn.bind === 'function') {
+                        conn.bind('connected', () => this.stopSyncFallback());
+                        conn.bind('disconnected', () => this.startSyncFallback());
+                        conn.bind('unavailable', () => this.startSyncFallback());
+                        conn.bind('failed', () => this.startSyncFallback());
+
+                        if (conn.state !== 'connected') {
+                            this.startSyncFallback();
+                        }
+                    } else {
+                        this.startSyncFallback();
+                    }
+                } else {
+                    this.startSyncFallback();
+                }
+            }
+
+            window.addEventListener('beforeunload', () => this.stopLocalTyping());
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden && this.messages.some((m) => !m.mine && !m.read_at)) {
+                    this.markReadNow();
+                }
+            });
+        },
+
+        subscribeConversation(convId) {
+            if (!convId || Number(this.subscribedConvId) === Number(convId)) return;
+            if (!window.Echo) return;
+
+            this.conversationId = Number(convId);
+            this.subscribedConvId = Number(convId);
+            window.__activeChatConvId = Number(convId);
+
+            this.echo = window.Echo.private('conversation.' + convId);
 
             this.echo.listen('.message.sent', (e) => {
-                if (e.sender_id === me) return;
+                if (!e || Number(e.sender_id) === Number(me)) return;
+                this.setRemoteTyping(false);
                 this.upsert(e);
                 this.$nextTick(() => this.scrollBottom());
+                this.markReadNow();
             });
 
             // Read receipts: the other party read our messages up to a given id.
             this.echo.listen('.message.read', (e) => {
-                if (e.reader_id === me) return;
+                if (!e || Number(e.reader_id) === Number(me)) return;
                 this.markMineRead(e.up_to_message_id);
             });
 
             // Typing indicator.
             this.echo.listen('.user.typing', (e) => {
-                if (e.user_id === me) return;
-                this.typing = e.typing;
-                if (e.typing) {
-                    clearTimeout(this.typingTimer);
-                    this.typingTimer = setTimeout(() => { this.typing = false; }, 4000);
-                }
+                if (!e || Number(e.user_id) === Number(me)) return;
+                this.setRemoteTyping(Boolean(e.typing));
             });
+        },
+
+        setRemoteTyping(isTyping) {
+            const wasTyping = this.typing;
+            this.typing = Boolean(isTyping);
+            clearTimeout(this.remoteTypingTimer);
+            if (this.typing) {
+                this.remoteTypingTimer = setTimeout(() => { this.typing = false; }, 4500);
+                if (!wasTyping) {
+                    this.$nextTick(() => this.scrollBottom());
+                }
+            }
+        },
+
+        startSyncFallback() {
+            if (!syncUrl || this.syncTimer) return;
+            this.syncTimer = setInterval(() => {
+                if (!document.hidden) {
+                    this.syncOnce();
+                }
+            }, 1800);
+        },
+
+        stopSyncFallback() {
+            if (this.syncTimer) {
+                clearInterval(this.syncTimer);
+                this.syncTimer = null;
+            }
+        },
+
+        async syncOnce() {
+            if (!syncUrl || this.syncing) return;
+            this.syncing = true;
+            try {
+                const lastId = this.messages.length > 0 ? this.messages[this.messages.length - 1].id : 0;
+                const url = new URL(syncUrl, window.location.origin);
+                url.searchParams.set('after', String(lastId));
+
+                const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!data.success) return;
+
+                if (data.conversation) {
+                    if (data.conversation.id) {
+                        this.subscribeConversation(data.conversation.id);
+                    }
+                    this.isPending = data.conversation.status === 'pending';
+                    this.canSend = data.conversation.can_send !== false;
+                    this.canRespond = Boolean(data.conversation.can_respond);
+                }
+
+                const incoming = Array.isArray(data.messages) ? data.messages : [];
+                let added = false;
+                incoming.forEach((m) => {
+                    const exists = this.messages.some((x) => x.id === m.id);
+                    this.upsert(m);
+                    if (!exists) added = true;
+                });
+
+                if (data.read_up_to_id) {
+                    this.markMineRead(data.read_up_to_id);
+                }
+
+                this.setRemoteTyping(Boolean(data.typing));
+
+                if (added) {
+                    this.$nextTick(() => this.scrollBottom());
+                }
+            } catch (e) {
+                // silent
+            } finally {
+                this.syncing = false;
+            }
+        },
+
+        markReadNow() {
+            if (!readUrl || document.hidden || this.isPending) return;
+            this.post(readUrl, {});
         },
 
         normalize(m) {
@@ -564,12 +711,26 @@ document.addEventListener('alpine:init', () => {
         },
 
         pingTyping() {
+            if (!this.draft.trim()) {
+                this.stopLocalTyping();
+                return;
+            }
             const now = Date.now();
-            if (now - this.lastTypingPing < 1500) return;
-            this.lastTypingPing = now;
-            this.post(typingUrl, { typing: true });
-            clearTimeout(this.typingTimer);
-            this.typingTimer = setTimeout(() => this.post(typingUrl, { typing: false }), 2500);
+            if (!this.localTypingSent || now - this.lastTypingPing >= 1800) {
+                this.lastTypingPing = now;
+                this.localTypingSent = true;
+                this.post(typingUrl, { typing: true });
+            }
+            clearTimeout(this.localTypingTimer);
+            this.localTypingTimer = setTimeout(() => this.stopLocalTyping(), 2600);
+        },
+
+        stopLocalTyping() {
+            clearTimeout(this.localTypingTimer);
+            if (!this.localTypingSent) return;
+            this.localTypingSent = false;
+            this.lastTypingPing = 0;
+            this.post(typingUrl, { typing: false });
         },
 
         async loadOlder() {
@@ -619,11 +780,15 @@ document.addEventListener('alpine:init', () => {
                 if (res.status === 401) { window.location.href = '/login'; return; }
                 const data = await res.json();
                 if (data.success) {
+                    this.stopLocalTyping();
                     this.upsert(data.message);
 
                     // Reflect the gate immediately: the first message to someone
                     // who doesn't follow us turns the thread into a pending request.
                     if (data.conversation) {
+                        if (data.conversation.id) {
+                            this.subscribeConversation(data.conversation.id);
+                        }
                         this.isPending = data.conversation.status === 'pending';
                         this.canSend = data.conversation.can_send !== false;
                         if (this.isPending) this.canRespond = false;

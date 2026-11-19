@@ -5,7 +5,7 @@ namespace App\Events;
 use App\Models\Message;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
@@ -13,7 +13,7 @@ use Illuminate\Queue\SerializesModels;
  * Notifies the recipient's personal channel that their inbox changed
  * (new message, updated preview, unread badge) so the inbox can update live.
  */
-class InboxUpdated implements ShouldBroadcast
+class InboxUpdated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -45,6 +45,7 @@ class InboxUpdated implements ShouldBroadcast
     public function broadcastWith(): array
     {
         return [
+            'id' => $this->message->id,
             'conversation_id' => $this->message->conversation_id,
             'sender_id' => $this->message->sender_id,
             'sender_name' => $this->message->sender?->name,

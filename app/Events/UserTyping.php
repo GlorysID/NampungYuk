@@ -17,6 +17,7 @@ class UserTyping implements ShouldBroadcastNow
         public int $userId,
         public string $name,
         public bool $typing = true,
+        public ?int $recipientId = null,
     ) {
         //
     }
@@ -26,9 +27,17 @@ class UserTyping implements ShouldBroadcastNow
      */
     public function broadcastOn(): array
     {
-        return [
-            new PrivateChannel('conversation.'.$this->conversationId),
-        ];
+        $channels = [];
+
+        if ($this->conversationId > 0) {
+            $channels[] = new PrivateChannel('conversation.'.$this->conversationId);
+        }
+
+        if ($this->recipientId !== null && $this->recipientId > 0) {
+            $channels[] = new PrivateChannel('App.Models.User.'.$this->recipientId);
+        }
+
+        return $channels;
     }
 
     public function broadcastAs(): string
