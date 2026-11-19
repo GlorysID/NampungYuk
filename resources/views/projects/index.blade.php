@@ -110,9 +110,12 @@
                 </span>
             </a>
 
-            <!-- Quick Action [+] -->
+            <!-- Quick Action [+] & Desktop Notification Bell -->
             @auth
-                <div class="px-3 shrink-0 flex items-center">
+                <div class="px-3 shrink-0 flex items-center gap-1">
+                    <div class="hidden lg:block">
+                        @include('partials.notification-bell')
+                    </div>
                     <a href="{{ route('projects.create') }}"
                        title="Pamer Kodingan"
                        aria-label="Pamer Kodingan"

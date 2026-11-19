@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Community;
 use App\Models\User;
+use App\Notifications\CommunityMembershipNotification;
 use App\Notifications\NewFollowerNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -61,5 +63,34 @@ class NotificationTest extends TestCase
         $this->actingAs($user)
             ->post("/notifikasi/{$notification->id}/read", ['to' => 'https://evil.example.com/phish'])
             ->assertRedirect(url('/'));
+    }
+
+    public function test_community_membership_notification_uses_komunitas_category_metadata(): void
+    {
+        $owner = User::factory()->create();
+        $member = User::factory()->create();
+        $community = Community::create([
+            'owner_id' => $owner->id,
+            'name' => 'Grup Testing Laravel',
+            'slug' => 'grup-testing-laravel',
+            'visibility' => 'public',
+            'join_policy' => 'open',
+            'post_policy' => 'all_members',
+            'members_count' => 1,
+        ]);
+
+        $member->notify(new CommunityMembershipNotification(
+            $community,
+            'Permintaan bergabungmu di Grup Testing Laravel disetujui.',
+            $owner
+        ));
+
+        $this->actingAs($member)
+            ->get('/notifikasi')
+            ->assertOk()
+            ->assertSee('Permintaan bergabungmu di Grup Testing Laravel disetujui.')
+            ->assertSee("activeFilter === 'komunitas'", false)
+            ->assertSee('<span class="font-semibold text-[var(--text-soft)]">Komunitas</span>', false)
+            ->assertDontSee('<span class="font-semibold text-[var(--text-soft)]">Aktivitas</span>', false);
     }
 }
