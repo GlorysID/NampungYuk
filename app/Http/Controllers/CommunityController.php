@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Community;
+use App\Models\CommunityJoinRequest;
 use App\Models\CommunityMember;
 use App\Models\CommunityPost;
 use App\Models\CommunityPostVote;
@@ -34,8 +35,9 @@ class CommunityController extends Controller
 
         $visibleIds = Community::visibleTo($userId)->pluck('id')->toArray();
 
-        // 1. Discussions Feed Query (CommunityPost)
+        // 1. Discussions Feed Query (approved posts only)
         $postQuery = CommunityPost::with(['user', 'community', 'comments.user'])
+            ->approved()
             ->whereIn('community_id', $visibleIds);
 
         if ($search) {
@@ -101,7 +103,29 @@ class CommunityController extends Controller
             ? Community::whereIn('id', $joinedIds)->orderByDesc('members_count')->take(5)->get()
             : collect();
 
-        // 4. User votes on community posts
+        // 4. Communities managed by the current user (owner/admin/mod)
+        $managedCommunities = collect();
+        $managedRoles = [];
+        if ($userId) {
+            $managedRoles = CommunityMember::where('user_id', $userId)
+                ->whereIn('role', ['owner', 'admin', 'mod'])
+                ->pluck('role', 'community_id')
+                ->all();
+
+            $ownedIds = Community::where('owner_id', $userId)->pluck('id')->all();
+            foreach ($ownedIds as $oid) {
+                $managedRoles[$oid] = 'owner';
+            }
+
+            if (! empty($managedRoles)) {
+                $managedCommunities = Community::whereIn('id', array_keys($managedRoles))
+                    ->withCount(['pendingJoinRequests', 'pendingPosts'])
+                    ->orderBy('name')
+                    ->get();
+            }
+        }
+
+        // 5. User votes on community posts
         $userVotes = $userId
             ? CommunityPostVote::where('user_id', $userId)
                 ->whereIn('community_post_id', $posts->pluck('id'))
@@ -109,7 +133,7 @@ class CommunityController extends Controller
                 ->toArray()
             : [];
 
-        // 5. Active Live Stage / Space
+        // 6. Active Live Stage / Space
         $liveSpace = Space::with('host')->where('status', 'live')->first();
 
         return view('communities.index', compact(
@@ -121,6 +145,8 @@ class CommunityController extends Controller
             'view',
             'topCommunities',
             'followedCommunities',
+            'managedCommunities',
+            'managedRoles',
             'userId',
             'userVotes',
             'liveSpace'
@@ -128,28 +154,82 @@ class CommunityController extends Controller
     }
 
     /**
-     * Show a single community with its post feed.
+     * Show a single community with its post feed, members, and rules.
      */
     public function show(string $slug, Request $request): View
     {
         $userId = Auth::id();
+        /** @var User|null $authUser */
+        $authUser = Auth::user();
 
         $community = Community::with('owner')
             ->where('slug', $slug)
             ->firstOrFail();
 
-        // Private community: only members/owner may view.
-        if ($community->isPrivate() && ! $community->hasMember($userId) && $community->owner_id !== $userId) {
-            abort(404);
-        }
-
         $isMember = $community->hasMember($userId);
-        $isOwner = $community->owner_id === $userId;
+        $isOwner = $community->isOwner($userId);
+        $isAdmin = $community->isAdmin($userId);
         $isModerator = $community->isModerator($userId);
+        $myRole = $community->roleOf($userId);
+        $memberRecord = $community->memberRecord($userId);
+        $isMuted = $memberRecord?->isMuted() ?? false;
+        $isBanned = $community->isBanned($userId);
+
+        $isLockedPrivate = $community->isPrivate()
+            && ! $isMember
+            && ! $isOwner
+            && ! ($authUser?->isAdmin() ?? false);
+
+        $pendingJoinRequest = $userId
+            ? $community->joinRequests()->where('user_id', $userId)->where('status', 'pending')->first()
+            : null;
 
         $tab = $request->query('tab', 'terbaru');
+        $section = $request->query('section', 'diskusi');
+        if (! in_array($section, ['diskusi', 'anggota', 'tentang'], true)) {
+            $section = 'diskusi';
+        }
         $search = $request->query('q');
-        $posts = $community->posts()
+
+        if ($isBanned || $isLockedPrivate) {
+            $posts = collect();
+            $members = collect();
+            $memberList = collect();
+            $allMembers = collect();
+            $adminModerators = collect();
+            $myPendingPosts = collect();
+            $userVotes = [];
+            $roleMap = [];
+            $pendingModerationCount = 0;
+
+            return view('communities.show', compact(
+                'community',
+                'posts',
+                'members',
+                'memberList',
+                'allMembers',
+                'adminModerators',
+                'myPendingPosts',
+                'isMember',
+                'isOwner',
+                'isAdmin',
+                'isModerator',
+                'myRole',
+                'memberRecord',
+                'isMuted',
+                'isBanned',
+                'isLockedPrivate',
+                'pendingJoinRequest',
+                'pendingModerationCount',
+                'roleMap',
+                'userVotes',
+                'tab',
+                'section',
+                'search'
+            ));
+        }
+
+        $posts = $community->approvedPosts()
             ->with(['user', 'comments.user'])
             ->when($tab === 'terjawab', fn ($q) => $q->where('is_answered', true))
             ->when($search, fn ($q) => $q->where('content', 'like', "%{$search}%"))
@@ -160,19 +240,69 @@ class CommunityController extends Controller
 
         $members = $community->memberUsers()->orderByDesc('community_members.created_at')->take(12)->get();
 
-        // Owner: full member list with roles for moderation.
         $memberList = $isOwner
             ? $community->memberUsers()->orderByDesc('community_members.created_at')->get()
             : collect();
 
-        // Which posts the user has voted on.
+        $adminModerators = $community->memberUsers()
+            ->whereIn('community_members.role', ['owner', 'admin', 'mod'])
+            ->orderByRaw("CASE community_members.role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 ELSE 2 END")
+            ->orderBy('users.name')
+            ->get();
+
+        $allMembers = $section === 'anggota'
+            ? $community->memberUsers()
+                ->orderByRaw("CASE community_members.role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 WHEN 'mod' THEN 2 ELSE 3 END")
+                ->orderBy('users.name')
+                ->paginate(24)
+                ->withQueryString()
+            : collect();
+
+        $roleMap = $community->members()
+            ->whereIn('role', ['owner', 'admin', 'mod'])
+            ->pluck('role', 'user_id')
+            ->all();
+        $roleMap[$community->owner_id] = 'owner';
+
+        $myPendingPosts = ($isMember && $userId)
+            ? $community->pendingPosts()->where('user_id', $userId)->latest()->get()
+            : collect();
+
+        $pendingModerationCount = $isModerator
+            ? ($community->pendingJoinRequests()->count() + $community->pendingPosts()->count())
+            : 0;
+
         $userVotes = $userId
             ? CommunityPostVote::where('user_id', $userId)
                 ->whereIn('community_post_id', $posts->pluck('id'))
                 ->pluck('type', 'community_post_id')->toArray()
             : [];
 
-        return view('communities.show', compact('community', 'posts', 'members', 'memberList', 'isMember', 'isOwner', 'isModerator', 'userVotes', 'tab', 'search'));
+        return view('communities.show', compact(
+            'community',
+            'posts',
+            'members',
+            'memberList',
+            'allMembers',
+            'adminModerators',
+            'myPendingPosts',
+            'isMember',
+            'isOwner',
+            'isAdmin',
+            'isModerator',
+            'myRole',
+            'memberRecord',
+            'isMuted',
+            'isBanned',
+            'isLockedPrivate',
+            'pendingJoinRequest',
+            'pendingModerationCount',
+            'roleMap',
+            'userVotes',
+            'tab',
+            'section',
+            'search'
+        ));
     }
 
     /**
@@ -190,7 +320,10 @@ class CommunityController extends Controller
             'topic' => ['nullable', 'string', 'max:60'],
             'description' => ['nullable', 'string', 'max:500'],
             'rules' => ['nullable', 'string', 'max:1000'],
+            'welcome_message' => ['nullable', 'string', 'max:500'],
             'visibility' => ['nullable', 'in:public,private'],
+            'join_policy' => ['nullable', 'in:open,approval'],
+            'post_policy' => ['nullable', 'in:all_members,approval_required,admins_only'],
             'icon' => ['nullable', 'string', 'max:255', new SafeUrl],
         ]);
 
@@ -202,6 +335,9 @@ class CommunityController extends Controller
             $i++;
         }
 
+        $visibility = $data['visibility'] ?? 'public';
+        $joinPolicy = $visibility === 'private' ? 'approval' : ($data['join_policy'] ?? 'open');
+
         $community = Community::create([
             'owner_id' => $user->id,
             'name' => $data['name'],
@@ -209,7 +345,10 @@ class CommunityController extends Controller
             'slug' => $slug,
             'description' => $data['description'] ?? null,
             'rules' => $data['rules'] ?? null,
-            'visibility' => $data['visibility'] ?? 'public',
+            'welcome_message' => $data['welcome_message'] ?? null,
+            'visibility' => $visibility,
+            'join_policy' => $joinPolicy,
+            'post_policy' => $data['post_policy'] ?? 'all_members',
             'icon' => $data['icon'] ?? null,
             'members_count' => 1,
         ]);
@@ -226,7 +365,7 @@ class CommunityController extends Controller
     }
 
     /**
-     * Toggle join/leave a community.
+     * Toggle join/leave or submit a join approval request.
      */
     public function toggleJoin(Request $request, Community $community): JsonResponse|RedirectResponse
     {
@@ -237,6 +376,15 @@ class CommunityController extends Controller
             }
 
             return redirect()->route('login');
+        }
+
+        if ($community->isBanned($user->id)) {
+            $msg = 'Kamu diblokir dari komunitas ini.';
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $msg], 403);
+            }
+
+            abort(403, $msg);
         }
 
         $existing = CommunityMember::where('community_id', $community->id)
@@ -255,24 +403,92 @@ class CommunityController extends Controller
             }
 
             $existing->delete();
-            $community->decrement('members_count');
+            if ($community->members_count > 0) {
+                $community->decrement('members_count');
+            }
             $joined = false;
             $message = 'Kamu keluar dari '.$community->name;
-        } else {
-            CommunityMember::create([
-                'community_id' => $community->id,
-                'user_id' => $user->id,
-                'role' => 'member',
-            ]);
-            $community->increment('members_count');
-            $joined = true;
-            $message = 'Kamu bergabung dengan '.$community->name;
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'joined' => false,
+                    'pending' => false,
+                    'members_count' => $community->fresh()->members_count,
+                    'message' => $message,
+                ]);
+            }
+
+            return back()->with('success', $message);
         }
+
+        // Communities requiring approval create/update a pending join request.
+        if ($community->requiresJoinApproval()) {
+            $questions = array_values(array_filter(
+                (array) ($community->join_questions ?? []),
+                fn ($q) => is_string($q) && trim($q) !== ''
+            ));
+
+            $rules = ['note' => ['nullable', 'string', 'max:500']];
+            if (! empty($questions) && ! $request->wantsJson()) {
+                $rules['answers'] = ['required', 'array', 'size:'.count($questions)];
+                $rules['answers.*'] = ['required', 'string', 'max:500'];
+            } else {
+                $rules['answers'] = ['nullable', 'array', 'max:3'];
+                $rules['answers.*'] = ['nullable', 'string', 'max:500'];
+            }
+
+            $validated = $request->validate($rules);
+
+            $pairedAnswers = [];
+            foreach ($questions as $idx => $qText) {
+                $ans = trim((string) ($validated['answers'][$idx] ?? ''));
+                if ($ans !== '') {
+                    $pairedAnswers[] = ['question' => $qText, 'answer' => $ans];
+                }
+            }
+
+            CommunityJoinRequest::updateOrCreate(
+                ['community_id' => $community->id, 'user_id' => $user->id],
+                [
+                    'status' => 'pending',
+                    'answers' => ! empty($pairedAnswers) ? $pairedAnswers : null,
+                    'note' => trim((string) ($validated['note'] ?? '')) ?: null,
+                    'reviewed_by' => null,
+                    'reviewed_at' => null,
+                    'rejection_reason' => null,
+                ]
+            );
+
+            $msg = 'Permintaan bergabung terkirim. Menunggu persetujuan pengurus.';
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'joined' => false,
+                    'pending' => true,
+                    'members_count' => $community->members_count,
+                    'message' => $msg,
+                ]);
+            }
+
+            return back()->with('success', $msg);
+        }
+
+        CommunityMember::create([
+            'community_id' => $community->id,
+            'user_id' => $user->id,
+            'role' => 'member',
+        ]);
+        $community->increment('members_count');
+        $community->joinRequests()->where('user_id', $user->id)->delete();
+
+        $message = 'Kamu bergabung dengan '.$community->name;
 
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'joined' => $joined,
+                'joined' => true,
+                'pending' => false,
                 'members_count' => $community->fresh()->members_count,
                 'message' => $message,
             ]);
@@ -282,12 +498,30 @@ class CommunityController extends Controller
     }
 
     /**
-     * Promote a member to moderator / demote a moderator (owner only).
+     * Cancel the authenticated user's own pending join request.
+     */
+    public function cancelJoinRequest(Request $request, Community $community): RedirectResponse
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return redirect()->route('login');
+        }
+
+        $community->joinRequests()
+            ->where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->delete();
+
+        return back()->with('success', 'Permintaan bergabung dibatalkan.');
+    }
+
+    /**
+     * Promote a member to moderator / demote a moderator (owner/admin).
      */
     public function toggleModerator(Request $request, Community $community, User $user): RedirectResponse
     {
         $auth = Auth::user();
-        if (! $auth || $community->owner_id !== $auth->id) {
+        if (! $auth || ! $community->isAdmin($auth->id)) {
             abort(403);
         }
 
@@ -299,11 +533,22 @@ class CommunityController extends Controller
             ->where('user_id', $user->id)
             ->firstOrFail();
 
-        $member->update([
-            'role' => $member->role === 'mod' ? 'member' : 'mod',
-        ]);
+        if (! $community->canManageRole($auth->id, $member->role)) {
+            abort(403);
+        }
 
-        return back()->with('success', $member->role === 'mod'
+        $newRole = $member->role === 'mod' ? 'member' : 'mod';
+        $member->update(['role' => $newRole]);
+
+        $community->recordAudit(
+            $auth->id,
+            'member.role_updated',
+            $newRole === 'mod' ? 'Mengangkat '.$user->name.' menjadi Moderator' : 'Mencopot '.$user->name.' dari Moderator',
+            $user->id,
+            ['role' => $newRole]
+        );
+
+        return back()->with('success', $newRole === 'mod'
             ? $user->name.' diangkat menjadi moderator.'
             : $user->name.' dicopot dari moderator.');
     }

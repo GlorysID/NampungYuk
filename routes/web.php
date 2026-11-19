@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\CommunityController;
+use App\Http\Controllers\CommunityManagementController;
 use App\Http\Controllers\CommunityPostController;
 use App\Http\Controllers\EmailChangeController;
 use App\Http\Controllers\FollowController;
@@ -140,6 +141,7 @@ Route::middleware('auth')->group(function () {
     // Communities (member actions)
     Route::post('/komunitas', [CommunityController::class, 'store'])->name('communities.store')->middleware('throttle:10,1');
     Route::post('/komunitas/{community:slug}/join', [CommunityController::class, 'toggleJoin'])->name('communities.join')->middleware('throttle:30,1');
+    Route::delete('/komunitas/{community:slug}/join-request', [CommunityController::class, 'cancelJoinRequest'])->name('communities.join.cancel')->middleware('throttle:30,1');
     Route::post('/komunitas/{community:slug}/post', [CommunityPostController::class, 'store'])->name('communities.post')->middleware('throttle:10,1');
     Route::post('/komunitas/{community:slug}/moderator/{user}', [CommunityController::class, 'toggleModerator'])->name('communities.moderator');
     Route::post('/community-post/{post}/vote', [CommunityPostController::class, 'vote'])->name('communities.post.vote')->middleware('throttle:30,1');
@@ -147,8 +149,26 @@ Route::middleware('auth')->group(function () {
 
     // Community moderation
     Route::post('/community-post/{post}/pin', [CommunityPostController::class, 'togglePin'])->name('communities.post.pin');
+    Route::post('/community-post/{post}/lock', [CommunityPostController::class, 'toggleLock'])->name('communities.post.lock');
     Route::post('/community-post/{post}/answered', [CommunityPostController::class, 'markAnswered'])->name('communities.post.answered');
     Route::delete('/community-post/{post}', [CommunityPostController::class, 'destroy'])->name('communities.post.destroy');
+
+    // Community management (Owner, Admin, Moderator)
+    Route::prefix('/komunitas/{community:slug}/kelola')->name('communities.manage.')->group(function () {
+        Route::get('/', [CommunityManagementController::class, 'index'])->name('index');
+        Route::put('/pengaturan', [CommunityManagementController::class, 'updateSettings'])->name('settings.update')->middleware('throttle:20,1');
+        Route::post('/permintaan/{joinRequest}/setujui', [CommunityManagementController::class, 'approveJoinRequest'])->name('requests.approve');
+        Route::post('/permintaan/{joinRequest}/tolak', [CommunityManagementController::class, 'rejectJoinRequest'])->name('requests.reject');
+        Route::post('/postingan/{post}/setujui', [CommunityManagementController::class, 'approvePost'])->name('posts.approve');
+        Route::post('/postingan/{post}/tolak', [CommunityManagementController::class, 'rejectPost'])->name('posts.reject');
+        Route::post('/anggota/{user}/role', [CommunityManagementController::class, 'updateMemberRole'])->name('members.role');
+        Route::post('/anggota/{user}/mute', [CommunityManagementController::class, 'muteMember'])->name('members.mute');
+        Route::delete('/anggota/{user}', [CommunityManagementController::class, 'kickMember'])->name('members.kick');
+        Route::post('/anggota/{user}/ban', [CommunityManagementController::class, 'banMember'])->name('members.ban');
+        Route::delete('/blokir/{user}', [CommunityManagementController::class, 'unbanMember'])->name('bans.remove');
+        Route::post('/transfer', [CommunityManagementController::class, 'transferOwnership'])->name('transfer');
+        Route::delete('/', [CommunityManagementController::class, 'destroy'])->name('destroy');
+    });
 
     // User reporting
     Route::post('/laporan', [ReportController::class, 'store'])->name('reports.store')->middleware('throttle:10,1');

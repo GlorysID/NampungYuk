@@ -84,7 +84,7 @@ class InfiniteFeedController extends Controller
         $visibleIds = Community::visibleTo($userId)->pluck('id')->toArray();
         $joinedIds = $userId ? CommunityMember::where('user_id', $userId)->pluck('community_id')->toArray() : [];
 
-        $q = CommunityPost::with(['user', 'community', 'comments.user'])->whereIn('community_id', $visibleIds);
+        $q = CommunityPost::with(['user', 'community', 'comments.user'])->approved()->whereIn('community_id', $visibleIds);
 
         if ($filterCommunity) {
             $cid = Community::where('slug', $filterCommunity)->value('id');
@@ -140,7 +140,7 @@ class InfiniteFeedController extends Controller
         $search = $request->query('q');
         $userId = Auth::id();
 
-        $posts = $community->posts()
+        $posts = $community->approvedPosts()
             ->with(['user', 'comments.user'])
             ->when($tab === 'terjawab', fn ($q) => $q->where('is_answered', true))
             ->when($search, fn ($q) => $q->where('content', 'like', "%{$search}%"))
@@ -155,9 +155,13 @@ class InfiniteFeedController extends Controller
 
         $isMember = $community->hasMember($userId);
         $isModerator = $community->isModerator($userId);
+        $isMuted = $community->isMuted($userId);
+        $allowComments = $isMember && ! $isMuted && ($community->allow_member_comments || $isModerator);
+        $roleMap = $community->members()->whereIn('role', ['owner', 'admin', 'mod'])->pluck('role', 'user_id')->all();
+        $roleMap[$community->owner_id] = 'owner';
 
         return response()
-            ->view('feeds._community-show-items', compact('posts', 'userVotes', 'isMember', 'isModerator'))
+            ->view('feeds._community-show-items', compact('posts', 'userVotes', 'isMember', 'isModerator', 'allowComments', 'roleMap'))
             ->header('X-Page', $posts->currentPage())
             ->header('X-Last-Page', $posts->lastPage());
     }

@@ -1081,14 +1081,18 @@ document.addEventListener('alpine:init', () => {
     /**
      * Community join/leave toggle.
      */
-    Alpine.data('communityJoin', ({ joined, url }) => ({
+    Alpine.data('communityJoin', ({ joined = false, pending = false, url }) => ({
         joined,
+        pending,
         loading: false,
         async toggle() {
             if (this.loading) return;
             this.loading = true;
-            const prev = this.joined;
-            this.joined = !prev;
+            const prevJoined = this.joined;
+            const prevPending = this.pending;
+            if (!this.pending) {
+                this.joined = !prevJoined;
+            }
             try {
                 const token = document.querySelector('meta[name=csrf-token]')?.content;
                 const res = await fetch(url, {
@@ -1098,14 +1102,17 @@ document.addEventListener('alpine:init', () => {
                 if (res.status === 401) { window.location.href = '/login'; return; }
                 const data = await res.json();
                 if (data.success) {
-                    this.joined = data.joined;
+                    this.joined = Boolean(data.joined);
+                    this.pending = Boolean(data.pending);
                     if (window.notify) window.notify(data.message);
                 } else {
-                    this.joined = prev;
+                    this.joined = prevJoined;
+                    this.pending = prevPending;
                     if (window.notify) window.notify(data.message || 'Gagal memproses.');
                 }
             } catch (e) {
-                this.joined = prev;
+                this.joined = prevJoined;
+                this.pending = prevPending;
                 if (window.notify) window.notify('Gagal memproses, coba lagi.');
             } finally {
                 this.loading = false;

@@ -30,8 +30,22 @@ class CommunityPostController extends Controller
             return redirect()->route('login');
         }
 
+        if ($community->isBanned($user->id)) {
+            abort(403, 'Kamu diblokir dari komunitas ini.');
+        }
+
         if (! $community->hasMember($user->id)) {
             return back()->with('error', 'Kamu harus bergabung dulu untuk memposting.');
+        }
+
+        $memberRecord = $community->memberRecord($user->id);
+        if ($memberRecord && $memberRecord->isMuted()) {
+            return back()->with('error', 'Akunmu sedang dibisukan hingga '.$memberRecord->muted_until->translatedFormat('d M Y H:i').'.');
+        }
+
+        $isMod = $community->isModerator($user->id);
+        if ($community->post_policy === 'admins_only' && ! $isMod) {
+            return back()->with('error', 'Hanya admin dan moderator yang dapat membuat postingan di komunitas ini.');
         }
 
         $data = $request->validate([
@@ -41,9 +55,13 @@ class CommunityPostController extends Controller
             'images.*' => ['image', 'mimes:jpeg,png,jpg,webp,gif', 'max:4096'],
         ]);
 
-        // Only owner/mod can post announcements.
+        if ($request->hasFile('images') && ! $community->allow_member_images && ! $isMod) {
+            return back()->with('error', 'Komunitas ini menonaktifkan unggahan gambar untuk anggota biasa.');
+        }
+
+        // Only owner/admin/mod can post announcements.
         $type = $data['type'] ?? 'discussion';
-        if ($type === 'announcement' && ! $community->isModerator($user->id)) {
+        if ($type === 'announcement' && ! $isMod) {
             $type = 'discussion';
         }
 
@@ -56,23 +74,31 @@ class CommunityPostController extends Controller
             }
         }
 
+        $requiresApproval = $community->postsRequireApproval($user->id);
+        $status = $requiresApproval ? 'pending' : 'approved';
+
         $post = $community->posts()->create([
             'user_id' => $user->id,
             'type' => $type,
+            'status' => $status,
             'content' => $data['content'],
             'images' => ! empty($images) ? $images : null,
         ]);
 
-        $community->increment('posts_count');
+        if ($status === 'approved') {
+            $community->increment('posts_count');
 
-        // Notify all other members of the new post.
-        $post->load('user');
-        $community->memberUsers()
-            ->where('users.id', '!=', $user->id)
-            ->get()
-            ->each(fn ($member) => $member->notify(new CommunityPostNotification($post)));
+            // Notify all other members of the new post.
+            $post->load('user');
+            $community->memberUsers()
+                ->where('users.id', '!=', $user->id)
+                ->get()
+                ->each(fn ($member) => $member->notify(new CommunityPostNotification($post)));
 
-        return back()->with('success', 'Postingan terkirim!');
+            return back()->with('success', 'Postingan terkirim!');
+        }
+
+        return back()->with('success', 'Postingan terkirim dan menunggu persetujuan pengurus.');
     }
 
     /**
@@ -86,7 +112,12 @@ class CommunityPostController extends Controller
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        if ($post->community?->isPrivate() && ! $post->community->hasMember($user->id) && ! $user->isAdmin()) {
+        $community = $post->community;
+        if (! $community || $post->status !== 'approved' || $community->isBanned($user->id)) {
+            abort(403);
+        }
+
+        if ($community->isPrivate() && ! $community->hasMember($user->id) && ! $user->isAdmin()) {
             abort(403);
         }
 
@@ -133,8 +164,27 @@ class CommunityPostController extends Controller
                 : redirect()->route('login');
         }
 
-        if ($post->community?->isPrivate() && ! $post->community->hasMember($user->id) && ! $user->isAdmin()) {
+        $community = $post->community;
+        if (! $community || $post->status !== 'approved' || $community->isBanned($user->id)) {
             abort(403);
+        }
+
+        if ($community->isPrivate() && ! $community->hasMember($user->id) && ! $user->isAdmin()) {
+            abort(403);
+        }
+
+        $isMod = $community->isModerator($user->id);
+
+        if ($community->isMuted($user->id)) {
+            abort(403, 'Akunmu sedang dibisukan di komunitas ini.');
+        }
+
+        if (! $community->allow_member_comments && ! $isMod) {
+            abort(403, 'Komentar anggota dinonaktifkan di komunitas ini.');
+        }
+
+        if ($post->is_locked && ! $isMod) {
+            abort(403, 'Komentar pada diskusi ini telah dikunci.');
         }
 
         $data = $request->validate([
@@ -184,29 +234,61 @@ class CommunityPostController extends Controller
     }
 
     /**
-     * Toggle pin on a post (owner/mod only).
+     * Toggle pin on a post (owner/admin/mod only).
      */
     public function togglePin(Request $request, CommunityPost $post): RedirectResponse
     {
         $user = Auth::user();
         $community = $post->community;
-        if (! $user || ! $community->isModerator($user->id)) {
+        if (! $user || ! $community || ! $community->isModerator($user->id)) {
             abort(403);
         }
 
         $post->update(['is_pinned' => ! $post->is_pinned]);
 
+        $community->recordAudit(
+            $user->id,
+            $post->is_pinned ? 'post.pinned' : 'post.unpinned',
+            $post->is_pinned ? 'Menyematkan postingan #'.$post->id : 'Melepas sematan postingan #'.$post->id,
+            $post->user_id,
+            ['post_id' => $post->id]
+        );
+
         return back()->with('success', $post->is_pinned ? 'Postingan disematkan.' : 'Sematan dilepas.');
     }
 
     /**
-     * Mark a question post as answered (owner/mod only).
+     * Toggle comment lock on a post (owner/admin/mod only).
+     */
+    public function toggleLock(Request $request, CommunityPost $post): RedirectResponse
+    {
+        $user = Auth::user();
+        $community = $post->community;
+        if (! $user || ! $community || ! $community->isModerator($user->id)) {
+            abort(403);
+        }
+
+        $post->update(['is_locked' => ! $post->is_locked]);
+
+        $community->recordAudit(
+            $user->id,
+            $post->is_locked ? 'post.locked' : 'post.unlocked',
+            $post->is_locked ? 'Mengunci komentar postingan #'.$post->id : 'Membuka komentar postingan #'.$post->id,
+            $post->user_id,
+            ['post_id' => $post->id]
+        );
+
+        return back()->with('success', $post->is_locked ? 'Komentar pada postingan dikunci.' : 'Komentar pada postingan dibuka kembali.');
+    }
+
+    /**
+     * Mark a question post as answered (owner/admin/mod only).
      */
     public function markAnswered(Request $request, CommunityPost $post): RedirectResponse
     {
         $user = Auth::user();
         $community = $post->community;
-        if (! $user || ! $community->isModerator($user->id)) {
+        if (! $user || ! $community || ! $community->isModerator($user->id)) {
             abort(403);
         }
 
@@ -216,7 +298,7 @@ class CommunityPostController extends Controller
     }
 
     /**
-     * Delete a post (author, community owner/mod, or admin).
+     * Delete a post (author, community owner/admin/mod, or platform admin).
      */
     public function destroy(Request $request, CommunityPost $post): RedirectResponse
     {
@@ -231,14 +313,28 @@ class CommunityPostController extends Controller
             abort(403);
         }
 
+        $wasApproved = $post->status === 'approved';
+        $authorId = $post->user_id;
+        $postId = $post->id;
+
         foreach ($post->images ?? [] as $img) {
             $this->media->deleteStoredFile(is_string($img) ? $img : null);
         }
 
         $post->delete();
 
-        if ($community && $community->posts_count > 0) {
+        if ($community && $wasApproved && $community->posts_count > 0) {
             $community->decrement('posts_count');
+        }
+
+        if ($community && $isMod && ! $isAuthor) {
+            $community->recordAudit(
+                $user->id,
+                'post.deleted',
+                'Menghapus postingan #'.$postId,
+                $authorId,
+                ['post_id' => $postId]
+            );
         }
 
         return back()->with('success', 'Postingan dihapus.');

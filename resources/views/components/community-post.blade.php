@@ -4,9 +4,18 @@
     'canComment' => false,
     'canModerate' => false,
     'showCommunity' => false,
+    'authorRole' => null,
 ])
 
-@php $images = $post->imageUrls(); @endphp
+@php
+    $images = $post->imageUrls();
+    $roleBadgeLabel = match ($authorRole) {
+        'owner' => 'Pemilik',
+        'admin' => 'Admin',
+        'mod' => 'Moderator',
+        default => null,
+    };
+@endphp
 
 <article id="post-{{ $post->id }}" class="bg-[var(--surface)] border border-[var(--border-color)] hover:border-[var(--border-strong)] rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-xs transition-colors {{ $post->is_pinned ?'ring-1 ring-[var(--border-strong)]' :'' }}"
          x-data="communityPostVote({
@@ -49,6 +58,11 @@
             </a>
             <div class="min-w-0 flex items-center gap-1.5 flex-wrap">
                 <a href="{{ route('profile.show', $post->user->username) }}" class="font-bold text-sm sm:text-[15px] text-[var(--primary)] hover:underline truncate">{{ $post->user->name }}</a>
+                @if($roleBadgeLabel)
+                    <span class="text-[10.5px] font-semibold px-2 py-0.5 rounded-full border shrink-0 {{ in_array($authorRole, ['owner', 'admin'], true) ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25' : 'bg-[var(--surface-muted)] text-[var(--primary)] border-[var(--border-color)]' }}">
+                        {{ $roleBadgeLabel }}
+                    </span>
+                @endif
                 <span class="text-xs text-[var(--text-faint)] shrink-0">·</span>
                 <span class="text-xs text-[var(--text-muted)] shrink-0">{{ $post->created_at->diffForHumans() }}</span>
             </div>
@@ -56,7 +70,7 @@
             <span class="font-semibold text-sm text-[var(--text-muted)]">Anonim</span>
         @endif
 
-        <div class="ml-auto flex items-center gap-1.5 shrink-0">
+        <div class="ml-auto flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
             <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full border {{ $post->typeClasses() }}">{{ $post->typeLabel() }}</span>
             @if($post->isQuestion() && $post->is_answered)
                 <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50">
@@ -64,17 +78,30 @@
                     Terjawab
                 </span>
             @endif
+            @if($post->is_locked)
+                <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[var(--surface-muted)] text-[var(--text-muted)] border border-[var(--border-color)]">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    Komentar dikunci
+                </span>
+            @endif
         </div>
     </div>
 
     <!-- Moderation actions for community moderators -->
     @if($canModerate)
-        <div class="flex items-center gap-2 -mt-1" data-no-card-nav>
+        <div class="flex flex-wrap items-center gap-3 -mt-1" data-no-card-nav>
             <form method="POST" action="{{ route('communities.post.pin', $post) }}">
                 @csrf
                 <button type="submit" class="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--primary)] transition inline-flex items-center gap-1 cursor-pointer">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
                     {{ $post->is_pinned ? 'Lepas sematan' : 'Sematkan' }}
+                </button>
+            </form>
+            <form method="POST" action="{{ route('communities.post.lock', $post) }}">
+                @csrf
+                <button type="submit" class="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--primary)] transition inline-flex items-center gap-1 cursor-pointer">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    {{ $post->is_locked ? 'Buka komentar' : 'Kunci komentar' }}
                 </button>
             </form>
             @if($post->isQuestion())
@@ -225,7 +252,9 @@
 
     <!-- Comment form -->
     @auth
-        @if($canComment)
+        @if($post->is_locked && ! $canModerate)
+            <p class="text-xs text-[var(--text-muted)] pt-1">Komentar pada diskusi ini dikunci oleh pengurus komunitas.</p>
+        @elseif($canComment)
             <form method="POST" action="{{ route('communities.post.comment', $post) }}" class="flex items-center gap-2 pt-1">
                 @csrf
                 <input type="text" name="content" required maxlength="1000" placeholder="Tulis komentar..."

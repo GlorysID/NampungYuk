@@ -33,6 +33,50 @@
         </div>
     </div>
 
+    <!-- MANAGED COMMUNITIES (Owner, Admin, Moderator) -->
+    @auth
+        @if(($managedCommunities ?? collect())->count() > 0)
+            <section class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl p-4 sm:p-5 space-y-3 shadow-xs">
+                <div class="flex items-center justify-between gap-2">
+                    <div>
+                        <p class="text-[11px] font-mono font-semibold uppercase tracking-[0.1em] text-[var(--text-faint)]">Pengelolaan Grup</p>
+                        <h2 class="text-sm sm:text-base font-bold text-[var(--primary)] mt-0.5">Komunitas yang Kamu Kelola</h2>
+                    </div>
+                    <span class="text-xs font-mono text-[var(--text-muted)]">{{ $managedCommunities->count() }} grup</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    @foreach($managedCommunities as $mc)
+                        @php
+                            $mcRole = $managedRoles[$mc->id] ?? 'mod';
+                            $mcRoleLabel = \App\Models\CommunityMember::labelForRole($mcRole);
+                            $mcPending = (int) ($mc->pending_join_requests_count ?? 0) + (int) ($mc->pending_posts_count ?? 0);
+                        @endphp
+                        <div class="flex items-center gap-3 p-3 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border-color)]">
+                            @if($mc->icon)
+                                <img src="{{ $mc->icon }}" alt="" class="w-10 h-10 rounded-xl object-cover shrink-0 border border-[var(--border-color)]">
+                            @else
+                                <div class="w-10 h-10 rounded-xl bg-[var(--primary)] text-[var(--primary-text)] flex items-center justify-center font-bold text-sm shrink-0">{{ mb_substr($mc->name, 0, 1) }}</div>
+                            @endif
+                            <div class="min-w-0 flex-1">
+                                <a href="{{ route('communities.show', $mc->slug) }}" class="text-sm font-bold text-[var(--primary)] hover:underline truncate block">{{ $mc->name }}</a>
+                                <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                    <span class="text-[10.5px] font-semibold px-2 py-0.5 rounded-full bg-[var(--surface)] border border-[var(--border-color)] text-[var(--text-muted)]">{{ $mcRoleLabel }}</span>
+                                    @if($mcPending > 0)
+                                        <span class="text-[10.5px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400">{{ $mcPending }} antrian</span>
+                                    @endif
+                                </div>
+                            </div>
+                            <a href="{{ route('communities.manage.index', $mc->slug) }}"
+                               class="px-3 py-1.5 rounded-lg bg-[var(--surface)] border border-[var(--border-color)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-hover)] text-xs font-semibold text-[var(--primary)] transition shrink-0">
+                                Kelola
+                            </a>
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+    @endauth
+
     <!-- VIEW MODE SWITCHER & FILTER TABS -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-1 border-b border-[var(--border-color)]">
         
@@ -170,6 +214,9 @@
                                     @else
                                         <span class="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400">Publik</span>
                                     @endif
+                                    @if($community->requiresJoinApproval() && ! $community->isPrivate())
+                                        <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[var(--surface-muted)] text-[var(--text-muted)] border border-[var(--border-color)]">Persetujuan</span>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -191,11 +238,17 @@
 
                         <div class="flex items-center gap-2 mt-auto">
                             @auth
-                                <button type="button" x-data="communityJoin({ joined: {{ $joined ? 'true' : 'false' }}, url: '{{ route('communities.join', $community) }}' })"
-                                        @click="toggle()" :disabled="loading"
-                                        :class="joined ? 'bg-[var(--surface-muted)] text-[var(--primary)] border border-[var(--border-color)]' : 'bg-[var(--primary)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)]'"
-                                        class="flex-1 text-xs font-semibold py-2 rounded-xl transition disabled:opacity-60 cursor-pointer shadow-xs select-none active:scale-[0.98]"
-                                        x-text="joined ? 'Bergabung' : 'Gabung'"></button>
+                                @if(! $joined && $community->requiresJoinApproval() && ! empty($community->join_questions))
+                                    <a href="{{ route('communities.show', $community->slug) }}" class="flex-1 text-center text-xs font-semibold py-2 rounded-xl bg-[var(--primary)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)] transition shadow-xs select-none">
+                                        Ajukan Gabung
+                                    </a>
+                                @else
+                                    <button type="button" x-data="communityJoin({ joined: {{ $joined ? 'true' : 'false' }}, pending: false, url: '{{ route('communities.join', $community) }}' })"
+                                            @click="toggle()" :disabled="loading"
+                                            :class="joined ? 'bg-[var(--surface-muted)] text-[var(--primary)] border border-[var(--border-color)]' : (pending ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-[var(--primary)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)]')"
+                                            class="flex-1 text-xs font-semibold py-2 rounded-xl transition disabled:opacity-60 cursor-pointer shadow-xs select-none active:scale-[0.98]"
+                                            x-text="joined ? 'Bergabung' : (pending ? 'Menunggu' : '{{ $community->requiresJoinApproval() ? 'Minta Gabung' : 'Gabung' }}')"></button>
+                                @endif
                             @else
                                 <button type="button" @click="window.openAuthModal('login')" class="flex-1 text-xs font-semibold py-2 rounded-xl bg-[var(--primary)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)] transition cursor-pointer shadow-xs select-none active:scale-[0.98]">
                                     Gabung
@@ -241,12 +294,33 @@
                     <label class="text-xs font-semibold text-[var(--primary)]">Deskripsi</label>
                     <textarea name="description" rows="3" maxlength="500" class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-input)] border border-[var(--border-color)] text-[var(--primary)] placeholder:text-[var(--text-placeholder)] text-sm outline-none focus:border-[var(--primary)] resize-none transition" placeholder="Komunitas ini dibuat untuk..."></textarea>
                 </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                        <label class="text-xs font-semibold text-[var(--primary)]">Visibilitas</label>
+                        <select name="visibility" class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-input)] border border-[var(--border-color)] text-[var(--primary)] text-sm outline-none focus:border-[var(--primary)] transition">
+                            <option value="public">Publik</option>
+                            <option value="private">Private</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-semibold text-[var(--primary)]">Izin Bergabung</label>
+                        <select name="join_policy" class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-input)] border border-[var(--border-color)] text-[var(--primary)] text-sm outline-none focus:border-[var(--primary)] transition">
+                            <option value="open">Langsung Gabung</option>
+                            <option value="approval">Persetujuan Admin</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="space-y-1">
-                    <label class="text-xs font-semibold text-[var(--primary)]">Visibilitas</label>
-                    <select name="visibility" class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-input)] border border-[var(--border-color)] text-[var(--primary)] text-sm outline-none focus:border-[var(--primary)] transition">
-                        <option value="public">Publik</option>
-                        <option value="private">Private</option>
+                    <label class="text-xs font-semibold text-[var(--primary)]">Izin Memposting</label>
+                    <select name="post_policy" class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-input)] border border-[var(--border-color)] text-[var(--primary)] text-sm outline-none focus:border-[var(--primary)] transition">
+                        <option value="all_members">Semua Anggota</option>
+                        <option value="approval_required">Perlu Persetujuan Admin/Mod</option>
+                        <option value="admins_only">Hanya Admin &amp; Moderator</option>
                     </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-semibold text-[var(--primary)]">Pesan Sambutan (Opsional)</label>
+                    <input type="text" name="welcome_message" maxlength="500" class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-input)] border border-[var(--border-color)] text-[var(--primary)] placeholder:text-[var(--text-placeholder)] text-sm outline-none focus:border-[var(--primary)] transition" placeholder="Selamat datang di komunitas kami...">
                 </div>
                 <div class="flex justify-end gap-2 pt-2">
                     <button type="button" @click="$refs.createModal.close()" class="px-4 py-2 rounded-xl border border-[var(--border-color)] bg-[var(--surface-muted)] hover:bg-[var(--surface-chip-hover)] text-[var(--primary)] text-xs font-semibold transition cursor-pointer">Batal</button>
