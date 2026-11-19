@@ -18,8 +18,24 @@
     <!-- Scripts & Styles -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+    @php
+        $headCompactSidebar = View::hasSection('compact_sidebar');
+    @endphp
+    <script>
+        (function () {
+            try {
+                var curr = '{{ $headCompactSidebar ? '1' : '0' }}';
+                var prev = sessionStorage.getItem('ny_sidebar_compact');
+                if (prev !== null && prev !== curr) {
+                    document.documentElement.classList.add(curr === '1' ? 'ny-sb-from-expanded' : 'ny-sb-from-compact');
+                }
+                sessionStorage.setItem('ny_sidebar_compact', curr);
+            } catch (e) {}
+        })();
+    </script>
+
     <style>
-        html { background-color: var(--bg-app); color-scheme: dark; }
+        html { background-color: var(--bg-app); color-scheme: dark; scrollbar-gutter: stable; }
         [x-cloak] { display: none !important; }
 
         /*
@@ -37,14 +53,31 @@
         /* Default-hidden so the columns never render in-flow before app.css lands. */
         .ny-aside { display: none; }
         .ny-rail { display: none; }
-        @media (min-width: 1024px) { .ny-aside { display: flex; flex-direction: column; flex: 0 0 264px; } }
+        .ny-aside.ny-aside-animating {
+            overflow-x: hidden;
+            transition: flex-basis 280ms cubic-bezier(0.22, 1, 0.36, 1), width 280ms cubic-bezier(0.22, 1, 0.36, 1);
+            will-change: flex-basis, width;
+        }
+        @media (min-width: 1024px) {
+            .ny-aside { display: flex; flex-direction: column; flex: 0 0 264px; width: 264px; }
+            .ny-aside.ny-aside-compact { flex: 0 0 72px; width: 72px; }
+            html.ny-sb-from-expanded .ny-aside.ny-aside-compact { flex: 0 0 264px; width: 264px; }
+            html.ny-sb-from-compact .ny-aside:not(.ny-aside-compact) { flex: 0 0 72px; width: 72px; }
+        }
         @media (min-width: 1280px) {
-            .ny-aside { flex-basis: 280px; }
+            .ny-aside { flex-basis: 280px; width: 280px; }
+            .ny-aside.ny-aside-compact { flex-basis: 72px; width: 72px; }
+            html.ny-sb-from-expanded .ny-aside.ny-aside-compact { flex-basis: 280px; width: 280px; }
+            html.ny-sb-from-compact .ny-aside:not(.ny-aside-compact) { flex-basis: 72px; width: 72px; }
             .ny-rail { display: block; flex: 0 0 370px; }
         }
+        html.ny-sb-from-compact .ny-aside,
+        html.ny-sb-from-expanded .ny-aside { overflow-x: hidden; }
+        html.ny-sb-from-compact .ny-aside > * { opacity: 0.35; }
+        .ny-aside > * { transition: opacity 220ms ease; }
     </style>
 </head>
-<body class="bg-[var(--bg-app)] text-[var(--primary)] min-h-screen transition-colors duration-150 antialiased selection:bg-[var(--primary)] selection:text-[var(--primary-text)] relative overflow-x-hidden pb-20 lg:pb-0"
+<body class="bg-[var(--bg-app)] text-[var(--primary)] transition-colors duration-150 antialiased selection:bg-[var(--primary)] selection:text-[var(--primary-text)] relative @hasSection('full_bleed') h-dvh overflow-hidden pb-16 lg:pb-0 @else min-h-screen overflow-x-hidden pb-20 lg:pb-0 @endif"
       x-data="{
           mobileSidebarOpen: false,
           mobileSearchOpen: false,
@@ -196,24 +229,56 @@
         </div>
     </div>
 
-    @php 
-        $onCommunity = request()->routeIs('communities.*'); 
+    @php
+        $onCommunity = request()->routeIs('communities.*');
         $profileUser = request()->routeIs('profile.show') ? request()->route('username') : null;
         $onProfile = $profileUser !== null;
         $onPeople = request()->routeIs('projects.index') && request('view') === 'people';
         $searchAction = $onCommunity ? route('communities.index') : ($onProfile ? route('projects.index') : url('/cari'));
+        $isCompactSidebar = View::hasSection('compact_sidebar');
     @endphp
 
     <!-- MAIN 3-COLUMN SHELL -->
-    <div class="ny-shell mx-auto flex w-full @yield('shell_width', 'max-w-[1440px]') min-h-screen">
+    <div class="ny-shell mx-auto flex w-full @yield('shell_width', 'max-w-[1440px]') @hasSection('full_bleed') h-full @else min-h-screen @endif">
         
         <!-- DESKTOP SIDEBAR -->
-        <aside class="ny-aside hidden lg:flex lg:flex-col w-[264px] xl:w-[280px] shrink-0 sticky top-0 h-screen z-30 bg-[var(--surface-invert)] border-r border-[var(--border-color)]">
-            @include('partials.sidebar')
+        <aside class="ny-aside {{ $isCompactSidebar ? 'ny-aside-compact w-[72px]' : 'w-[264px] xl:w-[280px]' }} hidden lg:flex lg:flex-col shrink-0 sticky top-0 @hasSection('full_bleed') h-full @else h-screen @endif z-30 bg-[var(--surface-invert)] border-r border-[var(--border-color)]">
+            @include('partials.sidebar', ['compact' => $isCompactSidebar])
         </aside>
+        <script>
+            (function () {
+                var root = document.documentElement;
+                if (!root.classList.contains('ny-sb-from-expanded') && !root.classList.contains('ny-sb-from-compact')) {
+                    return;
+                }
+                var aside = document.querySelector('.ny-aside');
+                if (!aside) {
+                    root.classList.remove('ny-sb-from-expanded', 'ny-sb-from-compact');
+                    return;
+                }
+                aside.classList.add('ny-aside-animating');
+                // Commit starting width on the first paint frame, then glide to target width.
+                requestAnimationFrame(function () {
+                    aside.offsetWidth;
+                    requestAnimationFrame(function () {
+                        root.classList.remove('ny-sb-from-expanded', 'ny-sb-from-compact');
+                    });
+                });
+                setTimeout(function () {
+                    aside.classList.remove('ny-aside-animating');
+                }, 340);
+            })();
+            window.addEventListener('pageshow', function (e) {
+                if (e.persisted) {
+                    try {
+                        sessionStorage.setItem('ny_sidebar_compact', '{{ $isCompactSidebar ? '1' : '0' }}');
+                    } catch (_) {}
+                }
+            });
+        </script>
 
         <!-- CENTER COLUMN -->
-        <main class="ny-main flex-1 min-w-0 w-full @yield('main_width','max-w-[760px]') lg:border-x border-[var(--border-color)] flex flex-col">
+        <main class="ny-main flex-1 min-w-0 w-full @yield('main_width','max-w-[760px]') @hasSection('full_bleed') h-full min-h-0 overflow-hidden lg:border-r @else lg:border-x @endif border-[var(--border-color)] flex flex-col">
 
             @hasSection('header')
                 @yield('header')
@@ -406,34 +471,40 @@
             @endif
 
             <!-- MAIN WORKSPACE CONTENT CONTAINER -->
-            <div class="w-full px-4 sm:px-6 py-6 flex-1 flex flex-col justify-between">
-                <div>
-                    <div class="space-y-6">
-                        @yield('content')
-                    </div>
+            @hasSection('full_bleed')
+                <div class="w-full flex-1 flex flex-col min-h-0 overflow-hidden">
+                    @yield('content')
                 </div>
+            @else
+                <div class="w-full px-4 sm:px-6 py-6 flex-1 flex flex-col justify-between">
+                    <div>
+                        <div class="space-y-6">
+                            @yield('content')
+                        </div>
+                    </div>
 
-                @if(View::hasSection('hide_right_rail') && ! View::hasSection('hide_footer'))
-                    <footer class="mt-10 pt-5 border-t border-[var(--border-color)] text-xs text-[var(--text-muted)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div class="flex items-center gap-2">
-                            <x-logo size="sm" />
-                            <span>&bull;</span>
-                            <span>Platform Showcase Project & Pengalaman Developer</span>
-                        </div>
-                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-                            <a href="{{ route('projects.index') }}" class="hover:text-[var(--primary)] transition">Feed</a>
-                            @auth
-                                <a href="{{ route('projects.create') }}" class="hover:text-[var(--primary)] transition">Pamerkan</a>
-                                <a href="{{ route('projects.bookmarks') }}" class="hover:text-[var(--primary)] transition">Koleksi</a>
-                            @else
-                                <button type="button" @click="window.openAuthModal('login')" class="hover:text-[var(--primary)] transition cursor-pointer">Masuk</button>
-                            @endauth
-                            <button type="button" @click="showHelpModal = true" class="hover:text-[var(--primary)] transition cursor-pointer">Shortcuts (?)</button>
-                            <a href="https://github.com/GlorysID/NampungYuk" target="_blank" rel="noopener noreferrer" class="hover:text-[var(--primary)] transition">GitHub</a>
-                        </div>
-                    </footer>
-                @endif
-            </div>
+                    @if(View::hasSection('hide_right_rail') && ! View::hasSection('hide_footer'))
+                        <footer class="mt-10 pt-5 border-t border-[var(--border-color)] text-xs text-[var(--text-muted)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div class="flex items-center gap-2">
+                                <x-logo size="sm" />
+                                <span>&bull;</span>
+                                <span>Platform Showcase Project & Pengalaman Developer</span>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                                <a href="{{ route('projects.index') }}" class="hover:text-[var(--primary)] transition">Feed</a>
+                                @auth
+                                    <a href="{{ route('projects.create') }}" class="hover:text-[var(--primary)] transition">Pamerkan</a>
+                                    <a href="{{ route('projects.bookmarks') }}" class="hover:text-[var(--primary)] transition">Koleksi</a>
+                                @else
+                                    <button type="button" @click="window.openAuthModal('login')" class="hover:text-[var(--primary)] transition cursor-pointer">Masuk</button>
+                                @endauth
+                                <button type="button" @click="showHelpModal = true" class="hover:text-[var(--primary)] transition cursor-pointer">Shortcuts (?)</button>
+                                <a href="https://github.com/GlorysID/NampungYuk" target="_blank" rel="noopener noreferrer" class="hover:text-[var(--primary)] transition">GitHub</a>
+                            </div>
+                        </footer>
+                    @endif
+                </div>
+            @endif
 
         </main>
 
