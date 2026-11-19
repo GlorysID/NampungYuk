@@ -19,8 +19,9 @@ class SpaceSignal implements ShouldBroadcastNow
         public int $spaceId,
         public int $from,
         public ?int $to,
-        public string $kind, // offer | answer | ice | join | leave
+        public string $kind, // offer | answer | ice | join | leave | chat
         public array $payload = [],
+        public ?int $signalId = null,
     ) {
         //
     }
@@ -44,6 +45,7 @@ class SpaceSignal implements ShouldBroadcastNow
     public function broadcastWith(): array
     {
         return [
+            'id' => $this->signalId,
             'from' => $this->from,
             'to' => $this->to,
             'kind' => $this->kind,

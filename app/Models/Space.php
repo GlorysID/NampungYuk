@@ -57,6 +57,11 @@ class Space extends Model
         return $this->hasMany(SpaceParticipant::class);
     }
 
+    public function signals(): HasMany
+    {
+        return $this->hasMany(SpaceSignalLog::class);
+    }
+
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'space_participants')

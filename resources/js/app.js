@@ -234,43 +234,63 @@ document.addEventListener('alpine:init', () => {
     }));
 
     /**
-     * Space room: WebRTC mesh with Reverb signaling.
-     * Each participant connects directly to every other participant.
+     * Space room: WebRTC mesh with Reverb signaling and HTTP polling fallback
+     * so 2+ local/offline browsers connect cleanly even without Reverb.
      */
     Alpine.data('spaceRoom', (config) => {
         const spaceId = config.spaceId;
         const routeKey = config.spaceSlug || config.spaceId;
         const me = config.me;
         const myName = config.myName || 'Kamu';
-        const type = config.type;
+        const type = config.type || 'audio';
         const signalUrl = config.signalUrl;
+        const syncUrl = config.syncUrl || ('/spaces/' + routeKey + '/sync');
         const isHost = !!config.isHost;
         const isJoined = !!(config.isJoined || isHost);
+        const hostName = window.location.hostname || '';
+        const isLocalNetwork = ['localhost', '127.0.0.1', '::1', ''].includes(hostName)
+            || hostName.endsWith('.local')
+            || hostName.endsWith('.test')
+            || /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(hostName);
 
         return {
+            type,
             joined: isJoined,
             micOn: false,
             camOn: false,
             peers: [],
+            participantsList: Array.isArray(config.initialParticipants) ? config.initialParticipants : [],
             localStream: null,
             pcs: {},
             pendingIce: {},
+            handledSignalIds: new Set(),
+            lastSignalId: Number(config.lastSignalId) || 0,
+            syncTimer: null,
+            syncing: false,
+            syncMode: 'local',
             channel: null,
             _subscribing: false,
             chatOpen: true,
-            spaceMsgs: [],
+            spaceMsgs: Array.isArray(config.initialMsgs) ? config.initialMsgs : [],
             draft: '',
-            ended: false,
+            ended: !!config.ended,
 
             async init() {
+                if (this.ended || !me) return;
                 if (isJoined) {
                     this.subscribeChannel();
+                } else {
+                    this.startSyncFallback();
                 }
             },
 
             async sendChat() {
                 const text = (this.draft || '').trim();
                 if (! text) return;
+                if (! this.joined) {
+                    if (window.notify) window.notify('Gabung ke space dulu untuk mengirim pesan.');
+                    return;
+                }
                 this.spaceMsgs.push({ name: myName, text, mine: true });
                 this.draft = '';
                 await this.send('chat', null, { text });
@@ -281,24 +301,118 @@ document.addEventListener('alpine:init', () => {
                 this._subscribing = true;
                 try {
                     const echo = await ensureEcho();
-                    if (! echo || this.channel || ! this.joined) return;
+                    if (! echo || this.channel || ! this.joined) {
+                        this.syncMode = 'local';
+                        this.startSyncFallback();
+                        return;
+                    }
                     this.channel = echo.private('space.' + spaceId);
                     this.channel.listen('.space.signal', (e) => this.onSignal(e));
+
+                    const conn = echo.connector?.pusher?.connection;
+                    if (conn && typeof conn.bind === 'function') {
+                        conn.bind('connected', () => {
+                            this.syncMode = 'reverb';
+                            this.stopSyncFallback();
+                        });
+                        conn.bind('disconnected', () => {
+                            this.syncMode = 'local';
+                            this.startSyncFallback();
+                        });
+                        conn.bind('unavailable', () => {
+                            this.syncMode = 'local';
+                            this.startSyncFallback();
+                        });
+                        conn.bind('failed', () => {
+                            this.syncMode = 'local';
+                            this.startSyncFallback();
+                        });
+                        if (conn.state === 'connected') {
+                            this.syncMode = 'reverb';
+                        } else {
+                            this.syncMode = 'local';
+                            this.startSyncFallback();
+                        }
+                    } else {
+                        this.syncMode = 'local';
+                        this.startSyncFallback();
+                    }
                 } finally {
                     this._subscribing = false;
                 }
             },
 
-            async join() {
-                try {
-                    this.localStream = await navigator.mediaDevices.getUserMedia({
-                        audio: true,
-                        video: type === 'video',
-                    });
-                    this.micOn = true;
-                    this.camOn = type === 'video';
-                    if (this.$refs.localVideo) this.$refs.localVideo.srcObject = this.localStream;
+            startSyncFallback() {
+                if (!syncUrl || !me || this.ended || this.syncTimer) return;
+                this.syncTimer = setInterval(() => {
+                    if (!document.hidden) {
+                        this.syncOnce();
+                    }
+                }, 1200);
+            },
 
+            stopSyncFallback() {
+                if (this.syncTimer) {
+                    clearInterval(this.syncTimer);
+                    this.syncTimer = null;
+                }
+            },
+
+            async syncOnce() {
+                if (this.syncing || this.ended || !syncUrl) return;
+                this.syncing = true;
+                try {
+                    const res = await fetch(syncUrl + '?after_id=' + encodeURIComponent(this.lastSignalId), {
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    });
+                    if (! res.ok) return;
+                    const data = await res.json();
+                    if (Array.isArray(data.participants)) {
+                        this.participantsList = data.participants;
+                    }
+                    if (Array.isArray(data.signals)) {
+                        for (const sig of data.signals) {
+                            await this.onSignal(sig);
+                        }
+                    }
+                    if (typeof data.last_id === 'number' && data.last_id > this.lastSignalId) {
+                        this.lastSignalId = data.last_id;
+                    }
+                    if (data.status === 'ended' && !this.ended) {
+                        await this.onSignal({ from: 0, kind: 'leave', payload: { ended: true } });
+                    }
+                } catch (e) {
+                    // Transient network/offline error — retry next tick.
+                } finally {
+                    this.syncing = false;
+                }
+            },
+
+            async acquireMedia(constraints = { audio: true, video: type === 'video' }) {
+                if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+                    return null;
+                }
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                this.localStream = stream;
+                this.micOn = stream.getAudioTracks().some((t) => t.enabled);
+                this.camOn = stream.getVideoTracks().some((t) => t.enabled);
+                if (this.$refs.localVideo) {
+                    this.$refs.localVideo.srcObject = stream;
+                }
+                return stream;
+            },
+
+            async join() {
+                let mediaReady = false;
+                try {
+                    const stream = await this.acquireMedia({ audio: true, video: type === 'video' });
+                    mediaReady = Boolean(stream);
+                } catch (e) {
+                    this.micOn = false;
+                    this.camOn = false;
+                }
+
+                try {
                     const token = document.querySelector('meta[name=csrf-token]')?.content;
                     const res = await fetch('/spaces/' + routeKey + '/join', {
                         method: 'POST',
@@ -306,6 +420,10 @@ document.addEventListener('alpine:init', () => {
                     });
 
                     if (! res.ok) {
+                        try { this.localStream?.getTracks().forEach((t) => t.stop()); } catch (e) {}
+                        this.localStream = null;
+                        this.micOn = false;
+                        this.camOn = false;
                         const err = await res.json().catch(() => ({}));
                         if (window.notify) window.notify(err.message || 'Gagal bergabung ke space.');
                         return;
@@ -313,14 +431,23 @@ document.addEventListener('alpine:init', () => {
 
                     this.joined = true;
                     this.subscribeChannel();
-                    if (window.notify) window.notify('Bergabung ke space.');
+                    await this.syncOnce();
+                    if (window.notify) {
+                        window.notify(mediaReady
+                            ? 'Bergabung ke space.'
+                            : 'Bergabung dalam mode dengar & chat (mikrofon/kamera tidak aktif).');
+                    }
                 } catch (e) {
-                    if (window.notify) window.notify('Tidak bisa akses kamera/mikrofon.');
+                    if (window.notify) window.notify('Gagal bergabung ke space.');
                 }
             },
 
             async leave() {
+                this.stopSyncFallback();
                 try { this.localStream?.getTracks().forEach((t) => t.stop()); } catch (e) {}
+                this.localStream = null;
+                this.micOn = false;
+                this.camOn = false;
                 Object.values(this.pcs).forEach((pc) => pc.close());
                 this.pcs = {};
                 this.peers = [];
@@ -332,21 +459,57 @@ document.addEventListener('alpine:init', () => {
                 }
 
                 const token = document.querySelector('meta[name=csrf-token]')?.content;
-                await fetch('/spaces/' + routeKey + '/leave', {
-                    method: 'POST',
-                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
-                });
+                try {
+                    await fetch('/spaces/' + routeKey + '/leave', {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
+                    });
+                } catch (e) {}
             },
 
-        toggleMic() {
-            const track = this.localStream?.getAudioTracks()[0];
+        async toggleMic() {
+            let track = this.localStream?.getAudioTracks()[0];
+            if (! track) {
+                try {
+                    const stream = await this.acquireMedia({ audio: true, video: type === 'video' && this.camOn });
+                    track = stream?.getAudioTracks()[0];
+                    if (stream) {
+                        for (const [peerId, pc] of Object.entries(this.pcs)) {
+                            stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+                            const offer = await pc.createOffer();
+                            await pc.setLocalDescription(offer);
+                            await this.send('offer', Number(peerId), offer);
+                        }
+                    }
+                } catch (e) {
+                    if (window.notify) window.notify('Mikrofon tidak tersedia atau akses ditolak browser.');
+                    return;
+                }
+            }
             if (! track) return;
             track.enabled = ! track.enabled;
             this.micOn = track.enabled;
         },
 
-        toggleCam() {
-            const track = this.localStream?.getVideoTracks()[0];
+        async toggleCam() {
+            let track = this.localStream?.getVideoTracks()[0];
+            if (! track) {
+                try {
+                    const stream = await this.acquireMedia({ audio: true, video: true });
+                    track = stream?.getVideoTracks()[0];
+                    if (stream) {
+                        for (const [peerId, pc] of Object.entries(this.pcs)) {
+                            stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+                            const offer = await pc.createOffer();
+                            await pc.setLocalDescription(offer);
+                            await this.send('offer', Number(peerId), offer);
+                        }
+                    }
+                } catch (e) {
+                    if (window.notify) window.notify('Kamera tidak tersedia atau akses ditolak browser.');
+                    return;
+                }
+            }
             if (! track) return;
             track.enabled = ! track.enabled;
             this.camOn = track.enabled;
@@ -355,7 +518,7 @@ document.addEventListener('alpine:init', () => {
         createPeer(peerId, name) {
             if (this.pcs[peerId]) return this.pcs[peerId];
             const pc = new RTCPeerConnection({
-                iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+                iceServers: isLocalNetwork ? [] : [{ urls: 'stun:stun.l.google.com:19302' }],
             });
             this.pcs[peerId] = pc;
 
@@ -369,29 +532,49 @@ document.addEventListener('alpine:init', () => {
                     this.peers.push({ id: peerId, name: name || 'Peserta' });
                 }
                 this.$nextTick(() => {
-                    const el = document.getElementById('peer-' + peerId);
-                    if (el && el.srcObject !== ev.streams[0]) el.srcObject = ev.streams[0];
+                    const videoEl = document.getElementById('peer-' + peerId);
+                    if (videoEl && videoEl.srcObject !== ev.streams[0]) {
+                        videoEl.srcObject = ev.streams[0];
+                    }
+                    const audioEl = document.getElementById('peer-audio-' + peerId);
+                    if (audioEl && audioEl.srcObject !== ev.streams[0]) {
+                        audioEl.srcObject = ev.streams[0];
+                    }
                 });
             };
             return pc;
         },
 
         async onSignal(e) {
-            const from = e.from;
-            if (from === me) return;
+            if (! e) return;
+            const sigId = Number(e.id || 0);
+            if (sigId > 0) {
+                if (this.handledSignalIds.has(sigId)) return;
+                this.handledSignalIds.add(sigId);
+                if (this.handledSignalIds.size > 400) {
+                    const first = this.handledSignalIds.values().next().value;
+                    this.handledSignalIds.delete(first);
+                }
+                if (sigId > this.lastSignalId) {
+                    this.lastSignalId = sigId;
+                }
+            }
+
+            const from = Number(e.from);
+            if (me && from === Number(me)) return;
 
             if (e.kind === 'join') {
                 const pc = this.createPeer(from, e.payload?.name);
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
-                this.send('offer', from, offer);
+                await this.send('offer', from, offer);
             } else if (e.kind === 'offer') {
                 const pc = this.createPeer(from, e.payload?.name);
                 await pc.setRemoteDescription(new RTCSessionDescription(e.payload));
                 await this.flushIce(from, pc);
                 const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
-                this.send('answer', from, answer);
+                await this.send('answer', from, answer);
             } else if (e.kind === 'answer') {
                 const pc = this.pcs[from];
                 if (pc) {
@@ -413,7 +596,9 @@ document.addEventListener('alpine:init', () => {
                 });
             } else if (e.kind === 'leave') {
                 if (e.payload?.ended) {
+                    this.stopSyncFallback();
                     try { this.localStream?.getTracks().forEach((t) => t.stop()); } catch (err) {}
+                    this.localStream = null;
                     Object.values(this.pcs).forEach((pc) => pc.close());
                     this.pcs = {};
                     this.peers = [];
@@ -428,7 +613,7 @@ document.addEventListener('alpine:init', () => {
                 }
                 this.pcs[from]?.close();
                 delete this.pcs[from];
-                this.peers = this.peers.filter((p) => p.id !== from);
+                this.peers = this.peers.filter((p) => Number(p.id) !== from);
             }
         },
 

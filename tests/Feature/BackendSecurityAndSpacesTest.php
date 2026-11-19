@@ -489,4 +489,85 @@ class BackendSecurityAndSpacesTest extends TestCase
                 && ($event->payload['text'] ?? null) === 'Halo semuanya';
         });
     }
+
+    /**
+     * 11. Space sync returns persisted chat/signaling events and participants for offline fallback,
+     * and join/leave/end never crash HTTP 500 when Reverb is unreachable.
+     */
+    public function test_spaces_offline_sync_and_safe_broadcast_resilience(): void
+    {
+        config([
+            'broadcasting.default' => 'reverb',
+            'broadcasting.connections.reverb.options.host' => '127.0.0.1',
+            'broadcasting.connections.reverb.options.port' => 65531,
+        ]);
+
+        $host = User::factory()->create(['name' => 'Host Lokal']);
+        $guest = User::factory()->create(['name' => 'Peserta Lokal']);
+
+        $this->actingAs($host)
+            ->post(route('spaces.store'), [
+                'title' => 'Diskusi Lokal Offline',
+                'type' => 'audio',
+            ])
+            ->assertRedirect();
+
+        $space = Space::where('title', 'Diskusi Lokal Offline')->firstOrFail();
+
+        // Guest joins while Reverb is down — should succeed without HTTP 500.
+        $this->actingAs($guest)
+            ->postJson(route('spaces.join', $space->slug))
+            ->assertOk()
+            ->assertJson(['success' => true]);
+
+        // Guest sends Space Chat message & direct WebRTC offer to host.
+        $this->actingAs($guest)
+            ->postJson(route('spaces.signal', $space->slug), [
+                'kind' => 'chat',
+                'payload' => ['text' => 'Tes offline sync'],
+            ])
+            ->assertOk()
+            ->assertJson(['success' => true]);
+
+        $this->actingAs($guest)
+            ->postJson(route('spaces.signal', $space->slug), [
+                'to' => $host->id,
+                'kind' => 'offer',
+                'payload' => ['type' => 'offer', 'sdp' => 'dummy-sdp'],
+            ])
+            ->assertOk()
+            ->assertJson(['success' => true]);
+
+        // Host polls /sync and receives join + chat + offer signals + participant list.
+        $syncRes = $this->actingAs($host)
+            ->getJson(route('spaces.sync', $space->slug).'?after_id=0')
+            ->assertOk()
+            ->assertJsonPath('status', 'live')
+            ->json();
+
+        $kinds = array_column($syncRes['signals'] ?? [], 'kind');
+        $this->assertContains('join', $kinds);
+        $this->assertContains('chat', $kinds);
+        $this->assertContains('offer', $kinds);
+        $this->assertCount(2, $syncRes['participants'] ?? []);
+
+        // Host renders /spaces/{slug} with initial messages and Alpine `type` prop.
+        $this->actingAs($host)
+            ->get(route('spaces.show', $space->slug))
+            ->assertOk()
+            ->assertSee('Tes offline sync')
+            ->assertSee("type: 'audio'", false);
+
+        // Leave & end while Reverb is still down succeed cleanly.
+        $this->actingAs($guest)
+            ->postJson(route('spaces.leave', $space->slug))
+            ->assertOk()
+            ->assertJson(['success' => true]);
+
+        $this->actingAs($host)
+            ->post(route('spaces.end', $space->slug))
+            ->assertRedirect(route('spaces.index'));
+
+        $this->assertSame('ended', $space->fresh()->status);
+    }
 }

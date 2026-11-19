@@ -20,7 +20,12 @@
              me: {{ auth()->id() ?? 'null' }},
              myName: @js(auth()->user()?->name ?? 'Kamu'),
              type: '{{ $space->type }}',
+             ended: {{ $space->status === 'ended' ? 'true' : 'false' }},
              signalUrl: '{{ route('spaces.signal', $space) }}',
+             syncUrl: '{{ route('spaces.sync', $space) }}',
+             lastSignalId: {{ (int) ($lastSignalId ?? 0) }},
+             initialMsgs: @js($initialMessages ?? []),
+             initialParticipants: @js($participantsData ?? []),
              isHost: {{ auth()->check() && (int) auth()->id() === (int) $space->host_id ? 'true' : 'false' }},
              isJoined: {{ auth()->check() && ($participants->contains('id', auth()->id()) || (int) auth()->id() === (int) $space->host_id) ? 'true' : 'false' }}
          })">
@@ -42,6 +47,10 @@
                 </div>
                 <p class="text-xs text-[var(--text-muted)]">
                     {{ $space->type === 'video' ? 'Video Space' : 'Audio Space' }} · Host: <strong class="text-[var(--primary)] font-semibold">{{ $space->host?->name }}</strong>
+                    @if($space->status === 'live')
+                        <span class="mx-1">·</span>
+                        <span class="font-mono text-[10.5px]" x-text="syncMode === 'reverb' ? 'Reverb Live' : 'Mode Lokal (Sync)'"></span>
+                    @endif
                 </p>
             </div>
 
@@ -114,30 +123,31 @@
                     </div>
 
                     {{-- Connected WebRTC peers --}}
-                    <template x-for="p in peers" :key="p.id">
+                    <template x-for="p in peers" :key="'peer-card-' + p.id">
                         <div class="flex flex-col items-center gap-2 p-3 rounded-2xl bg-[var(--surface-subtle)] border border-[var(--border-color)] text-center shadow-xs">
-                            <div class="w-14 h-14 rounded-2xl bg-[var(--surface-muted-flat)] text-[var(--primary)] flex items-center justify-center font-bold text-lg border border-[var(--border-color)]" x-text="p.name ? p.name[0] : '?'"></div>
+                            <audio :id="'peer-audio-' + p.id" autoplay playsinline class="hidden"></audio>
+                            <div class="w-14 h-14 rounded-2xl bg-[var(--surface-muted-flat)] text-[var(--primary)] flex items-center justify-center font-bold text-lg border border-emerald-500/40" x-text="p.name ? p.name[0] : '?'"></div>
                             <span class="text-xs font-medium text-[var(--primary-hover)] truncate max-w-full" x-text="p.name"></span>
                         </div>
                     </template>
 
-                    {{-- Other Participants --}}
-                    @foreach($participants->where('id', '!=', $space->host_id) as $part)
-                        <div x-show="!peers.some(p => Number(p.id) === {{ (int) $part->id }})" class="flex flex-col items-center gap-2 p-3 rounded-2xl bg-[var(--surface-subtle)] border border-[var(--border-color)] text-center shadow-xs">
-                            @if($part->avatar)
-                                <img src="{{ $part->avatar }}" alt="{{ $part->name }}" referrerpolicy="no-referrer" class="w-14 h-14 rounded-2xl object-cover border border-[var(--border-color)]">
-                            @else
-                                <div class="w-14 h-14 rounded-2xl bg-[var(--surface-muted-flat)] text-[var(--primary)] flex items-center justify-center font-bold text-lg border border-[var(--border-color)]">
-                                    {{ mb_substr($part->name, 0, 1) }}
-                                </div>
-                            @endif
-                            <span class="text-xs font-medium text-[var(--primary-hover)] truncate max-w-full">{{ $part->name }}</span>
+                    {{-- Live synced participants (including listener/local HTTP sync mode) --}}
+                    <template x-for="part in participantsList.filter(item => !item.is_host && !peers.some(p => Number(p.id) === Number(item.id)))" :key="'part-' + part.id">
+                        <div class="flex flex-col items-center gap-2 p-3 rounded-2xl bg-[var(--surface-subtle)] border border-[var(--border-color)] text-center shadow-xs">
+                            <template x-if="part.avatar">
+                                <img :src="part.avatar" :alt="part.name" referrerpolicy="no-referrer" class="w-14 h-14 rounded-2xl object-cover border border-[var(--border-color)]">
+                            </template>
+                            <template x-if="!part.avatar">
+                                <div class="w-14 h-14 rounded-2xl bg-[var(--surface-muted-flat)] text-[var(--primary)] flex items-center justify-center font-bold text-lg border border-[var(--border-color)]"
+                                     x-text="part.name ? part.name.trim().charAt(0).toUpperCase() : '?'"></div>
+                            </template>
+                            <span class="text-xs font-medium text-[var(--primary-hover)] truncate max-w-full" x-text="part.name"></span>
                         </div>
-                    @endforeach
+                    </template>
                 </div>
 
-                @if($participants->isEmpty() && $space->status === 'live')
-                    <p x-show="peers.length === 0" class="text-center text-xs text-[var(--text-muted)] py-6">
+                @if($space->status === 'live')
+                    <p x-show="peers.length === 0 && participantsList.filter(item => !item.is_host).length === 0" class="text-center text-xs text-[var(--text-muted)] py-6">
                         Belum ada peserta lain. Bagikan tautan ruang ini ke developer lain untuk mulai ngobrol.
                     </p>
                 @endif

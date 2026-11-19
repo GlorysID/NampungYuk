@@ -5,10 +5,14 @@ namespace App\Http\Controllers;
 use App\Events\SpaceSignal;
 use App\Models\Space;
 use App\Models\SpaceParticipant;
+use App\Models\SpaceSignalLog;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class SpaceController extends Controller
@@ -63,8 +67,33 @@ class SpaceController extends Controller
     {
         $space = Space::with('host')->where('slug', $slug)->firstOrFail();
         $participants = $space->users()->orderByDesc('space_participants.created_at')->get();
+        $authId = Auth::id();
 
-        return view('spaces.show', compact('space', 'participants'));
+        $initialMessages = SpaceSignalLog::where('space_id', $space->id)
+            ->where('kind', 'chat')
+            ->orderBy('id')
+            ->take(100)
+            ->get()
+            ->map(fn (SpaceSignalLog $log): array => [
+                'id' => $log->id,
+                'name' => $log->payload['name'] ?? 'Peserta',
+                'text' => $log->payload['text'] ?? '',
+                'mine' => $authId !== null && (int) $log->from_user_id === (int) $authId,
+            ])
+            ->values()
+            ->all();
+
+        $lastSignalId = (int) (SpaceSignalLog::where('space_id', $space->id)->max('id') ?? 0);
+
+        $participantsData = $this->formatParticipants($space, $participants);
+
+        return view('spaces.show', compact(
+            'space',
+            'participants',
+            'initialMessages',
+            'lastSignalId',
+            'participantsData'
+        ));
     }
 
     /**
@@ -110,7 +139,7 @@ class SpaceController extends Controller
             ['role' => 'listener', 'is_muted' => true]
         );
 
-        broadcast(new SpaceSignal($space->id, $user->id, null, 'join', ['name' => $user->name]))->toOthers();
+        $this->recordAndBroadcast($space, $user->id, null, 'join', ['name' => $user->name], true);
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true]);
@@ -132,7 +161,7 @@ class SpaceController extends Controller
         }
 
         SpaceParticipant::where('space_id', $space->id)->where('user_id', $user->id)->delete();
-        broadcast(new SpaceSignal($space->id, $user->id, null, 'leave', ['name' => $user->name]))->toOthers();
+        $this->recordAndBroadcast($space, $user->id, null, 'leave', ['name' => $user->name], true);
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true]);
@@ -154,9 +183,59 @@ class SpaceController extends Controller
         }
 
         $space->update(['status' => 'ended', 'ended_at' => now()]);
-        broadcast(new SpaceSignal($space->id, $user->id, null, 'leave', ['ended' => true]));
+        $this->recordAndBroadcast($space, $user->id, null, 'leave', ['ended' => true], false);
+
+        SpaceSignalLog::where('space_id', $space->id)
+            ->where('kind', '!=', 'chat')
+            ->where('created_at', '<', now()->subMinutes(5))
+            ->delete();
 
         return redirect()->route('spaces.index')->with('success', 'Space diakhiri.');
+    }
+
+    /**
+     * Poll pending WebRTC signals, space chat, and participants for offline/HTTP fallback.
+     */
+    public function sync(Request $request, Space|string $space): JsonResponse
+    {
+        $space = $this->resolveSpace($space);
+
+        $user = Auth::user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $afterId = max(0, (int) $request->query('after_id', 0));
+
+        $logs = SpaceSignalLog::where('space_id', $space->id)
+            ->where('id', '>', $afterId)
+            ->where('from_user_id', '!=', $user->id)
+            ->where(function ($q) use ($user): void {
+                $q->whereNull('to_user_id')
+                    ->orWhere('to_user_id', $user->id);
+            })
+            ->orderBy('id')
+            ->take(100)
+            ->get();
+
+        $lastId = $logs->isNotEmpty()
+            ? (int) $logs->max('id')
+            : max($afterId, (int) (SpaceSignalLog::where('space_id', $space->id)->max('id') ?? 0));
+
+        $participants = $space->users()->orderByDesc('space_participants.created_at')->get();
+
+        return response()->json([
+            'status' => $space->status,
+            'last_id' => $lastId,
+            'signals' => $logs->map(fn (SpaceSignalLog $log): array => [
+                'id' => $log->id,
+                'from' => $log->from_user_id,
+                'to' => $log->to_user_id,
+                'kind' => $log->kind,
+                'payload' => $log->payload ?? [],
+            ])->values()->all(),
+            'participants' => $this->formatParticipants($space, $participants),
+        ]);
     }
 
     /**
@@ -191,12 +270,12 @@ class SpaceController extends Controller
                 return response()->json(['message' => 'Pesan tidak boleh kosong.'], 422);
             }
 
-            broadcast(new SpaceSignal($space->id, $user->id, null, 'chat', [
+            $log = $this->recordAndBroadcast($space, $user->id, null, 'chat', [
                 'name' => $user->name,
                 'text' => mb_substr($text, 0, 500),
-            ]))->toOthers();
+            ], true);
 
-            return response()->json(['success' => true]);
+            return response()->json(['success' => true, 'signal_id' => $log->id]);
         }
 
         if (empty($data['to'])) {
@@ -211,8 +290,78 @@ class SpaceController extends Controller
             abort(403, 'Hanya peserta aktif yang dapat bertukar sinyal.');
         }
 
-        broadcast(new SpaceSignal($space->id, $user->id, $data['to'], $data['kind'], $data['payload']))->toOthers();
+        $log = $this->recordAndBroadcast($space, $user->id, (int) $data['to'], $data['kind'], $data['payload'], true);
 
-        return response()->json(['success' => true]);
+        return response()->json(['success' => true, 'signal_id' => $log->id]);
+    }
+
+    /**
+     * Format space participants consistently for initial Blade render and JSON sync.
+     *
+     * @param  Collection<int, User>  $participants
+     * @return array<int, array<string, mixed>>
+     */
+    protected function formatParticipants(Space $space, $participants): array
+    {
+        return $participants->map(fn ($p): array => [
+            'id' => (int) $p->id,
+            'name' => $p->name,
+            'username' => $p->username,
+            'avatar' => $p->avatar,
+            'is_host' => (int) $p->id === (int) $space->host_id,
+            'role' => $p->pivot?->role ?? ((int) $p->id === (int) $space->host_id ? 'host' : 'listener'),
+        ])->values()->all();
+    }
+
+    /**
+     * Persist a space signal/chat entry for HTTP polling fallback and try immediate WebSocket broadcast.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    protected function recordAndBroadcast(
+        Space $space,
+        int $fromId,
+        ?int $toId,
+        string $kind,
+        array $payload = [],
+        bool $toOthers = true
+    ): SpaceSignalLog {
+        $log = SpaceSignalLog::create([
+            'space_id' => $space->id,
+            'from_user_id' => $fromId,
+            'to_user_id' => $toId,
+            'kind' => $kind,
+            'payload' => $payload,
+        ]);
+
+        $this->safeBroadcast(
+            new SpaceSignal($space->id, $fromId, $toId, $kind, $payload, $log->id),
+            $toOthers
+        );
+
+        return $log;
+    }
+
+    /**
+     * Dispatch broadcast event safely so an offline local Reverb server never triggers HTTP 500.
+     */
+    protected function safeBroadcast(object $event, bool $toOthers = false): void
+    {
+        $isReverb = config('broadcasting.default') === 'reverb';
+        if ($isReverb && Cache::get('spaces:reverb_offline', false)) {
+            return;
+        }
+
+        try {
+            $pending = broadcast($event);
+            if ($toOthers) {
+                $pending->toOthers();
+            }
+            unset($pending);
+        } catch (\Throwable) {
+            if ($isReverb) {
+                Cache::put('spaces:reverb_offline', true, 10);
+            }
+        }
     }
 }

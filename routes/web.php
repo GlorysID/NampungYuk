@@ -60,6 +60,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/spaces/{space}/join', [SpaceController::class, 'join'])->name('spaces.join');
     Route::post('/spaces/{space}/leave', [SpaceController::class, 'leave'])->name('spaces.leave');
     Route::post('/spaces/{space}/end', [SpaceController::class, 'end'])->name('spaces.end');
+    Route::get('/spaces/{space}/sync', [SpaceController::class, 'sync'])->name('spaces.sync');
     Route::post('/spaces/{space}/signal', [SpaceController::class, 'signal'])->name('spaces.signal');
 });
 
