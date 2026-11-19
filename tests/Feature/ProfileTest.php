@@ -472,4 +472,47 @@ class ProfileTest extends TestCase
             ->assertOk()
             ->assertSee('pemilik_profil', false);
     }
+
+    public function test_profile_shows_relation_badge_for_follower_and_mutual_friend(): void
+    {
+        $viewer = User::factory()->create();
+        $target = User::factory()->create(['username' => 'target_dev']);
+
+        // Guest and unrelated logged-in visitor do not see the badge.
+        $this->get(route('profile.show', $target->username))
+            ->assertOk()
+            ->assertDontSee('Mengikutimu')
+            ->assertDontSee('mutual:', false);
+
+        $this->actingAs($viewer)
+            ->get(route('profile.show', $target->username))
+            ->assertOk()
+            ->assertDontSee('Mengikutimu')
+            ->assertDontSee('mutual:', false);
+
+        // One-way: target follows viewer -> badge shows "Mengikutimu".
+        $target->following()->attach($viewer->id);
+
+        $this->actingAs($viewer)
+            ->get(route('profile.show', $target->username))
+            ->assertOk()
+            ->assertSee('mutual: false', false)
+            ->assertSee('Mengikutimu');
+
+        // Mutual follow -> badge shows "Teman".
+        $viewer->following()->attach($target->id);
+
+        $this->actingAs($viewer)
+            ->get(route('profile.show', $target->username))
+            ->assertOk()
+            ->assertSee('mutual: true', false)
+            ->assertSee('Teman');
+
+        // Owner viewing own profile never sees relation badge.
+        $this->actingAs($target)
+            ->get(route('profile.show', $target->username))
+            ->assertOk()
+            ->assertDontSee('Mengikutimu')
+            ->assertDontSee('mutual:', false);
+    }
 }

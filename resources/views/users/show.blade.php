@@ -300,7 +300,18 @@
                         {{ $user->name }}
                     </h1>
                 </div>
-                <p class="text-sm text-[var(--text-muted)] font-mono">&#64;{{ $user->username }}</p>
+                <div class="flex items-center flex-wrap gap-2">
+                    <p class="text-sm text-[var(--text-muted)] font-mono">&#64;{{ $user->username }}</p>
+                    @if($followsViewer ?? false)
+                        <span x-data="{ mutual: {{ ($viewerFollowsUser ?? false) ? 'true' : 'false' }} }"
+                              @ny:follow-changed.window="if ($event.detail?.username === @js($user->username)) { mutual = Boolean($event.detail.following); }"
+                              :class="mutual ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25' : 'bg-[var(--surface-subtle)] text-[var(--text-muted)] border-[var(--border-color)]'"
+                              class="text-xs font-medium px-2.5 py-0.5 rounded-full border transition"
+                              x-text="mutual ? 'Teman' : 'Mengikutimu'">
+                            {{ ($viewerFollowsUser ?? false) ? 'Teman' : 'Mengikutimu' }}
+                        </span>
+                    @endif
+                </div>
             </div>
 
             @if($user->bio)
@@ -346,7 +357,10 @@
                    class="group relative block bg-[var(--surface)] px-4 py-3.5 hover:bg-[var(--surface-hover)] transition-colors focus-visible:outline-offset-0">
                     <p class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] font-mono">Pengikut</p>
                     <p class="mt-1.5 flex items-center justify-between gap-2">
-                        <span class="text-xl sm:text-2xl font-bold text-[var(--primary)] font-mono leading-none">{{ number_format($followersCount) }}</span>
+                        <span x-data="{ followersCount: {{ (int) $followersCount }} }"
+                              @ny:follow-changed.window="if ($event.detail?.username === @js($user->username) && typeof $event.detail.followers_count === 'number') { followersCount = $event.detail.followers_count; }"
+                              x-text="followersCount.toLocaleString('id-ID')"
+                              class="text-xl sm:text-2xl font-bold text-[var(--primary)] font-mono leading-none">{{ number_format($followersCount) }}</span>
                         <svg class="w-3.5 h-3.5 shrink-0 text-[var(--text-muted)] transition group-hover:translate-x-0.5 group-hover:text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
                     </p>
                     <span class="absolute inset-x-0 bottom-0 h-0.5 bg-emerald-500 origin-left scale-x-0 group-hover:scale-x-100 transition-transform"></span>

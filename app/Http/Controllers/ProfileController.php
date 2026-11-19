@@ -161,6 +161,11 @@ class ProfileController extends Controller
         $followersCount = $user->followers()->count();
         $followingCount = $user->following()->count();
 
+        /** @var User|null $authUser */
+        $authUser = auth()->user();
+        $followsViewer = ! $isOwner && $authUser !== null && $user->isFollowing($authUser);
+        $viewerFollowsUser = ! $isOwner && $authUser !== null && $authUser->isFollowing($user);
+
         // Likes tab is only shown to the owner.
         $likedProjects = $isOwner
             ? $user->likedProjects()
@@ -212,6 +217,8 @@ class ProfileController extends Controller
             'userRepostedIds',
             'followersCount',
             'followingCount',
+            'followsViewer',
+            'viewerFollowsUser',
             'isOwner',
             'search'
         ));

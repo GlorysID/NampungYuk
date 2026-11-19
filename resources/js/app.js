@@ -1221,6 +1221,14 @@ document.addEventListener('alpine:init', () => {
                 const data = await res.json();
                 if (data.success) {
                     this.following = data.following;
+                    this.count = typeof data.followers_count === 'number' ? data.followers_count : this.count;
+                    window.dispatchEvent(new CustomEvent('ny:follow-changed', {
+                        detail: {
+                            username: this.username,
+                            following: data.following,
+                            followers_count: data.followers_count,
+                        },
+                    }));
                     if (window.notify) window.notify(data.message);
                 } else {
                     this.following = previous;
