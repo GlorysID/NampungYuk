@@ -49,7 +49,7 @@
     <!-- 2. Title & Tagline -->
     <div class="space-y-1.5">
         <h2 class="text-[17.5px] sm:text-[19px] font-bold text-[var(--primary)] leading-snug tracking-[-0.015em] group-hover:text-emerald-300 transition-colors">
-            <a href="{{ route('projects.show', $project->slug) }}" class="card-detail-link focus-visible:rounded" @guest @click.prevent="window.openAuthModal('login')" @endguest>
+            <a href="{{ route('projects.show', $project->slug) }}" class="card-detail-link focus-visible:rounded" @guest data-auth-reason="detail" @click.prevent="window.openAuthModal('login')" @endguest>
                 {{ $project->title }}
             </a>
         </h2>
@@ -78,7 +78,7 @@
 
     <!-- 3. Full-Width Gallery Media Showcase -->
     @if($galleryCount > 0)
-        <div class="group/media relative block w-full overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-app)] ring-1 ring-inset ring-white/[0.05]">
+        <div class="group/media relative block w-full overflow-hidden rounded-lg border border-[var(--border-strong)]/80 bg-[var(--bg-app)] after:pointer-events-none after:absolute after:inset-0 after:rounded-lg after:ring-1 after:ring-inset after:ring-white/[0.08]">
             @if($galleryCount === 1)
                 <button type="button" class="block w-full aspect-video overflow-hidden cursor-pointer focus:outline-none" data-no-card-nav @click.stop="openLightbox(0)">
                     <img src="{{ $gallery[0] }}" alt="{{ $project->title }}" loading="lazy" decoding="async"
@@ -160,17 +160,17 @@
                 <div class="flex items-center gap-1.5 shrink-0">
                     @if($project->demo_url)
                         <a href="{{ $project->demo_url }}" target="_blank" rel="noopener noreferrer" @click.stop
-                           class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11.5px] font-medium bg-[var(--surface-subtle)] border border-[var(--border-color)] hover:border-emerald-500/40 text-[var(--primary)] hover:text-emerald-400 transition">
+                           class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11.5px] font-medium bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/15 transition">
                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                            <span>Demo</span>
-                            <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17L17 7M7 7h10v10"/></svg>
+                            <span>Live Demo</span>
+                            <svg class="w-3 h-3 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17L17 7M7 7h10v10"/></svg>
                         </a>
                     @endif
                     @if($project->prototype_url)
                         <a href="{{ $project->prototype_url }}" target="_blank" rel="noopener noreferrer" @click.stop
-                           class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11.5px] font-medium bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/15 transition">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                            <span>Interaktif</span>
+                           class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11.5px] font-medium bg-[var(--surface-subtle)] border border-[var(--border-color)] hover:border-[var(--border-strong)] text-[var(--text-muted)] hover:text-[var(--primary)] transition">
+                            <svg class="w-3 h-3 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
+                            <span>Prototipe</span>
                         </a>
                     @endif
                     @if($project->github_url)
@@ -268,7 +268,7 @@
 
                     <span class="inline-flex items-center gap-1.5 text-white/60">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                        <span class="font-mono">{{ $project->views_count }}</span>
+                        <span class="font-mono">{{ number_format($project->views_count, 0, ',', '.') }}</span>
                     </span>
 
                     <button type="button" @click="toggleBookmark()"
@@ -336,7 +336,7 @@
                         @endif
 
                         <p class="text-[11px] text-[var(--text-faint)] font-mono">
-                            {{ $project->created_at->translatedFormat('H:i · d M Y') }} · <span class="text-[var(--text-muted)]">{{ $project->views_count }} tayangan</span>
+                            {{ $project->created_at->translatedFormat('H:i · d M Y') }} · <span class="text-[var(--text-muted)]">{{ number_format($project->views_count, 0, ',', '.') }} tayangan</span>
                         </p>
                     </div>
 

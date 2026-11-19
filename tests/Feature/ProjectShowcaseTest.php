@@ -538,19 +538,58 @@ class ProjectShowcaseTest extends TestCase
         $response = $this->get('/');
         $response->assertStatus(200);
 
-        // Sidebar Navigation
+        // Guest Sidebar Navigation (ramping tanpa grup Aktivitas/Obrolan yang dead-end)
         $response->assertSee('Feed');
         $response->assertSee('Jelajahi');
-        $response->assertSee('Aktivitas');
         $response->assertSee('Semua Karya');
         $response->assertSee('Trending');
-        $response->assertSee('Obrolan');
+        $response->assertSee('Terbaru');
+        $response->assertSee('Direktori Kreator');
+        $response->assertSee('Showcase karya developer Indonesia.');
+        $response->assertSee('Untuk Anda');
+        $response->assertSee('Mengikuti');
+        $response->assertDontSee('Aktivitas');
         $response->assertDontSee('Menu Utama');
         $response->assertDontSee('Kategori Kodingan');
         $response->assertDontSee('Tech Stacks');
 
         // Mobile Drawer Toggle
         $response->assertSee('aria-label="Buka Menu Sidebar"', false);
+
+        // Authenticated Sidebar & Header Tabs
+        $user = User::factory()->create();
+        $authResponse = $this->actingAs($user)->get('/');
+        $authResponse->assertStatus(200);
+        $authResponse->assertSee('Aktivitas');
+        $authResponse->assertSee('Obrolan');
+        $authResponse->assertSee('Mengikuti');
+        $authResponse->assertDontSee('Showcase karya developer Indonesia.');
+    }
+
+    public function test_guest_feed_card_formats_views_and_labels_external_links_clearly(): void
+    {
+        $category = Category::create(['name' => 'Web App', 'slug' => 'web-app']);
+        $creator = User::factory()->create();
+
+        Project::create([
+            'user_id' => $creator->id,
+            'category_id' => $category->id,
+            'title' => 'GajiDev Benchmark',
+            'slug' => 'gajidev-benchmark',
+            'tagline' => 'Transparansi gaji dev Indonesia',
+            'description' => 'Deskripsi lengkap benchmark.',
+            'demo_url' => 'https://gajidev.example.test',
+            'prototype_url' => 'https://figma.example.test/proto',
+            'views_count' => 5139,
+            'status' => 'production',
+        ]);
+
+        $response = $this->get('/');
+        $response->assertOk()
+            ->assertSee('5.139')
+            ->assertSee('Live Demo')
+            ->assertSee('Prototipe')
+            ->assertSee('Masuk untuk melihat arsitektur, panduan setup, dan diskusi lengkap karya ini.');
     }
 
     public function test_people_search_view_lists_matching_accounts(): void

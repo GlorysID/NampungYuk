@@ -81,7 +81,7 @@
             </div>
         </div>
 
-        <!-- TABS BAR: "Untuk Anda" | "Mengikuti" | [+] (Image 1 replica) -->
+        {{-- TABS BAR: "Untuk Anda" | "Mengikuti" | [+] --}}
         @php
             $isFollowingTab = ($tab ?? '') === 'following';
             $isForYouTab = ! $isFollowingTab;
@@ -110,11 +110,12 @@
                 </span>
             </a>
 
-            <!-- Quick Action [+] (Image 1 replica) -->
+            <!-- Quick Action [+] -->
             @auth
                 <div class="px-3 shrink-0 flex items-center">
                     <a href="{{ route('projects.create') }}"
                        title="Pamer Kodingan"
+                       aria-label="Pamer Kodingan"
                        class="w-8 h-8 rounded-full flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--surface-hover)] transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -189,6 +190,38 @@
                 @endif
             </div>
         @else
+
+            @guest
+                @if(! $categorySlug && ! $techFilter && ! $search && ! ($searchOwner ?? null))
+                    <!-- COMPACT GUEST ORIENTATION STRIP (1-baris, dismissible) -->
+                    <div x-data="{ dismissed: sessionStorage.getItem('ny_guest_intro_dismissed') === '1' }"
+                         x-show="!dismissed"
+                         class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-[var(--surface)] border border-[var(--border-color)]">
+                        <div class="flex items-start sm:items-center gap-2.5 min-w-0">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0 mt-1.5 sm:mt-0" aria-hidden="true"></span>
+                            <p class="text-[13.5px] leading-snug text-[var(--text-muted)]">
+                                <span class="font-semibold text-[var(--primary)]">Showcase karya developer Indonesia.</span>
+                                Jelajahi demo, tech stack, dan diskusi proyek secara terbuka.
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                            <button type="button"
+                                    @click="window.openAuthModal('register')"
+                                    class="h-8 px-3.5 rounded-full bg-[var(--primary)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)] text-[12px] font-bold transition active:scale-[0.98] cursor-pointer whitespace-nowrap">
+                                Pamerkan karyamu
+                            </button>
+                            <button type="button"
+                                    @click="dismissed = true; sessionStorage.setItem('ny_guest_intro_dismissed', '1')"
+                                    aria-label="Tutup pengantar"
+                                    class="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-faint)] hover:text-[var(--primary)] hover:bg-[var(--surface-hover)] transition cursor-pointer">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                @endif
+            @endguest
 
             <!-- ACTIVE FILTER CHIPS BAR -->
             @if($categorySlug || $techFilter || $search || ($searchOwner ?? null))
@@ -277,10 +310,10 @@
                             </div>
 
                             <div class="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-2">
-                                <button type="button" @click="window.openAuthModal('register')" class="w-full sm:w-auto px-5 py-2 rounded-xl bg-zinc-950 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white text-white dark:text-zinc-950 font-semibold text-xs transition shadow-xs cursor-pointer">
+                                <button type="button" @click="window.openAuthModal('register')" class="w-full sm:w-auto px-5 py-2 rounded-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--primary-text)] font-bold text-xs transition shadow-xs cursor-pointer">
                                     Buat Akun Gratis
                                 </button>
-                                <button type="button" @click="window.openAuthModal('login')" class="w-full sm:w-auto px-5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition cursor-pointer">
+                                <button type="button" @click="window.openAuthModal('login')" class="w-full sm:w-auto px-5 py-2 rounded-full border border-[var(--border-color)] text-xs font-semibold text-[var(--primary)] hover:bg-[var(--surface-hover)] transition cursor-pointer">
                                     Masuk ke Akun
                                 </button>
                             </div>
@@ -343,6 +376,7 @@
             <div class="divide-y divide-[var(--border-color)]">
                 @forelse($trendingToday as $i => $tp)
                     <a href="{{ route('projects.show', $tp->slug) }}"
+                       @guest @click.prevent="window.openAuthModal('login', 'detail')" @endguest
                        class="flex items-start gap-3 px-4 py-3 hover:bg-[var(--surface-hover)] transition-colors group">
                         <span class="text-[11.5px] font-mono tabular-nums pt-0.5 w-5 shrink-0 {{ $i < 3 ? 'font-semibold text-emerald-400' : 'text-[var(--text-faint)]' }}">
                             {{ sprintf('%02d', $i + 1) }}
