@@ -9,6 +9,7 @@ use App\Models\ProjectRepost;
 use App\Models\ProjectVote;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -610,6 +611,28 @@ class MassDummySeeder extends Seeder
         // 10. Update Category Counts
         foreach (Category::all() as $cat) {
             $cat->update(['projects_count' => $cat->projects()->count()]);
+        }
+
+        // 11. Seed realistic follower counts (so top non-admin creators cross the 100-follower bar)
+        $now = now();
+        $allSeededIds = User::pluck('id')->all();
+        $featuredCreators = User::whereIn('username', ['budi_santoso', 'siti_rahma'])->get();
+        foreach ($featuredCreators as $creator) {
+            $followRows = [];
+            foreach ($allSeededIds as $followerId) {
+                if ((int) $followerId === (int) $creator->id) {
+                    continue;
+                }
+                $followRows[] = [
+                    'follower_id' => $followerId,
+                    'following_id' => $creator->id,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+            if (! empty($followRows)) {
+                DB::table('follows')->insertOrIgnore($followRows);
+            }
         }
     }
 }

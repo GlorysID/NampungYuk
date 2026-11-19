@@ -273,7 +273,56 @@
 
     <!-- Create Community Modal -->
     @auth
+        @php
+            $followersCount = (int) ($followersCount ?? 0);
+            $minFollowersToCreate = (int) ($minFollowersToCreate ?? \App\Models\Community::MIN_FOLLOWERS_TO_CREATE);
+            $canCreateCommunity = (bool) ($canCreateCommunity ?? false);
+            $followerProgress = $minFollowersToCreate > 0 ? min(100, (int) round(($followersCount / $minFollowersToCreate) * 100)) : 100;
+            $remainingFollowers = max(0, $minFollowersToCreate - $followersCount);
+        @endphp
         <dialog x-ref="createModal" class="rounded-2xl p-0 w-full max-w-md backdrop:bg-black/60 bg-transparent">
+            @if(! $canCreateCommunity)
+                <div class="bg-[var(--surface)] p-6 space-y-4 text-left border border-[var(--border-color)] rounded-2xl shadow-xl">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-sm text-[var(--primary)]">Buat Komunitas Baru</h3>
+                        <button type="button" @click="$refs.createModal.close()" class="text-[var(--text-muted)] hover:text-[var(--primary)] transition cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <div class="rounded-xl bg-[var(--surface-subtle)] border border-[var(--border-color)] p-4 space-y-3">
+                        <div class="flex items-start gap-3">
+                            <span class="w-9 h-9 rounded-xl bg-[var(--surface-muted)] border border-[var(--border-color)] flex items-center justify-center text-[var(--primary)] shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                            </span>
+                            <div class="space-y-1">
+                                <p class="text-xs font-bold text-[var(--primary)]">Minimal {{ number_format($minFollowersToCreate) }} pengikut diperlukan</p>
+                                <p class="text-xs text-[var(--text-muted)] leading-relaxed">
+                                    Untuk menjaga kualitas forum, hanya kreator dengan minimal {{ number_format($minFollowersToCreate) }} akun pengikut yang dapat membuat komunitas baru.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <div class="flex items-center justify-between text-[11px] font-mono">
+                                <span class="text-[var(--primary)] font-semibold">{{ number_format($followersCount) }} / {{ number_format($minFollowersToCreate) }} pengikut</span>
+                                <span class="text-[var(--text-muted)]">Kurang {{ number_format($remainingFollowers) }} lagi</span>
+                            </div>
+                            <div class="h-2 rounded-full bg-[var(--surface-muted)] overflow-hidden border border-[var(--border-color)]">
+                                <div class="h-full bg-[var(--primary)] transition-all" style="width: {{ $followerProgress }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="text-[11px] text-[var(--text-muted)] leading-relaxed">
+                        Bagikan karya terbaikmu dan aktif berdiskusi agar lebih banyak developer mengikuti akunmu.
+                    </p>
+
+                    <div class="flex justify-end pt-1">
+                        <button type="button" @click="$refs.createModal.close()" class="px-4 py-2 rounded-xl bg-[var(--primary)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)] text-xs font-bold transition shadow-xs cursor-pointer">Mengerti</button>
+                    </div>
+                </div>
+            @else
             <form method="POST" action="{{ route('communities.store') }}" class="bg-[var(--surface)] p-6 space-y-4 text-left border border-[var(--border-color)] rounded-2xl shadow-xl">
                 @csrf
                 <div class="flex items-center justify-between">
@@ -282,6 +331,11 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
+                @if(auth()->user()?->isAdmin() && $followersCount < $minFollowersToCreate)
+                    <p class="text-[11px] font-mono text-[var(--text-muted)] bg-[var(--surface-subtle)] border border-[var(--border-color)] rounded-xl px-3 py-2">
+                        Akses Admin aktif — bebas syarat minimal {{ number_format($minFollowersToCreate) }} pengikut.
+                    </p>
+                @endif
                 <div class="space-y-1">
                     <label class="text-xs font-semibold text-[var(--primary)]">Nama Komunitas</label>
                     <input type="text" name="name" required maxlength="60" class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-input)] border border-[var(--border-color)] text-[var(--primary)] placeholder:text-[var(--text-placeholder)] text-sm outline-none focus:border-[var(--primary)] transition" placeholder="mis. Web Dev Indonesia">
@@ -327,6 +381,7 @@
                     <button type="submit" class="px-4 py-2 rounded-xl bg-[var(--primary)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)] text-xs font-bold transition shadow-xs cursor-pointer">Buat Komunitas</button>
                 </div>
             </form>
+            @endif
         </dialog>
     @endauth
 

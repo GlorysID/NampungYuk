@@ -136,6 +136,12 @@ class CommunityController extends Controller
         // 6. Active Live Stage / Space
         $liveSpace = Space::with('host')->where('status', 'live')->first();
 
+        /** @var User|null $authUser */
+        $authUser = Auth::user();
+        $followersCount = $authUser ? $authUser->followers()->count() : 0;
+        $minFollowersToCreate = Community::MIN_FOLLOWERS_TO_CREATE;
+        $canCreateCommunity = Community::canBeCreatedBy($authUser);
+
         return view('communities.index', compact(
             'posts',
             'communities',
@@ -149,7 +155,10 @@ class CommunityController extends Controller
             'managedRoles',
             'userId',
             'userVotes',
-            'liveSpace'
+            'liveSpace',
+            'followersCount',
+            'minFollowersToCreate',
+            'canCreateCommunity'
         ));
     }
 
@@ -308,11 +317,23 @@ class CommunityController extends Controller
     /**
      * Create a new community.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): JsonResponse|RedirectResponse
     {
+        /** @var User|null $user */
         $user = Auth::user();
         if (! $user) {
             return redirect()->route('login');
+        }
+
+        if (! Community::canBeCreatedBy($user)) {
+            $followersCount = $user->followers()->count();
+            $msg = 'Minimal '.Community::MIN_FOLLOWERS_TO_CREATE." pengikut untuk membuat komunitas baru (saat ini {$followersCount} pengikut).";
+
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $msg], 403);
+            }
+
+            abort(403, $msg);
         }
 
         $data = $request->validate([

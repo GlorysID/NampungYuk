@@ -429,7 +429,7 @@ class BackendSecurityAndSpacesTest extends TestCase
      */
     public function test_community_creation_rejects_javascript_icon_url(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['is_admin' => true]);
 
         $this->actingAs($user)
             ->post(route('communities.store'), [

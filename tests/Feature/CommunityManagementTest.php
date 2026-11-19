@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Notifications\CommunityMembershipNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -480,5 +481,81 @@ class CommunityManagementTest extends TestCase
             ->assertSee('Selamat datang developer di komunitas ini!')
             ->assertSee('dismiss()', false)
             ->assertDontSee('x-init="try', false);
+    }
+
+    public function test_regular_user_with_fewer_than_100_followers_cannot_create_community(): void
+    {
+        $user = User::factory()->create();
+        $followers = User::factory()->count(99)->create();
+        $now = now();
+
+        DB::table('follows')->insert(
+            $followers->map(fn (User $f) => [
+                'follower_id' => $f->id,
+                'following_id' => $user->id,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ])->all()
+        );
+
+        $this->actingAs($user)
+            ->get(route('communities.index'))
+            ->assertOk()
+            ->assertSee('99 / 100 pengikut')
+            ->assertSee('Kurang 1 lagi');
+
+        $this->actingAs($user)
+            ->post(route('communities.store'), [
+                'name' => 'Komunitas Belum Cukup',
+                'topic' => 'Web',
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('communities', ['name' => 'Komunitas Belum Cukup']);
+    }
+
+    public function test_regular_user_with_100_followers_can_create_community(): void
+    {
+        $user = User::factory()->create();
+        $followers = User::factory()->count(100)->create();
+        $now = now();
+
+        DB::table('follows')->insert(
+            $followers->map(fn (User $f) => [
+                'follower_id' => $f->id,
+                'following_id' => $user->id,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ])->all()
+        );
+
+        $this->actingAs($user)
+            ->post(route('communities.store'), [
+                'name' => 'Komunitas 100 Follower',
+                'topic' => 'Backend',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('communities', [
+            'name' => 'Komunitas 100 Follower',
+            'owner_id' => $user->id,
+        ]);
+    }
+
+    public function test_admin_can_create_community_regardless_of_follower_count(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        $this->actingAs($admin)
+            ->post(route('communities.store'), [
+                'name' => 'Komunitas Resmi Admin',
+                'topic' => 'Official',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('communities', [
+            'name' => 'Komunitas Resmi Admin',
+            'owner_id' => $admin->id,
+        ]);
     }
 }

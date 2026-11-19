@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Community extends Model
 {
+    public const MIN_FOLLOWERS_TO_CREATE = 100;
+
     protected $attributes = [
         'visibility' => 'public',
         'join_policy' => 'open',
@@ -56,6 +58,22 @@ class Community extends Model
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    /**
+     * Only admins or creators with at least MIN_FOLLOWERS_TO_CREATE followers may create a community.
+     */
+    public static function canBeCreatedBy(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        return $user->followers()->count() >= self::MIN_FOLLOWERS_TO_CREATE;
     }
 
     public function posts(): HasMany
