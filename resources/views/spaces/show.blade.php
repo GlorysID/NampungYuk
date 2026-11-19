@@ -23,7 +23,7 @@
              signalUrl: '{{ route('spaces.signal', $space) }}',
              isHost: {{ auth()->check() && (int) auth()->id() === (int) $space->host_id ? 'true' : 'false' }},
              isJoined: {{ auth()->check() && ($participants->contains('id', auth()->id()) || (int) auth()->id() === (int) $space->host_id) ? 'true' : 'false' }}
-         })" x-init="init()">
+         })">
         <!-- Header -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--border-color)]">
             <div class="min-w-0 space-y-1">

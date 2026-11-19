@@ -129,7 +129,7 @@
 @endif
 
 @section('content')
-<div class="space-y-5" x-data="liveFeed()" x-init="init()">
+<div class="space-y-5" x-data="liveFeed()">
 
     <!-- LIVE PULSE: notification when new projects arrive in real-time -->
     <div x-show="newCount > 0" x-cloak

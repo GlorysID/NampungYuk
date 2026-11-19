@@ -126,6 +126,17 @@ import Alpine from 'alpinejs';
     });
 })();
 
+let echoPromise = null;
+function ensureEcho() {
+    if (window.Echo) return Promise.resolve(window.Echo);
+    if (!echoPromise) {
+        echoPromise = import('./echo')
+            .then(() => window.Echo || null)
+            .catch(() => null);
+    }
+    return echoPromise;
+}
+
 document.addEventListener('alpine:init', () => {
     /**
      * Infinite scroll feed.
@@ -245,6 +256,7 @@ document.addEventListener('alpine:init', () => {
             pcs: {},
             pendingIce: {},
             channel: null,
+            _subscribing: false,
             chatOpen: true,
             spaceMsgs: [],
             draft: '',
@@ -264,10 +276,17 @@ document.addEventListener('alpine:init', () => {
                 await this.send('chat', null, { text });
             },
 
-            subscribeChannel() {
-                if (! window.Echo || this.channel) return;
-                this.channel = window.Echo.private('space.' + spaceId);
-                this.channel.listen('.space.signal', (e) => this.onSignal(e));
+            async subscribeChannel() {
+                if (this.channel || this._subscribing) return;
+                this._subscribing = true;
+                try {
+                    const echo = await ensureEcho();
+                    if (! echo || this.channel || ! this.joined) return;
+                    this.channel = echo.private('space.' + spaceId);
+                    this.channel.listen('.space.signal', (e) => this.onSignal(e));
+                } finally {
+                    this._subscribing = false;
+                }
             },
 
             async join() {
@@ -473,8 +492,7 @@ document.addEventListener('alpine:init', () => {
 
             this.$nextTick(() => this.scrollBottom());
 
-            const echo = window.Echo || null;
-            if (true) {
+            ensureEcho().then((echo) => {
                 if (this.conversationId) {
                     this.subscribeConversation(this.conversationId);
                 }
@@ -521,7 +539,7 @@ document.addEventListener('alpine:init', () => {
                 } else {
                     this.startSyncFallback();
                 }
-            }
+            });
 
             window.addEventListener('beforeunload', () => this.stopLocalTyping());
             document.addEventListener('visibilitychange', () => {
@@ -533,7 +551,12 @@ document.addEventListener('alpine:init', () => {
 
         subscribeConversation(convId) {
             if (!convId || Number(this.subscribedConvId) === Number(convId)) return;
-            if (!window.Echo) return;
+            if (!window.Echo) {
+                ensureEcho().then((echo) => {
+                    if (echo) this.subscribeConversation(convId);
+                });
+                return;
+            }
 
             this.conversationId = Number(convId);
             this.subscribedConvId = Number(convId);
@@ -1097,16 +1120,21 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('liveFeed', () => ({
         newCount: 0,
         lastSeen: null,
+        _echoBound: false,
 
         init() {
             this.lastSeen = new Date().toISOString();
+            this.bindEcho();
+            window.addEventListener('ny:echo-ready', () => this.bindEcho(), { once: true });
+        },
 
-            if (window.Echo) {
-                window.Echo.channel('feed')
-                    .listen('.project.published', () => {
-                        this.newCount += 1;
-                    });
-            }
+        bindEcho() {
+            if (this._echoBound || !window.Echo) return;
+            this._echoBound = true;
+            window.Echo.channel('feed')
+                .listen('.project.published', () => {
+                    this.newCount += 1;
+                });
         },
 
         revealNew() {
@@ -1122,32 +1150,34 @@ document.addEventListener('alpine:init', () => {
      */
     Alpine.data('inboxLive', ({ me }) => ({
         init() {
-            if (!window.Echo) return;
+            ensureEcho().then((echo) => {
+                if (!echo) return;
 
-            window.Echo.private('App.Models.User.' + me).listen('.inbox.updated', (e) => {
-                const row = document.querySelector('[data-conv="' + e.conversation_id + '"]');
-                if (!row) {
-                    // New conversation not yet in the list — refresh to create it.
-                    if (window.notify) notify(e.sender_name + ' mengirim pesan.');
-                    return;
-                }
+                echo.private('App.Models.User.' + me).listen('.inbox.updated', (e) => {
+                    const row = document.querySelector('[data-conv="' + e.conversation_id + '"]');
+                    if (!row) {
+                        // New conversation not yet in the list — refresh to create it.
+                        if (window.notify) notify(e.sender_name + ' mengirim pesan.');
+                        return;
+                    }
 
-                const preview = row.querySelector('[data-conv-preview]');
-                if (preview) preview.textContent = e.body;
+                    const preview = row.querySelector('[data-conv-preview]');
+                    if (preview) preview.textContent = e.body;
 
-                const time = row.querySelector('[data-conv-time]');
-                if (time) time.textContent = 'baru saja';
+                    const time = row.querySelector('[data-conv-time]');
+                    if (time) time.textContent = 'baru saja';
 
-                row.classList.add('bg-emerald-500/[0.06]', 'dark:bg-emerald-500/[0.08]');
+                    row.classList.add('bg-emerald-500/[0.06]', 'dark:bg-emerald-500/[0.08]');
 
-                const badge = row.querySelector('[data-conv-unread]');
-                if (badge) {
-                    const current = parseInt(badge.textContent.trim(), 10) || 0;
-                    badge.textContent = String(current + 1);
-                    badge.classList.remove('hidden');
-                }
+                    const badge = row.querySelector('[data-conv-unread]');
+                    if (badge) {
+                        const current = parseInt(badge.textContent.trim(), 10) || 0;
+                        badge.textContent = String(current + 1);
+                        badge.classList.remove('hidden');
+                    }
 
-                if (window.notify) notify('Pesan baru dari ' + e.sender_name + '.');
+                    if (window.notify) notify('Pesan baru dari ' + e.sender_name + '.');
+                });
             });
         },
     }));
@@ -1208,34 +1238,44 @@ document.addEventListener('alpine:init', () => {
      * Notification bell: fetches latest notifications + it re-fetches
      * whenever a broadcast event arrives on the live channel.
      */
-    Alpine.data('notificationBell', ({ me = null } = {}) => ({
+    Alpine.data('notificationBell', ({ me = null, initialUnread = 0 } = {}) => ({
         open: false,
-        unreadCount: 0,
+        unreadCount: Number(initialUnread) || 0,
         notifications: [],
+        loading: false,
+        _echoBound: false,
         endpoint: '/notifikasi/latest',
 
         init() {
-            this.refresh();
+            this.bindEcho();
+            window.addEventListener('ny:echo-ready', () => this.bindEcho(), { once: true });
+        },
 
-            if (window.Echo) {
-                // New project published → some notifications may be fan-out.
-                window.Echo.channel('feed')
-                    .listen('.project.published', () => this.refresh());
+        bindEcho() {
+            if (this._echoBound || !window.Echo) return;
+            this._echoBound = true;
 
-                // Personal channel: new messages / inbox changes refresh the bell.
-                if (me) {
-                    window.Echo.private('App.Models.User.' + me)
-                        .listen('.inbox.updated', (e) => {
-                            this.refresh();
-                            if (!window.__activeChatConvId || Number(window.__activeChatConvId) !== Number(e?.conversation_id)) {
-                                window.dispatchEvent(new CustomEvent('ny:chat-unread-inc'));
-                            }
-                        });
-                }
+            // New project published → some notifications may be fan-out.
+            window.Echo.channel('feed')
+                .listen('.project.published', () => {
+                    if (this.open) this.refresh();
+                });
+
+            // Personal channel: new messages / inbox changes update the bell badge.
+            if (me) {
+                window.Echo.private('App.Models.User.' + me)
+                    .listen('.inbox.updated', (e) => {
+                        this.unreadCount += 1;
+                        if (this.open) this.refresh();
+                        if (!window.__activeChatConvId || Number(window.__activeChatConvId) !== Number(e?.conversation_id)) {
+                            window.dispatchEvent(new CustomEvent('ny:chat-unread-inc'));
+                        }
+                    });
             }
         },
 
         async refresh() {
+            this.loading = true;
             try {
                 const res = await fetch(this.endpoint, {
                     headers: { 'Accept': 'application/json' },
@@ -1246,6 +1286,8 @@ document.addEventListener('alpine:init', () => {
                 this.notifications = data.notifications ?? [];
             } catch (e) {
                 // silent fail — bell is non-critical
+            } finally {
+                this.loading = false;
             }
         },
 
@@ -1612,11 +1654,3 @@ window.nySettingSave = (input) => {
 
     return queued;
 };
-
-/**
- * Echo exposes an expressive API for subscribing to channels and listening
- * for events that are broadcast by Laravel. Echo and event broadcasting
- * allow your team to quickly build robust real-time web applications.
- */
-
-import './echo';

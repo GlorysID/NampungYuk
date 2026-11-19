@@ -225,7 +225,9 @@
                 </button>
             </div>
 
-            @include('partials.sidebar')
+            <template x-if="mobileSidebarOpen">
+                @include('partials.sidebar', ['compact' => false])
+            </template>
         </div>
     </div>
 
@@ -370,7 +372,7 @@
                     @auth
                         @unless(View::hasSection('hide_header_notifications'))
                             <!-- Notification Bell + Dropdown -->
-                        <div class="relative" x-data="notificationBell({ me: {{ auth()->id() }} })" x-init="init()">
+                        <div class="relative" x-data="notificationBell({ me: {{ auth()->id() }}, initialUnread: {{ $unreadNotificationsCount ?? 0 }} })">
                             <button @click="open = !open; if (open) refresh()"
                                     type="button"
                                     class="relative w-9 h-9 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--surface-hover)] transition"
@@ -416,7 +418,13 @@
                                         </a>
                                     </template>
 
-                                    <template x-if="notifications.length === 0">
+                                    <template x-if="loading && notifications.length === 0">
+                                        <div class="px-4 py-8 text-center text-xs text-[var(--text-muted)]">
+                                            Memuat notifikasi...
+                                        </div>
+                                    </template>
+
+                                    <template x-if="!loading && notifications.length === 0">
                                         <div class="px-4 py-8 text-center text-xs text-[var(--text-muted)]">
                                             Belum ada notifikasi baru.
                                         </div>
