@@ -1061,7 +1061,12 @@ document.addEventListener('alpine:init', () => {
                 // Personal channel: new messages / inbox changes refresh the bell.
                 if (me) {
                     window.Echo.private('App.Models.User.' + me)
-                        .listen('.inbox.updated', () => this.refresh());
+                        .listen('.inbox.updated', (e) => {
+                            this.refresh();
+                            if (!window.__activeChatConvId || Number(window.__activeChatConvId) !== Number(e?.conversation_id)) {
+                                window.dispatchEvent(new CustomEvent('ny:chat-unread-inc'));
+                            }
+                        });
                 }
             }
         },

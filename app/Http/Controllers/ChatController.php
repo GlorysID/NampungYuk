@@ -33,9 +33,15 @@ class ChatController extends Controller
 
         ['conversations' => $conversations, 'requests' => $requests] = $this->inboxData($userId, $search);
 
-        // Suggested people to start a new chat with (exclude self, banned).
+        /** @var User $auth */
+        $auth = Auth::user();
+        $blockedIds = $auth->allBlockedIds();
+
+        // Suggested people to start a new chat with (exclude self, banned, blocked).
         $suggested = User::where('id', '!=', $userId)
             ->where('is_banned', false)
+            ->discoverable()
+            ->when(! empty($blockedIds), fn ($q) => $q->whereNotIn('id', $blockedIds))
             ->orderByDesc('reputation_points')
             ->take(8)
             ->get();
@@ -234,10 +240,17 @@ class ChatController extends Controller
         }
         $messages = $messages->sortBy('id')->values();
 
+        $other->loadCount([
+            'projects' => fn ($q) => $q->visibleTo($userId),
+            'followers',
+        ]);
+
+        $blockedIds = $auth->allBlockedIds();
         $suggested = User::where('id', '!=', $userId)
             ->where('id', '!=', $other->id)
             ->where('is_banned', false)
             ->discoverable()
+            ->when(! empty($blockedIds), fn ($q) => $q->whereNotIn('id', $blockedIds))
             ->orderByDesc('reputation_points')
             ->take(6)
             ->get();

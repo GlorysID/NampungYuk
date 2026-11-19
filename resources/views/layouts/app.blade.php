@@ -53,15 +53,19 @@
           requestsOpen: false,
           shortcutsEnabled: {{ auth()->check() ? (auth()->user()->preference('display.keyboard_shortcuts', true) ? 'true' : 'false') : 'true' }},
           chatRequestsCount: {{ ($chatRequests ?? collect())->count() }},
+          unreadChatCount: {{ $unreadMessagesCount ?? 0 }},
           passwordPrompt: {{ session('password_prompt') ? 'true' : 'false' }},
           toast: {
-              show: {{ (session('status') || session('success') || session('error')) ? 'true' : 'false' }},
-              message: @js(session('status') ?? session('success') ?? session('error') ?? ''),
+              show: {{ ((session('status') && ! session('unverified_email')) || session('success') || session('error')) ? 'true' : 'false' }},
+              message: @js((session('unverified_email') ? null : session('status')) ?? session('success') ?? session('error') ?? ''),
               type: '{{ session('success') ? 'success' : (session('error') ? 'error' : 'info') }}',
               timeout: null
           },
           init() {
               window.notify = (msg, type = 'info') => this.notify(msg, type);
+              window.addEventListener('ny:chat-unread-inc', () => {
+                  this.unreadChatCount += 1;
+              });
 
               if (this.toast.show) {
                   this.toast.timeout = setTimeout(() => {
@@ -586,10 +590,18 @@
         {{-- 4. Obrolan (auth) or Daftar (guest) --}}
         @auth
             <a href="{{ route('chat.index') }}" 
-               class="flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition {{ request()->routeIs('chat.*') ? 'text-[var(--primary)] font-bold' : 'text-[var(--text-muted)]' }}">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
-                </svg>
+               class="relative flex flex-col items-center gap-0.5 px-3 py-1 rounded-md transition {{ request()->routeIs('chat.*') ? 'text-[var(--primary)] font-bold' : 'text-[var(--text-muted)]' }}">
+                <span class="relative inline-flex">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                    </svg>
+                    <span x-show="unreadChatCount > 0"
+                          x-cloak
+                          x-text="unreadChatCount > 9 ? '9+' : unreadChatCount"
+                          class="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-emerald-500 text-[var(--primary-text)] text-[9.5px] font-mono font-bold flex items-center justify-center leading-none tabular-nums">
+                        {{ ($unreadMessagesCount ?? 0) > 9 ? '9+' : ($unreadMessagesCount ?? 0) }}
+                    </span>
+                </span>
                 <span>Obrolan</span>
             </a>
         @else
@@ -850,8 +862,15 @@
 
     <script>
         // Global auth modal opener helper
-        window.openAuthModal = function(tab = 'login') {
-            window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { tab } }));
+        window.openAuthModal = function(tab = 'login', reason = '') {
+            if (!reason) {
+                try {
+                    reason = window.event?.target?.closest?.('[data-auth-reason]')?.dataset?.authReason || '';
+                } catch (_) {
+                    reason = '';
+                }
+            }
+            window.dispatchEvent(new CustomEvent('open-auth-modal', { detail: { tab, reason } }));
         };
 
         // Auto trigger modal on load if query param ?auth=login or errors exist

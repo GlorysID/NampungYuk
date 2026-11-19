@@ -251,4 +251,29 @@ class ChatTest extends TestCase
         $types = collect($response->json('notifications'))->pluck('data.type');
         $this->assertTrue($types->contains('new_message'));
     }
+
+    public function test_sidebar_shows_unread_chat_badge_and_clears_when_opened(): void
+    {
+        [$sender, $recipient] = $this->pair();
+
+        $this->actingAs($sender)->postJson('/obrolan/'.$recipient->username.'/kirim', ['body' => 'Pesan 1'])->assertOk();
+        $this->actingAs($sender)->postJson('/obrolan/'.$recipient->username.'/kirim', ['body' => 'Pesan 2'])->assertOk();
+
+        // On feed, recipient sees unreadChatCount: 2 in the sidebar state.
+        $this->actingAs($recipient)
+            ->get('/')
+            ->assertOk()
+            ->assertSee('unreadChatCount: 2', false);
+
+        // Opening the thread marks messages as read so the next page shows 0.
+        $this->actingAs($recipient)
+            ->get('/obrolan/'.$sender->username)
+            ->assertOk()
+            ->assertSee('Bergabung', false);
+
+        $this->actingAs($recipient)
+            ->get('/')
+            ->assertOk()
+            ->assertSee('unreadChatCount: 0', false);
+    }
 }

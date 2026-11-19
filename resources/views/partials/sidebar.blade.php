@@ -81,18 +81,20 @@
             </p>
 
             <nav class="ny-nav flex flex-col gap-0.5">
-                <!-- Cari -->
-                <a href="{{ route('search.index') }}" class="{{ $navClass($isSearchNav) }}">
-                    <div class="flex items-center gap-3 min-w-0">
-                        <svg class="{{ $iconClass($isSearchNav) }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                        </svg>
-                        <span class="truncate">Cari</span>
-                    </div>
-                    @if($isSearchNav)
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" aria-hidden="true"></span>
-                    @endif
-                </a>
+                @auth
+                    <!-- Cari (desktop guest sudah punya search bar di rail kanan & mobile header) -->
+                    <a href="{{ route('search.index') }}" class="{{ $navClass($isSearchNav) }}">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <svg class="{{ $iconClass($isSearchNav) }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                            <span class="truncate">Cari</span>
+                        </div>
+                        @if($isSearchNav)
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" aria-hidden="true"></span>
+                        @endif
+                    </a>
+                @endauth
 
                 <!-- Direktori Kreator -->
                 <a href="{{ route('projects.index', ['view' => 'people']) }}" class="{{ $navClass($isPeopleNav) }}">
@@ -141,30 +143,38 @@
             </nav>
         </div>
 
-        <!-- Group 3: Aktivitas -->
-        <div class="pt-3 border-t border-[var(--border-color)]/45">
-            <p class="{{ $groupLabelClass }}">
-                Aktivitas
-            </p>
+        {{-- Group 3: Aktivitas (auth only — menghindari dead-end & hemat ruang untuk guest) --}}
+        @auth
+            <div class="pt-3 border-t border-[var(--border-color)]/45">
+                <p class="{{ $groupLabelClass }}">
+                    Aktivitas
+                </p>
 
-            <nav class="ny-nav flex flex-col gap-0.5">
-                <!-- Obrolan -->
-                @php $isChatNav = request()->routeIs('chat.*'); @endphp
-                <a href="{{ auth()->check() ? route('chat.index') : '#' }}"
-                   @guest @click.prevent="window.openAuthModal('login')" @endguest
-                   class="{{ $navClass($isChatNav) }}">
-                    <div class="flex items-center gap-3 min-w-0">
-                        <svg class="{{ $iconClass($isChatNav) }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-                        </svg>
-                        <span class="truncate">Obrolan</span>
-                    </div>
-                    @if($isChatNav)
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" aria-hidden="true"></span>
-                    @endif
-                </a>
+                <nav class="ny-nav flex flex-col gap-0.5">
+                    <!-- Obrolan -->
+                    @php
+                        $isChatNav = request()->routeIs('chat.*');
+                        $unreadChat = $unreadMessagesCount ?? 0;
+                    @endphp
+                    <a href="{{ route('chat.index') }}"
+                       class="{{ $navClass($isChatNav) }}">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <svg class="{{ $iconClass($isChatNav) }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                            </svg>
+                            <span class="truncate">Obrolan</span>
+                        </div>
+                        <span x-show="unreadChatCount > 0"
+                              x-cloak
+                              x-text="unreadChatCount > 99 ? '99+' : unreadChatCount"
+                              class="px-1.5 py-0.5 text-[10.5px] font-bold rounded-full bg-emerald-500 text-[var(--primary-text)] font-mono leading-none tabular-nums shrink-0">
+                            {{ $unreadChat > 99 ? '99+' : $unreadChat }}
+                        </span>
+                        @if($isChatNav)
+                            <span x-show="unreadChatCount === 0" class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" aria-hidden="true"></span>
+                        @endif
+                    </a>
 
-                @auth
                     <!-- Permintaan Pengguna -->
                     <button type="button"
                             @click="requestsOpen = true"
@@ -217,9 +227,9 @@
                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" aria-hidden="true"></span>
                         @endif
                     </a>
-                @endauth
-            </nav>
-        </div>
+                </nav>
+            </div>
+        @endauth
 
         <!-- Conditional Admin Section -->
         @if(auth()->check() && (auth()->user()->isAdmin() || auth()->user()->is_admin))
@@ -286,48 +296,48 @@
                 </a>
             </div>
         @endauth
-    </div>
 
-    <!-- Bottom: guest auth actions & promo card -->
-    @guest
-        <div class="shrink-0 pt-3 flex flex-col gap-3">
-            <!-- Promo Card -->
-            <div class="rounded-xl bg-[var(--surface)] border border-[var(--border-color)] p-3.5 space-y-2">
-                <h3 class="text-[14px] font-bold text-[var(--primary)] tracking-tight leading-tight">
-                    Pamer karya, dapat feedback
-                </h3>
-                <p class="text-[12.5px] text-[var(--text-muted)] leading-snug">
-                    Showcase project, kumpulkan upvote, dan dapat masukan teknis.
-                </p>
-                <div class="space-y-1.5">
-                    <div class="flex items-start gap-2 text-[12.5px] text-[var(--text-muted)]">
-                        <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                        </svg>
-                        <span>Unggah project + link demo & GitHub</span>
-                    </div>
-                    <div class="flex items-start gap-2 text-[12.5px] text-[var(--text-muted)]">
-                        <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                        </svg>
-                        <span>Ngobrol langsung dengan sesama kreator</span>
+        <!-- Guest auth actions & promo card (menyambung langsung di bawah nav, tidak mentok ke dasar layar) -->
+        @guest
+            <div class="shrink-0 pt-4 pb-2 border-t border-[var(--border-color)]/45 flex flex-col gap-3">
+                <!-- Promo Card -->
+                <div class="rounded-xl bg-[var(--surface)] border border-[var(--border-color)] p-3.5 space-y-2">
+                    <h3 class="text-[14px] font-bold text-[var(--primary)] tracking-tight leading-tight">
+                        Pamer karya, dapat feedback
+                    </h3>
+                    <p class="text-[12.5px] text-[var(--text-muted)] leading-snug">
+                        Showcase project, kumpulkan upvote, dan dapat masukan teknis.
+                    </p>
+                    <div class="space-y-1.5">
+                        <div class="flex items-start gap-2 text-[12.5px] text-[var(--text-muted)]">
+                            <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span>Unggah project + link demo & GitHub</span>
+                        </div>
+                        <div class="flex items-start gap-2 text-[12.5px] text-[var(--text-muted)]">
+                            <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span>Ngobrol langsung dengan sesama kreator</span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Auth Buttons -->
-            <div class="space-y-2">
-                <button type="button" @click="window.openAuthModal('register')"
-                        class="w-full inline-flex items-center justify-center rounded-full bg-[var(--primary)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)] font-bold text-[14px] h-11 px-4 transition active:scale-[0.98] cursor-pointer">
-                    <span>Daftar gratis</span>
-                </button>
-                <button type="button" @click="window.openAuthModal('login')"
-                        class="w-full inline-flex items-center justify-center rounded-full border border-[var(--border-color)] hover:bg-[var(--surface-hover)] text-[var(--primary)] font-semibold text-[14px] h-11 px-4 transition active:scale-[0.98] cursor-pointer">
-                    <span>Masuk</span>
-                </button>
+                <!-- Auth Buttons -->
+                <div class="space-y-2">
+                    <button type="button" @click="window.openAuthModal('register')"
+                            class="w-full inline-flex items-center justify-center rounded-full bg-[var(--primary)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)] font-bold text-[14px] h-11 px-4 transition active:scale-[0.98] cursor-pointer">
+                        <span>Daftar gratis</span>
+                    </button>
+                    <button type="button" @click="window.openAuthModal('login')"
+                            class="w-full inline-flex items-center justify-center rounded-full border border-[var(--border-color)] hover:bg-[var(--surface-hover)] text-[var(--primary)] font-semibold text-[14px] h-11 px-4 transition active:scale-[0.98] cursor-pointer">
+                        <span>Masuk</span>
+                    </button>
+                </div>
             </div>
-        </div>
-    @endguest
+        @endguest
+    </div>
 
     <!-- Bottom: pinned user profile (authenticated only) -->
     @auth

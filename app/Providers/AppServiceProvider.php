@@ -60,6 +60,24 @@ class AppServiceProvider extends ServiceProvider
                     ? $user->unreadNotifications()->count()
                     : 0;
 
+                $unreadMessagesCount = 0;
+                if ($user && Schema::hasTable('conversations') && Schema::hasTable('messages')) {
+                    $blockedIds = $user->allBlockedIds();
+                    $unreadMessagesCount = Message::query()
+                        ->whereNull('read_at')
+                        ->where('sender_id', '!=', $user->id)
+                        ->whereHas('conversation', function ($q) use ($user, $blockedIds) {
+                            $q->where('status', 'accepted')
+                                ->where(fn ($w) => $w->where('user_one_id', $user->id)->orWhere('user_two_id', $user->id));
+
+                            if (! empty($blockedIds)) {
+                                $q->whereNotIn('user_one_id', $blockedIds)
+                                    ->whereNotIn('user_two_id', $blockedIds);
+                            }
+                        })
+                        ->count();
+                }
+
                 // Pending message requests where I am the recipient, for the
                 // global "Permintaan Pengguna" modal in the sidebar.
                 $chatRequests = collect();
@@ -111,6 +129,7 @@ class AppServiceProvider extends ServiceProvider
                     'sidebarCommunities' => $communities,
                     'pendingReportsCount' => $pendingReportsCount,
                     'unreadNotificationsCount' => $unreadNotificationsCount,
+                    'unreadMessagesCount' => $unreadMessagesCount,
                     'chatRequests' => $chatRequests,
                     'defaultRailTrending' => $defaultRailTrending,
                 ];
