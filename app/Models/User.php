@@ -382,6 +382,19 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Return IDs of all users blocked by this user or blocking this user.
+     *
+     * @return array<int, int>
+     */
+    public function allBlockedIds(): array
+    {
+        $blocked = $this->blockedUsers()->pluck('users.id')->all();
+        $blockedBy = $this->blockedByUsers()->pluck('users.id')->all();
+
+        return array_values(array_unique(array_map('intval', array_merge($blocked, $blockedBy))));
+    }
+
+    /**
      * Return user preferences merged cleanly with sensible defaults.
      *
      * @return array{
@@ -434,6 +447,8 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * Check whether this user allows direct messages from the given sender.
+     * Only blocked relationships are rejected outright; `following_only` routes
+     * unfollowed senders into message requests instead of refusing them.
      */
     public function allowsDirectMessageFrom(User $sender): bool
     {
@@ -441,11 +456,17 @@ class User extends Authenticatable implements MustVerifyEmail
             return false;
         }
 
-        if ($this->preference('privacy.dm_policy', 'everyone') === 'following_only') {
-            return $this->isFollowing($sender);
-        }
-
         return true;
+    }
+
+    /**
+     * Check whether a new message from the given sender must start as a pending
+     * message request (permission required) instead of landing directly.
+     */
+    public function requiresMessageRequestFrom(User $sender): bool
+    {
+        return $this->preference('privacy.dm_policy', 'everyone') === 'following_only'
+            && ! $this->isFollowing($sender);
     }
 
     /**

@@ -105,11 +105,9 @@
                             @php
                                 $chatThreadExists = (bool) \App\Models\Conversation::findBetween(auth()->id(), $user->id);
 
-                                $messageHint = match (true) {
-                                    ! $chatThreadExists && ! $user->allowsDirectMessageFrom(auth()->user()) => $user->name.' hanya menerima pesan dari akun yang mereka ikuti.',
-                                    $user->isFollowing(auth()->user()) => 'Kirim pesan ke '.$user->name,
-                                    default => $user->name.' belum mengikutimu — pesanmu akan masuk sebagai permintaan pesan.',
-                                };
+                                $messageHint = (! $chatThreadExists && $user->requiresMessageRequestFrom(auth()->user()))
+                                    ? $user->name.' mewajibkan izin — pesanmu akan masuk sebagai permintaan pesan.'
+                                    : 'Kirim pesan ke '.$user->name;
                             @endphp
                             <a href="{{ route('chat.show', $user->username) }}"
                                class="btn-secondary h-10 text-sm px-4 shadow-xs"

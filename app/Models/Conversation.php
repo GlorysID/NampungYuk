@@ -116,9 +116,12 @@ class Conversation extends Model
             return $conversation;
         }
 
-        // Existing conversation: allow pending → accepted upgrades, never the reverse.
+        // Existing conversation: allow pending → accepted upgrades only when the
+        // original initiator's request now satisfies the recipient's gate (never
+        // let a recipient bypass explicit accept by replying, and never downgrade).
         if ($conversation->isPending()
             && ! $conversation->accepted_at
+            && (int) $conversation->initiator_id === $from
             && static::gateStatusFor($from, $to) === 'accepted') {
             $conversation->status = 'accepted';
             $conversation->save();
@@ -128,17 +131,23 @@ class Conversation extends Model
     }
 
     /**
-     * Whether a message from $from to $to may land directly (true) or must
-     * become a pending request (false). Rule: the recipient follows the sender.
+     * Whether a message from $from to $to may land directly ('accepted') or must
+     * become a pending message request ('pending').
+     *
+     * Default policy ('everyone') lets anyone chat directly without permission.
+     * Under 'following_only', accounts the recipient follows land directly while
+     * everyone else enters as a pending message request.
      */
     public static function gateStatusFor(int $from, int $to): string
     {
         $sender = User::find($from);
         $recipient = User::find($to);
 
-        $allowed = $recipient && $sender && $recipient->isFollowing($sender);
+        if (! $sender || ! $recipient) {
+            return 'pending';
+        }
 
-        return $allowed ? 'accepted' : 'pending';
+        return $recipient->requiresMessageRequestFrom($sender) ? 'pending' : 'accepted';
     }
 
     /**

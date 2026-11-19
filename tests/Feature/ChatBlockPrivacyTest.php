@@ -68,10 +68,10 @@ class ChatBlockPrivacyTest extends TestCase
     }
 
     /**
-     * `following_only` refuses the thread outright (no pending request), so the
-     * locked composer must not promise a request that will never exist.
+     * `following_only` requires permission for unfollowed senders (message request)
+     * instead of rejecting them outright with 403.
      */
-    public function test_following_only_policy_refuses_a_new_thread_and_says_why(): void
+    public function test_following_only_policy_queues_unfollowed_sender_as_message_request(): void
     {
         $recipient = User::factory()->create();
         $sender = User::factory()->create();
@@ -83,19 +83,30 @@ class ChatBlockPrivacyTest extends TestCase
         $this->actingAs($sender)
             ->get('/obrolan/'.$recipient->username)
             ->assertStatus(200)
-            ->assertSee('blockedByPolicy: true', false)
-            ->assertSee('hanya menerima obrolan dari akun yang mereka ikuti', false);
+            ->assertSee('blockedByPolicy: false', false)
+            ->assertSee('canSend: true', false);
 
         $this->actingAs($sender)
             ->get(route('profile.show', $recipient->username))
             ->assertStatus(200)
-            ->assertSee('hanya menerima pesan dari akun yang mereka ikuti', false);
+            ->assertSee('mewajibkan izin', false);
 
+        // First opener succeeds and enters as a pending message request.
         $this->actingAs($sender)
-            ->postJson('/obrolan/'.$recipient->username.'/kirim', ['body' => 'halo'])
+            ->postJson('/obrolan/'.$recipient->username.'/kirim', ['body' => 'halo izin chat'])
+            ->assertOk()
+            ->assertJsonPath('conversation.status', 'pending')
+            ->assertJsonPath('conversation.can_send', false);
+
+        // Second message is held until accepted.
+        $this->actingAs($sender)
+            ->postJson('/obrolan/'.$recipient->username.'/kirim', ['body' => 'pesan kedua'])
             ->assertStatus(403);
 
-        $this->assertDatabaseCount('conversations', 0);
+        $this->assertDatabaseHas('conversations', [
+            'status' => 'pending',
+            'initiator_id' => $sender->id,
+        ]);
     }
 
     public function test_existing_thread_keeps_working_after_switching_to_following_only(): void

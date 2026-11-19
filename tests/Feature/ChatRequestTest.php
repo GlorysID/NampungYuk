@@ -11,10 +11,29 @@ class ChatRequestTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_non_mutual_message_starts_as_pending(): void
+    private function userRequiringPermission(array $attributes = []): User
+    {
+        return User::factory()->create(array_merge([
+            'preferences' => ['privacy' => ['dm_policy' => 'following_only']],
+        ], $attributes));
+    }
+
+    public function test_default_everyone_policy_allows_direct_dm_without_permission(): void
     {
         $a = User::factory()->create();
         $b = User::factory()->create();
+
+        $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo'])->assertStatus(200);
+        $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Langsung lanjut'])->assertStatus(200);
+
+        $conv = Conversation::first();
+        $this->assertEquals('accepted', $conv->status);
+    }
+
+    public function test_non_mutual_message_starts_as_pending(): void
+    {
+        $a = User::factory()->create();
+        $b = $this->userRequiringPermission();
 
         $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
 
@@ -26,9 +45,9 @@ class ChatRequestTest extends TestCase
     public function test_message_is_accepted_when_recipient_follows_sender(): void
     {
         $a = User::factory()->create(); // sender
-        $b = User::factory()->create(); // recipient
+        $b = $this->userRequiringPermission(); // recipient
 
-        // Recipient follows sender → direct delivery (IG rule).
+        // Recipient follows sender → direct delivery even when permission mode is on.
         $b->following()->attach($a->id);
 
         $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
@@ -39,7 +58,7 @@ class ChatRequestTest extends TestCase
     public function test_message_is_pending_when_only_sender_follows_recipient(): void
     {
         $a = User::factory()->create(); // sender
-        $b = User::factory()->create(); // recipient
+        $b = $this->userRequiringPermission(); // recipient
 
         // Sender follows recipient, but recipient does NOT follow back.
         $a->following()->attach($b->id);
@@ -53,7 +72,7 @@ class ChatRequestTest extends TestCase
     public function test_initiator_cannot_send_second_message_while_pending(): void
     {
         $a = User::factory()->create();
-        $b = User::factory()->create();
+        $b = $this->userRequiringPermission();
 
         $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Pesan pertama'])->assertStatus(200);
         $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Pesan kedua'])->assertStatus(403);
@@ -62,7 +81,7 @@ class ChatRequestTest extends TestCase
     public function test_recipient_cannot_reply_before_accepting(): void
     {
         $a = User::factory()->create();
-        $b = User::factory()->create();
+        $b = $this->userRequiringPermission();
 
         $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
         $this->actingAs($b)->postJson('/obrolan/'.$a->username.'/kirim', ['body' => 'Balas'])->assertStatus(403);
@@ -71,7 +90,7 @@ class ChatRequestTest extends TestCase
     public function test_recipient_can_accept_request_then_chat_freely(): void
     {
         $a = User::factory()->create();
-        $b = User::factory()->create();
+        $b = $this->userRequiringPermission();
 
         $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
 
@@ -86,7 +105,7 @@ class ChatRequestTest extends TestCase
     public function test_initiator_cannot_accept_own_request(): void
     {
         $a = User::factory()->create();
-        $b = User::factory()->create();
+        $b = $this->userRequiringPermission();
 
         $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
 
@@ -96,7 +115,7 @@ class ChatRequestTest extends TestCase
     public function test_recipient_can_decline_request(): void
     {
         $a = User::factory()->create();
-        $b = User::factory()->create();
+        $b = $this->userRequiringPermission();
 
         $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
 
@@ -106,7 +125,7 @@ class ChatRequestTest extends TestCase
 
     public function test_inbox_shows_requests_separately_from_conversations(): void
     {
-        $recipient = User::factory()->create();
+        $recipient = $this->userRequiringPermission();
         $stranger = User::factory()->create(['name' => 'Stranger Danger']);
 
         $this->actingAs($stranger)->postJson('/obrolan/'.$recipient->username.'/kirim', ['body' => 'Hai, kenalan yuk']);
@@ -119,7 +138,7 @@ class ChatRequestTest extends TestCase
 
     public function test_sidebar_request_modal_lists_pending_requests_for_recipient_only(): void
     {
-        $recipient = User::factory()->create();
+        $recipient = $this->userRequiringPermission();
         $stranger = User::factory()->create(['name' => 'Stranger Danger']);
 
         $this->actingAs($stranger)->postJson('/obrolan/'.$recipient->username.'/kirim', ['body' => 'preview-unik-xyz']);
@@ -151,7 +170,7 @@ class ChatRequestTest extends TestCase
     public function test_typing_does_not_create_conversation_or_bypass_the_gate(): void
     {
         $a = User::factory()->create();
-        $b = User::factory()->create();
+        $b = $this->userRequiringPermission();
 
         // Typing before any message must not create a conversation row.
         $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/mengetik', ['typing' => true])->assertStatus(200);
@@ -168,7 +187,7 @@ class ChatRequestTest extends TestCase
     public function test_typing_after_conversation_exists_does_not_resend_gate(): void
     {
         $a = User::factory()->create();
-        $b = User::factory()->create();
+        $b = $this->userRequiringPermission();
 
         $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
         $conv = Conversation::first();
@@ -204,7 +223,7 @@ class ChatRequestTest extends TestCase
     public function test_recipient_composer_is_locked_while_request_pending(): void
     {
         $a = User::factory()->create(); // initiator
-        $b = User::factory()->create(); // recipient
+        $b = $this->userRequiringPermission(); // recipient
 
         $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
 
@@ -226,7 +245,7 @@ class ChatRequestTest extends TestCase
     public function test_initiator_composer_is_open_before_sending_opener(): void
     {
         $a = User::factory()->create();
-        $b = User::factory()->create();
+        $b = $this->userRequiringPermission();
 
         // No conversation yet — the opener is allowed, so canSend is true.
         $response = $this->actingAs($a)->get('/obrolan/'.$b->username);
@@ -237,7 +256,7 @@ class ChatRequestTest extends TestCase
     public function test_composer_reopens_for_both_after_accept(): void
     {
         $a = User::factory()->create();
-        $b = User::factory()->create();
+        $b = $this->userRequiringPermission();
 
         $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
         $this->actingAs($b)->postJson('/obrolan/'.$a->username.'/terima');
@@ -249,7 +268,7 @@ class ChatRequestTest extends TestCase
     public function test_pending_upgrades_to_accepted_once_recipient_follows_sender(): void
     {
         $a = User::factory()->create(); // sender / initiator
-        $b = User::factory()->create(); // recipient
+        $b = $this->userRequiringPermission(); // recipient
 
         // Start as a request (no follows): A's opener creates a pending conversation.
         $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
@@ -269,7 +288,7 @@ class ChatRequestTest extends TestCase
     public function test_accepted_conversation_is_never_downgraded(): void
     {
         $a = User::factory()->create(); // sender
-        $b = User::factory()->create(); // recipient
+        $b = $this->userRequiringPermission(); // recipient
 
         // Recipient follows sender → direct delivery.
         $b->following()->attach($a->id);
@@ -287,7 +306,7 @@ class ChatRequestTest extends TestCase
     public function test_explicit_acceptance_is_sticky_across_resends(): void
     {
         $a = User::factory()->create();
-        $b = User::factory()->create();
+        $b = $this->userRequiringPermission();
 
         // Start pending, then recipient accepts.
         $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
@@ -303,7 +322,7 @@ class ChatRequestTest extends TestCase
     public function test_send_response_reports_pending_gate_for_non_follower(): void
     {
         $a = User::factory()->create(); // sender
-        $b = User::factory()->create(); // recipient who does NOT follow a
+        $b = $this->userRequiringPermission(); // recipient who requires permission and does NOT follow a
 
         $response = $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
 
@@ -320,7 +339,7 @@ class ChatRequestTest extends TestCase
     public function test_send_response_reports_accepted_gate_when_recipient_follows(): void
     {
         $a = User::factory()->create();
-        $b = User::factory()->create();
+        $b = $this->userRequiringPermission();
         $b->following()->attach($a->id); // recipient follows sender → direct
 
         $response = $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);
@@ -336,7 +355,7 @@ class ChatRequestTest extends TestCase
     public function test_chat_page_exposes_reactive_gate_state(): void
     {
         $a = User::factory()->create();
-        $b = User::factory()->create();
+        $b = $this->userRequiringPermission();
 
         // First opener creates a pending request.
         $this->actingAs($a)->postJson('/obrolan/'.$b->username.'/kirim', ['body' => 'Halo']);

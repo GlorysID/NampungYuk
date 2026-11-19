@@ -487,8 +487,8 @@
                                            onchange="nySettingSave(this)"
                                            class="mt-0.5 accent-emerald-500">
                                     <div>
-                                        <p class="text-xs font-semibold text-[var(--primary)]">Semua Orang</p>
-                                        <p class="text-[11px] text-[var(--text-muted)] mt-0.5">Siapa pun bisa memulai obrolan. Akun yang belum kamu ikuti masuk sebagai permintaan pesan.</p>
+                                        <p class="text-xs font-semibold text-[var(--primary)]">Semua Orang (Langsung)</p>
+                                        <p class="text-[11px] text-[var(--text-muted)] mt-0.5">Siapa pun bisa langsung mengirim pesan dan mengobrol tanpa perlu izin.</p>
                                     </div>
                                 </label>
                                 <label class="flex items-start gap-3 p-3.5 rounded-xl border border-[var(--border-color)] bg-[var(--surface-subtle)] cursor-pointer hover:border-[var(--border-strong)] has-[:checked]:border-emerald-500/50 has-[:checked]:bg-[var(--surface)] transition">
@@ -497,8 +497,8 @@
                                            onchange="nySettingSave(this)"
                                            class="mt-0.5 accent-emerald-500">
                                     <div>
-                                        <p class="text-xs font-semibold text-[var(--primary)]">Hanya yang Saya Ikuti</p>
-                                        <p class="text-[11px] text-[var(--text-muted)] mt-0.5">Hanya akun yang kamu ikuti yang bisa memulai obrolan. Akun lain ditolak, bukan jadi permintaan pesan.</p>
+                                        <p class="text-xs font-semibold text-[var(--primary)]">Minta Izin Dulu</p>
+                                        <p class="text-[11px] text-[var(--text-muted)] mt-0.5">Akun yang kamu ikuti bisa langsung mengobrol. Akun lain masuk sebagai permintaan pesan untuk kamu terima atau tolak.</p>
                                     </div>
                                 </label>
                             </div>

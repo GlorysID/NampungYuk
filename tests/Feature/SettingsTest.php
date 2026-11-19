@@ -73,7 +73,7 @@ class SettingsTest extends TestCase
         $this->assertDatabaseMissing('sessions', ['id' => 'other-device-session-1']);
     }
 
-    public function test_dm_privacy_following_only_blocks_unfollowed_sender_on_new_chat(): void
+    public function test_dm_privacy_following_only_requires_permission_instead_of_rejecting(): void
     {
         $recipient = User::factory()->create([
             'username' => 'penerima_ketat',
@@ -81,18 +81,23 @@ class SettingsTest extends TestCase
         ]);
         $stranger = User::factory()->create(['username' => 'orang_asing']);
 
+        // Unfollowed sender sends an opener -> queued as pending message request (not 403).
         $this->actingAs($stranger)
             ->postJson(route('chat.send', $recipient->username), ['body' => 'Halo bro'])
-            ->assertForbidden()
-            ->assertJsonPath('success', false);
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('conversation.status', 'pending')
+            ->assertJsonPath('conversation.can_send', false);
 
-        // Recipient follows stranger back -> DM is now allowed.
+        // Recipient follows stranger back -> pending upgrades to accepted automatically.
         $recipient->following()->attach($stranger->id);
 
         $this->actingAs($stranger)
             ->postJson(route('chat.send', $recipient->username), ['body' => 'Sekarang boleh'])
             ->assertOk()
-            ->assertJsonPath('success', true);
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('conversation.status', 'accepted')
+            ->assertJsonPath('conversation.can_send', true);
     }
 
     public function test_saved_dm_policy_survives_reload_of_settings_page(): void
