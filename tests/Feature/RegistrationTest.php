@@ -146,4 +146,17 @@ class RegistrationTest extends TestCase
         $response->assertSessionHasErrors('name');
         $this->assertDatabaseCount('users', 0);
     }
+
+    public function test_register_forms_disable_submit_button_to_prevent_double_submission(): void
+    {
+        $this->get(route('register'))
+            ->assertOk()
+            ->assertSee(':disabled="submitting"', false)
+            ->assertSee('Membuat akun...', false);
+
+        $this->get(route('projects.index'))
+            ->assertOk()
+            ->assertSee(':disabled="submittingRegister"', false)
+            ->assertSee('Membuat akun...', false);
+    }
 }

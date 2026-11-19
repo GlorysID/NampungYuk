@@ -14,10 +14,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Geist:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>[x-cloak] { display: none !important; }</style>
 </head>
 <body class="bg-[var(--bg-app)] text-[var(--primary)] min-h-screen antialiased selection:bg-[var(--primary)] selection:text-[var(--primary-text)]">
 
-    <div class="min-h-screen grid grid-cols-1 lg:grid-cols-2" x-data="{ showPassword: false }">
+    <div class="min-h-screen grid grid-cols-1 lg:grid-cols-2" x-data="{ showPassword: false, submitting: false }" @pageshow.window="submitting = false">
 
         <!-- LEFT HALF: Developer Showcase Panel (Full-bleed 50vw) -->
         <div class="hidden lg:flex bg-[var(--bg-app)] text-[var(--primary)] relative overflow-hidden flex-col justify-between p-12 lg:p-16 min-h-screen select-none border-r border-[var(--border-color)]">
@@ -152,6 +153,10 @@
                 <div>
                     <x-google-auth-button />
 
+                    <p class="mt-2 text-center text-[11.5px] text-[var(--text-faint)]">
+                        Akun Google yang sudah terdaftar akan langsung masuk otomatis.
+                    </p>
+
                     <!-- Centered ATAU Divider -->
                     <div class="relative my-4 text-center">
                         <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-[var(--border-color)]"></div></div>
@@ -160,7 +165,10 @@
                 </div>
 
                 <!-- Registration Form -->
-                <form method="POST" action="{{ route('register') }}" class="space-y-4">
+                <form method="POST"
+                      action="{{ route('register') }}"
+                      @submit="if (submitting) { $event.preventDefault(); return; } submitting = true;"
+                      class="space-y-4">
                     @csrf
 
                     <!-- Nama Lengkap & Username (2-col grid) -->
@@ -240,9 +248,16 @@
                         </div>
                     </div>
 
-                    <button type="submit" 
-                            class="w-full h-12 rounded-xl bg-[var(--primary)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)] font-bold text-[15px] transition shadow-xs active:scale-[0.99] cursor-pointer mt-2">
-                        Buat Akun
+                    <button type="submit"
+                            :disabled="submitting"
+                            :aria-busy="submitting"
+                            class="w-full h-12 rounded-xl bg-[var(--primary)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)] font-bold text-[15px] transition shadow-xs active:scale-[0.99] cursor-pointer disabled:opacity-60 disabled:cursor-wait inline-flex items-center justify-center gap-2 mt-2">
+                        <svg x-show="submitting" x-cloak class="w-4 h-4 animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                        </svg>
+                        <span x-show="!submitting">Buat Akun</span>
+                        <span x-show="submitting" x-cloak>Membuat akun...</span>
                     </button>
                 </form>
 
