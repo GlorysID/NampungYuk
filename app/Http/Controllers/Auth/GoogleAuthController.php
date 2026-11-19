@@ -79,7 +79,7 @@ class GoogleAuthController extends Controller
                 $googleUser = Socialite::driver('google')->stateless()->user();
             }
 
-            $user = $this->findOrCreateGoogleUser(
+            [$user, $wasCreated] = $this->findOrCreateGoogleUser(
                 googleId: (string) $googleUser->getId(),
                 email: (string) $googleUser->getEmail(),
                 name: $googleUser->getName(),
@@ -93,8 +93,12 @@ class GoogleAuthController extends Controller
                 $request->session()->flash('password_prompt', true);
             }
 
+            $welcomeMessage = $wasCreated
+                ? 'Akun berhasil dibuat! Selamat datang, '.$user->name.'.'
+                : 'Selamat datang kembali, '.$user->name.'! Berhasil masuk dengan Google.';
+
             return redirect()->intended(route('projects.index'))
-                ->with('status', 'Selamat datang, '.$user->name.'! Berhasil masuk dengan Google.');
+                ->with('status', $welcomeMessage);
         } catch (Throwable $e) {
             Log::error('Google OAuth callback error ('.get_class($e).'): '.$e->getMessage().' in '.$e->getFile().':'.$e->getLine());
 
@@ -121,7 +125,7 @@ class GoogleAuthController extends Controller
         try {
             $claims = $verifier->verify($validated['id_token']);
 
-            $user = $this->findOrCreateGoogleUser(
+            [$user, $wasCreated] = $this->findOrCreateGoogleUser(
                 googleId: $claims['google_id'],
                 email: $claims['email'],
                 name: $claims['name'],
@@ -135,12 +139,15 @@ class GoogleAuthController extends Controller
                 $request->session()->flash('password_prompt', true);
             }
 
-            $welcomeMessage = 'Selamat datang, '.$user->name.'! Berhasil masuk dengan Google.';
+            $welcomeMessage = $wasCreated
+                ? 'Akun berhasil dibuat! Selamat datang, '.$user->name.'.'
+                : 'Selamat datang kembali, '.$user->name.'! Berhasil masuk dengan Google.';
             $request->session()->flash('status', $welcomeMessage);
 
             return response()->json([
                 'redirect' => $request->session()->pull('url.intended', route('projects.index')),
                 'message' => $welcomeMessage,
+                'is_new_user' => $wasCreated,
             ]);
         } catch (Throwable $e) {
             Log::warning('Firebase Google login gagal: '.$e->getMessage(), [
@@ -155,8 +162,10 @@ class GoogleAuthController extends Controller
 
     /**
      * Find an existing user by Google ID or email, or provision a new verified account.
+     *
+     * @return array{0: User, 1: bool}
      */
-    private function findOrCreateGoogleUser(string $googleId, string $email, ?string $name = null, ?string $avatar = null): User
+    private function findOrCreateGoogleUser(string $googleId, string $email, ?string $name = null, ?string $avatar = null): array
     {
         $normalizedEmail = strtolower(trim($email));
 
@@ -177,7 +186,7 @@ class GoogleAuthController extends Controller
             }
             $user->save();
 
-            return $user;
+            return [$user, false];
         }
 
         $baseUsername = Str::slug(explode('@', $normalizedEmail)[0], '_');
@@ -192,7 +201,7 @@ class GoogleAuthController extends Controller
             $counter++;
         }
 
-        return User::create([
+        $createdUser = User::create([
             'name' => ! empty($name) ? $name : $username,
             'username' => $username,
             'email' => $normalizedEmail,
@@ -201,5 +210,7 @@ class GoogleAuthController extends Controller
             'password' => null,
             'email_verified_at' => now(),
         ]);
+
+        return [$createdUser, true];
     }
 }

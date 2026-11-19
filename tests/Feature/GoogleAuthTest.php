@@ -190,7 +190,8 @@ class GoogleAuthTest extends TestCase
         ]);
 
         $response->assertOk()
-            ->assertJsonStructure(['redirect', 'message'])
+            ->assertJsonPath('is_new_user', true)
+            ->assertJsonStructure(['redirect', 'message', 'is_new_user'])
             ->assertSessionHas('status');
 
         $this->assertAuthenticated();
@@ -352,6 +353,51 @@ class GoogleAuthTest extends TestCase
             ->assertOk();
 
         $this->assertSame('/storage/avatars/custom-upload.webp', $customAvatarUser->fresh()->avatar);
+    }
+
+    public function test_firebase_google_signs_in_existing_google_account_instead_of_creating_duplicate(): void
+    {
+        Cache::flush();
+        Config::set('services.firebase.project_id', 'nampungyuk-test');
+
+        $existingGoogleUser = User::factory()->create([
+            'name' => 'Raka Dev',
+            'username' => 'raka_dev',
+            'email' => 'raka.google@example.com',
+            'google_id' => 'google-existing-777',
+            'email_verified_at' => now(),
+        ]);
+
+        [$privateKey, $jwks] = $this->createMockFirebaseKeySet('kid-existing-1');
+        Http::fake([
+            'https://www.googleapis.com/service_accounts/v1/jwk/*' => Http::response($jwks, 200),
+        ]);
+
+        $token = $this->signMockFirebaseToken($privateKey, 'kid-existing-1', [
+            'iss' => 'https://securetoken.google.com/nampungyuk-test',
+            'aud' => 'nampungyuk-test',
+            'sub' => 'firebase-uid-existing-777',
+            'email' => 'raka.google@example.com',
+            'email_verified' => true,
+            'name' => 'Raka Dev',
+            'firebase' => [
+                'identities' => [
+                    'google.com' => ['google-existing-777'],
+                ],
+                'sign_in_provider' => 'google.com',
+            ],
+        ]);
+
+        $response = $this->postJson(route('auth.firebase.google'), [
+            'id_token' => $token,
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('is_new_user', false)
+            ->assertJsonPath('message', 'Selamat datang kembali, Raka Dev! Berhasil masuk dengan Google.');
+
+        $this->assertAuthenticatedAs($existingGoogleUser);
+        $this->assertSame(1, User::where('email', 'raka.google@example.com')->count());
     }
 
     /**
