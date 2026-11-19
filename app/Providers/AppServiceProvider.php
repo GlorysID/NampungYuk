@@ -46,22 +46,31 @@ class AppServiceProvider extends ServiceProvider
             $cached = $request?->attributes->get('__sidebar_composer_data');
 
             if ($cached === null) {
-                $communities = Schema::hasTable('communities')
+                static $tableCache = [];
+                $hasTable = static function (string $table) use (&$tableCache): bool {
+                    if (app()->runningUnitTests()) {
+                        return Schema::hasTable($table);
+                    }
+
+                    return $tableCache[$table] ??= Schema::hasTable($table);
+                };
+
+                $communities = ($request?->routeIs('communities.*') && $hasTable('communities'))
                     ? Community::visibleTo(Auth::id())->orderByDesc('members_count')->take(5)->get()
                     : collect();
 
                 /** @var User|null $user */
                 $user = Auth::user();
-                $pendingReportsCount = ($user?->isAdmin() && Schema::hasTable('reports'))
+                $pendingReportsCount = ($user?->isAdmin() && $hasTable('reports'))
                     ? Report::pending()->count()
                     : 0;
 
-                $unreadNotificationsCount = ($user && Schema::hasTable('notifications'))
+                $unreadNotificationsCount = ($user && $hasTable('notifications'))
                     ? $user->unreadNotifications()->count()
                     : 0;
 
                 $unreadMessagesCount = 0;
-                if ($user && Schema::hasTable('conversations') && Schema::hasTable('messages')) {
+                if ($user && $hasTable('conversations') && $hasTable('messages')) {
                     $blockedIds = $user->allBlockedIds();
                     $unreadMessagesCount = Message::query()
                         ->whereNull('read_at')
@@ -81,7 +90,7 @@ class AppServiceProvider extends ServiceProvider
                 // Pending message requests where I am the recipient, for the
                 // global "Permintaan Pengguna" modal in the sidebar.
                 $chatRequests = collect();
-                if ($user && Schema::hasTable('conversations')) {
+                if ($user && $hasTable('conversations')) {
                     $chatRequests = Conversation::with(['userOne:id,name,username,avatar', 'userTwo:id,name,username,avatar'])
                         ->where('status', 'pending')
                         ->where('initiator_id', '!=', $user->id)
@@ -108,7 +117,8 @@ class AppServiceProvider extends ServiceProvider
                         ->values();
                 }
 
-                $defaultRailTrending = Schema::hasTable('projects')
+                $needsDefaultRail = ! $request?->routeIs('chat.*', 'settings.*', 'admin.*', 'spaces.*', 'projects.create', 'projects.edit');
+                $defaultRailTrending = ($needsDefaultRail && $hasTable('projects'))
                     ? Cache::remember('rail:trending_projects_v2', 300, fn () => Project::query()
                         ->visibleTo(null)
                         ->with('user:id,name,username')

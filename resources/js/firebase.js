@@ -111,6 +111,7 @@ export async function completeFirebaseRedirectIfNeeded({ endpoint, config } = {}
         redirectResultPromise = (async () => {
             const auth = getFirebaseAuthInstance(config);
             const result = await getRedirectResult(auth);
+            try { sessionStorage.removeItem('ny_fb_redirect_pending'); } catch (_) {}
             if (!result?.user) {
                 return null;
             }
@@ -118,6 +119,7 @@ export async function completeFirebaseRedirectIfNeeded({ endpoint, config } = {}
             const idToken = await result.user.getIdToken();
             return exchangeIdTokenForSession(endpoint, idToken);
         })().catch((err) => {
+            try { sessionStorage.removeItem('ny_fb_redirect_pending'); } catch (_) {}
             redirectResultPromise = null;
             throw new Error(mapFirebaseErrorMessage(err));
         });
@@ -140,6 +142,7 @@ export async function signInWithFirebaseGoogle({ endpoint, config } = {}) {
         return await exchangeIdTokenForSession(endpoint, idToken);
     } catch (err) {
         if (err?.code === 'auth/popup-blocked') {
+            try { sessionStorage.setItem('ny_fb_redirect_pending', '1'); } catch (_) {}
             await signInWithRedirect(auth, provider);
             return null;
         }

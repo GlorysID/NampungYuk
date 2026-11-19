@@ -919,17 +919,24 @@
         </div>
     </div>
 
-    <!-- GLOBAL X-STYLE AUTH MODAL -->
-    <x-auth-modal />
+    <!-- GLOBAL X-STYLE AUTH MODAL (guest only) -->
+    @guest
+        <x-auth-modal />
+    @endguest
 
-    <!-- GLOBAL REPORT MODAL -->
-    <x-report-modal />
+    <!-- GLOBAL AUTH MODALS (report, block, admin warn) -->
+    @auth
+        <x-report-modal />
+        <x-block-user-modal />
+        @if(auth()->user()->isAdmin() || auth()->user()->is_admin)
+            <x-admin-warn-project-modal />
+        @endif
+    @endauth
 
-    <!-- GLOBAL BLOCK USER MODAL + UNDO SNACKBAR -->
-    <x-block-user-modal />
-
-    <!-- GLOBAL ADMIN: WARN PROJECT MODAL -->
-    <x-admin-warn-project-modal />
+    <!-- GLOBAL PROJECT MEDIA LIGHTBOX (single shared instance) -->
+    @unless(request()->routeIs('chat.*', 'settings.*', 'admin.*', 'spaces.*'))
+        <x-project-lightbox-modal />
+    @endunless
 
     <script>
         // Global auth modal opener helper

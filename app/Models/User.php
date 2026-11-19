@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 #[Fillable(['name', 'username', 'email', 'email_verified_at', 'password', 'avatar', 'banner', 'bio', 'github_url', 'website_url', 'reputation_points', 'google_id', 'is_admin', 'is_banned', 'ban_reason', 'banned_at', 'warning_notes', 'warned_at', 'username_changed_at', 'preferences'])]
 #[Hidden(['password', 'remember_token'])]
@@ -383,15 +384,28 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * Return IDs of all users blocked by this user or blocking this user.
+     * Uses a single lightweight query on user_blocks (memoized per HTTP request).
      *
      * @return array<int, int>
      */
     public function allBlockedIds(): array
     {
-        $blocked = $this->blockedUsers()->pluck('users.id')->all();
-        $blockedBy = $this->blockedByUsers()->pluck('users.id')->all();
+        $rows = DB::table('user_blocks')
+            ->where('blocker_id', $this->id)
+            ->orWhere('blocked_id', $this->id)
+            ->get(['blocker_id', 'blocked_id']);
 
-        return array_values(array_unique(array_map('intval', array_merge($blocked, $blockedBy))));
+        $ids = [];
+        foreach ($rows as $row) {
+            $other = (int) $row->blocker_id === (int) $this->id
+                ? (int) $row->blocked_id
+                : (int) $row->blocker_id;
+            if ($other !== (int) $this->id) {
+                $ids[$other] = $other;
+            }
+        }
+
+        return array_values($ids);
     }
 
     /**

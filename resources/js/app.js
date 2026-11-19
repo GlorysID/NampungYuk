@@ -1,5 +1,4 @@
 import Alpine from 'alpinejs';
-import { completeFirebaseRedirectIfNeeded, signInWithFirebaseGoogle } from './firebase';
 
 /**
  * Scroll position restore.
@@ -1271,14 +1270,21 @@ document.addEventListener('alpine:init', () => {
 
 document.addEventListener('alpine:init', () => {
     /**
-     * Firebase Auth Google Sign-In button controller.
+     * Firebase Auth Google Sign-In button controller (lazy-loads Firebase SDK only on demand).
      */
     Alpine.data('firebaseGoogleAuth', ({ endpoint = '', config = {} } = {}) => ({
         loading: false,
         error: '',
 
         async init() {
+            let pending = false;
             try {
+                pending = sessionStorage.getItem('ny_fb_redirect_pending') === '1';
+            } catch (_) {}
+            if (!pending) return;
+
+            try {
+                const { completeFirebaseRedirectIfNeeded } = await import('./firebase');
                 await completeFirebaseRedirectIfNeeded({ endpoint, config });
             } catch (e) {
                 this.error = e?.message || 'Gagal menyelesaikan login Google.';
@@ -1291,6 +1297,7 @@ document.addEventListener('alpine:init', () => {
             this.error = '';
 
             try {
+                const { signInWithFirebaseGoogle } = await import('./firebase');
                 const res = await signInWithFirebaseGoogle({ endpoint, config });
                 if (res?.redirect) {
                     return;
@@ -1299,6 +1306,43 @@ document.addEventListener('alpine:init', () => {
                 this.error = e?.message || 'Gagal masuk dengan Google. Silakan coba lagi.';
                 this.loading = false;
             }
+        },
+    }));
+
+    /**
+     * Global project lightbox controller (single modal shared across all feed cards).
+     */
+    Alpine.data('projectLightbox', () => ({
+        open: false,
+        card: null,
+        index: 0,
+        sidebar: true,
+
+        get gallery() {
+            return this.card?.gallery || [];
+        },
+
+        init() {
+            window.openProjectLightbox = (card, index = 0) => {
+                this.card = card;
+                this.index = index;
+                this.sidebar = true;
+                this.open = true;
+            };
+        },
+
+        close() {
+            this.open = false;
+        },
+
+        prev() {
+            if (this.gallery.length < 2) return;
+            this.index = (this.index - 1 + this.gallery.length) % this.gallery.length;
+        },
+
+        next() {
+            if (this.gallery.length < 2) return;
+            this.index = (this.index + 1) % this.gallery.length;
         },
     }));
 
@@ -1314,9 +1358,6 @@ document.addEventListener('alpine:init', () => {
         isVoting: false,
         isBookmarking: false,
         isReposting: false,
-        lightboxOpen: false,
-        lightboxIndex: 0,
-        lightboxSidebar: true,
         commentsCount: config.commentsCount ?? 0,
         comments: [],
         commentsLoaded: false,
@@ -1324,6 +1365,7 @@ document.addEventListener('alpine:init', () => {
         newComment: '',
         isSubmittingComment: false,
         gallery: Array.isArray(config.gallery) ? config.gallery : [],
+        meta: config.meta || {},
 
         requireAuth() {
             if (! config.isGuest) return false;
@@ -1344,9 +1386,10 @@ document.addEventListener('alpine:init', () => {
         },
 
         openLightbox(i) {
-            this.lightboxIndex = i;
-            this.lightboxOpen = true;
             this.loadComments();
+            if (window.openProjectLightbox) {
+                window.openProjectLightbox(this, i);
+            }
         },
 
         async loadComments() {
