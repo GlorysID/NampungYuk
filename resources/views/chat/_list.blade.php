@@ -51,6 +51,11 @@
                 </div>
                 <div class="divide-y divide-[var(--border-color)]">
                     @foreach($requests as $c)
+                        @php
+                            $declineAfter = ($active === $c->other->username)
+                                ? "window.location.href = '".route('chat.index')."'"
+                                : 'window.location.reload()';
+                        @endphp
                         <div class="flex items-center gap-3.5 px-5 py-3.5">
                             <a href="{{ route('profile.show', $c->other->username) }}" class="shrink-0">
                                 <x-user-avatar :user="$c->other" size="md" />
@@ -66,7 +71,7 @@
                                     Terima
                                 </button>
                                 <button type="button" :disabled="busy === {{ $c->id }}"
-                                        @click="busy = {{ $c->id }}; fetch('{{ route('chat.decline', $c->other) }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' } }).then(r => r.ok && window.location.reload())"
+                                        @click="busy = {{ $c->id }}; fetch('{{ route('chat.decline', $c->other) }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' } }).then(r => r.ok && ({{ $declineAfter }}))"
                                         class="px-3.5 py-1.5 rounded-lg border border-rose-800/60 text-rose-400 text-xs font-semibold hover:bg-rose-950/30 disabled:opacity-60 cursor-pointer">
                                     Hapus
                                 </button>

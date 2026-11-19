@@ -123,7 +123,7 @@ class NampungYukSeeder extends Seeder
         foreach ($developers as $dev) {
             $users[$dev['username']] = User::updateOrCreate(
                 ['username' => $dev['username']],
-                $dev
+                array_merge($dev, ['email_verified_at' => now()])
             );
         }
 
