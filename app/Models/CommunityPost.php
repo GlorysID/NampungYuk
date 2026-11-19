@@ -2,16 +2,23 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CommunityPost extends Model
 {
+    protected $attributes = [
+        'status' => 'approved',
+        'is_locked' => false,
+    ];
+
     protected $fillable = [
         'community_id',
         'user_id',
         'type',
+        'status',
         'content',
         'images',
         'upvotes_count',
@@ -20,7 +27,11 @@ class CommunityPost extends Model
         'comments_count',
         'is_pinned',
         'is_answered',
+        'is_locked',
         'answered_comment_id',
+        'reviewed_by',
+        'reviewed_at',
+        'rejection_reason',
     ];
 
     protected function casts(): array
@@ -29,6 +40,8 @@ class CommunityPost extends Model
             'images' => 'array',
             'is_pinned' => 'boolean',
             'is_answered' => 'boolean',
+            'is_locked' => 'boolean',
+            'reviewed_at' => 'datetime',
         ];
     }
 
@@ -57,6 +70,16 @@ class CommunityPost extends Model
     public function isQuestion(): bool
     {
         return $this->type === 'question';
+    }
+
+    public function scopeApproved(Builder $query): Builder
+    {
+        return $query->where('status', 'approved');
+    }
+
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->where('status', 'pending');
     }
 
     public function scopeSortTab($query, string $tab)
@@ -91,6 +114,11 @@ class CommunityPost extends Model
     public function answeredComment(): BelongsTo
     {
         return $this->belongsTo(CommunityPostComment::class, 'answered_comment_id');
+    }
+
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
     }
 
     /**
