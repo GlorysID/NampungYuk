@@ -374,6 +374,14 @@ Alur lama (form email + password inline di `/pengaturan`, reset password lewat l
   - **Simpan & Kelola Draft**: Menambahkan tombol **Simpan ke Draft** di `/unggah`, opsi visibilitas `Draft` di `/project/{slug}/edit`, halaman `/draft` (`projects.drafts`), aksi publikasi langsung `POST /project/{slug}/publish`, serta tab **Draft** khusus pemilik di profil (`users/show.blade.php`). Draft dikecualikan dari `Project::scopeVisibleTo()` dan `Category::projects_count` hingga dipublikasikan.
   - **Verifikasi**: `vendor/bin/pint --dirty --format agent` passed, `artisan view:cache` ok, `npm run build` ok (`1.13s`), dan full PHPUnit suite **264/264 tests (1309 assertions) passed**.
 
+## 3j. Dokumentasi README, Tangkapan Layar & Perbaikan Kartu Pendengar Spaces (20 Nov 2026)
+
+- **Bug Alpine `spaceRoom`** (`resources/js/app.js`): properti `me` hanya hidup di closure sehingga `Number(part.id) !== Number(me)` di daftar peserta panggung melempar `ReferenceError: me is not defined`; sekarang `me` ikut di-return dari komponen Alpine. Commit `454e3b1`, diverifikasi full suite **264/264 tests (1309 assertions) passed**.
+- **Penyempurnaan [README.md](README.md)**: bagian **Fitur Utama** diperbarui mengikuti fitur terbaru (Composer Anti-Refresh & Draft, Spaces X-Style, Komunitas ala Facebook Groups dengan gerbang 100 pengikut, Obrolan 2-pane & kebijakan DM, Profil Kreator), angka test suite disinkronkan ke **264 tests / 1.309 assertions**, ditambah info akun demo seeder (`@budi_santoso`, `@siti_rahma`) dan perintah opsional `reverb:start`, serta bagian **Struktur Direktori Utama** dirapikan.
+- **12 tangkapan layar asli `docs/images/`**: `banner.png`, `feed.png`, `detail-project.png`, `form-unggah.png`, `draft-karya.png`, `spaces.png`, `komunitas.png`, `obrolan.png`, `profil.png`, `autentikasi.png`, `admin-moderasi.png`, dan `responsive-dark-mode.png` (mobile `390x844`, Dark Mode Only) — semuanya diambil dari aplikasi yang berjalan di `http://localhost:8000` (Chrome headless, akun demo seeder) dan dipasang di bagian **Tangkapan Layar & Pratinjau** README.
+- **Perbaikan UI kartu Pendengar Spaces** (`resources/views/spaces/show.blade.php`): kartu pendengar sebelumnya menampilkan nama terpotong (`Q...`) karena tombol moderasi berbagi satu baris; grid diubah ke `grid-cols-1 sm:grid-cols-2 md:grid-cols-3` dengan tata letak `flex-col` (baris identitas + baris aksi ber-divider) sehingga nama tampil penuh di semua lebar layar.
+- **Verifikasi**: `npm run build` exit 0, `artisan view:cache` ok, `BackendSecurityAndSpacesTest` **13/13 passed** (`109` assertions), screenshot `spaces.png` diambil ulang. Commit `2175d0a` (`Update README with current features and screenshots, refine Space listener card`, 14 berkas) sudah di-push ke `origin/main` (`454e3b1..2175d0a`) dan working tree bersih.
+
 ---
 
 ## 4. Backlog Masa Depan (Rekomendasi Lanjutan)
