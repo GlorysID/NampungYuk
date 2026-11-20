@@ -1,9 +1,7 @@
 # NampungYuk
 
-Platform showcase karya programmer dan wadah kolaborasi komunitas developer. NampungYuk dirancang untuk memamerkan proyek perangkat lunak, mendokumentasikan proses belajar, membagikan tantangan teknis, serta membangun jaringan antardeveloper di Indonesia.
+Platform showcase karya programmer dan wadah kolaborasi komunitas developer. NampungYuk dirancang untuk memamerkan proyek perangkat lunak, mendokumentasikan proses belajar, berdiskusi lewat komunitas & live audio/video **Spaces**, serta membangun jaringan antardeveloper di Indonesia dalam antarmuka **Token Harbor** (Dark Mode Only).
 
-<!-- TEMPAT GAMBAR: BANNER UTAMA PROYEK -->
-<!-- Letakkan gambar banner atau logo mockup platform di path: docs/images/banner.png -->
 ![Banner NampungYuk](docs/images/banner.png)
 
 ---
@@ -32,86 +30,72 @@ NampungYuk hadir sebagai solusi bagi para pengembang aplikasi untuk tidak hanya 
 ## Fitur Utama
 
 ### 1. Showcase Proyek & Feed Interaktif
-- Penelusuran proyek berdasarkan tab Trending, Terbaru, Populer, dan Mengikuti (auth).
-- Filter pencarian berbasis kategori kodingan dan tech stack (tagar teknologi).
-- Akses cepat fitur Obrolan langsung dari sidebar antarmuka.
-- Sistem voting (upvote/downvote) dengan kalkulasi skor reputasi.
-- Fitur bookmark (koleksi tersimpan) dan repost karya.
+- Penelusuran proyek berdasarkan tab **Untuk Anda / Trending**, **Terbaru**, dan **Mengikuti** (auth).
+- Pencarian global bertab (`/cari`) serta filter kategori kodingan dan tech stack (tagar teknologi).
+- Sistem apresiasi seragam dengan panah **Upvote (`^`)** dan kalkulasi skor reputasi kreator.
+- Fitur **Koleksi Tersimpan** (bookmark), **Repost** karya, serta komentar bersarang (nested thread).
 
-### 2. Informasi Proyek Mendalam
-- Tautan langsung ke live demo, repositori kode sumber (GitHub/GitLab), dan prototipe desain (Figma).
-- Panduan teknis cara menjalankan proyek (setup instructions).
-- Dokumentasi tantangan (challenges) dan hal yang dipelajari (learnings).
-- Media galeri foto dan demonstrasi video.
+### 2. Composer Anti-Refresh, Sistem Draft & Detail Karya
+- **Auto-Save & Anti-Refresh Error**: Composer `/unggah` menyimpan state ke `localStorage` dan menyinkronkannya otomatis ke database via `POST /unggah/autosave` (debounce & `sendBeacon` saat refresh/tutup tab). Validasi URL dan submit memakai AJAX `fetch` sehingga kesalahan input tidak me-refresh halaman atau menghilangkan file gambar yang sudah dipilih.
+- **Auto-Normalisasi HTTPS**: Domain polos berformat valid pada `demo_url` / `github_url` otomatis dilengkapi awalan `https://`, sementara skema berbahaya (`javascript:`, dll.) tetap ditolak.
+- **Kelola Draft (`/draft`)**: Simpan manual via tombol **Simpan ke Draft**, lanjutkan pengeditan, publikasikan langsung, atau pindahkan karya dari/ke mode Draft lewat `/project/{slug}/edit` dan tab **Draft** di profil.
+- **Detail Teknis Lengkap**: Live demo, repositori GitHub, prototipe interaktif (Figma), tantangan teknis, pelajaran berharga, cara run di lokal, galeri gambar (WebP), dan video demo.
 
-### 3. Manajemen Siklus Hidup Karya (CRUD)
-- Formulir multi-step wizard untuk unggah karya baru secara bertahap dan rapi.
-- Kemampuan edit dan pembaruan data proyek oleh pemilik karya atau administrator.
-- Fitur hapus proyek dengan penghapusan relasi data (komentar, bookmark, vote) secara aman.
+### 3. Spaces Live Audio & Video Terstruktur (X-Style)
+- **Gerbang Host Kreator**: Pembuatan Space dibatasi untuk Admin atau kreator terverifikasi yang memenuhi syarat reputasi (`>= 100` pengikut, `>= 3` karya publik aktif, `>= 100` poin reputasi, link GitHub/Website, dan bebas catatan moderasi).
+- **Siklus & Panggung Terstruktur**: Mendukung Space langsung maupun terjadwal (`scheduled`), penyematan karya bahasan (`pinned_project_id`), pemisahan **Panggung** (`Host`, `Co-host` maks. 2, `Speaker` maks. 10) vs **Pendengar** (`Listener`), alur **Angkat Tangan**, persetujuan naik panggung, mute paksa, turun panggung, kick, reaksi cepat, dan Obrolan Ruang.
+- **Offline & Local-Ready**: Mendukung Laravel Reverb WebSocket maupun fallback polling HTTP (`/spaces/{space}/sync`) serta WebRTC lokal tanpa memerlukan STUN eksternal saat berjalan di jaringan lokal.
 
-### 4. Komunitas Developer
-- Pembuatan dan pengelolaan grup komunitas berbasis topik atau teknologi.
-- Diskusi publik, sistem tanya-jawab (Q&A) dengan penandaan solusi terjawab.
-- Pin postingan penting oleh moderator komunitas.
+### 4. Komunitas Developer & Tata Kelola (Facebook Groups-Style)
+- Pembuatan grup komunitas baru mensyaratkan minimal `100` pengikut (atau akses Admin).
+- Sistem peran berlapis (**Owner**, **Admin**, **Moderator**, **Member**) dengan konsol pengelolaan `/komunitas/{slug}/kelola`: pertanyaan gabung & antrean persetujuan anggota, persetujuan postingan, pin & kunci komentar, tanya-jawab (Q&A) berpenanda terjawab, mute/kick/ban, transfer kepemilikan, dan audit log.
 
-### 5. Obrolan Antar Pengguna (Chat)
-- Sistem obrolan langsung (direct message) antar developer terdaftar.
-- Permintaan obrolan (chat request) untuk menjaga privasi pengguna.
+### 5. Obrolan Antar Pengguna & Profil Kreator
+- **Obrolan 2-Pane (`/obrolan`)**: Layout workspace penuh dengan sidebar ringkas `72px`, badge unread realtime, typing indicator, read receipts, dan 2 mode kebijakan privasi DM (`everyone` / `following_only`) dengan gerbang permintaan pesan monotonik.
+- **Profil Kreator (`/@username`)**: Banner & avatar custom crop, link-in-bio, stat terminal (reputasi, karya, pengikut, mengikuti), lencana relasi sosial (*Mengikutimu* / *Teman*), serta hingga 3 karya disematkan.
 
-### 6. Autentikasi Fleksibel & Terverifikasi
-- **Pendaftaran Manual:** Wajib melakukan verifikasi alamat email via link aktivasi yang dikirimkan ke kotak masuk sebelum dapat login.
-- **Login Google (OAuth):** Masuk langsung menggunakan akun Google. Jika alamat email sudah pernah didaftarkan secara manual, sistem akan otomatis menautkan akun dan menandainya sebagai terverifikasi tanpa membuat akun duplikat.
-- Fitur reset password melalui email dan pembaruan kata sandi di pengaturan akun.
-
-### 7. Moderasi & Keamanan Konten
-- Laporan pelanggaran konten dari pengguna (spam, malware/judi, pelanggaran hak cipta, pelecehan).
-- Dashboard moderasi terpusat bagi administrator untuk meninjau laporan, memberikan teguran (warning), take-down karya bermasalah, hingga pemblokiran akun (banned).
+### 6. Autentikasi Terverifikasi & Moderasi Admin
+- **Pendaftaran & Verifikasi Email**: Registrasi manual dengan aktivasi email sebelum login, reset password berbasis kode OTP, serta **Login Google (OAuth)** via Laravel Socialite.
+- **Dashboard Moderasi (`/admin/laporan`)**: Tinjau laporan konten/akun, beri peringatan (menyembunyikan karya dari publik), blokir (ban) pengguna, hingga hapus proyek bermasalah.
 
 ---
 
 ## Tangkapan Layar & Pratinjau
 
-Bagian ini memuat panduan visual antarmuka platform. Seluruh gambar disimpan dalam direktori `docs/images/`.
+Seluruh tangkapan layar antarmuka disimpan dalam direktori `docs/images/`.
 
 ### 1. Halaman Beranda & Feed Utama
-<!-- TEMPAT GAMBAR: FEED UTAMA -->
-<!-- Simpan tangkapan layar beranda (feed proyek) pada path: docs/images/feed.png -->
 ![Halaman Feed Utama NampungYuk](docs/images/feed.png)
 
 ### 2. Halaman Detail Karya & Dokumentasi Teknis
-<!-- TEMPAT GAMBAR: DETAIL PROYEK -->
-<!-- Simpan tangkapan layar detail proyek (deskripsi, tantangan, setup) pada path: docs/images/detail-project.png -->
 ![Halaman Detail Proyek](docs/images/detail-project.png)
 
-### 3. Formulir Unggah & Edit Karya (Wizard Form)
-<!-- TEMPAT GAMBAR: FORM UNGGAH KARYA -->
-<!-- Simpan tangkapan layar formulir wizard upload pada path: docs/images/form-unggah.png -->
+### 3. Formulir Unggah Karya (Composer Anti-Refresh & Draft)
 ![Formulir Unggah Karya](docs/images/form-unggah.png)
 
-### 4. Halaman Komunitas & Diskusi
-<!-- TEMPAT GAMBAR: KOMUNITAS -->
-<!-- Simpan tangkapan layar halaman komunitas pada path: docs/images/komunitas.png -->
+### 4. Halaman Daftar Draft Karya
+![Halaman Daftar Draft Karya](docs/images/draft-karya.png)
+
+### 5. Spaces Live Audio & Video Terstruktur
+![Halaman Spaces NampungYuk](docs/images/spaces.png)
+
+### 6. Halaman Komunitas & Diskusi Developer
 ![Halaman Komunitas Developer](docs/images/komunitas.png)
 
-### 5. Fitur Obrolan Developer
-<!-- TEMPAT GAMBAR: OBROLAN -->
-<!-- Simpan tangkapan layar antarmuka chat pada path: docs/images/obrolan.png -->
+### 7. Fitur Obrolan Developer (Workspace 2-Pane)
 ![Fitur Obrolan Antar Pengguna](docs/images/obrolan.png)
 
-### 6. Autentikasi & Verifikasi Email
-<!-- TEMPAT GAMBAR: MODAL AUTENTIKASI ATAU VERIFIKASI EMAIL -->
-<!-- Simpan tangkapan layar modal login atau halaman verifikasi email pada path: docs/images/autentikasi.png -->
-![Halaman Verifikasi Email & Autentikasi](docs/images/autentikasi.png)
+### 8. Halaman Profil Kreator
+![Halaman Profil Kreator](docs/images/profil.png)
 
-### 7. Dashboard Moderasi Administrator
-<!-- TEMPAT GAMBAR: PANEL MODERASI ADMIN -->
-<!-- Simpan tangkapan layar dashboard moderasi laporan pada path: docs/images/admin-moderasi.png -->
+### 9. Autentikasi Split-Screen
+![Halaman Login dan Autentikasi](docs/images/autentikasi.png)
+
+### 10. Dashboard Moderasi Administrator
 ![Panel Moderasi Administrator](docs/images/admin-moderasi.png)
 
-### 8. Tampilan Responsif Mobile & Dark Mode (Only)
-Platform mengadopsi estetika **Token Harbor** yang dirancang **Dark Mode Only** (tidak ada light mode atau toggle tema) demi kenyamanan eksplorasi kode berjam-jam dengan kontras tinggi dan aksen warna Warm Stone.
-<!-- TEMPAT GAMBAR: RESPONSIVE / DARK MODE -->
-<!-- Simpan tangkapan layar tampilan mobile drawer atau tema gelap pada path: docs/images/responsive-dark-mode.png -->
+### 11. Tampilan Responsif Mobile (Dark Mode Only)
+Platform mengadopsi estetika **Token Harbor** yang dirancang **Dark Mode Only** (Matte Obsidian `#0B0B0D`, Surface `#121214`, Hairline Border `#242426`, Warm Stone `#EAE8E1`, dan tipografi Geist / Geist Mono).
 ![Tampilan Mode Gelap dan Ponsel](docs/images/responsive-dark-mode.png)
 
 ---
@@ -119,13 +103,13 @@ Platform mengadopsi estetika **Token Harbor** yang dirancang **Dark Mode Only** 
 ## Teknologi yang Digunakan
 
 - **Bahasa Pemrograman:** PHP 8.3+
-- **Framework Backend:** Laravel 13 (v13.30.1)
-- **Frontend & UI:** Blade Templates, Tailwind CSS v4, Alpine.js
-- **Basis Data:** SQLite (default lokal dev & test) / MySQL 8.4 (opsional produksi)
+- **Framework Backend:** Laravel 13 (`v13.30.1`)
+- **Frontend & UI:** Blade Templates, Tailwind CSS v4, Alpine.js, Vite v8
+- **Basis Data:** SQLite (default lokal dev & test) / MySQL 8.4 (opsional)
 - **Autentikasi Eksternal:** Laravel Socialite (Google OAuth 2.0)
-- **Layanan Realtime:** Laravel Reverb (WebSockets)
+- **Layanan Realtime & Media:** Laravel Reverb (WebSockets + fallback polling HTTP) & WebRTC P2P
 - **Kompresi Media:** PHP GD (WebP) & FFmpeg CLI (H.264 Video) via `App\Services\MediaOptimizer`
-- **Testing:** PHPUnit 12 (142 tests, 506 assertions)
+- **Testing & Code Style:** PHPUnit 12 (**264 tests, 1.309 assertions**) & Laravel Pint
 
 ---
 
@@ -133,9 +117,9 @@ Platform mengadopsi estetika **Token Harbor** yang dirancang **Dark Mode Only** 
 
 Sebelum menjalankan proyek di komputer lokal, pastikan perangkat Anda telah terpasang:
 
-1. **PHP:** Versi 8.3 atau lebih baru (dengan ekstensi `pdo_sqlite`, `pdo_mysql`, `mbstring`, `fileinfo`, `gd` aktif). Pada lingkungan Laragon Windows, pastikan menggunakan binary PHP 8.3 (`C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe`).
+1. **PHP:** Versi 8.3 atau lebih baru (dengan ekstensi `pdo_sqlite`, `pdo_mysql`, `mbstring`, `fileinfo`, `gd` aktif). Pada lingkungan Laragon Windows, gunakan binary PHP 8.3 (`C:\laragon\bin\php\php-8.3.30-Win32-vs16-x64\php.exe`).
 2. **Composer:** Versi 2.x
-3. **Node.js:** Versi 18.x atau 20.x dan **npm**
+3. **Node.js:** Versi 20.x / 24.x dan **npm**
 4. **Git**
 
 ---
@@ -181,9 +165,10 @@ Secara default, NampungYuk menggunakan SQLite lokal yang langsung siap digunakan
 ```bash
 php artisan migrate --seed
 ```
+> Akun demo bawaan hasil seeder: `@budi_santoso` (Admin, password `password`) dan `@siti_rahma` (password `password`).
 
 ### 8. Kompilasi Aset Frontend
-Untuk mode pengembangan aktif:
+Untuk mode pengembangan aktif (HMR):
 ```bash
 npm run dev
 ```
@@ -196,6 +181,10 @@ npm run build
 Buka terminal baru dan jalankan:
 ```bash
 php artisan serve
+```
+*(Opsional untuk WebSocket realtime instan tanpa fallback polling)*:
+```bash
+php artisan reverb:start
 ```
 Akses aplikasi melalui browser di alamat: `http://localhost:8000`.
 
@@ -257,24 +246,22 @@ GOOGLE_REDIRECT_URI=http://localhost:8000/auth/google/callback
 
 ## Pengujian Aplikasi
 
-Proyek ini dilengkapi dengan cakupan pengujian unit dan fitur komprehensif menggunakan PHPUnit:
+Proyek ini dilengkapi dengan cakupan pengujian unit dan fitur komprehensif menggunakan PHPUnit (264 tests, 1.309 assertions):
 
 ```bash
 # Menjalankan seluruh pengujian
-php artisan test
-
-# Menjalankan pengujian dengan output ringkas
 php artisan test --compact
 
 # Menjalankan pengujian untuk fitur tertentu
 php artisan test --filter=ProjectShowcaseTest
-php artisan test --filter=LoginTest
-php artisan test --filter=GoogleAuthTest
+php artisan test --filter=ProjectDraftsTest
+php artisan test --filter=BackendSecurityAndSpacesTest
+php artisan test --filter=CommunityManagementTest
 ```
 
 Untuk memastikan konsistensi gaya penulisan kode sesuai standar Laravel:
 ```bash
-php vendor/bin/pint --format agent
+php vendor/bin/pint --dirty --format agent
 ```
 
 ---
@@ -284,29 +271,32 @@ php vendor/bin/pint --format agent
 ```text
 NampungYuk/
 ├── app/
+│   ├── Events/                                 # Broadcast events (SpaceSignal, MessageSent, ProjectPublished)
 │   ├── Http/
 │   │   ├── Controllers/
 │   │   │   ├── AdminModerationController.php   # Moderasi laporan & pengguna
-│   │   │   ├── Auth/                           # Login, register, oauth, verifikasi email
-│   │   │   ├── ChatController.php              # Fitur obrolan langsung
-│   │   │   ├── CommunityController.php         # Manajemen komunitas
-│   │   │   ├── ProfileController.php           # Profil & kata sandi
-│   │   │   └── ProjectController.php           # Showcase, unggah, edit, hapus karya
-│   │   └── Middleware/                         # Proteksi admin, banned check
-│   ├── Models/                                 # Model Eloquent (User, Project, Community, dll)
-│   └── Services/                               # Media optimizer & business logic
+│   │   │   ├── Auth/                           # Login, register, oauth, verifikasi email, OTP password
+│   │   │   ├── ChatController.php              # Obrolan langsung, sync, typing, read receipt
+│   │   │   ├── CommunityController.php         # Direktori, feed komunitas, keanggotaan
+│   │   │   ├── CommunityManagementController.php # Konsol kelola komunitas ala FB Groups
+│   │   │   ├── ProfileController.php           # Profil kreator & daftar pengikut/mengikuti
+│   │   │   ├── ProjectController.php           # Showcase, draft, autosave, edit, hapus karya
+│   │   │   └── SpaceController.php             # Spaces audio/video, stage, angkat tangan, WebRTC sync
+│   │   └── Middleware/                         # Proteksi admin & status banned
+│   ├── Models/                                 # Model Eloquent (User, Project, Community, Space, dll.)
+│   └── Services/                               # MediaOptimizer & business logic
 ├── database/
 │   ├── factories/                              # Factory data testing
 │   ├── migrations/                             # Skema tabel database
 │   └── seeders/                                # Seeder data demo awal
 ├── docs/
-│   └── images/                                 # Direktori tangkapan layar untuk README
+│   └── images/                                 # Tangkapan layar aplikasi untuk README
 ├── resources/
-│   ├── css/                                    # Berkas stylesheet Tailwind
-│   ├── js/                                     # Skrip Alpine.js & aplikasi frontend
+│   ├── css/                                    # Token desain & stylesheet Tailwind v4
+│   ├── js/                                     # Alpine.js components (spaceRoom, chatRoom, dll.)
 │   └── views/                                  # Template Blade halaman antarmuka
 ├── routes/
-│   ├── channels.php                            # Broadcast channels WebSockets
+│   ├── channels.php                            # Broadcast authorization channels
 │   ├── console.php                             # Perintah artisan kustom
 │   └── web.php                                 # Rute navigasi web aplikasi
 └── tests/                                      # Pengujian fitur & unit (PHPUnit)

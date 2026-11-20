@@ -289,15 +289,15 @@
                     </p>
                 </template>
 
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5" x-show="listenerParticipants.length > 0">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5" x-show="listenerParticipants.length > 0">
                     <template x-for="part in listenerParticipants" :key="'listener-' + part.id">
-                        <div class="relative flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--surface-subtle)] border text-left"
+                        <div class="relative flex flex-col gap-2 p-3 rounded-xl bg-[var(--surface-subtle)] border text-left"
                              :class="part.hand_raised ? 'border-amber-500/50' : 'border-[var(--border-color)]'">
                             <template x-if="reactions[part.id]">
                                 <span class="absolute -top-2 right-2 px-2 py-0.5 rounded-full bg-[var(--primary)] text-[var(--primary-text)] text-[10px] font-bold shadow-xs" x-text="reactions[part.id].label"></span>
                             </template>
 
-                            <div class="flex items-center gap-2 min-w-0">
+                            <div class="flex items-center gap-2.5 min-w-0">
                                 <template x-if="part.avatar">
                                     <img :src="part.avatar" :alt="part.name" referrerpolicy="no-referrer" class="w-8 h-8 rounded-full object-cover shrink-0">
                                 </template>
@@ -305,23 +305,23 @@
                                     <div class="w-8 h-8 rounded-full bg-[var(--surface-muted-flat)] text-[var(--primary)] flex items-center justify-center font-bold text-xs shrink-0"
                                          x-text="part.name ? part.name.trim().charAt(0).toUpperCase() : '?'"></div>
                                 </template>
-                                <div class="min-w-0">
-                                    <p class="text-xs font-medium text-[var(--primary)] truncate" x-text="part.name"></p>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-xs font-semibold text-[var(--primary)] truncate" x-text="part.name"></p>
                                     <p class="text-[10px] text-amber-400 font-semibold" x-show="part.hand_raised">Angkat tangan</p>
                                 </div>
                             </div>
 
-                            <div class="flex items-center gap-1 shrink-0" x-show="isModerator && status !== 'ended'">
+                            <div class="flex items-center justify-end gap-1.5 pt-1 border-t border-[var(--border-color)]/60" x-show="isModerator && status !== 'ended'">
                                 <button type="button"
                                         x-show="status === 'live'"
                                         @click="moderate(part.id, 'promote_speaker')"
-                                        class="text-[10px] font-semibold px-2 py-1 rounded-lg border border-[var(--border-color)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] text-[var(--primary)] cursor-pointer"
+                                        class="text-[10px] font-semibold px-2.5 py-1 rounded-lg border border-[var(--border-color)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] text-[var(--primary)] cursor-pointer"
                                         title="Undang naik ke panggung">
                                     Naikkan
                                 </button>
                                 <button type="button"
                                         @click="moderate(part.id, 'kick')"
-                                        class="text-[10px] font-semibold px-1.5 py-1 rounded-lg text-rose-400 hover:bg-rose-950/30 cursor-pointer"
+                                        class="text-[10px] font-semibold px-2 py-1 rounded-lg text-rose-400 hover:bg-rose-950/30 cursor-pointer"
                                         title="Keluarkan dari Space">
                                     Hapus
                                 </button>
