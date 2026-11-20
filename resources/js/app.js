@@ -267,6 +267,7 @@ document.addEventListener('alpine:init', () => {
         };
 
         return {
+            me,
             type,
             status: config.status || (config.ended ? 'ended' : 'live'),
             joined: isJoined,
