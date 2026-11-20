@@ -129,6 +129,8 @@ class Project extends Model
      */
     public function scopeVisibleTo(Builder $query, ?int $viewerId): Builder
     {
+        $query->where('projects.visibility', '!=', 'draft');
+
         $isAdmin = false;
         if ($viewerId) {
             if (Auth::check() && (int) Auth::id() === (int) $viewerId) {
@@ -166,6 +168,16 @@ class Project extends Model
         });
     }
 
+    /**
+     * Scope: unpublished drafts owned by the given user.
+     */
+    public function scopeDraftsFor(Builder $query, int $userId): Builder
+    {
+        return $query->where('projects.user_id', $userId)
+            ->where('projects.visibility', 'draft')
+            ->latest('updated_at');
+    }
+
     public function hasWarning(): bool
     {
         return (bool) $this->is_flagged || ! empty($this->warning_notes);
@@ -174,6 +186,11 @@ class Project extends Model
     public function isPrivate(): bool
     {
         return $this->visibility === 'private';
+    }
+
+    public function isDraft(): bool
+    {
+        return $this->visibility === 'draft';
     }
 
     public function isRepost(): bool

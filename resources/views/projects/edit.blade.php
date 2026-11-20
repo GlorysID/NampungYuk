@@ -221,6 +221,7 @@
                     <select name="visibility" id="visibility" x-model="visibility" class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] text-xs sm:text-sm outline-none focus:border-[#EAE8E1] focus:ring-1 focus:ring-[#EAE8E1] transition">
                         <option value="public">Publik — Tampil di Feed &amp; Pencarian</option>
                         <option value="private">Privat — Hanya Saya</option>
+                        <option value="draft">Draft — Belum Dipublikasikan</option>
                     </select>
                 </div>
 

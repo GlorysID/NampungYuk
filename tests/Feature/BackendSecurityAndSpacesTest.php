@@ -502,7 +502,7 @@ class BackendSecurityAndSpacesTest extends TestCase
             'broadcasting.connections.reverb.options.port' => 65531,
         ]);
 
-        $host = User::factory()->create(['name' => 'Host Lokal']);
+        $host = User::factory()->create(['name' => 'Host Lokal', 'is_admin' => true]);
         $guest = User::factory()->create(['name' => 'Peserta Lokal']);
 
         $this->actingAs($host)
@@ -569,5 +569,222 @@ class BackendSecurityAndSpacesTest extends TestCase
             ->assertRedirect(route('spaces.index'));
 
         $this->assertSame('ended', $space->fresh()->status);
+    }
+
+    /**
+     * 12. Creating a Space requires recognized & credible creator criteria (or admin).
+     */
+    public function test_space_creation_requires_recognized_creator_or_admin(): void
+    {
+        $category = Category::create(['name' => 'Backend', 'slug' => 'backend']);
+
+        $newbie = User::factory()->create([
+            'reputation_points' => 10,
+            'github_url' => null,
+        ]);
+
+        $this->actingAs($newbie)
+            ->get(route('spaces.index'))
+            ->assertOk()
+            ->assertSee('Syarat Host Space');
+
+        $this->actingAs($newbie)
+            ->post(route('spaces.store'), [
+                'title' => 'Space Ilegal',
+                'type' => 'audio',
+            ])
+            ->assertStatus(403);
+
+        $proCreator = User::factory()->create([
+            'reputation_points' => Space::MIN_REPUTATION_TO_CREATE,
+            'github_url' => 'https://github.com/pro-dev',
+        ]);
+
+        for ($i = 1; $i <= Space::MIN_PROJECTS_TO_CREATE; $i++) {
+            Project::create([
+                'user_id' => $proCreator->id,
+                'category_id' => $category->id,
+                'title' => "Pro Project {$i}",
+                'slug' => "pro-project-{$i}",
+                'tagline' => 'Public portfolio project',
+                'tech_stacks' => ['Laravel'],
+                'visibility' => 'public',
+            ]);
+        }
+
+        $followers = User::factory()->count(Space::MIN_FOLLOWERS_TO_CREATE)->create();
+        $proCreator->followers()->attach($followers->pluck('id')->all());
+
+        $this->actingAs($proCreator)
+            ->post(route('spaces.store'), [
+                'title' => 'Bedah Arsitektur Laravel',
+                'type' => 'audio',
+                'description' => 'Diskusi terstruktur untuk developer.',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('spaces', [
+            'host_id' => $proCreator->id,
+            'title' => 'Bedah Arsitektur Laravel',
+            'status' => 'live',
+        ]);
+    }
+
+    /**
+     * 13. Structured X-Spaces flow: schedule/start, raise hand, approve/demote, co-host, force-mute, pin, and kick.
+     */
+    public function test_structured_space_stage_roles_moderation_and_schedule_flow(): void
+    {
+        $category = Category::create(['name' => 'Tools', 'slug' => 'tools']);
+        $host = User::factory()->create(['is_admin' => true, 'name' => 'Host Utama']);
+        $listenerA = User::factory()->create(['name' => 'Pendengar A']);
+        $listenerB = User::factory()->create(['name' => 'Pendengar B']);
+
+        $project = Project::create([
+            'user_id' => $host->id,
+            'category_id' => $category->id,
+            'title' => 'Karya Bahasan Utama',
+            'slug' => 'karya-bahasan-utama',
+            'tagline' => 'Topik diskusi space',
+            'tech_stacks' => ['PHP'],
+            'visibility' => 'public',
+        ]);
+
+        // Host schedules a Space
+        $this->actingAs($host)
+            ->post(route('spaces.store'), [
+                'title' => 'Space Terjadwal',
+                'type' => 'audio',
+                'start_mode' => 'scheduled',
+                'scheduled_at' => now()->addHours(2)->format('Y-m-d H:i:s'),
+                'pinned_project_id' => $project->id,
+            ])
+            ->assertRedirect();
+
+        $space = Space::where('title', 'Space Terjadwal')->firstOrFail();
+        $this->assertSame('scheduled', $space->status);
+        $this->assertSame($project->id, $space->pinned_project_id);
+
+        // Listener A joins lobby while scheduled
+        $this->actingAs($listenerA)
+            ->postJson(route('spaces.join', $space->slug))
+            ->assertOk();
+
+        // Non-host cannot start scheduled space
+        $this->actingAs($listenerA)
+            ->postJson(route('spaces.start', $space->slug))
+            ->assertStatus(403);
+
+        // Host starts the Space
+        $this->actingAs($host)
+            ->postJson(route('spaces.start', $space->slug))
+            ->assertOk()
+            ->assertJson(['status' => 'live']);
+
+        // Listener B joins live space
+        $this->actingAs($listenerB)
+            ->postJson(route('spaces.join', $space->slug))
+            ->assertOk();
+
+        // Listener cannot unmute mic before stage approval
+        $this->actingAs($listenerA)
+            ->postJson(route('spaces.mic', $space->slug), ['muted' => false])
+            ->assertStatus(403);
+
+        // Listener A raises hand
+        $this->actingAs($listenerA)
+            ->postJson(route('spaces.request_speak', $space->slug))
+            ->assertOk()
+            ->assertJson(['hand_raised' => true]);
+
+        // Non-moderator Listener B cannot approve Listener A
+        $this->actingAs($listenerB)
+            ->postJson(route('spaces.participant.role', ['space' => $space->slug, 'user' => $listenerA->id]), [
+                'action' => 'approve_speaker',
+            ])
+            ->assertStatus(403);
+
+        // Host approves Listener A to Speaker
+        $this->actingAs($host)
+            ->postJson(route('spaces.participant.role', ['space' => $space->slug, 'user' => $listenerA->id]), [
+                'action' => 'approve_speaker',
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseHas('space_participants', [
+            'space_id' => $space->id,
+            'user_id' => $listenerA->id,
+            'role' => 'speaker',
+            'hand_raised_at' => null,
+        ]);
+
+        // Speaker A can now unmute own mic
+        $this->actingAs($listenerA)
+            ->postJson(route('spaces.mic', $space->slug), ['muted' => false])
+            ->assertOk()
+            ->assertJson(['is_muted' => false]);
+
+        // Host force-mutes Speaker A -> Speaker A cannot unmute
+        $this->actingAs($host)
+            ->postJson(route('spaces.participant.role', ['space' => $space->slug, 'user' => $listenerA->id]), [
+                'action' => 'mute',
+            ])
+            ->assertOk();
+
+        $this->actingAs($listenerA)
+            ->postJson(route('spaces.mic', $space->slug), ['muted' => false])
+            ->assertStatus(403);
+
+        // Host unmutes restriction & promotes Listener A to Co-host
+        $this->actingAs($host)
+            ->postJson(route('spaces.participant.role', ['space' => $space->slug, 'user' => $listenerA->id]), [
+                'action' => 'promote_cohost',
+            ])
+            ->assertOk();
+
+        // Co-host can promote Listener B to Speaker, but cannot promote another Co-host
+        $this->actingAs($listenerA)
+            ->postJson(route('spaces.participant.role', ['space' => $space->slug, 'user' => $listenerB->id]), [
+                'action' => 'promote_speaker',
+            ])
+            ->assertOk();
+
+        $this->actingAs($listenerA)
+            ->postJson(route('spaces.participant.role', ['space' => $space->slug, 'user' => $listenerB->id]), [
+                'action' => 'promote_cohost',
+            ])
+            ->assertStatus(403);
+
+        // Speaker B steps down to listener voluntarily
+        $this->actingAs($listenerB)
+            ->postJson(route('spaces.participant.role', ['space' => $space->slug, 'user' => $listenerB->id]), [
+                'action' => 'step_down',
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseHas('space_participants', [
+            'space_id' => $space->id,
+            'user_id' => $listenerB->id,
+            'role' => 'listener',
+        ]);
+
+        // Co-host kicks Listener B and unpins project
+        $this->actingAs($listenerA)
+            ->postJson(route('spaces.participant.role', ['space' => $space->slug, 'user' => $listenerB->id]), [
+                'action' => 'kick',
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseMissing('space_participants', [
+            'space_id' => $space->id,
+            'user_id' => $listenerB->id,
+        ]);
+
+        // Sync exposes pinned_project and structured participant roles
+        $this->actingAs($host)
+            ->getJson(route('spaces.sync', $space->slug).'?after_id=0')
+            ->assertOk()
+            ->assertJsonPath('status', 'live')
+            ->assertJsonPath('pinned_project.slug', $project->slug);
     }
 }

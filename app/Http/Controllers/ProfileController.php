@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\Project;
 use App\Models\ProjectBookmark;
 use App\Models\ProjectRepost;
 use App\Models\ProjectVote;
@@ -190,6 +191,11 @@ class ProfileController extends Controller
 
         $totalReposts = $user->reposts()->count();
 
+        $draftProjects = $isOwner
+            ? Project::with('category')->draftsFor($user->id)->take(12)->get()
+            : collect();
+        $totalDrafts = $isOwner ? Project::draftsFor($user->id)->count() : 0;
+
         $userBookmarkedIds = $currentUserId
             ? ProjectBookmark::where('user_id', $currentUserId)->pluck('project_id')->toArray()
             : [];
@@ -212,6 +218,8 @@ class ProfileController extends Controller
             'totalProjects',
             'totalLikes',
             'totalReposts',
+            'draftProjects',
+            'totalDrafts',
             'userBookmarkedIds',
             'userVotes',
             'userRepostedIds',

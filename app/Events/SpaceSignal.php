@@ -19,7 +19,7 @@ class SpaceSignal implements ShouldBroadcastNow
         public int $spaceId,
         public int $from,
         public ?int $to,
-        public string $kind, // offer | answer | ice | join | leave | chat
+        public string $kind, // offer | answer | ice | join | leave | chat | state | reaction | kick
         public array $payload = [],
         public ?int $signalId = null,
     ) {

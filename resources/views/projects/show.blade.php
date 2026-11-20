@@ -134,6 +134,26 @@
         @endif
     </div>
 
+    <!-- DRAFT BANNER — owner only -->
+    @if($project->isDraft() && auth()->id() === $project->user_id)
+        <div class="p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="space-y-0.5 text-xs">
+                <span class="inline-flex items-center gap-1.5 font-mono font-bold uppercase tracking-wider text-[10px] text-[var(--primary)]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                    <span>Mode Draft — Belum Dipublikasikan</span>
+                </span>
+                <p class="text-[var(--text-muted)]">Hanya kamu yang dapat melihat halaman draft ini. Lanjutkan pengeditan atau publikasikan kapan saja.</p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <a href="{{ route('projects.create', ['draft' => $project->slug]) }}" class="btn-secondary text-xs py-1.5 px-3">Lanjutkan di Editor</a>
+                <form method="POST" action="{{ route('projects.publish', $project->slug) }}">
+                    @csrf
+                    <button type="submit" class="btn-primary text-xs py-1.5 px-3.5 cursor-pointer">Publikasikan</button>
+                </form>
+            </div>
+        </div>
+    @endif
+
     <!-- WARNING BANNER — private: only the project owner or an admin sees it -->
     @if($project->hasWarning() && (auth()->id() === $project->user_id || auth()->user()?->is_admin))
         <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 flex items-start gap-3">

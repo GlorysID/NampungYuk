@@ -245,6 +245,11 @@ document.addEventListener('alpine:init', () => {
         const type = config.type || 'audio';
         const signalUrl = config.signalUrl;
         const syncUrl = config.syncUrl || ('/spaces/' + routeKey + '/sync');
+        const startUrl = config.startUrl || ('/spaces/' + routeKey + '/start');
+        const requestSpeakUrl = config.requestSpeakUrl || ('/spaces/' + routeKey + '/request-speak');
+        const micUrl = config.micUrl || ('/spaces/' + routeKey + '/mic');
+        const pinUrl = config.pinUrl || ('/spaces/' + routeKey + '/pin');
+        const roleUrlTemplate = config.roleUrlTemplate || ('/spaces/' + routeKey + '/participants/__USER__/role');
         const isHost = !!config.isHost;
         const isJoined = !!(config.isJoined || isHost);
         const hostName = window.location.hostname || '';
@@ -253,13 +258,26 @@ document.addEventListener('alpine:init', () => {
             || hostName.endsWith('.test')
             || /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(hostName);
 
+        const reactionLabels = {
+            clap: 'Tepuk Tangan',
+            fire: 'Mantap',
+            bulb: 'Ide Bagus',
+            question: 'Mau Tanya',
+            agree: 'Setuju',
+        };
+
         return {
             type,
+            status: config.status || (config.ended ? 'ended' : 'live'),
             joined: isJoined,
             micOn: false,
             camOn: false,
             peers: [],
             participantsList: Array.isArray(config.initialParticipants) ? config.initialParticipants : [],
+            pinnedProject: config.initialPinnedProject || null,
+            pinProjectId: config.initialPinnedProject?.id ? String(config.initialPinnedProject.id) : '',
+            reactions: {},
+            busyAction: false,
             localStream: null,
             pcs: {},
             pendingIce: {},
@@ -273,15 +291,63 @@ document.addEventListener('alpine:init', () => {
             chatOpen: true,
             spaceMsgs: Array.isArray(config.initialMsgs) ? config.initialMsgs : [],
             draft: '',
-            ended: !!config.ended,
+            ended: (config.status || (config.ended ? 'ended' : 'live')) === 'ended',
+
+            get myParticipant() {
+                if (! me) return null;
+                return this.participantsList.find((p) => Number(p.id) === Number(me)) || null;
+            },
+
+            get myRole() {
+                return this.myParticipant?.role || (isHost ? 'host' : 'listener');
+            },
+
+            get isOnStage() {
+                return ['host', 'cohost', 'speaker'].includes(this.myRole);
+            },
+
+            get isModerator() {
+                return ['host', 'cohost'].includes(this.myRole);
+            },
+
+            get isHandRaised() {
+                return !!this.myParticipant?.hand_raised;
+            },
+
+            get isForcedMuted() {
+                return !!this.myParticipant?.is_forced_muted;
+            },
+
+            get stageParticipants() {
+                const rank = { host: 0, cohost: 1, speaker: 2 };
+                return this.participantsList
+                    .filter((p) => ['host', 'cohost', 'speaker'].includes(p.role))
+                    .slice()
+                    .sort((a, b) => (rank[a.role] ?? 9) - (rank[b.role] ?? 9));
+            },
+
+            get raisedHandParticipants() {
+                return this.participantsList.filter((p) => p.role === 'listener' && p.hand_raised);
+            },
+
+            get listenerParticipants() {
+                return this.participantsList.filter((p) => p.role === 'listener');
+            },
 
             async init() {
-                if (this.ended || !me) return;
+                if (this.ended || ! me) return;
                 if (isJoined) {
                     this.subscribeChannel();
                 } else {
                     this.startSyncFallback();
                 }
+            },
+
+            roleLabel(role) {
+                if (role === 'host') return 'Host';
+                if (role === 'cohost') return 'Co-host';
+                if (role === 'speaker') return 'Speaker';
+                return 'Pendengar';
             },
 
             async sendChat() {
@@ -343,9 +409,9 @@ document.addEventListener('alpine:init', () => {
             },
 
             startSyncFallback() {
-                if (!syncUrl || !me || this.ended || this.syncTimer) return;
+                if (! syncUrl || ! me || this.ended || this.syncTimer) return;
                 this.syncTimer = setInterval(() => {
-                    if (!document.hidden) {
+                    if (! document.hidden) {
                         this.syncOnce();
                     }
                 }, 1200);
@@ -358,8 +424,29 @@ document.addEventListener('alpine:init', () => {
                 }
             },
 
+            enforceLocalRoleState() {
+                if (! this.isOnStage) {
+                    this.stopLocalMedia();
+                } else if (this.isForcedMuted && this.localStream) {
+                    this.localStream.getAudioTracks().forEach((t) => {
+                        t.enabled = false;
+                    });
+                    this.micOn = false;
+                }
+            },
+
+            stopLocalMedia() {
+                try { this.localStream?.getTracks().forEach((t) => t.stop()); } catch (e) {}
+                this.localStream = null;
+                this.micOn = false;
+                this.camOn = false;
+                if (this.$refs.localVideo) {
+                    this.$refs.localVideo.srcObject = null;
+                }
+            },
+
             async syncOnce() {
-                if (this.syncing || this.ended || !syncUrl) return;
+                if (this.syncing || this.ended || ! syncUrl) return;
                 this.syncing = true;
                 try {
                     const res = await fetch(syncUrl + '?after_id=' + encodeURIComponent(this.lastSignalId), {
@@ -367,8 +454,15 @@ document.addEventListener('alpine:init', () => {
                     });
                     if (! res.ok) return;
                     const data = await res.json();
+                    if (data.status) {
+                        this.status = data.status;
+                    }
+                    if (data.pinned_project !== undefined) {
+                        this.pinnedProject = data.pinned_project;
+                    }
                     if (Array.isArray(data.participants)) {
                         this.participantsList = data.participants;
+                        this.enforceLocalRoleState();
                     }
                     if (Array.isArray(data.signals)) {
                         for (const sig of data.signals) {
@@ -378,7 +472,7 @@ document.addEventListener('alpine:init', () => {
                     if (typeof data.last_id === 'number' && data.last_id > this.lastSignalId) {
                         this.lastSignalId = data.last_id;
                     }
-                    if (data.status === 'ended' && !this.ended) {
+                    if (data.status === 'ended' && ! this.ended) {
                         await this.onSignal({ from: 0, kind: 'leave', payload: { ended: true } });
                     }
                 } catch (e) {
@@ -389,7 +483,7 @@ document.addEventListener('alpine:init', () => {
             },
 
             async acquireMedia(constraints = { audio: true, video: type === 'video' }) {
-                if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+                if (! navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
                     return null;
                 }
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -403,15 +497,6 @@ document.addEventListener('alpine:init', () => {
             },
 
             async join() {
-                let mediaReady = false;
-                try {
-                    const stream = await this.acquireMedia({ audio: true, video: type === 'video' });
-                    mediaReady = Boolean(stream);
-                } catch (e) {
-                    this.micOn = false;
-                    this.camOn = false;
-                }
-
                 try {
                     const token = document.querySelector('meta[name=csrf-token]')?.content;
                     const res = await fetch('/spaces/' + routeKey + '/join', {
@@ -420,34 +505,163 @@ document.addEventListener('alpine:init', () => {
                     });
 
                     if (! res.ok) {
-                        try { this.localStream?.getTracks().forEach((t) => t.stop()); } catch (e) {}
-                        this.localStream = null;
-                        this.micOn = false;
-                        this.camOn = false;
                         const err = await res.json().catch(() => ({}));
                         if (window.notify) window.notify(err.message || 'Gagal bergabung ke space.');
                         return;
+                    }
+
+                    const data = await res.json().catch(() => ({}));
+                    if (Array.isArray(data.participants)) {
+                        this.participantsList = data.participants;
                     }
 
                     this.joined = true;
                     this.subscribeChannel();
                     await this.syncOnce();
                     if (window.notify) {
-                        window.notify(mediaReady
-                            ? 'Bergabung ke space.'
-                            : 'Bergabung dalam mode dengar & chat (mikrofon/kamera tidak aktif).');
+                        window.notify(this.status === 'scheduled'
+                            ? 'Bergabung ke ruang tunggu Space.'
+                            : 'Bergabung sebagai pendengar. Angkat tangan jika ingin berbicara.');
                     }
                 } catch (e) {
                     if (window.notify) window.notify('Gagal bergabung ke space.');
                 }
             },
 
+            async startSpace() {
+                if (! isHost || this.busyAction) return;
+                this.busyAction = true;
+                try {
+                    const token = document.querySelector('meta[name=csrf-token]')?.content;
+                    const res = await fetch(startUrl, {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
+                    });
+                    if (! res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        if (window.notify) window.notify(err.message || 'Gagal memulai Space.');
+                        return;
+                    }
+                    this.status = 'live';
+                    this.ended = false;
+                    await this.syncOnce();
+                    if (window.notify) window.notify('Space dimulai dan sekarang Live.');
+                } finally {
+                    this.busyAction = false;
+                }
+            },
+
+            async toggleHand() {
+                if (! this.joined || this.isOnStage || this.status !== 'live' || this.busyAction) return;
+                this.busyAction = true;
+                try {
+                    const token = document.querySelector('meta[name=csrf-token]')?.content;
+                    const res = await fetch(requestSpeakUrl, {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (! res.ok) {
+                        if (window.notify) window.notify(data.message || 'Gagal memperbarui permintaan bicara.');
+                        return;
+                    }
+                    if (Array.isArray(data.participants)) {
+                        this.participantsList = data.participants;
+                    }
+                    if (window.notify) {
+                        window.notify(data.hand_raised
+                            ? 'Tangan diangkat. Menunggu persetujuan Host atau Co-host.'
+                            : 'Permintaan bicara dibatalkan.');
+                    }
+                } finally {
+                    this.busyAction = false;
+                }
+            },
+
+            async moderate(userId, action) {
+                if (this.busyAction) return;
+                this.busyAction = true;
+                try {
+                    const token = document.querySelector('meta[name=csrf-token]')?.content;
+                    const url = roleUrlTemplate.replace('__USER__', String(userId));
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                        },
+                        body: JSON.stringify({ action }),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (! res.ok) {
+                        if (window.notify) window.notify(data.message || 'Aksi moderasi gagal.');
+                        return;
+                    }
+                    if (Array.isArray(data.participants)) {
+                        this.participantsList = data.participants;
+                        this.enforceLocalRoleState();
+                    }
+                } finally {
+                    this.busyAction = false;
+                }
+            },
+
+            async savePinnedProject() {
+                if (! this.isModerator || this.busyAction) return;
+                this.busyAction = true;
+                try {
+                    const token = document.querySelector('meta[name=csrf-token]')?.content;
+                    const res = await fetch(pinUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                        },
+                        body: JSON.stringify({
+                            pinned_project_id: this.pinProjectId ? Number(this.pinProjectId) : null,
+                        }),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (! res.ok) {
+                        if (window.notify) window.notify(data.message || 'Gagal menyematkan karya.');
+                        return;
+                    }
+                    this.pinnedProject = data.pinned_project || null;
+                    if (window.notify) {
+                        window.notify(this.pinnedProject ? 'Karya disematkan di atas panggung.' : 'Sematkan karya dilepas.');
+                    }
+                } finally {
+                    this.busyAction = false;
+                }
+            },
+
+            showReaction(userId, reactionType) {
+                const label = reactionLabels[reactionType];
+                if (! label) return;
+                this.reactions = {
+                    ...this.reactions,
+                    [userId]: { type: reactionType, label },
+                };
+                setTimeout(() => {
+                    if (this.reactions[userId]?.type === reactionType) {
+                        const copy = { ...this.reactions };
+                        delete copy[userId];
+                        this.reactions = copy;
+                    }
+                }, 4000);
+            },
+
+            async sendReaction(reactionType) {
+                if (! this.joined || this.status !== 'live') return;
+                if (me) this.showReaction(me, reactionType);
+                await this.send('reaction', null, { type: reactionType });
+            },
+
             async leave() {
                 this.stopSyncFallback();
-                try { this.localStream?.getTracks().forEach((t) => t.stop()); } catch (e) {}
-                this.localStream = null;
-                this.micOn = false;
-                this.camOn = false;
+                this.stopLocalMedia();
                 Object.values(this.pcs).forEach((pc) => pc.close());
                 this.pcs = {};
                 this.peers = [];
@@ -467,176 +681,253 @@ document.addEventListener('alpine:init', () => {
                 } catch (e) {}
             },
 
-        async toggleMic() {
-            let track = this.localStream?.getAudioTracks()[0];
-            if (! track) {
-                try {
-                    const stream = await this.acquireMedia({ audio: true, video: type === 'video' && this.camOn });
-                    track = stream?.getAudioTracks()[0];
-                    if (stream) {
-                        for (const [peerId, pc] of Object.entries(this.pcs)) {
-                            stream.getTracks().forEach((t) => pc.addTrack(t, stream));
-                            const offer = await pc.createOffer();
-                            await pc.setLocalDescription(offer);
-                            await this.send('offer', Number(peerId), offer);
-                        }
-                    }
-                } catch (e) {
-                    if (window.notify) window.notify('Mikrofon tidak tersedia atau akses ditolak browser.');
-                    return;
-                }
-            }
-            if (! track) return;
-            track.enabled = ! track.enabled;
-            this.micOn = track.enabled;
-        },
-
-        async toggleCam() {
-            let track = this.localStream?.getVideoTracks()[0];
-            if (! track) {
-                try {
-                    const stream = await this.acquireMedia({ audio: true, video: true });
-                    track = stream?.getVideoTracks()[0];
-                    if (stream) {
-                        for (const [peerId, pc] of Object.entries(this.pcs)) {
-                            stream.getTracks().forEach((t) => pc.addTrack(t, stream));
-                            const offer = await pc.createOffer();
-                            await pc.setLocalDescription(offer);
-                            await this.send('offer', Number(peerId), offer);
-                        }
-                    }
-                } catch (e) {
-                    if (window.notify) window.notify('Kamera tidak tersedia atau akses ditolak browser.');
-                    return;
-                }
-            }
-            if (! track) return;
-            track.enabled = ! track.enabled;
-            this.camOn = track.enabled;
-        },
-
-        createPeer(peerId, name) {
-            if (this.pcs[peerId]) return this.pcs[peerId];
-            const pc = new RTCPeerConnection({
-                iceServers: isLocalNetwork ? [] : [{ urls: 'stun:stun.l.google.com:19302' }],
-            });
-            this.pcs[peerId] = pc;
-
-            this.localStream?.getTracks().forEach((t) => pc.addTrack(t, this.localStream));
-
-            pc.onicecandidate = (ev) => {
-                if (ev.candidate) this.send('ice', peerId, ev.candidate);
-            };
-            pc.ontrack = (ev) => {
-                if (! this.peers.find((p) => p.id === peerId)) {
-                    this.peers.push({ id: peerId, name: name || 'Peserta' });
-                }
-                this.$nextTick(() => {
-                    const videoEl = document.getElementById('peer-' + peerId);
-                    if (videoEl && videoEl.srcObject !== ev.streams[0]) {
-                        videoEl.srcObject = ev.streams[0];
-                    }
-                    const audioEl = document.getElementById('peer-audio-' + peerId);
-                    if (audioEl && audioEl.srcObject !== ev.streams[0]) {
-                        audioEl.srcObject = ev.streams[0];
-                    }
+            async syncServerMic(muted) {
+                const token = document.querySelector('meta[name=csrf-token]')?.content;
+                const res = await fetch(micUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': token,
+                    },
+                    body: JSON.stringify({ muted }),
                 });
-            };
-            return pc;
-        },
-
-        async onSignal(e) {
-            if (! e) return;
-            const sigId = Number(e.id || 0);
-            if (sigId > 0) {
-                if (this.handledSignalIds.has(sigId)) return;
-                this.handledSignalIds.add(sigId);
-                if (this.handledSignalIds.size > 400) {
-                    const first = this.handledSignalIds.values().next().value;
-                    this.handledSignalIds.delete(first);
+                const data = await res.json().catch(() => ({}));
+                if (! res.ok) {
+                    throw new Error(data.message || 'Gagal memperbarui status mikrofon.');
                 }
-                if (sigId > this.lastSignalId) {
-                    this.lastSignalId = sigId;
+                if (Array.isArray(data.participants)) {
+                    this.participantsList = data.participants;
                 }
-            }
+            },
 
-            const from = Number(e.from);
-            if (me && from === Number(me)) return;
+            async toggleMic() {
+                if (this.status !== 'live') {
+                    if (window.notify) window.notify('Mikrofon hanya bisa dipakai saat Space sedang live.');
+                    return;
+                }
+                if (! this.isOnStage) {
+                    if (window.notify) window.notify('Angkat tangan dan tunggu izin Host/Co-host untuk berbicara.');
+                    return;
+                }
+                if (this.isForcedMuted && ! this.micOn) {
+                    if (window.notify) window.notify('Mikrofonmu sedang dibisukan oleh Host atau Co-host.');
+                    return;
+                }
 
-            if (e.kind === 'join') {
-                const pc = this.createPeer(from, e.payload?.name);
-                const offer = await pc.createOffer();
-                await pc.setLocalDescription(offer);
-                await this.send('offer', from, offer);
-            } else if (e.kind === 'offer') {
-                const pc = this.createPeer(from, e.payload?.name);
-                await pc.setRemoteDescription(new RTCSessionDescription(e.payload));
-                await this.flushIce(from, pc);
-                const answer = await pc.createAnswer();
-                await pc.setLocalDescription(answer);
-                await this.send('answer', from, answer);
-            } else if (e.kind === 'answer') {
-                const pc = this.pcs[from];
-                if (pc) {
+                const wantUnmute = ! this.micOn;
+                let track = this.localStream?.getAudioTracks()[0];
+                if (wantUnmute && ! track) {
+                    try {
+                        const stream = await this.acquireMedia({ audio: true, video: type === 'video' && this.camOn });
+                        track = stream?.getAudioTracks()[0];
+                        if (stream) {
+                            for (const [peerId, pc] of Object.entries(this.pcs)) {
+                                stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+                                const offer = await pc.createOffer();
+                                await pc.setLocalDescription(offer);
+                                await this.send('offer', Number(peerId), offer);
+                            }
+                        }
+                    } catch (e) {
+                        if (window.notify) window.notify('Mikrofon tidak tersedia atau akses ditolak browser.');
+                        return;
+                    }
+                }
+
+                try {
+                    await this.syncServerMic(! wantUnmute);
+                } catch (e) {
+                    if (track) track.enabled = false;
+                    this.micOn = false;
+                    if (window.notify) window.notify(e.message || 'Tidak dapat menyalakan mikrofon.');
+                    return;
+                }
+
+                if (track) {
+                    track.enabled = wantUnmute;
+                }
+                this.micOn = wantUnmute && Boolean(track);
+            },
+
+            async toggleCam() {
+                if (this.status !== 'live' || ! this.isOnStage) {
+                    if (window.notify) window.notify('Kamera hanya tersedia untuk peserta di panggung saat live.');
+                    return;
+                }
+                let track = this.localStream?.getVideoTracks()[0];
+                if (! track) {
+                    try {
+                        const stream = await this.acquireMedia({ audio: true, video: true });
+                        track = stream?.getVideoTracks()[0];
+                        if (stream) {
+                            for (const [peerId, pc] of Object.entries(this.pcs)) {
+                                stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+                                const offer = await pc.createOffer();
+                                await pc.setLocalDescription(offer);
+                                await this.send('offer', Number(peerId), offer);
+                            }
+                        }
+                    } catch (e) {
+                        if (window.notify) window.notify('Kamera tidak tersedia atau akses ditolak browser.');
+                        return;
+                    }
+                }
+                if (! track) return;
+                track.enabled = ! track.enabled;
+                this.camOn = track.enabled;
+            },
+
+            createPeer(peerId, name) {
+                if (this.pcs[peerId]) return this.pcs[peerId];
+                const pc = new RTCPeerConnection({
+                    iceServers: isLocalNetwork ? [] : [{ urls: 'stun:stun.l.google.com:19302' }],
+                });
+                this.pcs[peerId] = pc;
+
+                if (this.isOnStage && this.localStream) {
+                    this.localStream.getTracks().forEach((t) => pc.addTrack(t, this.localStream));
+                }
+
+                pc.onicecandidate = (ev) => {
+                    if (ev.candidate) this.send('ice', peerId, ev.candidate);
+                };
+                pc.ontrack = (ev) => {
+                    if (! this.peers.find((p) => p.id === peerId)) {
+                        this.peers.push({ id: peerId, name: name || 'Peserta' });
+                    }
+                    this.$nextTick(() => {
+                        const videoEl = document.getElementById('peer-' + peerId);
+                        if (videoEl && videoEl.srcObject !== ev.streams[0]) {
+                            videoEl.srcObject = ev.streams[0];
+                        }
+                        const audioEl = document.getElementById('peer-audio-' + peerId);
+                        if (audioEl && audioEl.srcObject !== ev.streams[0]) {
+                            audioEl.srcObject = ev.streams[0];
+                        }
+                    });
+                };
+                return pc;
+            },
+
+            async onSignal(e) {
+                if (! e) return;
+                const sigId = Number(e.id || 0);
+                if (sigId > 0) {
+                    if (this.handledSignalIds.has(sigId)) return;
+                    this.handledSignalIds.add(sigId);
+                    if (this.handledSignalIds.size > 400) {
+                        const first = this.handledSignalIds.values().next().value;
+                        this.handledSignalIds.delete(first);
+                    }
+                    if (sigId > this.lastSignalId) {
+                        this.lastSignalId = sigId;
+                    }
+                }
+
+                const from = Number(e.from);
+                if (me && from === Number(me)) return;
+
+                if (e.kind === 'join') {
+                    const pc = this.createPeer(from, e.payload?.name);
+                    const offer = await pc.createOffer();
+                    await pc.setLocalDescription(offer);
+                    await this.send('offer', from, offer);
+                    await this.syncOnce();
+                } else if (e.kind === 'offer') {
+                    const pc = this.createPeer(from, e.payload?.name);
                     await pc.setRemoteDescription(new RTCSessionDescription(e.payload));
                     await this.flushIce(from, pc);
-                }
-            } else if (e.kind === 'ice') {
-                const pc = this.pcs[from];
-                if (pc && pc.remoteDescription) {
-                    try { await pc.addIceCandidate(new RTCIceCandidate(e.payload)); } catch (err) {}
-                } else {
-                    (this.pendingIce[from] = this.pendingIce[from] || []).push(e.payload);
-                }
-            } else if (e.kind === 'chat') {
-                this.spaceMsgs.push({
-                    name: e.payload?.name || 'Peserta',
-                    text: e.payload?.text || '',
-                    mine: false,
-                });
-            } else if (e.kind === 'leave') {
-                if (e.payload?.ended) {
-                    this.stopSyncFallback();
-                    try { this.localStream?.getTracks().forEach((t) => t.stop()); } catch (err) {}
-                    this.localStream = null;
-                    Object.values(this.pcs).forEach((pc) => pc.close());
-                    this.pcs = {};
-                    this.peers = [];
-                    this.joined = false;
-                    this.ended = true;
-                    if (this.channel) {
-                        window.Echo?.leave('space.' + spaceId);
-                        this.channel = null;
+                    const answer = await pc.createAnswer();
+                    await pc.setLocalDescription(answer);
+                    await this.send('answer', from, answer);
+                } else if (e.kind === 'answer') {
+                    const pc = this.pcs[from];
+                    if (pc) {
+                        await pc.setRemoteDescription(new RTCSessionDescription(e.payload));
+                        await this.flushIce(from, pc);
                     }
-                    if (window.notify) window.notify('Space telah diakhiri oleh host.');
-                    return;
+                } else if (e.kind === 'ice') {
+                    const pc = this.pcs[from];
+                    if (pc && pc.remoteDescription) {
+                        try { await pc.addIceCandidate(new RTCIceCandidate(e.payload)); } catch (err) {}
+                    } else {
+                        (this.pendingIce[from] = this.pendingIce[from] || []).push(e.payload);
+                    }
+                } else if (e.kind === 'chat') {
+                    this.spaceMsgs.push({
+                        name: e.payload?.name || 'Peserta',
+                        text: e.payload?.text || '',
+                        mine: false,
+                    });
+                } else if (e.kind === 'reaction') {
+                    this.showReaction(from, e.payload?.type);
+                } else if (e.kind === 'state') {
+                    if (e.payload?.status) {
+                        this.status = e.payload.status;
+                    }
+                    if (e.payload?.pinned_project !== undefined) {
+                        this.pinnedProject = e.payload.pinned_project;
+                    }
+                    await this.syncOnce();
+                } else if (e.kind === 'kick') {
+                    if (me && Number(e.to) === Number(me)) {
+                        this.stopSyncFallback();
+                        this.stopLocalMedia();
+                        Object.values(this.pcs).forEach((pc) => pc.close());
+                        this.pcs = {};
+                        this.peers = [];
+                        this.joined = false;
+                        if (this.channel) {
+                            window.Echo?.leave('space.' + spaceId);
+                            this.channel = null;
+                        }
+                        if (window.notify) window.notify('Kamu telah dikeluarkan dari Space oleh moderator.');
+                    }
+                } else if (e.kind === 'leave') {
+                    if (e.payload?.ended) {
+                        this.stopSyncFallback();
+                        this.stopLocalMedia();
+                        Object.values(this.pcs).forEach((pc) => pc.close());
+                        this.pcs = {};
+                        this.peers = [];
+                        this.joined = false;
+                        this.status = 'ended';
+                        this.ended = true;
+                        if (this.channel) {
+                            window.Echo?.leave('space.' + spaceId);
+                            this.channel = null;
+                        }
+                        if (window.notify) window.notify('Space telah diakhiri oleh host.');
+                        return;
+                    }
+                    this.pcs[from]?.close();
+                    delete this.pcs[from];
+                    this.peers = this.peers.filter((p) => Number(p.id) !== from);
+                    this.participantsList = this.participantsList.filter((p) => Number(p.id) !== from);
                 }
-                this.pcs[from]?.close();
-                delete this.pcs[from];
-                this.peers = this.peers.filter((p) => Number(p.id) !== from);
-            }
-        },
+            },
 
-        async flushIce(peerId, pc) {
-            const queued = this.pendingIce[peerId] || [];
-            for (const c of queued) {
-                try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch (e) {}
-            }
-            this.pendingIce[peerId] = [];
-        },
+            async flushIce(peerId, pc) {
+                const queued = this.pendingIce[peerId] || [];
+                for (const c of queued) {
+                    try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch (e) {}
+                }
+                this.pendingIce[peerId] = [];
+            },
 
-        async send(kind, to, payload) {
-            const token = document.querySelector('meta[name=csrf-token]')?.content;
-            try {
-                await fetch(signalUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
-                    body: JSON.stringify({ to, kind, payload }),
-                });
-            } catch (e) {}
-        },
-    };
-});
+            async send(kind, to, payload) {
+                const token = document.querySelector('meta[name=csrf-token]')?.content;
+                try {
+                    await fetch(signalUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
+                        body: JSON.stringify({ to, kind, payload }),
+                    });
+                } catch (e) {}
+            },
+        };
+    });
 
     /**
      * Chat room: send messages and receive them live via Echo (Reverb).

@@ -41,6 +41,96 @@ class ProjectController extends Controller
     }
 
     /**
+     * Normalize optional external URL inputs by prepending https:// only for bare domain names.
+     */
+    private function normalizeUrl(?string $value): ?string
+    {
+        $trimmed = trim((string) $value);
+        if ($trimmed === '') {
+            return null;
+        }
+
+        if (
+            ! str_contains($trimmed, '://')
+            && ! preg_match('/^[a-zA-Z][a-zA-Z0-9+.-]*:/', $trimmed)
+            && preg_match('/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}([:\/?#].*)?$/', $trimmed)
+        ) {
+            return 'https://'.$trimmed;
+        }
+
+        return $trimmed;
+    }
+
+    /**
+     * Merge normalized URL fields onto the request before validation.
+     */
+    private function normalizeLinkInputs(Request $request): void
+    {
+        $updates = [];
+        foreach (['demo_url', 'github_url', 'prototype_url', 'thumbnail_url', 'video_url'] as $field) {
+            if ($request->has($field)) {
+                $updates[$field] = $this->normalizeUrl($request->input($field));
+            }
+        }
+
+        if ($updates !== []) {
+            $request->merge($updates);
+        }
+    }
+
+    /**
+     * Check whether a normalized URL passes SafeUrl constraints (used by silent autosave).
+     */
+    private function isSafeHttpUrl(?string $url): bool
+    {
+        if (! $url) {
+            return false;
+        }
+
+        return ! preg_match('/[\x00-\x1F\x7F\s]/', $url)
+            && filter_var($url, FILTER_VALIDATE_URL) !== false
+            && in_array(strtolower((string) parse_url($url, PHP_URL_SCHEME)), ['http', 'https'], true);
+    }
+
+    /**
+     * Generate a unique slug for a project title.
+     */
+    private function uniqueSlug(string $title, ?int $ignoreId = null): string
+    {
+        $baseSlug = Str::slug($title) ?: 'karya-developer';
+        $slug = $baseSlug;
+        $count = 1;
+        while (
+            Project::where('slug', $slug)
+                ->when($ignoreId !== null, fn ($q) => $q->where('id', '!=', $ignoreId))
+                ->exists()
+        ) {
+            $slug = "{$baseSlug}-{$count}";
+            $count++;
+        }
+
+        return $slug;
+    }
+
+    /**
+     * Publish a project and notify followers (only once when becoming public).
+     */
+    private function dispatchPublishNotifications(Project $project, User $author): void
+    {
+        if ($project->visibility !== 'public') {
+            return;
+        }
+
+        $project->load('user');
+        foreach ($author->followers as $follower) {
+            if ($follower->wantsNotification('project_uploaded')) {
+                $follower->notify(new ProjectUploadedNotification($project));
+            }
+        }
+        ProjectPublished::dispatch($project);
+    }
+
+    /**
      * Display project showcase feed.
      */
     public function index(Request $request): View|RedirectResponse
@@ -273,6 +363,11 @@ class ProjectController extends Controller
 
         $isAdmin = Auth::user()?->is_admin ?? false;
 
+        // Drafts are strictly private to their owner.
+        if ($project->isDraft() && $project->user_id !== Auth::id()) {
+            abort(404);
+        }
+
         // Private projects are only visible to their owner or admin.
         if ($project->isPrivate() && $project->user_id !== Auth::id() && ! $isAdmin) {
             abort(404);
@@ -283,9 +378,9 @@ class ProjectController extends Controller
             abort(404);
         }
 
-        // Session-based view counting (prevents counting on every refresh)
+        // Session-based view counting (prevents counting on every refresh; skip for drafts)
         $viewKey = 'viewed_project_'.$project->id;
-        if (! $request->session()->has($viewKey)) {
+        if (! $project->isDraft() && ! $request->session()->has($viewKey)) {
             $project->increment('views_count');
             $request->session()->put($viewKey, true);
         }
@@ -314,27 +409,200 @@ class ProjectController extends Controller
     }
 
     /**
-     * Show form to upload/submit a new coding project.
+     * Show form to upload/submit a new coding project (or resume a saved draft).
      */
-    public function create(): View
+    public function create(Request $request): View
     {
         $categories = Category::all();
+        $userId = (int) Auth::id();
 
-        return view('projects.create', compact('categories'));
+        $draft = null;
+        $draftSlug = trim((string) $request->query('draft', ''));
+        if ($draftSlug !== '' && $userId > 0) {
+            $draft = Project::where('slug', $draftSlug)
+                ->where('user_id', $userId)
+                ->where('visibility', 'draft')
+                ->first();
+        }
+
+        $draftsCount = $userId > 0 ? Project::draftsFor($userId)->count() : 0;
+
+        return view('projects.create', compact('categories', 'draft', 'draftsCount'));
     }
 
     /**
-     * Store new developer project.
+     * List all unpublished drafts belonging to the authenticated user.
      */
-    public function store(Request $request): RedirectResponse
+    public function drafts(): View
     {
-        $validated = $request->validate([
+        $drafts = Project::with('category')
+            ->draftsFor((int) Auth::id())
+            ->paginate(12);
+
+        return view('projects.drafts', compact('drafts'));
+    }
+
+    /**
+     * Silently auto-save work-in-progress from the composer (supports fetch & sendBeacon).
+     */
+    public function autosaveDraft(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $this->normalizeLinkInputs($request);
+
+        $draftId = $request->input('draft_id');
+        $title = trim((string) $request->input('title', ''));
+        $tagline = trim((string) $request->input('tagline', ''));
+        $description = trim((string) $request->input('description', ''));
+        $challenges = trim((string) $request->input('challenges', ''));
+        $learnings = trim((string) $request->input('learnings', ''));
+        $setupInstructions = trim((string) $request->input('setup_instructions', ''));
+        $demoUrl = $this->isSafeHttpUrl($request->input('demo_url')) ? $request->input('demo_url') : null;
+        $githubUrl = $this->isSafeHttpUrl($request->input('github_url')) ? $request->input('github_url') : null;
+        $prototypeUrl = $this->isSafeHttpUrl($request->input('prototype_url')) ? $request->input('prototype_url') : null;
+        $thumbnailUrl = $this->isSafeHttpUrl($request->input('thumbnail_url')) ? $request->input('thumbnail_url') : null;
+
+        $hasContent = $title !== '' || $tagline !== '' || $description !== ''
+            || $challenges !== '' || $learnings !== '' || $setupInstructions !== ''
+            || $demoUrl !== null || $githubUrl !== null || $prototypeUrl !== null;
+
+        $draft = null;
+        if ($draftId) {
+            $draft = Project::where('id', (int) $draftId)
+                ->where('user_id', $user->id)
+                ->where('visibility', 'draft')
+                ->first();
+        }
+
+        if (! $hasContent && ! $draft) {
+            return response()->json(['saved' => false]);
+        }
+
+        $categoryId = (int) $request->input('category_id', 0);
+        if (! $categoryId || ! Category::whereKey($categoryId)->exists()) {
+            $categoryId = $draft?->category_id ?: (int) (Category::value('id') ?? 0);
+        }
+
+        if (! $categoryId) {
+            return response()->json(['saved' => false]);
+        }
+
+        $techRaw = (string) $request->input('tech_stacks', '');
+        $techArray = array_values(array_filter(array_map('trim', explode(',', $techRaw))));
+
+        $allowedStatuses = ['idea', 'prototype', 'beta', 'production', 'archived'];
+        $status = in_array($request->input('status'), $allowedStatuses, true)
+            ? $request->input('status')
+            : ($draft?->status ?? 'beta');
+
+        $projectType = trim((string) $request->input('project_type', ''));
+        if ($projectType === '' || mb_strlen($projectType) > 50) {
+            $projectType = $draft?->project_type ?? 'web';
+        }
+
+        $finalTitle = mb_substr($title !== '' ? $title : ($draft?->title ?: 'Draft Tanpa Judul'), 0, 150);
+
+        $attributes = [
+            'category_id' => $categoryId,
+            'project_type' => $projectType,
+            'status' => $status,
+            'visibility' => 'draft',
+            'title' => $finalTitle,
+            'tagline' => mb_substr($tagline, 0, 255),
+            'description' => $description,
+            'challenges' => $challenges !== '' ? $challenges : null,
+            'learnings' => $learnings !== '' ? $learnings : null,
+            'setup_instructions' => $setupInstructions !== '' ? $setupInstructions : null,
+            'demo_url' => $demoUrl,
+            'github_url' => $githubUrl,
+            'prototype_url' => $prototypeUrl,
+            'tech_stacks' => $techArray,
+        ];
+
+        if ($thumbnailUrl !== null) {
+            $attributes['thumbnail'] = $thumbnailUrl;
+        }
+
+        if ($draft) {
+            if (str_starts_with($draft->slug, 'draft-tanpa-judul') && $title !== '') {
+                $attributes['slug'] = $this->uniqueSlug($finalTitle, $draft->id);
+            }
+            $draft->update($attributes);
+        } else {
+            $draft = Project::create(array_merge($attributes, [
+                'user_id' => $user->id,
+                'slug' => $this->uniqueSlug($finalTitle),
+                'thumbnail' => $thumbnailUrl ?: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80',
+                'upvotes_count' => 0,
+                'downvotes_count' => 0,
+                'score' => 0,
+                'comments_count' => 0,
+                'views_count' => 0,
+                'is_featured' => false,
+            ]));
+        }
+
+        return response()->json([
+            'saved' => true,
+            'draft_id' => $draft->id,
+            'slug' => $draft->slug,
+            'saved_at' => now()->format('H:i:s'),
+        ]);
+    }
+
+    /**
+     * Store new developer project or save explicitly as a draft.
+     */
+    public function store(Request $request): JsonResponse|RedirectResponse
+    {
+        $user = Auth::user();
+        if (! $user) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Silakan masuk terlebih dahulu untuk memamerkan karya.'], 401);
+            }
+
+            return redirect()->route('login')->with('error', 'Silakan masuk terlebih dahulu untuk memamerkan karya.');
+        }
+
+        $this->normalizeLinkInputs($request);
+        $saveAsDraft = $request->boolean('save_as_draft');
+
+        $validated = $request->validate($saveAsDraft ? [
+            'draft_id' => ['nullable', 'integer'],
+            'title' => ['nullable', 'string', 'max:150'],
+            'tagline' => ['nullable', 'string', 'max:255'],
+            'category_id' => ['nullable', 'exists:categories,id'],
+            'project_type' => ['nullable', 'string', 'max:50'],
+            'status' => ['nullable', 'string', 'in:idea,prototype,beta,production,archived'],
+            'visibility' => ['nullable', 'in:public,private,draft'],
+            'tech_stacks' => ['nullable', 'string'],
+            'description' => ['nullable', 'string'],
+            'challenges' => ['nullable', 'string'],
+            'learnings' => ['nullable', 'string'],
+            'setup_instructions' => ['nullable', 'string'],
+            'demo_url' => $this->linkRules(),
+            'github_url' => $this->linkRules(),
+            'prototype_url' => $this->linkRules(),
+            'thumbnail' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:4096'],
+            'thumbnail_url' => $this->linkRules(),
+            'images' => ['nullable', 'array', 'max:8'],
+            'images.*' => ['image', 'mimes:jpeg,png,jpg,webp,gif', 'max:4096'],
+            'video' => ['nullable', 'file', 'mimes:mp4,webm,ogg,mov,m4v', 'max:25600'],
+            'video_url' => $this->linkRules(),
+            'videos' => ['nullable', 'array', 'max:4'],
+            'videos.*' => ['file', 'mimes:mp4,webm,ogg,mov,m4v', 'max:25600'],
+        ] : [
+            'draft_id' => ['nullable', 'integer'],
             'title' => ['required', 'string', 'max:150'],
             'tagline' => ['required', 'string', 'max:255'],
             'category_id' => ['required', 'exists:categories,id'],
             'project_type' => ['nullable', 'string', 'max:50'],
             'status' => ['nullable', 'string', 'in:idea,prototype,beta,production,archived'],
-            'visibility' => ['nullable', 'in:public,private'],
+            'visibility' => ['nullable', 'in:public,private,draft'],
             'tech_stacks' => ['required', 'string'],
             'description' => ['nullable', 'string'],
             'challenges' => ['nullable', 'string'],
@@ -353,27 +621,36 @@ class ProjectController extends Controller
             'videos.*' => ['file', 'mimes:mp4,webm,ogg,mov,m4v', 'max:25600'],
         ]);
 
-        $user = Auth::user();
-        if (! $user) {
-            return redirect()->route('login')->with('error', 'Silakan masuk terlebih dahulu untuk memamerkan karya.');
+        $targetVisibility = $saveAsDraft ? 'draft' : ($validated['visibility'] ?? 'public');
+        $isDraft = $targetVisibility === 'draft';
+
+        $existingDraft = null;
+        if (! empty($validated['draft_id'])) {
+            $existingDraft = Project::where('id', (int) $validated['draft_id'])
+                ->where('user_id', $user->id)
+                ->where('visibility', 'draft')
+                ->first();
         }
 
         // Process tech stacks tags into array
-        $techArray = array_values(array_filter(array_map('trim', explode(',', $validated['tech_stacks']))));
+        $techArray = array_values(array_filter(array_map('trim', explode(',', (string) ($validated['tech_stacks'] ?? '')))));
 
-        // Handle thumbnail: file upload (optimized) OR external image URL OR default
-        $thumbnailPath = null;
+        // Handle thumbnail: file upload (optimized) OR external image URL OR existing/default
+        $thumbnailPath = $existingDraft?->getRawOriginal('thumbnail');
         if ($request->hasFile('thumbnail')) {
+            if ($existingDraft) {
+                $this->media->deleteStoredFile($existingDraft->thumbnail);
+            }
             $path = $this->media->storeImage($request->file('thumbnail'), 'thumbnails', 'thumb');
             $thumbnailPath = '/storage/'.$path;
         } elseif (! empty($validated['thumbnail_url'])) {
             $thumbnailPath = $validated['thumbnail_url'];
-        } else {
+        } elseif (! $thumbnailPath) {
             $thumbnailPath = 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80';
         }
 
         // Handle additional gallery images (multiple uploads, optimized to WebP).
-        $galleryPaths = [];
+        $galleryPaths = is_array($existingDraft?->images) ? $existingDraft->images : [];
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
                 if ($image && $image->isValid()) {
@@ -383,8 +660,8 @@ class ProjectController extends Controller
         }
 
         // Handle primary video: uploaded file (compressed + poster) OR external URL.
-        $videoPath = null;
-        $videoPosterPath = null;
+        $videoPath = $existingDraft?->video;
+        $videoPosterPath = $existingDraft?->video_poster;
         if ($request->hasFile('video')) {
             $optimized = $this->media->storeVideo($request->file('video'), 'project-videos');
             $videoPath = '/storage/'.$optimized['path'];
@@ -394,7 +671,7 @@ class ProjectController extends Controller
         }
 
         // Handle additional gallery videos (multiple uploads, compressed).
-        $galleryVideoPaths = [];
+        $galleryVideoPaths = is_array($existingDraft?->videos) ? $existingDraft->videos : [];
         if ($request->hasFile('videos')) {
             foreach ($request->file('videos') as $video) {
                 if ($video && $video->isValid()) {
@@ -404,72 +681,145 @@ class ProjectController extends Controller
             }
         }
 
-        $baseSlug = Str::slug($validated['title']);
-        $slug = $baseSlug;
-        $count = 1;
-        while (Project::where('slug', $slug)->exists()) {
-            $slug = "{$baseSlug}-{$count}";
-            $count++;
-        }
+        $finalTitle = trim((string) ($validated['title'] ?? '')) ?: 'Draft Tanpa Judul';
+        $categoryId = (int) ($validated['category_id'] ?? $existingDraft?->category_id ?? Category::value('id'));
 
-        $project = Project::create([
+        $payload = [
             'user_id' => $user->id,
-            'category_id' => $validated['category_id'],
-            'project_type' => $validated['project_type'] ?? 'web',
-            'status' => $validated['status'] ?? 'beta',
-            'visibility' => $validated['visibility'] ?? 'public',
-            'title' => $validated['title'],
-            'slug' => $slug,
-            'tagline' => $validated['tagline'],
+            'category_id' => $categoryId,
+            'project_type' => $validated['project_type'] ?? $existingDraft?->project_type ?? 'web',
+            'status' => $validated['status'] ?? $existingDraft?->status ?? 'beta',
+            'visibility' => $targetVisibility,
+            'title' => $finalTitle,
+            'tagline' => trim((string) ($validated['tagline'] ?? '')),
             'description' => $validated['description'] ?? '',
             'challenges' => $validated['challenges'] ?? null,
             'learnings' => $validated['learnings'] ?? null,
             'setup_instructions' => $validated['setup_instructions'] ?? null,
             'thumbnail' => $thumbnailPath,
-            'images' => ! empty($galleryPaths) ? $galleryPaths : null,
+            'images' => ! empty($galleryPaths) ? array_slice($galleryPaths, 0, 8) : null,
             'video' => $videoPath,
             'video_poster' => $videoPosterPath,
-            'videos' => ! empty($galleryVideoPaths) ? $galleryVideoPaths : null,
+            'videos' => ! empty($galleryVideoPaths) ? array_slice($galleryVideoPaths, 0, 4) : null,
             'demo_url' => $validated['demo_url'] ?? null,
             'github_url' => $validated['github_url'] ?? null,
             'prototype_url' => $validated['prototype_url'] ?? null,
             'tech_stacks' => $techArray,
-            'upvotes_count' => 1,
-            'downvotes_count' => 0,
-            'score' => 1,
-            'comments_count' => 0,
-            'views_count' => 0,
-            'is_featured' => false,
-        ]);
+        ];
+
+        if ($existingDraft) {
+            if (! $isDraft || str_starts_with($existingDraft->slug, 'draft-tanpa-judul')) {
+                $payload['slug'] = $this->uniqueSlug($finalTitle, $existingDraft->id);
+            }
+            if (! $isDraft) {
+                $payload['upvotes_count'] = max(1, (int) $existingDraft->upvotes_count);
+                $payload['score'] = max(1, (int) $existingDraft->score);
+            }
+            $existingDraft->update($payload);
+            $project = $existingDraft->fresh();
+        } else {
+            $project = Project::create(array_merge($payload, [
+                'slug' => $this->uniqueSlug($finalTitle),
+                'upvotes_count' => $isDraft ? 0 : 1,
+                'downvotes_count' => 0,
+                'score' => $isDraft ? 0 : 1,
+                'comments_count' => 0,
+                'views_count' => 0,
+                'is_featured' => false,
+            ]));
+        }
+
+        if ($isDraft) {
+            if ($request->wantsJson()) {
+                $request->session()->flash('success', 'Karya berhasil disimpan ke Draft.');
+
+                return response()->json([
+                    'success' => true,
+                    'redirect_url' => route('projects.drafts'),
+                    'message' => 'Karya berhasil disimpan ke Draft.',
+                ]);
+            }
+
+            return redirect()->route('projects.drafts')
+                ->with('clear_project_draft', true)
+                ->with('success', 'Karya berhasil disimpan ke Draft.');
+        }
 
         // Auto-upvote by creator
-        ProjectVote::create([
-            'project_id' => $project->id,
-            'user_id' => $user->id,
-            'ip_address' => $request->ip(),
-            'type' => 'up',
-        ]);
+        ProjectVote::firstOrCreate(
+            ['project_id' => $project->id, 'user_id' => $user->id],
+            ['ip_address' => $request->ip(), 'type' => 'up']
+        );
 
         // Increment category count
-        $project->category->increment('projects_count');
+        $project->category?->increment('projects_count');
 
         Cache::forget('projects.hot_hashtags');
         Cache::forget('rail:trending_projects_v2');
 
         // Notify followers about the new project + broadcast to live feed.
-        $project->load('user');
-        if ($project->visibility !== 'private') {
-            $followers = $user->followers;
-            foreach ($followers as $follower) {
-                if ($follower->wantsNotification('project_uploaded')) {
-                    $follower->notify(new ProjectUploadedNotification($project));
-                }
-            }
-            ProjectPublished::dispatch($project);
+        $this->dispatchPublishNotifications($project, $user);
+
+        if ($request->wantsJson()) {
+            $request->session()->flash('success', 'Project codingan kamu berhasil dipamerkan dan tampil di feed!');
+
+            return response()->json([
+                'success' => true,
+                'redirect_url' => route('projects.show', $project->slug),
+                'message' => 'Project codingan kamu berhasil dipamerkan dan tampil di feed!',
+            ]);
         }
 
         return redirect()->route('projects.show', $project->slug)
+            ->with('clear_project_draft', true)
             ->with('success', 'Project codingan kamu berhasil dipamerkan dan tampil di feed!');
+    }
+
+    /**
+     * Publish a previously saved draft immediately (if required fields are complete).
+     */
+    public function publishDraft(Request $request, Project $project): RedirectResponse
+    {
+        $user = Auth::user();
+        if (! $user || (int) $project->user_id !== (int) $user->id) {
+            abort(403, 'Anda tidak memiliki hak untuk mempublikasikan draft ini.');
+        }
+
+        if (! $project->isDraft()) {
+            return redirect()->route('projects.show', $project->slug);
+        }
+
+        $incomplete = trim($project->title) === ''
+            || $project->title === 'Draft Tanpa Judul'
+            || trim((string) $project->tagline) === ''
+            || empty($project->tech_stacks);
+
+        if ($incomplete) {
+            return redirect()->route('projects.create', ['draft' => $project->slug])
+                ->with('error', 'Lengkapi judul, tagline, dan minimal 1 tech stack sebelum mempublikasikan draft.');
+        }
+
+        $project->update([
+            'visibility' => 'public',
+            'slug' => $this->uniqueSlug($project->title, $project->id),
+            'upvotes_count' => max(1, (int) $project->upvotes_count),
+            'score' => max(1, (int) $project->score),
+        ]);
+
+        ProjectVote::firstOrCreate(
+            ['project_id' => $project->id, 'user_id' => $user->id],
+            ['ip_address' => $request->ip(), 'type' => 'up']
+        );
+
+        $project->category?->increment('projects_count');
+        Cache::forget('projects.hot_hashtags');
+        Cache::forget('rail:trending_projects_v2');
+
+        $this->dispatchPublishNotifications($project, $user);
+
+        return redirect()->route('projects.show', $project->slug)
+            ->with('clear_project_draft', true)
+            ->with('success', 'Draft berhasil dipublikasikan ke feed!');
     }
 
     /**
@@ -495,13 +845,15 @@ class ProjectController extends Controller
             abort(403, 'Anda tidak memiliki hak untuk memperbarui proyek ini.');
         }
 
+        $this->normalizeLinkInputs($request);
+
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:150'],
             'tagline' => ['required', 'string', 'max:255'],
             'category_id' => ['required', 'exists:categories,id'],
             'project_type' => ['nullable', 'string', 'max:50'],
             'status' => ['nullable', 'string', 'in:idea,prototype,beta,production,archived'],
-            'visibility' => ['nullable', 'in:public,private'],
+            'visibility' => ['nullable', 'in:public,private,draft'],
             'tech_stacks' => ['required', 'string'],
             'description' => ['nullable', 'string'],
             'challenges' => ['nullable', 'string'],
@@ -523,7 +875,7 @@ class ProjectController extends Controller
         $techArray = array_values(array_filter(array_map('trim', explode(',', $validated['tech_stacks']))));
 
         // Handle thumbnail
-        $thumbnailPath = $project->thumbnail;
+        $thumbnailPath = $project->getRawOriginal('thumbnail');
         if ($request->hasFile('thumbnail')) {
             $this->media->deleteStoredFile($project->thumbnail);
             $path = $this->media->storeImage($request->file('thumbnail'), 'thumbnails', 'thumb');
@@ -573,14 +925,17 @@ class ProjectController extends Controller
             }
         }
 
+        $wasDraft = $project->isDraft();
         $oldCategoryId = $project->category_id;
         $newCategoryId = (int) $validated['category_id'];
+        $newVisibility = $validated['visibility'] ?? $project->visibility;
+        $isNowDraft = $newVisibility === 'draft';
 
-        $project->update([
+        $updatePayload = [
             'category_id' => $newCategoryId,
             'project_type' => $validated['project_type'] ?? $project->project_type,
             'status' => $validated['status'] ?? $project->status,
-            'visibility' => $validated['visibility'] ?? $project->visibility,
+            'visibility' => $newVisibility,
             'title' => $validated['title'],
             'tagline' => $validated['tagline'],
             'description' => $validated['description'] ?? '',
@@ -596,18 +951,41 @@ class ProjectController extends Controller
             'github_url' => $validated['github_url'] ?? null,
             'prototype_url' => $validated['prototype_url'] ?? null,
             'tech_stacks' => $techArray,
-        ]);
+        ];
 
-        if ($oldCategoryId !== $newCategoryId) {
-            Category::where('id', $oldCategoryId)->decrement('projects_count');
+        if ($wasDraft && ! $isNowDraft) {
+            $updatePayload['upvotes_count'] = max(1, (int) $project->upvotes_count);
+            $updatePayload['score'] = max(1, (int) $project->score);
+        }
+
+        $project->update($updatePayload);
+
+        if ($wasDraft && ! $isNowDraft) {
+            Category::where('id', $newCategoryId)->increment('projects_count');
+            ProjectVote::firstOrCreate(
+                ['project_id' => $project->id, 'user_id' => $project->user_id],
+                ['ip_address' => $request->ip(), 'type' => 'up']
+            );
+            if ($project->user) {
+                $this->dispatchPublishNotifications($project, $project->user);
+            }
+        } elseif (! $wasDraft && $isNowDraft) {
+            Category::where('id', $oldCategoryId)->where('projects_count', '>', 0)->decrement('projects_count');
+        } elseif (! $wasDraft && ! $isNowDraft && $oldCategoryId !== $newCategoryId) {
+            Category::where('id', $oldCategoryId)->where('projects_count', '>', 0)->decrement('projects_count');
             Category::where('id', $newCategoryId)->increment('projects_count');
         }
 
         Cache::forget('projects.hot_hashtags');
         Cache::forget('rail:trending_projects_v2');
 
+        if ($isNowDraft) {
+            return redirect()->route('projects.drafts')
+                ->with('success', 'Karya dipindahkan ke Draft.');
+        }
+
         return redirect()->route('projects.show', $project->slug)
-            ->with('success', 'Project codingan berhasil diperbarui!');
+            ->with('success', $wasDraft ? 'Draft berhasil dipublikasikan!' : 'Project codingan berhasil diperbarui!');
     }
 
     /**
@@ -619,6 +997,7 @@ class ProjectController extends Controller
             abort(403, 'Anda tidak memiliki hak untuk menghapus proyek ini.');
         }
 
+        $wasDraft = $project->isDraft();
         $categoryId = $project->category_id;
         $username = Auth::user()->username;
 
@@ -631,10 +1010,17 @@ class ProjectController extends Controller
         $project->reposts()->delete();
         $project->delete();
 
-        Category::where('id', $categoryId)->where('projects_count', '>', 0)->decrement('projects_count');
+        if (! $wasDraft) {
+            Category::where('id', $categoryId)->where('projects_count', '>', 0)->decrement('projects_count');
+        }
 
         Cache::forget('projects.hot_hashtags');
         Cache::forget('rail:trending_projects_v2');
+
+        if ($wasDraft) {
+            return redirect()->route('projects.drafts')
+                ->with('success', 'Draft berhasil dihapus.');
+        }
 
         return redirect()->route('profile.show', $username)
             ->with('success', 'Project berhasil dihapus.');
@@ -1109,6 +1495,10 @@ class ProjectController extends Controller
      */
     protected function isProjectAccessible(Project $project, ?User $user): bool
     {
+        if ($project->isDraft()) {
+            return $user !== null && (int) $project->user_id === (int) $user->id;
+        }
+
         if ($user?->isAdmin()) {
             return true;
         }

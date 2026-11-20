@@ -57,9 +57,14 @@ Route::get('/spaces', [SpaceController::class, 'index'])->name('spaces.index');
 Route::get('/spaces/{slug}', [SpaceController::class, 'show'])->name('spaces.show');
 Route::middleware('auth')->group(function () {
     Route::post('/spaces', [SpaceController::class, 'store'])->name('spaces.store')->middleware('throttle:10,1');
+    Route::post('/spaces/{space}/start', [SpaceController::class, 'start'])->name('spaces.start');
     Route::post('/spaces/{space}/join', [SpaceController::class, 'join'])->name('spaces.join');
     Route::post('/spaces/{space}/leave', [SpaceController::class, 'leave'])->name('spaces.leave');
     Route::post('/spaces/{space}/end', [SpaceController::class, 'end'])->name('spaces.end');
+    Route::post('/spaces/{space}/request-speak', [SpaceController::class, 'requestSpeak'])->name('spaces.request_speak');
+    Route::post('/spaces/{space}/participants/{user}/role', [SpaceController::class, 'manageParticipantRole'])->name('spaces.participant.role');
+    Route::post('/spaces/{space}/mic', [SpaceController::class, 'updateMic'])->name('spaces.mic');
+    Route::post('/spaces/{space}/pin', [SpaceController::class, 'pinProject'])->name('spaces.pin');
     Route::get('/spaces/{space}/sync', [SpaceController::class, 'sync'])->name('spaces.sync');
     Route::post('/spaces/{space}/signal', [SpaceController::class, 'signal'])->name('spaces.signal');
 });
@@ -83,9 +88,12 @@ Route::get('/feed-fragment/communities', [InfiniteFeedController::class, 'commun
 Route::get('/feed-fragment/community/{community:slug}', [InfiniteFeedController::class, 'communityShowFeed'])->name('feeds.community');
 
 Route::middleware('auth')->group(function () {
-    // Project lifecycle (upload, edit, update, delete)
+    // Project lifecycle (upload, draft, edit, update, delete)
     Route::get('/unggah', [ProjectController::class, 'create'])->name('projects.create');
     Route::post('/unggah', [ProjectController::class, 'store'])->name('projects.store')->middleware('throttle:10,1');
+    Route::post('/unggah/autosave', [ProjectController::class, 'autosaveDraft'])->name('projects.autosave')->middleware('throttle:60,1');
+    Route::get('/draft', [ProjectController::class, 'drafts'])->name('projects.drafts');
+    Route::post('/project/{project:slug}/publish', [ProjectController::class, 'publishDraft'])->name('projects.publish');
     Route::get('/project/{project:slug}/edit', [ProjectController::class, 'edit'])->name('projects.edit');
     Route::put('/project/{project:slug}', [ProjectController::class, 'update'])->name('projects.update')->middleware('throttle:10,1');
     Route::delete('/project/{project:slug}', [ProjectController::class, 'destroy'])->name('projects.destroy');

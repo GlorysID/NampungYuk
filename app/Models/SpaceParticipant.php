@@ -12,12 +12,16 @@ class SpaceParticipant extends Model
         'user_id',
         'role',
         'is_muted',
+        'hand_raised_at',
+        'is_forced_muted',
     ];
 
     protected function casts(): array
     {
         return [
             'is_muted' => 'boolean',
+            'is_forced_muted' => 'boolean',
+            'hand_raised_at' => 'datetime',
         ];
     }
 
@@ -29,5 +33,15 @@ class SpaceParticipant extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function isOnStage(): bool
+    {
+        return in_array($this->role, Space::STAGE_ROLES, true);
+    }
+
+    public function isModerator(): bool
+    {
+        return in_array($this->role, ['host', 'cohost'], true);
     }
 }

@@ -5,17 +5,285 @@
 @section('header_title', 'Pamerkan Karya')
 
 @section('content')
+@php
+    $editingDraft = $draft ?? null;
+    $initialTitle = old('title', $editingDraft?->title === 'Draft Tanpa Judul' ? '' : ($editingDraft?->title ?? ''));
+    $initialTagline = old('tagline', $editingDraft?->tagline ?? '');
+    $initialCategoryId = old('category_id', $editingDraft?->category_id ? (string) $editingDraft->category_id : '');
+    $initialProjectType = old('project_type', $editingDraft?->project_type ?? 'web');
+    $initialStatus = old('status', $editingDraft?->status ?? 'beta');
+    $initialVisibility = old('visibility', ($editingDraft && $editingDraft->visibility !== 'draft') ? $editingDraft->visibility : 'public');
+    $initialTechList = old('tech_stacks')
+        ? array_values(array_filter(array_map('trim', explode(',', old('tech_stacks')))))
+        : ($editingDraft && is_array($editingDraft->tech_stacks) && count($editingDraft->tech_stacks)
+            ? $editingDraft->tech_stacks
+            : ['Laravel', 'TailwindCSS']);
+    $initialDemoUrl = old('demo_url', $editingDraft?->demo_url ?? '');
+    $initialGithubUrl = old('github_url', $editingDraft?->github_url ?? '');
+    $initialPrototypeUrl = old('prototype_url', $editingDraft?->prototype_url ?? '');
+    $initialThumbnailUrl = old('thumbnail_url', '');
+    $initialDescription = old('description', $editingDraft?->description ?? '');
+    $initialChallenges = old('challenges', $editingDraft?->challenges ?? '');
+    $initialLearnings = old('learnings', $editingDraft?->learnings ?? '');
+    $initialSetup = old('setup_instructions', $editingDraft?->setup_instructions ?? '');
+    $initialDraftId = old('draft_id', $editingDraft?->id);
+
+    $prevUrl = url()->previous();
+    $prevHost = parse_url($prevUrl, PHP_URL_HOST);
+    $prevPath = (string) (parse_url($prevUrl, PHP_URL_PATH) ?? '');
+    $currentPath = (string) (parse_url(url()->current(), PHP_URL_PATH) ?? '');
+    $sameOrigin = $prevUrl
+        && ($prevHost === null || strcasecmp((string) $prevHost, (string) request()->getHost()) === 0)
+        && $prevPath !== $currentPath;
+    $backUrl = $sameOrigin ? $prevUrl : route('projects.index');
+    $backLabel = match (true) {
+        str_starts_with($prevPath, '/@') && $sameOrigin => 'Kembali ke Profil',
+        str_starts_with($prevPath, '/komunitas') && $sameOrigin => 'Kembali ke Komunitas',
+        str_starts_with($prevPath, '/draft') && $sameOrigin => 'Kembali ke Draft',
+        $sameOrigin && $prevPath !== '/' => 'Kembali',
+        default => 'Kembali ke Feed',
+    };
+@endphp
+
 <div class="space-y-4 max-w-2xl mx-auto"
      x-data="{
-         title: @js(old('title', '')),
-         tagline: @js(old('tagline', '')),
-         categoryId: @js(old('category_id', '')),
-         projectType: @js(old('project_type', 'web')),
-         status: @js(old('status', 'beta')),
+         draftKey: 'ny_project_draft_{{ Auth::id() }}',
+         autosaveUrl: @js(route('projects.autosave')),
+         csrfToken: @js(csrf_token()),
+         shouldClearSaved: {{ session('clear_project_draft') ? 'true' : 'false' }},
+         hasServerDraft: {{ $editingDraft ? 'true' : 'false' }},
+         hasValidationErrors: {{ $errors->any() ? 'true' : 'false' }},
+         draftId: @js($initialDraftId ? (int) $initialDraftId : null),
+         title: @js($initialTitle),
+         tagline: @js($initialTagline),
+         categoryId: @js($initialCategoryId),
+         projectType: @js($initialProjectType),
+         status: @js($initialStatus),
+         visibility: @js($initialVisibility),
          techInput: '',
-         techList: @js(old('tech_stacks') ? array_filter(array_map('trim', explode(',', old('tech_stacks')))) : ['Laravel', 'TailwindCSS']),
+         techList: @js($initialTechList),
+         demoUrl: @js($initialDemoUrl),
+         githubUrl: @js($initialGithubUrl),
+         prototypeUrl: @js($initialPrototypeUrl),
+         thumbnailUrl: @js($initialThumbnailUrl),
+         description: @js($initialDescription),
+         challenges: @js($initialChallenges),
+         learnings: @js($initialLearnings),
+         setupInstructions: @js($initialSetup),
          previewImage: '',
-         showLinks: {{ old('demo_url') || old('github_url') ? 'true' : 'false' }},
+         showLinks: {{ ($initialDemoUrl || $initialGithubUrl) ? 'true' : 'false' }},
+         detailsOpen: {{ ($initialDescription || $initialChallenges || $initialLearnings || $initialSetup || $initialPrototypeUrl || $initialThumbnailUrl) ? 'true' : 'false' }},
+         saveAsDraftFlag: false,
+         restoredNotice: false,
+         autoSaveStatus: '',
+         autoSaveTimer: null,
+         isSubmitting: false,
+         serverErrors: [],
+
+         init() {
+             if (this.shouldClearSaved) {
+                 try { localStorage.removeItem(this.draftKey); } catch (e) {}
+             } else if (! this.hasServerDraft) {
+                 this.restoreFromLocal();
+             }
+
+             const watchFields = [
+                 'title', 'tagline', 'categoryId', 'projectType', 'status', 'visibility',
+                 'techList', 'demoUrl', 'githubUrl', 'prototypeUrl', 'thumbnailUrl',
+                 'description', 'challenges', 'learnings', 'setupInstructions'
+             ];
+             for (const field of watchFields) {
+                 this.$watch(field, () => this.scheduleAutosave());
+             }
+
+             const flushBeforeLeave = () => {
+                 if (this.isSubmitting) return;
+                 this.saveToLocal();
+                 this.beaconAutosave();
+             };
+             window.addEventListener('pagehide', flushBeforeLeave);
+             window.addEventListener('beforeunload', flushBeforeLeave);
+         },
+
+         snapshot() {
+             return {
+                 draftId: this.draftId,
+                 title: this.title,
+                 tagline: this.tagline,
+                 categoryId: this.categoryId,
+                 projectType: this.projectType,
+                 status: this.status,
+                 visibility: this.visibility,
+                 techList: this.techList,
+                 demoUrl: this.demoUrl,
+                 githubUrl: this.githubUrl,
+                 prototypeUrl: this.prototypeUrl,
+                 thumbnailUrl: this.thumbnailUrl,
+                 description: this.description,
+                 challenges: this.challenges,
+                 learnings: this.learnings,
+                 setupInstructions: this.setupInstructions,
+                 showLinks: this.showLinks,
+                 detailsOpen: this.detailsOpen,
+                 savedAt: Date.now()
+             };
+         },
+
+         hasMeaningfulContent() {
+             return Boolean(
+                 this.title.trim() || this.tagline.trim() || this.description.trim()
+                 || this.challenges.trim() || this.learnings.trim() || this.setupInstructions.trim()
+                 || this.demoUrl.trim() || this.githubUrl.trim() || this.prototypeUrl.trim()
+             );
+         },
+
+         saveToLocal() {
+             try {
+                 if (! this.hasMeaningfulContent() && ! this.draftId) {
+                     localStorage.removeItem(this.draftKey);
+                     return;
+                 }
+                 localStorage.setItem(this.draftKey, JSON.stringify(this.snapshot()));
+             } catch (e) {}
+         },
+
+         restoreFromLocal() {
+             try {
+                 const raw = localStorage.getItem(this.draftKey);
+                 if (! raw) return;
+                 const data = JSON.parse(raw);
+                 if (! data || typeof data !== 'object') return;
+
+                 if (this.hasValidationErrors) {
+                     if (data.draftId && ! this.draftId) {
+                         this.draftId = Number(data.draftId);
+                     }
+                     return;
+                 }
+
+                 const hasSavedText = Boolean(
+                     (data.title || '').trim() || (data.tagline || '').trim() || (data.description || '').trim()
+                     || (data.demoUrl || '').trim() || (data.githubUrl || '').trim()
+                 );
+                 if (! hasSavedText) return;
+
+                 if (data.draftId) this.draftId = Number(data.draftId);
+                 if (typeof data.title === 'string') this.title = data.title;
+                 if (typeof data.tagline === 'string') this.tagline = data.tagline;
+                 if (typeof data.categoryId === 'string') this.categoryId = data.categoryId;
+                 if (typeof data.projectType === 'string') this.projectType = data.projectType;
+                 if (typeof data.status === 'string') this.status = data.status;
+                 if (typeof data.visibility === 'string') this.visibility = data.visibility;
+                 if (Array.isArray(data.techList) && data.techList.length) this.techList = data.techList;
+                 if (typeof data.demoUrl === 'string') this.demoUrl = data.demoUrl;
+                 if (typeof data.githubUrl === 'string') this.githubUrl = data.githubUrl;
+                 if (typeof data.prototypeUrl === 'string') this.prototypeUrl = data.prototypeUrl;
+                 if (typeof data.thumbnailUrl === 'string') this.thumbnailUrl = data.thumbnailUrl;
+                 if (typeof data.description === 'string') this.description = data.description;
+                 if (typeof data.challenges === 'string') this.challenges = data.challenges;
+                 if (typeof data.learnings === 'string') this.learnings = data.learnings;
+                 if (typeof data.setupInstructions === 'string') this.setupInstructions = data.setupInstructions;
+                 if (this.demoUrl || this.githubUrl || data.showLinks) this.showLinks = true;
+                 if (this.description || this.challenges || this.learnings || this.setupInstructions || this.prototypeUrl || this.thumbnailUrl || data.detailsOpen) {
+                     this.detailsOpen = true;
+                 }
+                 this.restoredNotice = true;
+             } catch (e) {}
+         },
+
+         discardLocalDraft() {
+             try { localStorage.removeItem(this.draftKey); } catch (e) {}
+             this.draftId = null;
+             this.title = '';
+             this.tagline = '';
+             this.categoryId = '';
+             this.projectType = 'web';
+             this.status = 'beta';
+             this.visibility = 'public';
+             this.techList = ['Laravel', 'TailwindCSS'];
+             this.demoUrl = '';
+             this.githubUrl = '';
+             this.prototypeUrl = '';
+             this.thumbnailUrl = '';
+             this.description = '';
+             this.challenges = '';
+             this.learnings = '';
+             this.setupInstructions = '';
+             this.restoredNotice = false;
+             this.autoSaveStatus = '';
+         },
+
+         scheduleAutosave() {
+             this.saveToLocal();
+             if (this.autoSaveTimer) clearTimeout(this.autoSaveTimer);
+             this.autoSaveTimer = setTimeout(() => this.syncDraftToServer(), 1200);
+         },
+
+         async syncDraftToServer() {
+             if (this.isSubmitting) return;
+             if (! this.hasMeaningfulContent() && ! this.draftId) return;
+
+             this.autoSaveStatus = 'Menyimpan draft...';
+             try {
+                 const res = await fetch(this.autosaveUrl, {
+                     method: 'POST',
+                     headers: {
+                         'Content-Type': 'application/json',
+                         'Accept': 'application/json',
+                         'X-CSRF-TOKEN': this.csrfToken,
+                     },
+                     body: JSON.stringify({
+                         draft_id: this.draftId,
+                         title: this.title,
+                         tagline: this.tagline,
+                         category_id: this.categoryId || null,
+                         project_type: this.projectType,
+                         status: this.status,
+                         tech_stacks: this.techStacksJoined,
+                         demo_url: this.demoUrl,
+                         github_url: this.githubUrl,
+                         prototype_url: this.prototypeUrl,
+                         thumbnail_url: this.thumbnailUrl,
+                         description: this.description,
+                         challenges: this.challenges,
+                         learnings: this.learnings,
+                         setup_instructions: this.setupInstructions,
+                     }),
+                 });
+                 if (! res.ok) return;
+                 const data = await res.json();
+                 if (data.saved && data.draft_id) {
+                     this.draftId = Number(data.draft_id);
+                     this.saveToLocal();
+                     this.autoSaveStatus = 'Tersimpan otomatis ke Draft · ' + (data.saved_at || '');
+                 }
+             } catch (e) {
+                 this.autoSaveStatus = 'Draft tersimpan di browser';
+             }
+         },
+
+         beaconAutosave() {
+             if (! this.hasMeaningfulContent() && ! this.draftId) return;
+             if (! navigator.sendBeacon) return;
+             const fd = new FormData();
+             fd.append('_token', this.csrfToken);
+             if (this.draftId) fd.append('draft_id', String(this.draftId));
+             fd.append('title', this.title);
+             fd.append('tagline', this.tagline);
+             if (this.categoryId) fd.append('category_id', this.categoryId);
+             fd.append('project_type', this.projectType);
+             fd.append('status', this.status);
+             fd.append('tech_stacks', this.techStacksJoined);
+             fd.append('demo_url', this.demoUrl);
+             fd.append('github_url', this.githubUrl);
+             fd.append('prototype_url', this.prototypeUrl);
+             fd.append('thumbnail_url', this.thumbnailUrl);
+             fd.append('description', this.description);
+             fd.append('challenges', this.challenges);
+             fd.append('learnings', this.learnings);
+             fd.append('setup_instructions', this.setupInstructions);
+             navigator.sendBeacon(this.autosaveUrl, fd);
+         },
 
          handleFileSelect(event) {
              const file = event.target.files[0];
@@ -43,7 +311,107 @@
          get techStacksJoined() {
              return this.techList.join(', ');
          },
+         normalizeAndValidateUrl(prop, label, inputId, openLinks = false, openDetails = false) {
+             const raw = (this[prop] || '').trim();
+             if (! raw) {
+                 this[prop] = '';
+                 return true;
+             }
+             let normalized = raw;
+             if (! raw.includes('://') && ! /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(raw)) {
+                 if (/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}([:\/?#].*)?$/.test(raw)) {
+                     normalized = 'https://' + raw;
+                     this[prop] = normalized;
+                 }
+             }
+             try {
+                 const parsed = new URL(normalized);
+                 if (! ['http:', 'https:'].includes(parsed.protocol) || /\s/.test(normalized)) {
+                     throw new Error('Invalid protocol');
+                 }
+                 return true;
+             } catch (err) {
+                 if (openLinks) this.showLinks = true;
+                 if (openDetails) this.detailsOpen = true;
+                 const msg = 'Kolom ' + label + ' harus berupa URL valid (contoh: https://domain.com).';
+                 this.serverErrors = [msg];
+                 if (window.notify) notify(msg);
+                 this.$nextTick(() => document.getElementById(inputId)?.focus());
+                 return false;
+             }
+         },
+         validateOptionalUrls() {
+             return this.normalizeAndValidateUrl('demoUrl', 'Live Demo', 'demo_url', true, false)
+                 && this.normalizeAndValidateUrl('githubUrl', 'GitHub Repo', 'github_url', true, false)
+                 && this.normalizeAndValidateUrl('prototypeUrl', 'Figma / Prototype URL', 'prototype_url', false, true)
+                 && this.normalizeAndValidateUrl('thumbnailUrl', 'URL Gambar Eksternal', 'thumbnail_url', false, true);
+         },
+         async submitViaFetch(formEl) {
+             if (this.isSubmitting) return;
+             this.isSubmitting = true;
+             this.serverErrors = [];
+             this.saveToLocal();
+
+             try {
+                 const fd = new FormData(formEl);
+                 fd.set('tech_stacks', this.techStacksJoined);
+                 fd.set('save_as_draft', this.saveAsDraftFlag ? '1' : '0');
+                 if (this.draftId) fd.set('draft_id', String(this.draftId));
+
+                 const res = await fetch(formEl.action, {
+                     method: 'POST',
+                     headers: {
+                         'Accept': 'application/json',
+                         'X-Requested-With': 'XMLHttpRequest',
+                         'X-CSRF-TOKEN': this.csrfToken,
+                     },
+                     body: fd,
+                 });
+
+                 const data = await res.json().catch(() => ({}));
+
+                 if (! res.ok) {
+                     this.isSubmitting = false;
+                     const collected = [];
+                     if (data.errors && typeof data.errors === 'object') {
+                         for (const [field, msgs] of Object.entries(data.errors)) {
+                             if (['demo_url', 'github_url'].includes(field)) this.showLinks = true;
+                             if (['prototype_url', 'thumbnail_url', 'description', 'challenges', 'learnings', 'setup_instructions'].includes(field)) {
+                                 this.detailsOpen = true;
+                             }
+                             if (Array.isArray(msgs)) {
+                                 collected.push(...msgs);
+                             }
+                         }
+                     }
+                     this.serverErrors = collected.length ? collected : [data.message || 'Terjadi kesalahan saat menyimpan karya. Data dan gambar kamu tetap aman di halaman ini.'];
+                     if (window.notify) notify(this.serverErrors[0]);
+                     window.scrollTo({ top: 0, behavior: 'smooth' });
+                     return;
+                 }
+
+                 try { localStorage.removeItem(this.draftKey); } catch (e) {}
+                 window.location.href = data.redirect_url || '/';
+             } catch (err) {
+                 this.isSubmitting = false;
+                 const msg = 'Koneksi gagal atau server bermasalah. Data dan gambar kamu tetap aman dan tersimpan di Draft.';
+                 this.serverErrors = [msg];
+                 if (window.notify) notify(msg);
+             }
+         },
+         submitAsDraft() {
+             this.serverErrors = [];
+             if (! this.validateOptionalUrls()) return;
+             this.saveAsDraftFlag = true;
+             this.$nextTick(() => this.submitViaFetch(this.$refs.composerForm));
+         },
          submitForm(e) {
+             this.serverErrors = [];
+             if (this.saveAsDraftFlag) {
+                 if (! this.validateOptionalUrls()) return;
+                 this.submitViaFetch(e.target);
+                 return;
+             }
              if (!this.title.trim() || this.title.trim().length < 2) {
                  if (window.notify) notify('Judul project wajib diisi (minimal 2 karakter).');
                  document.getElementById('title')?.focus();
@@ -64,39 +432,60 @@
                  document.getElementById('tech_input')?.focus();
                  return;
              }
-             e.target.submit();
+             if (! this.validateOptionalUrls()) return;
+             this.submitViaFetch(e.target);
          }
      }">
 
-    @php
-        $prevUrl = url()->previous();
-        $prevHost = parse_url($prevUrl, PHP_URL_HOST);
-        $prevPath = (string) (parse_url($prevUrl, PHP_URL_PATH) ?? '');
-        $currentPath = (string) (parse_url(url()->current(), PHP_URL_PATH) ?? '');
-        $sameOrigin = $prevUrl
-            && ($prevHost === null || strcasecmp((string) $prevHost, (string) request()->getHost()) === 0)
-            && $prevPath !== $currentPath;
-        $backUrl = $sameOrigin ? $prevUrl : route('projects.index');
-        $backLabel = match (true) {
-            str_starts_with($prevPath, '/@') && $sameOrigin => 'Kembali ke Profil',
-            str_starts_with($prevPath, '/komunitas') && $sameOrigin => 'Kembali ke Komunitas',
-            $sameOrigin && $prevPath !== '/' => 'Kembali',
-            default => 'Kembali ke Feed',
-        };
-    @endphp
+    <!-- Contextual Back Link + Drafts Shortcut -->
+    <div class="flex items-center justify-between gap-3">
+        <a href="{{ $backUrl }}"
+           class="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--primary)] transition font-medium">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            <span>{{ $backLabel }}</span>
+        </a>
 
-    <!-- Contextual Back Link -->
-    <a href="{{ $backUrl }}"
-       class="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--primary)] transition font-medium">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-        </svg>
-        <span>{{ $backLabel }}</span>
-    </a>
+        <a href="{{ route('projects.drafts') }}"
+           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-[var(--surface)] border border-[var(--border-color)] hover:border-[var(--border-strong)] text-[var(--primary)] transition">
+            <span>Draft Saya</span>
+            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-[var(--surface-muted)] text-[var(--text-muted)]">{{ (int) ($draftsCount ?? 0) }}</span>
+        </a>
+    </div>
+
+    <!-- Restored / Auto-saved Banner -->
+    <div x-show="restoredNotice || autoSaveStatus || hasServerDraft" x-cloak
+         class="px-4 py-2.5 rounded-xl bg-[var(--surface)] border border-[var(--border-color)] text-xs flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2 min-w-0">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+            <span class="text-[var(--text-muted)] truncate"
+                  x-text="autoSaveStatus || (hasServerDraft ? 'Melanjutkan edit dari Draft tersimpan.' : 'Draft lokal dipulihkan otomatis setelah refresh/keluar.')"></span>
+        </div>
+        <button type="button" x-show="restoredNotice && !hasServerDraft" @click="discardLocalDraft()"
+                class="text-[11px] font-semibold text-rose-400 hover:underline shrink-0 cursor-pointer">
+            Reset Form
+        </button>
+    </div>
+
+    <!-- Dynamic AJAX Error Summary (no page refresh, preserves files & inputs) -->
+    <div x-show="serverErrors.length > 0" x-cloak class="p-4 rounded-xl bg-rose-950/40 border border-rose-900 text-rose-300 text-xs space-y-1" role="alert">
+        <p class="font-bold flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <span>Mohon periksa data berikut (gambar &amp; tulisan kamu tetap aman):</span>
+        </p>
+        <ul class="list-disc list-inside ml-5 space-y-0.5">
+            <template x-for="(err, idx) in serverErrors" :key="idx">
+                <li x-text="err"></li>
+            </template>
+        </ul>
+    </div>
 
     <!-- Error Summary if any -->
     @if ($errors->any())
-        <div class="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs space-y-1" role="alert">
+        <div class="p-4 rounded-xl bg-rose-950/40 border border-rose-900 text-rose-300 text-xs space-y-1" role="alert">
             <p class="font-bold flex items-center gap-1.5">
                 <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
@@ -111,13 +500,15 @@
         </div>
     @endif
 
-    <!-- Quick Twitter-style Composer Card -->
+    <!-- Quick Composer Card -->
     <div class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl p-5 sm:p-6 shadow-xs">
-        <form action="{{ route('projects.store') }}" method="POST" enctype="multipart/form-data" novalidate @submit.prevent="submitForm($event)" class="space-y-4">
+        <form x-ref="composerForm" action="{{ route('projects.store') }}" method="POST" enctype="multipart/form-data" novalidate @submit.prevent="submitForm($event)" class="space-y-4">
             @csrf
 
             <!-- Hidden inputs -->
             <input type="hidden" name="tech_stacks" :value="techStacksJoined">
+            <input type="hidden" name="draft_id" :value="draftId ?? ''">
+            <input type="hidden" name="save_as_draft" :value="saveAsDraftFlag ? '1' : '0'">
 
             <!-- Author header & visibility row -->
             <div class="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
@@ -130,9 +521,9 @@
                 </div>
 
                 <div class="flex items-center gap-2 shrink-0">
-                    <select name="visibility" class="text-[11px] font-medium rounded-lg bg-[var(--surface-muted)] text-[var(--primary)] border border-[var(--border-color)] px-2.5 py-1 outline-none">
-                        <option value="public" {{ old('visibility') === 'public' ? 'selected' : '' }}>Publik</option>
-                        <option value="private" {{ old('visibility') === 'private' ? 'selected' : '' }}>Privat</option>
+                    <select name="visibility" x-model="visibility" class="text-[11px] font-medium rounded-lg bg-[var(--surface-muted)] text-[var(--primary)] border border-[var(--border-color)] px-2.5 py-1 outline-none">
+                        <option value="public">Publik</option>
+                        <option value="private">Privat</option>
                     </select>
 
                     <select name="status" x-model="status" class="text-[11px] font-medium rounded-lg bg-[var(--surface-muted)] text-[var(--primary)] border border-[var(--border-color)] px-2.5 py-1 outline-none">
@@ -146,13 +537,13 @@
 
             <!-- Title Input -->
             <div class="space-y-1">
-                <input type="text" 
-                       name="title" 
-                       id="title" 
-                       required 
+                <input type="text"
+                       name="title"
+                       id="title"
+                       required
                        maxlength="150"
                        x-model="title"
-                       placeholder="Apa nama karya codinganmu?" 
+                       placeholder="Apa nama karya codinganmu?"
                        class="composer-seamless w-full text-base sm:text-lg font-bold text-[var(--primary)] placeholder:text-[var(--text-muted)] bg-transparent border-0 border-none focus:border-none focus:outline-none focus:ring-0 px-0 outline-none"
                        style="border: none !important; outline: none !important; box-shadow: none !important;">
                 @error('title') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
@@ -160,13 +551,13 @@
 
             <!-- Tagline Input -->
             <div class="space-y-1">
-                <textarea name="tagline" 
-                          id="tagline" 
-                          required 
+                <textarea name="tagline"
+                          id="tagline"
+                          required
                           maxlength="255"
                           rows="2"
                           x-model="tagline"
-                          placeholder="Ceritakan ringkas fungsi atau keunggulannya dalam 1-2 kalimat (tagline)..." 
+                          placeholder="Ceritakan ringkas fungsi atau keunggulannya dalam 1-2 kalimat (tagline)..."
                           class="composer-seamless w-full text-xs sm:text-sm text-[var(--primary)] placeholder:text-[var(--text-muted)] bg-transparent border-0 border-none focus:border-none focus:outline-none focus:ring-0 px-0 outline-none resize-none leading-relaxed"
                           style="border: none !important; outline: none !important; box-shadow: none !important;"></textarea>
                 @error('tagline') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
@@ -176,7 +567,7 @@
             <template x-if="previewImage">
                 <div class="relative w-full aspect-video max-h-[260px] rounded-xl overflow-hidden border border-[var(--border-color)] bg-[var(--surface-deep)]">
                     <img :src="previewImage" alt="Preview Thumbnail" class="w-full h-full object-cover">
-                    <button type="button" 
+                    <button type="button"
                             @click="removeThumbnail()"
                             class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/75 hover:bg-black text-white flex items-center justify-center transition cursor-pointer"
                             title="Hapus media">
@@ -190,14 +581,14 @@
                 <!-- Category Select -->
                 <div class="inline-flex items-center gap-1.5">
                     <label for="category_id" class="text-xs text-[var(--text-muted)] font-medium">Kategori <span class="text-rose-500">*</span>:</label>
-                    <select name="category_id" 
-                            id="category_id" 
-                            required 
+                    <select name="category_id"
+                            id="category_id"
+                            required
                             x-model="categoryId"
                             class="text-xs rounded-lg bg-[var(--surface-muted)] text-[var(--primary)] border border-[var(--border-color)] px-2.5 py-1.5 outline-none focus:border-[var(--primary)] transition">
                         <option value="">-- Pilih Kategori --</option>
                         @foreach($categories as $category)
-                            <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
+                            <option value="{{ $category->id }}">{{ $category->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -205,8 +596,8 @@
                 <!-- Project Type -->
                 <div class="inline-flex items-center gap-1.5">
                     <label for="project_type" class="text-xs text-[var(--text-muted)] font-medium">Tipe:</label>
-                    <select name="project_type" 
-                            id="project_type" 
+                    <select name="project_type"
+                            id="project_type"
                             x-model="projectType"
                             class="text-xs rounded-lg bg-[var(--surface-muted)] text-[var(--primary)] border border-[var(--border-color)] px-2.5 py-1.5 outline-none focus:border-[var(--primary)] transition">
                         <option value="web">Web App</option>
@@ -230,7 +621,7 @@
                 <!-- Chips container -->
                 <div class="flex flex-wrap items-center gap-1.5">
                     <template x-for="(tech, index) in techList" :key="index">
-                        <span class="inline-flex items-center gap-1 font-mono text-xs px-2.5 py-1 rounded-md bg-[#161619] dark:bg-[#19191D] text-[#EAE8E1] border border-[#242426]">
+                        <span class="inline-flex items-center gap-1 font-mono text-xs px-2.5 py-1 rounded-md bg-[var(--surface-muted)] text-[var(--primary)] border border-[var(--border-color)]">
                             <span x-text="'#' + tech"></span>
                             <button @click="removeTech(index)" type="button" class="text-[var(--text-muted)] hover:text-rose-500 transition cursor-pointer ml-0.5" aria-label="Hapus stack">&times;</button>
                         </span>
@@ -238,12 +629,12 @@
 
                     <!-- Quick Input -->
                     <div class="inline-flex items-center gap-1">
-                        <input type="text" 
+                        <input type="text"
                                id="tech_input"
                                x-model="techInput"
                                @keydown.enter.prevent="addTech()"
-                               placeholder="+ Tambah stack..." 
-                               class="text-xs px-2.5 py-1 rounded-md bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] outline-none focus:border-[#EAE8E1] font-mono w-36">
+                               placeholder="+ Tambah stack..."
+                               class="text-xs px-2.5 py-1 rounded-md bg-[var(--surface-deep)] border border-[var(--border-color)] text-[var(--primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--primary)] font-mono w-36">
                         <button type="button" @click="addTech()" class="text-xs px-2 py-1 rounded-md bg-[var(--surface-muted)] text-[var(--primary)] hover:bg-[var(--surface-hover)] border border-[var(--border-color)] cursor-pointer">
                             +
                         </button>
@@ -254,8 +645,8 @@
                 <div class="flex flex-wrap items-center gap-1 pt-0.5">
                     <span class="text-[10px] font-mono text-[var(--text-muted)] mr-1">Cepat:</span>
                     @foreach(['Laravel', 'Vue.js', 'React', 'TailwindCSS', 'TypeScript', 'Next.js', 'Python', 'Go', 'Flutter', 'PostgreSQL', 'Docker'] as $suggestion)
-                        <button @click="addTech('{{ $suggestion }}')" 
-                                type="button" 
+                        <button @click="addTech('{{ $suggestion }}')"
+                                type="button"
                                 class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[var(--surface-deep)] hover:bg-[var(--surface-muted)] text-[var(--text-muted)] hover:text-[var(--primary)] border border-[var(--border-color)] transition cursor-pointer">
                             + {{ $suggestion }}
                         </button>
@@ -270,8 +661,8 @@
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                         <span>Live Demo (opsional)</span>
                     </label>
-                    <input type="url" name="demo_url" id="demo_url" value="{{ old('demo_url') }}" placeholder="https://projectmu.com"
-                           class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs outline-none focus:border-[#EAE8E1]">
+                    <input type="url" name="demo_url" id="demo_url" x-model="demoUrl" placeholder="https://projectmu.com"
+                           class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[var(--border-color)] text-[var(--primary)] placeholder:text-[var(--text-muted)] text-xs outline-none focus:border-[var(--primary)]">
                 </div>
 
                 <div class="space-y-1">
@@ -279,57 +670,57 @@
                         <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
                         <span>GitHub Repo (opsional)</span>
                     </label>
-                    <input type="url" name="github_url" id="github_url" value="{{ old('github_url') }}" placeholder="https://github.com/user/repo"
-                           class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs outline-none focus:border-[#EAE8E1]">
+                    <input type="url" name="github_url" id="github_url" x-model="githubUrl" placeholder="https://github.com/user/repo"
+                           class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[var(--border-color)] text-[var(--primary)] placeholder:text-[var(--text-muted)] text-xs outline-none focus:border-[var(--primary)]">
                 </div>
             </div>
 
             <!-- Optional Knowledge & Setup collapsible details -->
-            <details class="group pt-2 border-t border-[var(--border-color)]">
-                <summary class="text-xs text-[var(--text-muted)] hover:text-[var(--primary)] cursor-pointer select-none flex items-center justify-between py-1 transition">
-                    <span class="font-medium">+ Tambah Cerita Teknis & Cara Setup (opsional)</span>
-                    <svg class="w-4 h-4 transition group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            <details class="group pt-2 border-t border-[var(--border-color)]" :open="detailsOpen">
+                <summary @click.prevent="detailsOpen = !detailsOpen" class="text-xs text-[var(--text-muted)] hover:text-[var(--primary)] cursor-pointer select-none flex items-center justify-between py-1 transition">
+                    <span class="font-medium">+ Tambah Cerita Teknis &amp; Cara Setup (opsional)</span>
+                    <svg class="w-4 h-4 transition" :class="detailsOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </summary>
                 <div class="space-y-3 pt-3">
                     <div class="space-y-1">
                         <label for="description" class="text-xs text-[var(--text-muted)] font-medium">Deskripsi Lengkap / Fitur</label>
-                        <textarea name="description" id="description" rows="3" placeholder="Ceritakan fitur utama atau arsitekturnya..."
-                                  class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs outline-none focus:border-[#EAE8E1]">{{ old('description') }}</textarea>
+                        <textarea name="description" id="description" x-model="description" rows="3" placeholder="Ceritakan fitur utama atau arsitekturnya..."
+                                  class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[var(--border-color)] text-[var(--primary)] placeholder:text-[var(--text-muted)] text-xs outline-none focus:border-[var(--primary)]"></textarea>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div class="space-y-1">
                             <label for="challenges" class="text-xs text-[var(--text-muted)] font-medium">Tantangan Teknis</label>
-                            <textarea name="challenges" id="challenges" rows="2" placeholder="Masalah tersulit yang ditemui..."
-                                      class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs outline-none focus:border-[#EAE8E1]">{{ old('challenges') }}</textarea>
+                            <textarea name="challenges" id="challenges" x-model="challenges" rows="2" placeholder="Masalah tersulit yang ditemui..."
+                                      class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[var(--border-color)] text-[var(--primary)] placeholder:text-[var(--text-muted)] text-xs outline-none focus:border-[var(--primary)]"></textarea>
                         </div>
                         <div class="space-y-1">
                             <label for="learnings" class="text-xs text-[var(--text-muted)] font-medium">Pelajaran Berharga</label>
-                            <textarea name="learnings" id="learnings" rows="2" placeholder="Solusi atau hal baru yang dipelajari..."
-                                      class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs outline-none focus:border-[#EAE8E1]">{{ old('learnings') }}</textarea>
+                            <textarea name="learnings" id="learnings" x-model="learnings" rows="2" placeholder="Solusi atau hal baru yang dipelajari..."
+                                      class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[var(--border-color)] text-[var(--primary)] placeholder:text-[var(--text-muted)] text-xs outline-none focus:border-[var(--primary)]"></textarea>
                         </div>
                     </div>
                     <div class="space-y-1">
                         <label for="setup_instructions" class="text-xs text-[var(--text-muted)] font-medium">Cara Run di Lokal</label>
-                        <textarea name="setup_instructions" id="setup_instructions" rows="2" placeholder="git clone ...&#10;composer install&#10;npm run dev"
-                                  class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] font-mono text-xs outline-none focus:border-[#EAE8E1]">{{ old('setup_instructions') }}</textarea>
+                        <textarea name="setup_instructions" id="setup_instructions" x-model="setupInstructions" rows="2" placeholder="git clone ...&#10;composer install&#10;npm run dev"
+                                  class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[var(--border-color)] text-[var(--primary)] placeholder:text-[var(--text-muted)] font-mono text-xs outline-none focus:border-[var(--primary)]"></textarea>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                         <div class="space-y-1">
                             <label for="prototype_url" class="text-xs text-[var(--text-muted)] font-medium">Figma / Prototype URL</label>
-                            <input type="url" name="prototype_url" id="prototype_url" value="{{ old('prototype_url') }}" placeholder="https://figma.com/proto/..."
-                                   class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs outline-none focus:border-[#EAE8E1]">
+                            <input type="url" name="prototype_url" id="prototype_url" x-model="prototypeUrl" placeholder="https://figma.com/proto/..."
+                                   class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[var(--border-color)] text-[var(--primary)] placeholder:text-[var(--text-muted)] text-xs outline-none focus:border-[var(--primary)]">
                         </div>
                         <div class="space-y-1">
                             <label for="thumbnail_url" class="text-xs text-[var(--text-muted)] font-medium">Atau URL Gambar Eksternal</label>
-                            <input type="url" name="thumbnail_url" id="thumbnail_url" value="{{ old('thumbnail_url') }}" placeholder="https://images.unsplash.com/..."
-                                   class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[#242426] text-[#EAE8E1] placeholder:text-[#8E8D86] text-xs outline-none focus:border-[#EAE8E1]">
+                            <input type="url" name="thumbnail_url" id="thumbnail_url" x-model="thumbnailUrl" placeholder="https://images.unsplash.com/..."
+                                   class="w-full px-3 py-2 rounded-xl bg-[var(--surface-deep)] border border-[var(--border-color)] text-[var(--primary)] placeholder:text-[var(--text-muted)] text-xs outline-none focus:border-[var(--primary)]">
                         </div>
                     </div>
                 </div>
             </details>
 
-            <!-- Bottom Toolbar: Attachments + Submit -->
-            <div class="flex items-center justify-between pt-3 border-t border-[var(--border-color)]">
+            <!-- Bottom Toolbar: Attachments + Save Draft + Publish -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-[var(--border-color)]">
                 <div class="flex items-center gap-1">
                     <!-- Upload Media Button -->
                     <label class="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--surface-muted)] transition cursor-pointer flex items-center gap-1.5 text-xs select-none" title="Unggah tangkapan layar / thumbnail">
@@ -341,7 +732,7 @@
                     </label>
 
                     <!-- Toggle Links Button -->
-                    <button type="button" @click="showLinks = !showLinks" 
+                    <button type="button" @click="showLinks = !showLinks"
                             :class="showLinks ? 'text-[var(--primary)] bg-[var(--surface-muted)]' : 'text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--surface-muted)]'"
                             class="p-2 rounded-lg transition cursor-pointer flex items-center gap-1.5 text-xs select-none" title="Tautkan Demo / GitHub">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -351,9 +742,14 @@
                     </button>
                 </div>
 
-                <x-button type="submit" variant="primary" size="md">
-                    <span>Pamerkan Karya</span>
-                </x-button>
+                <div class="flex items-center gap-2">
+                    <button type="button" @click="submitAsDraft()" :disabled="isSubmitting" class="btn-secondary text-xs py-2.5 px-3.5 cursor-pointer disabled:opacity-50">
+                        Simpan ke Draft
+                    </button>
+                    <x-button type="submit" @click="saveAsDraftFlag = false" ::disabled="isSubmitting" variant="primary" size="md">
+                        <span x-text="isSubmitting ? 'Menyimpan...' : 'Pamerkan Karya'"></span>
+                    </x-button>
+                </div>
             </div>
         </form>
     </div>
