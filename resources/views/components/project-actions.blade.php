@@ -135,6 +135,20 @@
                     <span>Salin Tautan</span>
                 </button>
 
+                <!-- Edit (owner only) -->
+                @auth
+                    @if(auth()->id() === $project->user_id)
+                        <div class="border-t border-[var(--border-color)]"></div>
+                        <a href="{{ route('projects.edit', $project->slug) }}"
+                           data-no-card-nav
+                           @click.stop
+                           class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-[var(--primary)] hover:bg-[var(--surface-hover)] transition cursor-pointer">
+                            <svg class="w-4 h-4 text-[var(--text-muted)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            <span>Edit Karya</span>
+                        </a>
+                    @endif
+                @endauth
+
                 <!-- Report (hidden from own project) -->
                 @auth
                     @if(auth()->id() !== $project->user_id)

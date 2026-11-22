@@ -844,7 +844,7 @@ class ProjectController extends Controller
     /**
      * Update an existing project.
      */
-    public function update(Request $request, Project $project): RedirectResponse
+    public function update(Request $request, Project $project): JsonResponse|RedirectResponse
     {
         if ($project->user_id !== Auth::id() && ! (Auth::user()?->is_admin ?? false)) {
             abort(403, 'Anda tidak memiliki hak untuk memperbarui proyek ini.');
@@ -871,6 +871,9 @@ class ProjectController extends Controller
             'thumbnail_url' => $this->linkRules(),
             'images' => ['nullable', 'array', 'max:8'],
             'images.*' => ['image', 'mimes:jpeg,png,jpg,webp,gif', 'max:4096'],
+            'media_order' => ['nullable', 'string'],
+            'new_images' => ['nullable', 'array', 'max:9'],
+            'new_images.*' => ['image', 'mimes:jpeg,png,jpg,webp,gif', 'max:4096'],
             'video' => ['nullable', 'file', 'mimes:mp4,webm,ogg,mov,m4v', 'max:25600'],
             'video_url' => $this->linkRules(),
             'videos' => ['nullable', 'array', 'max:4'],
@@ -879,25 +882,85 @@ class ProjectController extends Controller
 
         $techArray = array_values(array_filter(array_map('trim', explode(',', $validated['tech_stacks']))));
 
-        // Handle thumbnail
         $thumbnailPath = $project->getRawOriginal('thumbnail');
-        if ($request->hasFile('thumbnail')) {
-            $this->media->deleteStoredFile($project->thumbnail);
-            $path = $this->media->storeImage($request->file('thumbnail'), 'thumbnails', 'thumb');
-            $thumbnailPath = '/storage/'.$path;
-        } elseif (! empty($validated['thumbnail_url'])) {
-            if ($validated['thumbnail_url'] !== $project->thumbnail && $validated['thumbnail_url'] !== $project->getRawOriginal('thumbnail')) {
-                $this->media->deleteStoredFile($project->thumbnail);
-            }
-            $thumbnailPath = $validated['thumbnail_url'];
-        }
-
-        // Handle gallery images
         $galleryPaths = is_array($project->images) ? $project->images : [];
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                if ($image && $image->isValid()) {
-                    $galleryPaths[] = '/storage/'.$this->media->storeImage($image, 'project-images', 'gallery');
+
+        if ($request->filled('media_order')) {
+            $orderSpec = json_decode((string) $request->input('media_order'), true);
+
+            if (is_array($orderSpec)) {
+                $allowedExisting = array_values(array_unique(array_filter(array_merge(
+                    [$project->getRawOriginal('thumbnail')],
+                    is_array($project->images) ? $project->images : []
+                ))));
+
+                $uploadedFiles = $request->file('new_images', []);
+                if (! is_array($uploadedFiles)) {
+                    $uploadedFiles = [];
+                }
+
+                $finalPaths = [];
+                foreach ($orderSpec as $entry) {
+                    if (count($finalPaths) >= 9 || ! is_array($entry)) {
+                        break;
+                    }
+
+                    $entryType = $entry['type'] ?? null;
+                    if ($entryType === 'existing') {
+                        $path = (string) ($entry['path'] ?? '');
+                        if ($path !== '' && in_array($path, $allowedExisting, true) && ! in_array($path, $finalPaths, true)) {
+                            $finalPaths[] = $path;
+                        }
+                    } elseif ($entryType === 'new') {
+                        $idx = isset($entry['index']) ? (int) $entry['index'] : -1;
+                        $file = $uploadedFiles[$idx] ?? null;
+                        if ($file && $file->isValid()) {
+                            $isCover = count($finalPaths) === 0;
+                            $stored = $this->media->storeImage(
+                                $file,
+                                $isCover ? 'thumbnails' : 'project-images',
+                                $isCover ? 'thumb' : 'gallery'
+                            );
+                            $finalPaths[] = '/storage/'.$stored;
+                        }
+                    }
+                }
+
+                foreach ($allowedExisting as $oldPath) {
+                    if (! in_array($oldPath, $finalPaths, true)) {
+                        $this->media->deleteStoredFile($oldPath);
+                    }
+                }
+
+                if (count($finalPaths) > 0) {
+                    $thumbnailPath = $finalPaths[0];
+                    $galleryPaths = array_slice($finalPaths, 1, 8);
+                } elseif (! empty($validated['thumbnail_url'])) {
+                    $thumbnailPath = $validated['thumbnail_url'];
+                    $galleryPaths = [];
+                } else {
+                    $thumbnailPath = 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80';
+                    $galleryPaths = [];
+                }
+            }
+        } else {
+            // Legacy multipart update (keeps existing edit forms & tests working)
+            if ($request->hasFile('thumbnail')) {
+                $this->media->deleteStoredFile($project->thumbnail);
+                $path = $this->media->storeImage($request->file('thumbnail'), 'thumbnails', 'thumb');
+                $thumbnailPath = '/storage/'.$path;
+            } elseif (! empty($validated['thumbnail_url'])) {
+                if ($validated['thumbnail_url'] !== $project->thumbnail && $validated['thumbnail_url'] !== $project->getRawOriginal('thumbnail')) {
+                    $this->media->deleteStoredFile($project->thumbnail);
+                }
+                $thumbnailPath = $validated['thumbnail_url'];
+            }
+
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                    if ($image && $image->isValid()) {
+                        $galleryPaths[] = '/storage/'.$this->media->storeImage($image, 'project-images', 'gallery');
+                    }
                 }
             }
         }
@@ -984,13 +1047,23 @@ class ProjectController extends Controller
         Cache::forget('projects.hot_hashtags');
         Cache::forget('rail:trending_projects_v2');
 
-        if ($isNowDraft) {
-            return redirect()->route('projects.drafts')
-                ->with('success', 'Karya dipindahkan ke Draft.');
+        $redirectUrl = $isNowDraft
+            ? route('projects.drafts')
+            : route('projects.show', $project->slug);
+        $flashMessage = $isNowDraft
+            ? 'Karya dipindahkan ke Draft.'
+            : ($wasDraft ? 'Draft berhasil dipublikasikan!' : 'Project codingan berhasil diperbarui!');
+
+        if ($request->wantsJson()) {
+            $request->session()->flash('success', $flashMessage);
+
+            return response()->json([
+                'success' => true,
+                'redirect_url' => $redirectUrl,
+            ]);
         }
 
-        return redirect()->route('projects.show', $project->slug)
-            ->with('success', $wasDraft ? 'Draft berhasil dipublikasikan!' : 'Project codingan berhasil diperbarui!');
+        return redirect()->to($redirectUrl)->with('success', $flashMessage);
     }
 
     /**

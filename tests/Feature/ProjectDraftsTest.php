@@ -287,4 +287,68 @@ class ProjectDraftsTest extends TestCase
         $this->assertCount(1, $promoted->images);
         $this->assertCount(2, $promoted->galleryImages());
     }
+
+    public function test_edit_page_uses_unified_composer_and_supports_media_reorder_addition_and_removal(): void
+    {
+        Storage::fake('public');
+
+        $category = Category::create(['name' => 'DevTools', 'slug' => 'devtools']);
+        $author = User::factory()->create();
+
+        $project = Project::create([
+            'user_id' => $author->id,
+            'category_id' => $category->id,
+            'title' => 'Edit Composer Demo',
+            'slug' => 'edit-composer-demo',
+            'tagline' => 'Tagline sebelum diubah.',
+            'tech_stacks' => ['Laravel', 'Alpine.js'],
+            'thumbnail' => '/storage/thumbnails/a.webp',
+            'images' => ['/storage/project-images/b.webp'],
+            'visibility' => 'public',
+            'status' => 'beta',
+        ]);
+
+        $this->actingAs($author)
+            ->get(route('projects.edit', $project->slug))
+            ->assertOk()
+            ->assertSee('Edit Project:')
+            ->assertSee('object-contain', false)
+            ->assertSee('draggable="true"', false)
+            ->assertSee('openLightbox', false)
+            ->assertSee('moveImage', false)
+            ->assertDontSee('LANGKAH 01 DARI 05')
+            ->assertDontSee('return confirm(', false);
+
+        $response = $this->actingAs($author)->postJson(route('projects.update', $project->slug), [
+            '_method' => 'PUT',
+            'title' => 'Edit Composer Updated',
+            'tagline' => 'Tagline setelah diubah.',
+            'category_id' => $category->id,
+            'project_type' => 'web',
+            'status' => 'production',
+            'visibility' => 'public',
+            'tech_stacks' => 'Laravel, Vue.js',
+            'demo_url' => 'demoedit.id',
+            'media_order' => json_encode([
+                ['type' => 'existing', 'path' => '/storage/project-images/b.webp'],
+                ['type' => 'existing', 'path' => '/storage/other-user/secret.webp'],
+                ['type' => 'new', 'index' => 0],
+            ]),
+            'new_images' => [
+                UploadedFile::fake()->image('c.png', 500, 400),
+            ],
+        ]);
+
+        $response->assertOk()->assertJson(['success' => true]);
+
+        $project->refresh();
+        $this->assertSame('Edit Composer Updated', $project->title);
+        $this->assertSame('https://demoedit.id', $project->demo_url);
+        $this->assertSame('production', $project->status);
+        $this->assertSame('/storage/project-images/b.webp', $project->getRawOriginal('thumbnail'));
+        $this->assertIsArray($project->images);
+        $this->assertCount(1, $project->images);
+        $this->assertStringStartsWith('/storage/', $project->images[0]);
+        $this->assertNotContains('/storage/other-user/secret.webp', $project->images);
+    }
 }

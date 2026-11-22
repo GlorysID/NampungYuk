@@ -35,6 +35,33 @@
         ))
         : [];
 
+    $visibilityOptions = [
+        ['value' => 'public', 'label' => 'Publik', 'hint' => 'Tampil di feed & profil'],
+        ['value' => 'private', 'label' => 'Privat', 'hint' => 'Hanya terlihat oleh kamu'],
+    ];
+
+    $categoryOptions = $categories->map(static fn ($category): array => [
+        'value' => (string) $category->id,
+        'label' => (string) $category->name,
+    ])->values()->all();
+
+    $projectTypeOptions = [
+        ['value' => 'web', 'label' => 'Web App'],
+        ['value' => 'mobile', 'label' => 'Mobile App'],
+        ['value' => 'developer_tool', 'label' => 'Developer Tool / CLI'],
+        ['value' => 'library_package', 'label' => 'Library / Package'],
+        ['value' => 'game', 'label' => 'Game'],
+        ['value' => 'hardware_iot', 'label' => 'Hardware / IoT'],
+        ['value' => 'other', 'label' => 'Lainnya'],
+    ];
+
+    $statusOptions = [
+        ['value' => 'production', 'label' => 'Stabil / Rilis', 'hint' => 'Sudah siap dipakai publik'],
+        ['value' => 'beta', 'label' => 'Beta', 'hint' => 'Berjalan, masih tahap uji coba'],
+        ['value' => 'prototype', 'label' => 'Prototipe', 'hint' => 'Purwarupa / demo awal'],
+        ['value' => 'idea', 'label' => 'Ide', 'hint' => 'Masih konsep & rencana'],
+    ];
+
     $prevUrl = url()->previous();
     $prevHost = parse_url($prevUrl, PHP_URL_HOST);
     $prevPath = (string) (parse_url($prevUrl, PHP_URL_PATH) ?? '');
@@ -628,17 +655,7 @@
                 </div>
 
                 <div class="flex items-center gap-2 shrink-0">
-                    <select name="visibility" x-model="visibility" class="text-[11px] font-medium rounded-lg bg-[var(--surface-muted)] text-[var(--primary)] border border-[var(--border-color)] px-2.5 py-1 outline-none">
-                        <option value="public">Publik</option>
-                        <option value="private">Privat</option>
-                    </select>
-
-                    <select name="status" x-model="status" class="text-[11px] font-medium rounded-lg bg-[var(--surface-muted)] text-[var(--primary)] border border-[var(--border-color)] px-2.5 py-1 outline-none">
-                        <option value="beta">Beta</option>
-                        <option value="production">Rilis Publik</option>
-                        <option value="prototype">Prototipe</option>
-                        <option value="idea">Ide</option>
-                    </select>
+                    <x-custom-select name="visibility" id="visibility" x-model="visibility" :options="$visibilityOptions" size="sm" align="right" min-width="min-w-[205px]" />
                 </div>
             </div>
 
@@ -816,38 +833,18 @@
                 </div>
             </div>
 
-            <!-- Metadata Row: Category & Type -->
-            <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-[var(--border-color)]">
+            <!-- Metadata Row: Category & Type (Custom Selects) -->
+            <div class="flex flex-wrap items-center gap-3 pt-2 border-t border-[var(--border-color)]">
                 <!-- Category Select -->
-                <div class="inline-flex items-center gap-1.5">
+                <div class="inline-flex items-center gap-2">
                     <label for="category_id" class="text-xs text-[var(--text-muted)] font-medium">Kategori <span class="text-rose-500">*</span>:</label>
-                    <select name="category_id"
-                            id="category_id"
-                            required
-                            x-model="categoryId"
-                            class="text-xs rounded-lg bg-[var(--surface-muted)] text-[var(--primary)] border border-[var(--border-color)] px-2.5 py-1.5 outline-none focus:border-[var(--primary)] transition">
-                        <option value="">-- Pilih Kategori --</option>
-                        @foreach($categories as $category)
-                            <option value="{{ $category->id }}">{{ $category->name }}</option>
-                        @endforeach
-                    </select>
+                    <x-custom-select name="category_id" id="category_id" x-model="categoryId" :options="$categoryOptions" placeholder="Pilih Kategori" min-width="min-w-[210px]" />
                 </div>
 
                 <!-- Project Type -->
-                <div class="inline-flex items-center gap-1.5">
+                <div class="inline-flex items-center gap-2">
                     <label for="project_type" class="text-xs text-[var(--text-muted)] font-medium">Tipe:</label>
-                    <select name="project_type"
-                            id="project_type"
-                            x-model="projectType"
-                            class="text-xs rounded-lg bg-[var(--surface-muted)] text-[var(--primary)] border border-[var(--border-color)] px-2.5 py-1.5 outline-none focus:border-[var(--primary)] transition">
-                        <option value="web">Web App</option>
-                        <option value="mobile">Mobile App</option>
-                        <option value="developer_tool">Developer Tool / CLI</option>
-                        <option value="library_package">Library / Package</option>
-                        <option value="game">Game</option>
-                        <option value="hardware_iot">Hardware / IoT</option>
-                        <option value="other">Lainnya</option>
-                    </select>
+                    <x-custom-select name="project_type" id="project_type" x-model="projectType" :options="$projectTypeOptions" min-width="min-w-[200px]" />
                 </div>
             </div>
 
@@ -915,13 +912,20 @@
                 </div>
             </div>
 
-            <!-- Optional Knowledge & Setup collapsible details -->
+            <!-- Optional Knowledge, Development Stage & Setup collapsible details -->
             <details class="group pt-2 border-t border-[var(--border-color)]" :open="detailsOpen">
                 <summary @click.prevent="detailsOpen = !detailsOpen" class="text-xs text-[var(--text-muted)] hover:text-[var(--primary)] cursor-pointer select-none flex items-center justify-between py-1 transition">
-                    <span class="font-medium">+ Tambah Cerita Teknis &amp; Cara Setup (opsional)</span>
+                    <span class="font-medium">+ Tambah Cerita Teknis, Tahap Rilis &amp; Cara Setup (opsional)</span>
                     <svg class="w-4 h-4 transition" :class="detailsOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </summary>
                 <div class="space-y-3 pt-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[var(--border-color)]/60">
+                        <div>
+                            <label for="status" class="text-xs font-medium text-[var(--primary)] block">Tahap Pengembangan Karya</label>
+                            <p class="text-[11px] text-[var(--text-muted)]">Badge ini tampil di halaman detail karya.</p>
+                        </div>
+                        <x-custom-select name="status" id="status" x-model="status" :options="$statusOptions" align="right" min-width="min-w-[225px]" />
+                    </div>
                     <div class="space-y-1">
                         <label for="description" class="text-xs text-[var(--text-muted)] font-medium">Deskripsi Lengkap / Fitur</label>
                         <textarea name="description" id="description" x-model="description" rows="3" placeholder="Ceritakan fitur utama atau arsitekturnya..."
