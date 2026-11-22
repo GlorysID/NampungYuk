@@ -10,20 +10,25 @@
 @php
     $search = $search ?? '';
     $hasSearch = $search !== '';
-    $initialTab = match (request('tab')) {
+    $requestedTab = request('tab');
+    $initialTab = match ($requestedTab) {
         'likes' => $isOwner ? 'likes' : 'projects',
-        'drafts' => $isOwner ? 'drafts' : 'projects',
         'comments' => 'comments',
         'reposts' => 'reposts',
         default => 'projects',
     };
+    $initialProjectsSubTab = ($isOwner && ($requestedTab === 'drafts' || request('sub') === 'drafts'))
+        ? 'drafts'
+        : 'published';
     $clearSearchUrl = route('profile.show', array_filter([
         'username' => $user->username,
-        'tab' => $initialTab !== 'projects' ? $initialTab : null,
+        'tab' => $initialProjectsSubTab === 'drafts'
+            ? 'drafts'
+            : ($initialTab !== 'projects' ? $initialTab : null),
     ]));
 @endphp
 
-<div class="space-y-5" x-data="{ activeTab: '{{ $initialTab }}', editOpen: {{ $errors->any() && $isOwner ? 'true' : 'false' }} }">
+<div class="space-y-5" x-data="{ activeTab: '{{ $initialTab }}', projectsSubTab: '{{ $initialProjectsSubTab }}', editOpen: {{ $errors->any() && $isOwner ? 'true' : 'false' }}, deleteDraftModalOpen: false, deleteDraftUrl: '', deleteDraftTitle: '' }">
 
     <!-- Banned Alert Banner (if user is banned) -->
     @if($user->is_banned)
@@ -50,8 +55,13 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
             </svg>
             <div class="space-y-0.5">
-                <div class="flex items-center gap-2">
-                    <p class="font-bold text-sm text-amber-950 dark:text-amber-100">Status Peringatan Akun dari Admin</p>
+                <div class="flex flex-wrap items-center gap-2">
+                    <p class="font-bold text-sm text-amber-950 dark:text-amber-100">
+                        Status Peringatan Akun dari Admin
+                        <span class="font-normal text-xs text-amber-300/90">
+                            {{ $isOwner ? '— Hanya Kamu dan Admin yang Melihat Ini' : '— Hanya Terlihat oleh Pemilik Akun & Admin' }}
+                        </span>
+                    </p>
                     @if($user->warned_at)
                         <span class="text-[11px] opacity-75 font-mono">({{ $user->warned_at->format('d M Y, H:i') }})</span>
                     @endif
@@ -476,14 +486,6 @@
                 <span>Disukai</span>
                 <span class="text-xs font-mono px-2 py-0.5 rounded" :class="activeTab === 'likes' ? 'bg-white/20 dark:bg-black/20 text-[var(--primary-text)]' : 'bg-[var(--surface-muted)] text-[var(--text-muted)]'">{{ $hasSearch && method_exists($likedProjects, 'total') ? $likedProjects->total() : $totalLikes }}</span>
             </button>
-
-            <button @click="activeTab = 'drafts'"
-                    :class="activeTab === 'drafts' ? 'bg-[var(--primary)] text-[var(--primary-text)] font-semibold shadow-xs' : 'text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--surface-muted)]'"
-                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer shrink-0">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                <span>Draft</span>
-                <span class="text-xs font-mono px-2 py-0.5 rounded" :class="activeTab === 'drafts' ? 'bg-white/20 dark:bg-black/20 text-[var(--primary-text)]' : 'bg-[var(--surface-muted)] text-[var(--text-muted)]'">{{ $totalDrafts ?? 0 }}</span>
-            </button>
         @endif
     </div>
 
@@ -492,7 +494,7 @@
           action="{{ route('profile.show', $user->username) }}"
           id="profile-search-form"
           class="space-y-2">
-        <input type="hidden" name="tab" :value="activeTab">
+        <input type="hidden" name="tab" :value="activeTab === 'projects' && projectsSubTab === 'drafts' ? 'drafts' : activeTab">
         <div class="flex items-center gap-2 rounded-xl bg-[var(--surface)] border border-[var(--border-color)] focus-within:border-[var(--border-strong)] px-3.5 py-2 shadow-xs transition">
             <svg class="w-4 h-4 text-[var(--text-muted)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
@@ -525,22 +527,122 @@
 
     <!-- ===================== TAB: PROJECTS ===================== -->
     <div x-show="activeTab === 'projects'" class="space-y-4">
-        @forelse($projects as $project)
-            @php
-                $isBookmarked = in_array($project->id, $userBookmarkedIds ?? []);
-                $initialVote = $userVotes[$project->id] ?? null;
-            @endphp
-            <x-project-card :project="$project" :initial-vote="$initialVote" :is-bookmarked="$isBookmarked" :is-owner="$isOwner" :is-reposted="in_array($project->id, $userRepostedIds ?? [])" />
-        @empty
-            @if($hasSearch)
-                <x-empty-state title="Postingan tidak ditemukan" :description="'Tidak ada karya yang cocok dengan kata kunci &quot;' . e($search) . '&quot;.'" />
-            @else
-                <x-empty-state title="Belum ada karya codingan" description="Developer ini belum mempublikasikan project ke NampungYuk." />
-            @endif
-        @endforelse
+        @if($isOwner)
+            <div class="flex flex-wrap items-center justify-between gap-2.5">
+                <div class="inline-flex items-center gap-1 p-1 rounded-xl bg-[var(--surface)] border border-[var(--border-color)]">
+                    <button type="button"
+                            @click="projectsSubTab = 'published'"
+                            :class="projectsSubTab === 'published' ? 'bg-[var(--surface-hover)] text-[var(--primary)] font-semibold border border-[var(--border-strong)]' : 'text-[var(--text-muted)] hover:text-[var(--primary)] border border-transparent'"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition cursor-pointer">
+                        <span>Terpublikasi</span>
+                        <span class="font-mono text-[11px] opacity-80">{{ $hasSearch ? $projects->total() : $totalProjects }}</span>
+                    </button>
+                    <button type="button"
+                            @click="projectsSubTab = 'drafts'"
+                            :class="projectsSubTab === 'drafts' ? 'bg-[var(--surface-hover)] text-[var(--primary)] font-semibold border border-[var(--border-strong)]' : 'text-[var(--text-muted)] hover:text-[var(--primary)] border border-transparent'"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition cursor-pointer">
+                        <span>Draft</span>
+                        <span class="font-mono text-[11px] opacity-80">{{ $hasSearch ? $draftProjects->count() : ($totalDrafts ?? 0) }}</span>
+                    </button>
+                </div>
 
-        @if($projects->hasPages())
-            <div class="pt-2">{{ $projects->links() }}</div>
+                <div x-show="projectsSubTab === 'drafts'" x-cloak class="flex items-center gap-3 text-xs">
+                    <a href="{{ route('projects.drafts') }}" class="font-semibold text-[var(--text-muted)] hover:text-[var(--primary)] transition">
+                        Kelola Semua Draft
+                    </a>
+                    <a href="{{ route('projects.create') }}" class="btn-secondary text-xs py-1.5 px-3">
+                        + Tulis Karya
+                    </a>
+                </div>
+            </div>
+        @endif
+
+        <div x-show="!{{ $isOwner ? 'true' : 'false' }} || projectsSubTab === 'published'" class="space-y-4">
+            @forelse($projects as $project)
+                @php
+                    $isBookmarked = in_array($project->id, $userBookmarkedIds ?? []);
+                    $initialVote = $userVotes[$project->id] ?? null;
+                @endphp
+                <x-project-card :project="$project" :initial-vote="$initialVote" :is-bookmarked="$isBookmarked" :is-owner="$isOwner" :is-reposted="in_array($project->id, $userRepostedIds ?? [])" />
+            @empty
+                @if($hasSearch)
+                    <x-empty-state title="Postingan tidak ditemukan" :description="'Tidak ada karya yang cocok dengan kata kunci &quot;' . e($search) . '&quot;.'" />
+                @else
+                    <x-empty-state title="Belum ada karya codingan" description="Developer ini belum mempublikasikan project ke NampungYuk." />
+                @endif
+            @endforelse
+
+            @if($projects->hasPages())
+                <div class="pt-2">{{ $projects->links() }}</div>
+            @endif
+        </div>
+
+        @if($isOwner)
+            <div x-show="projectsSubTab === 'drafts'" x-cloak class="space-y-3">
+                <p class="text-[11.5px] text-[var(--text-muted)] px-1">
+                    Draft hanya terlihat oleh kamu. Lanjutkan edit atau langsung post ke feed kapan saja.
+                </p>
+
+                @forelse(($draftProjects ?? collect()) as $draftItem)
+                    <div class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl p-4 sm:p-5 space-y-3">
+                        <div class="flex items-start gap-3.5 min-w-0">
+                            @if($draftItem->thumbnail)
+                                <img src="{{ $draftItem->thumbnail }}" alt="{{ $draftItem->title ?: 'Draft' }}" class="w-16 h-12 rounded-xl object-cover border border-[var(--border-color)] shrink-0 bg-[var(--surface-muted)]">
+                            @endif
+
+                            <div class="min-w-0 flex-1 space-y-1">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="text-[10px] font-mono font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/25">Draft</span>
+                                    @if($draftItem->category)
+                                        <span class="text-[11px] font-mono text-[var(--text-muted)]">{{ $draftItem->category->name }}</span>
+                                    @endif
+                                    <span class="text-[11px] font-mono text-[var(--text-faint)]">Diperbarui {{ $draftItem->updated_at?->diffForHumans() }}</span>
+                                </div>
+                                <p class="font-bold text-sm sm:text-[15px] text-[var(--primary)] truncate">{{ $draftItem->title ?: 'Draft Tanpa Judul' }}</p>
+                                @if($draftItem->tagline)
+                                    <p class="text-xs text-[var(--text-muted)] line-clamp-2">{{ $draftItem->tagline }}</p>
+                                @else
+                                    <p class="text-xs italic text-[var(--text-faint)]">Belum ada tagline.</p>
+                                @endif
+                            </div>
+                        </div>
+
+                        @if(! empty($draftItem->tech_stacks))
+                            <div class="flex flex-wrap items-center gap-1.5">
+                                @foreach(array_slice($draftItem->tech_stacks, 0, 5) as $stack)
+                                    <span class="text-[11px] font-mono px-2 py-0.5 rounded-md bg-[var(--surface-muted)] text-[var(--text-muted)]">#{{ $stack }}</span>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-[var(--border-color)]">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <a href="{{ route('projects.create', ['draft' => $draftItem->slug]) }}" class="btn-secondary text-xs py-1.5 px-3.5">
+                                    Edit Draft
+                                </a>
+                                <form method="POST" action="{{ route('projects.publish', $draftItem->slug) }}">
+                                    @csrf
+                                    <button type="submit" class="btn-primary text-xs py-1.5 px-3.5 cursor-pointer">
+                                        Post Sekarang
+                                    </button>
+                                </form>
+                            </div>
+
+                            <button type="button"
+                                    @click="deleteDraftUrl = @js(route('projects.destroy', $draftItem->slug)); deleteDraftTitle = @js($draftItem->title ?: 'Draft Tanpa Judul'); deleteDraftModalOpen = true"
+                                    class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition cursor-pointer">
+                                Hapus
+                            </button>
+                        </div>
+                    </div>
+                @empty
+                    @if($hasSearch)
+                        <x-empty-state title="Draft tidak ditemukan" :description="'Tidak ada draft yang cocok dengan kata kunci &quot;' . e($search) . '&quot;.'" />
+                    @else
+                        <x-empty-state title="Belum ada draft" description="Karya yang disimpan ke draft akan muncul di sini." action-label="Mulai Tulis Karya" :action-url="route('projects.create')" />
+                    @endif
+                @endforelse
+            </div>
         @endif
     </div>
 
@@ -584,37 +686,6 @@
             @if(method_exists($likedProjects, 'hasPages') && $likedProjects->hasPages())
                 <div class="pt-2">{{ $likedProjects->links() }}</div>
             @endif
-        </div>
-
-        <!-- ===================== TAB: DRAFTS (owner only) ===================== -->
-        <div x-show="activeTab === 'drafts'" x-cloak class="space-y-3">
-            <div class="flex items-center justify-between gap-2 px-1">
-                <p class="text-[11px] text-[var(--text-muted)]">Draft tersimpan otomatis maupun manual (hanya terlihat oleh kamu).</p>
-                <a href="{{ route('projects.drafts') }}" class="text-xs font-semibold text-[var(--primary)] hover:underline">Kelola Semua Draft &rarr;</a>
-            </div>
-            @forelse(($draftProjects ?? collect()) as $draftItem)
-                <div class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div class="min-w-0 space-y-1">
-                        <div class="flex items-center gap-2">
-                            <span class="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded-full bg-[var(--surface-muted)] text-[var(--text-muted)] border border-[var(--border-color)]">Draft</span>
-                            <span class="text-[11px] font-mono text-[var(--text-faint)]">{{ $draftItem->updated_at?->diffForHumans() }}</span>
-                        </div>
-                        <p class="font-bold text-sm text-[var(--primary)] truncate">{{ $draftItem->title ?: 'Draft Tanpa Judul' }}</p>
-                        @if($draftItem->tagline)
-                            <p class="text-xs text-[var(--text-muted)] truncate">{{ $draftItem->tagline }}</p>
-                        @endif
-                    </div>
-                    <div class="flex items-center gap-2 shrink-0">
-                        <a href="{{ route('projects.create', ['draft' => $draftItem->slug]) }}" class="btn-primary text-xs py-1.5 px-3">Lanjutkan</a>
-                        <form method="POST" action="{{ route('projects.publish', $draftItem->slug) }}">
-                            @csrf
-                            <button type="submit" class="btn-secondary text-xs py-1.5 px-3 cursor-pointer">Publikasikan</button>
-                        </form>
-                    </div>
-                </div>
-            @empty
-                <x-empty-state title="Belum ada draft" description="Karya yang disimpan ke draft akan muncul di sini." />
-            @endforelse
         </div>
     @endif
 
@@ -913,6 +984,42 @@
                             <span>Terapkan</span>
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== DELETE DRAFT DANGER MODAL ===================== -->
+        <div x-show="deleteDraftModalOpen"
+             x-cloak
+             @keydown.escape.window="deleteDraftModalOpen = false"
+             class="fixed inset-0 z-50 overflow-y-auto"
+             role="dialog"
+             aria-modal="true">
+            <div class="fixed inset-0 bg-black/80 backdrop-blur-xs" @click="deleteDraftModalOpen = false"></div>
+            <div class="min-h-full flex items-center justify-center p-4">
+                <div class="relative w-full max-w-md bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl p-6 shadow-2xl space-y-4 text-[var(--primary)]">
+                    <div class="flex items-start gap-3">
+                        <span class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-400 flex items-center justify-center shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </span>
+                        <div class="min-w-0 space-y-1">
+                            <h3 class="text-base font-bold text-rose-400">Hapus Draft Permanen</h3>
+                            <p class="text-xs text-[var(--text-muted)] break-words" x-text="deleteDraftTitle"></p>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-rose-200/80 px-3.5 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25">
+                        Draft yang dihapus tidak dapat dipulihkan lagi.
+                    </p>
+
+                    <form method="POST" :action="deleteDraftUrl" class="space-y-4">
+                        @csrf
+                        @method('DELETE')
+                        <div class="flex items-center justify-end gap-2">
+                            <button type="button" @click="deleteDraftModalOpen = false" class="btn-secondary text-xs py-2 px-4 cursor-pointer">Batal</button>
+                            <button type="submit" class="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs cursor-pointer transition">Hapus Permanen</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

@@ -447,4 +447,34 @@ class AdminModerationTest extends TestCase
             'resolved_by' => $admin->id,
         ]);
     }
+
+    public function test_warned_user_profile_banner_is_only_visible_to_owner_and_admin(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $warnedUser = User::factory()->create([
+            'warning_notes' => 'Catatan rahasia moderasi akun.',
+            'warned_at' => now(),
+        ]);
+        $otherUser = User::factory()->create();
+
+        $this->get(route('profile.show', $warnedUser->username))
+            ->assertOk()
+            ->assertDontSee('Status Peringatan Akun dari Admin')
+            ->assertDontSee('Catatan rahasia moderasi akun.');
+
+        $this->actingAs($otherUser)->get(route('profile.show', $warnedUser->username))
+            ->assertOk()
+            ->assertDontSee('Status Peringatan Akun dari Admin')
+            ->assertDontSee('Catatan rahasia moderasi akun.');
+
+        $this->actingAs($warnedUser)->get(route('profile.show', $warnedUser->username))
+            ->assertOk()
+            ->assertSee('Status Peringatan Akun dari Admin')
+            ->assertSee('Catatan rahasia moderasi akun.');
+
+        $this->actingAs($admin)->get(route('profile.show', $warnedUser->username))
+            ->assertOk()
+            ->assertSee('Status Peringatan Akun dari Admin')
+            ->assertSee('Catatan rahasia moderasi akun.');
+    }
 }

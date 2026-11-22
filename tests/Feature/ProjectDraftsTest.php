@@ -162,7 +162,22 @@ class ProjectDraftsTest extends TestCase
         $this->actingAs($author)
             ->get(route('profile.show', $author->username))
             ->assertOk()
-            ->assertSee('Draft');
+            ->assertSee('Terpublikasi')
+            ->assertSee('Draft')
+            ->assertSee('Edit Draft')
+            ->assertSee('Post Sekarang')
+            ->assertSee('Karya Masih Draft');
+
+        $this->actingAs($author)
+            ->get(route('profile.show', ['username' => $author->username, 'tab' => 'drafts']))
+            ->assertOk()
+            ->assertSee('Karya Masih Draft');
+
+        $this->actingAs($otherUser)
+            ->get(route('profile.show', $author->username))
+            ->assertOk()
+            ->assertDontSee('Karya Masih Draft')
+            ->assertDontSee('Post Sekarang');
 
         // Direct show returns 404 for other users and even non-owner admins
         $this->actingAs($otherUser)

@@ -192,7 +192,11 @@ class ProfileController extends Controller
         $totalReposts = $user->reposts()->count();
 
         $draftProjects = $isOwner
-            ? Project::with('category')->draftsFor($user->id)->take(12)->get()
+            ? Project::with('category')
+                ->draftsFor($user->id)
+                ->when($search !== '', fn ($q) => $q->search($search))
+                ->take(12)
+                ->get()
             : collect();
         $totalDrafts = $isOwner ? Project::draftsFor($user->id)->count() : 0;
 

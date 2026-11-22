@@ -72,12 +72,12 @@
                 <template x-if="action === 'set'">
                     <div>
                         <label class="block text-xs font-semibold text-[var(--primary)] mb-2">
-                            Keterangan Peringatan (tampil publik pada project)
+                            Keterangan Peringatan (hanya terlihat oleh pemilik & admin)
                         </label>
                         <textarea name="warning_notes" x-model="notes" rows="3" maxlength="500" required
                                   placeholder="Contoh: Konten mengandung tautan yang melanggar pedoman komunitas. Mohon segera diperbaiki."
                                   class="w-full px-3 py-2.5 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border-color)] text-xs text-[var(--primary)] placeholder-[#908F88] outline-none focus:border-amber-500 transition resize-none"></textarea>
-                        <p class="text-[11px] text-[var(--text-muted)] mt-1">Keterangan ini akan ditampilkan kepada pembuat project dan pengunjung halaman project.</p>
+                        <p class="text-[11px] text-[var(--text-muted)] mt-1">Karya akan disembunyikan dari publik; keterangan ini hanya ditampilkan kepada pemilik karya dan admin.</p>
                     </div>
                 </template>
 
