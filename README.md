@@ -73,28 +73,34 @@ Seluruh tangkapan layar antarmuka disimpan dalam direktori `docs/images/`.
 ### 3. Formulir Unggah Karya (Composer Anti-Refresh & Draft)
 ![Formulir Unggah Karya](docs/images/form-unggah.png)
 
-### 4. Halaman Daftar Draft Karya
+### 4. Formulir Edit Karya (Unified Composer & Custom Select)
+![Formulir Edit Karya](docs/images/edit-karya.png)
+
+### 5. Halaman Daftar Draft Karya
 ![Halaman Daftar Draft Karya](docs/images/draft-karya.png)
 
-### 5. Spaces Live Audio & Video Terstruktur
+### 6. Spaces Live Audio & Video Terstruktur
 ![Halaman Spaces NampungYuk](docs/images/spaces.png)
 
-### 6. Halaman Komunitas & Diskusi Developer
+### 7. Halaman Komunitas & Diskusi Developer
 ![Halaman Komunitas Developer](docs/images/komunitas.png)
 
-### 7. Fitur Obrolan Developer (Workspace 2-Pane)
+### 8. Konsol Pengelolaan Komunitas
+![Konsol Pengelolaan Komunitas](docs/images/komunitas-kelola.png)
+
+### 9. Fitur Obrolan Developer (Workspace 2-Pane)
 ![Fitur Obrolan Antar Pengguna](docs/images/obrolan.png)
 
-### 8. Halaman Profil Kreator
+### 10. Halaman Profil Kreator
 ![Halaman Profil Kreator](docs/images/profil.png)
 
-### 9. Autentikasi Split-Screen
+### 11. Autentikasi Split-Screen
 ![Halaman Login dan Autentikasi](docs/images/autentikasi.png)
 
-### 10. Dashboard Moderasi Administrator
+### 12. Dashboard Moderasi Administrator
 ![Panel Moderasi Administrator](docs/images/admin-moderasi.png)
 
-### 11. Tampilan Responsif Mobile (Dark Mode Only)
+### 13. Tampilan Responsif Mobile (Dark Mode Only)
 Platform mengadopsi estetika **Token Harbor** yang dirancang **Dark Mode Only** (Matte Obsidian `#0B0B0D`, Surface `#121214`, Hairline Border `#242426`, Warm Stone `#EAE8E1`, dan tipografi Geist / Geist Mono).
 ![Tampilan Mode Gelap dan Ponsel](docs/images/responsive-dark-mode.png)
 
