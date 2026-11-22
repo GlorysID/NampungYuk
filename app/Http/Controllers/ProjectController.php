@@ -635,7 +635,18 @@ class ProjectController extends Controller
         // Process tech stacks tags into array
         $techArray = array_values(array_filter(array_map('trim', explode(',', (string) ($validated['tech_stacks'] ?? '')))));
 
-        // Handle thumbnail: file upload (optimized) OR external image URL OR existing/default
+        // Handle additional gallery images (multiple uploads, optimized to WebP).
+        $existingGalleryPaths = is_array($existingDraft?->images) ? $existingDraft->images : [];
+        $uploadedGalleryPaths = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                if ($image && $image->isValid()) {
+                    $uploadedGalleryPaths[] = '/storage/'.$this->media->storeImage($image, 'project-images', 'gallery');
+                }
+            }
+        }
+
+        // Handle thumbnail: file upload (optimized) OR external image URL OR first uploaded gallery image OR existing/default
         $thumbnailPath = $existingDraft?->getRawOriginal('thumbnail');
         if ($request->hasFile('thumbnail')) {
             if ($existingDraft) {
@@ -645,19 +656,13 @@ class ProjectController extends Controller
             $thumbnailPath = '/storage/'.$path;
         } elseif (! empty($validated['thumbnail_url'])) {
             $thumbnailPath = $validated['thumbnail_url'];
+        } elseif (! $thumbnailPath && count($uploadedGalleryPaths) > 0) {
+            $thumbnailPath = array_shift($uploadedGalleryPaths);
         } elseif (! $thumbnailPath) {
             $thumbnailPath = 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80';
         }
 
-        // Handle additional gallery images (multiple uploads, optimized to WebP).
-        $galleryPaths = is_array($existingDraft?->images) ? $existingDraft->images : [];
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                if ($image && $image->isValid()) {
-                    $galleryPaths[] = '/storage/'.$this->media->storeImage($image, 'project-images', 'gallery');
-                }
-            }
-        }
+        $galleryPaths = array_merge($existingGalleryPaths, $uploadedGalleryPaths);
 
         // Handle primary video: uploaded file (compressed + poster) OR external URL.
         $videoPath = $existingDraft?->video;

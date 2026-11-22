@@ -7,7 +7,9 @@ use App\Models\Category;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ProjectDraftsTest extends TestCase
@@ -225,5 +227,64 @@ class ProjectDraftsTest extends TestCase
 
         $this->assertSame('draft', $draft->fresh()->visibility);
         $this->assertSame(0, $category->fresh()->projects_count);
+    }
+
+    public function test_user_can_upload_multiple_images_when_creating_project(): void
+    {
+        Storage::fake('public');
+
+        $category = Category::create(['name' => 'UI Engineering', 'slug' => 'ui-engineering']);
+        $author = User::factory()->create();
+
+        $this->actingAs($author)
+            ->get(route('projects.create'))
+            ->assertOk()
+            ->assertSee('id="media_images_input"', false)
+            ->assertSee('multiple', false)
+            ->assertSee('object-contain', false)
+            ->assertSee('draggable="true"', false)
+            ->assertSee('openLightbox', false)
+            ->assertSee('moveImage', false);
+
+        // 1. Upload 1 cover (thumbnail) + 2 gallery images (3 images total)
+        $response = $this->actingAs($author)->postJson(route('projects.store'), [
+            'title' => 'Multi Image Showcase',
+            'tagline' => 'Testing unggah banyak gambar sekaligus.',
+            'category_id' => $category->id,
+            'tech_stacks' => 'Laravel, TailwindCSS',
+            'thumbnail' => UploadedFile::fake()->image('cover.png', 600, 400),
+            'images' => [
+                UploadedFile::fake()->image('shot1.png', 600, 400),
+                UploadedFile::fake()->image('shot2.png', 600, 400),
+            ],
+        ]);
+
+        $response->assertOk()->assertJson(['success' => true]);
+
+        $project = Project::where('title', 'Multi Image Showcase')->firstOrFail();
+        $this->assertStringStartsWith('/storage/', (string) $project->getRawOriginal('thumbnail'));
+        $this->assertIsArray($project->images);
+        $this->assertCount(2, $project->images);
+        $this->assertCount(3, $project->galleryImages());
+
+        // 2. Upload via images[] only -> first gallery image promoted to thumbnail
+        $promotedResponse = $this->actingAs($author)->postJson(route('projects.store'), [
+            'title' => 'Gallery Promoted Showcase',
+            'tagline' => 'Gambar pertama dipromosikan menjadi cover.',
+            'category_id' => $category->id,
+            'tech_stacks' => 'Vue.js',
+            'images' => [
+                UploadedFile::fake()->image('first.png', 600, 400),
+                UploadedFile::fake()->image('second.png', 600, 400),
+            ],
+        ]);
+
+        $promotedResponse->assertOk()->assertJson(['success' => true]);
+
+        $promoted = Project::where('title', 'Gallery Promoted Showcase')->firstOrFail();
+        $this->assertStringStartsWith('/storage/', (string) $promoted->getRawOriginal('thumbnail'));
+        $this->assertIsArray($promoted->images);
+        $this->assertCount(1, $promoted->images);
+        $this->assertCount(2, $promoted->galleryImages());
     }
 }

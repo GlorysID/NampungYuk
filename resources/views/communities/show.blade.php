@@ -471,7 +471,48 @@
                             Hanya admin dan moderator yang dapat membuat postingan di komunitas ini.
                         </div>
                     @else
-                        <form method="POST" action="{{ route('communities.post', $community) }}" enctype="multipart/form-data" class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl p-4 space-y-3 shadow-xs" x-data="{ type: 'discussion' }">
+                        <form method="POST"
+                              action="{{ route('communities.post', $community) }}"
+                              enctype="multipart/form-data"
+                              class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl p-4 space-y-3 shadow-xs"
+                              x-data="{
+                                  type: 'discussion',
+                                  files: [],
+                                  maxFiles: 4,
+                                  handleImages(event) {
+                                      const picked = Array.from(event.target.files || []).filter(f => f && f.type && f.type.startsWith('image/'));
+                                      if (! picked.length) return;
+                                      const remaining = this.maxFiles - this.files.length;
+                                      if (remaining <= 0) {
+                                          if (window.notify) notify('Maksimal 4 foto per postingan.');
+                                          this.syncInput();
+                                          return;
+                                      }
+                                      if (picked.length > remaining && window.notify) {
+                                          notify('Maksimal 4 foto. Hanya ' + remaining + ' foto tambahan yang dimasukkan.');
+                                      }
+                                      for (const file of picked.slice(0, remaining)) {
+                                          this.files.push({ file, url: URL.createObjectURL(file) });
+                                      }
+                                      this.syncInput();
+                                  },
+                                  removeImage(idx) {
+                                      const removed = this.files.splice(idx, 1)[0];
+                                      if (removed && removed.url) {
+                                          try { URL.revokeObjectURL(removed.url); } catch (e) {}
+                                      }
+                                      this.syncInput();
+                                  },
+                                  syncInput() {
+                                      const input = this.$refs.communityImagesInput;
+                                      if (! input) return;
+                                      const dt = new DataTransfer();
+                                      for (const item of this.files) {
+                                          dt.items.add(item.file);
+                                      }
+                                      input.files = dt.files;
+                                  }
+                              }">
                             @csrf
                             @if($community->postsRequireApproval(auth()->id()))
                                 <p class="text-[11px] font-medium text-amber-400">Postingan baru akan ditinjau admin/moderator sebelum tampil di linimasa.</p>
@@ -481,6 +522,24 @@
                                 <textarea name="content" required maxlength="2000" rows="2" placeholder="Bagikan ilmu, ajukan pertanyaan, atau mulai diskusi..."
                                           class="w-full px-3.5 py-2.5 rounded-xl bg-[var(--surface-input)] border border-[var(--border-color)] text-[var(--primary)] placeholder:text-[var(--text-placeholder)] text-sm resize-none outline-none focus:border-[var(--primary)] transition flex-1"></textarea>
                             </div>
+                            @if($canAttachImages)
+                                <div x-show="files.length > 0" x-cloak class="pl-10 space-y-1.5">
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                        <template x-for="(item, idx) in files" :key="item.url">
+                                            <div class="relative aspect-square rounded-xl overflow-hidden border border-[var(--border-color)] bg-[var(--surface-muted)]">
+                                                <img :src="item.url" alt="" class="w-full h-full object-cover">
+                                                <button type="button"
+                                                        @click="removeImage(idx)"
+                                                        aria-label="Hapus foto"
+                                                        class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/75 hover:bg-black text-white flex items-center justify-center transition cursor-pointer">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                </button>
+                                            </div>
+                                        </template>
+                                    </div>
+                                    <p class="text-[11px] font-mono text-[var(--text-muted)]" x-text="files.length + '/4 foto dipilih · klik Foto lagi untuk tambah'"></p>
+                                </div>
+                            @endif
                             <input type="hidden" name="type" :value="type">
                             <div class="flex flex-wrap items-center justify-between gap-2 pl-10">
                                 <div class="flex items-center gap-1.5">
@@ -500,7 +559,8 @@
                                         <label class="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)] cursor-pointer hover:text-[var(--primary)] transition">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                             <span>Foto</span>
-                                            <input type="file" name="images[]" accept="image/*" multiple class="hidden">
+                                            <span x-show="files.length > 0" x-cloak class="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-[var(--surface-muted)] text-[var(--primary)]" x-text="files.length + '/4'"></span>
+                                            <input type="file" x-ref="communityImagesInput" name="images[]" accept="image/*" multiple @change="handleImages($event)" class="hidden">
                                         </label>
                                     @endif
                                     <button type="submit" class="px-4 py-2 rounded-xl bg-[var(--primary)] text-[var(--primary-text)] hover:bg-[var(--primary-hover)] text-xs font-bold transition shadow-xs cursor-pointer select-none active:scale-[0.98]">Posting</button>

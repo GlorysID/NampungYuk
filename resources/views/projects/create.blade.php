@@ -27,6 +27,13 @@
     $initialLearnings = old('learnings', $editingDraft?->learnings ?? '');
     $initialSetup = old('setup_instructions', $editingDraft?->setup_instructions ?? '');
     $initialDraftId = old('draft_id', $editingDraft?->id);
+    $defaultThumbnailPlaceholder = 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80';
+    $existingDraftImages = $editingDraft
+        ? array_values(array_filter(
+            $editingDraft->galleryImages(),
+            static fn (string $url): bool => $url !== $defaultThumbnailPlaceholder
+        ))
+        : [];
 
     $prevUrl = url()->previous();
     $prevHost = parse_url($prevUrl, PHP_URL_HOST);
@@ -70,7 +77,13 @@
          challenges: @js($initialChallenges),
          learnings: @js($initialLearnings),
          setupInstructions: @js($initialSetup),
-         previewImage: '',
+         selectedImages: [],
+         maxImages: 9,
+         existingDraftImages: @js($existingDraftImages),
+         activeImageIndex: 0,
+         lightboxOpen: false,
+         dragIndex: null,
+         dragOverIndex: null,
          showLinks: {{ ($initialDemoUrl || $initialGithubUrl) ? 'true' : 'false' }},
          detailsOpen: {{ ($initialDescription || $initialChallenges || $initialLearnings || $initialSetup || $initialPrototypeUrl || $initialThumbnailUrl) ? 'true' : 'false' }},
          saveAsDraftFlag: false,
@@ -209,6 +222,16 @@
              this.challenges = '';
              this.learnings = '';
              this.setupInstructions = '';
+             for (const item of this.selectedImages) {
+                 if (item && item.url) {
+                     try { URL.revokeObjectURL(item.url); } catch (e) {}
+                 }
+             }
+             this.selectedImages = [];
+             this.activeImageIndex = 0;
+             this.lightboxOpen = false;
+             this.dragIndex = null;
+             this.dragOverIndex = null;
              this.restoredNotice = false;
              this.autoSaveStatus = '';
          },
@@ -286,17 +309,92 @@
          },
 
          handleFileSelect(event) {
-             const file = event.target.files[0];
-             if (file) {
-                 this.previewImage = URL.createObjectURL(file);
-             } else {
-                 this.previewImage = '';
+             const files = Array.from(event.target.files || []).filter(f => f && f.type && f.type.startsWith('image/'));
+             if (! files.length) {
+                 event.target.value = '';
+                 return;
+             }
+             const wasEmpty = this.selectedImages.length === 0;
+             const remaining = this.maxImages - this.selectedImages.length;
+             if (remaining <= 0) {
+                 if (window.notify) notify('Maksimal ' + this.maxImages + ' gambar per postingan.');
+                 event.target.value = '';
+                 return;
+             }
+             if (files.length > remaining && window.notify) {
+                 notify('Maksimal ' + this.maxImages + ' gambar. Hanya ' + remaining + ' gambar tambahan yang dimasukkan.');
+             }
+             for (const file of files.slice(0, remaining)) {
+                 this.selectedImages.push({
+                     file,
+                     url: URL.createObjectURL(file),
+                     name: file.name,
+                 });
+             }
+             if (wasEmpty) {
+                 this.activeImageIndex = 0;
+             }
+             event.target.value = '';
+         },
+         removeSelectedImage(index) {
+             const removed = this.selectedImages.splice(index, 1)[0];
+             if (removed && removed.url) {
+                 try { URL.revokeObjectURL(removed.url); } catch (e) {}
+             }
+             if (this.selectedImages.length === 0) {
+                 this.activeImageIndex = 0;
+                 this.lightboxOpen = false;
+             } else if (this.activeImageIndex >= this.selectedImages.length) {
+                 this.activeImageIndex = this.selectedImages.length - 1;
+             } else if (index < this.activeImageIndex) {
+                 this.activeImageIndex -= 1;
              }
          },
-         removeThumbnail() {
-             this.previewImage = '';
-             const input = document.getElementById('thumbnail_input');
-             if (input) input.value = '';
+         moveImage(fromIndex, toIndex) {
+             if (fromIndex === null || toIndex === null) return;
+             if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return;
+             if (fromIndex >= this.selectedImages.length || toIndex >= this.selectedImages.length) return;
+             const activeItem = this.selectedImages[this.activeImageIndex];
+             const [moved] = this.selectedImages.splice(fromIndex, 1);
+             this.selectedImages.splice(toIndex, 0, moved);
+             const newActiveIdx = this.selectedImages.indexOf(activeItem);
+             this.activeImageIndex = newActiveIdx >= 0 ? newActiveIdx : toIndex;
+         },
+         onDragStart(idx, event) {
+             this.dragIndex = idx;
+             if (event && event.dataTransfer) {
+                 event.dataTransfer.effectAllowed = 'move';
+                 try { event.dataTransfer.setData('text/plain', String(idx)); } catch (e) {}
+             }
+         },
+         onDragOver(idx) {
+             if (this.dragIndex !== null && this.dragIndex !== idx) {
+                 this.dragOverIndex = idx;
+             }
+         },
+         onDrop(idx) {
+             if (this.dragIndex !== null && this.dragIndex !== idx) {
+                 this.moveImage(this.dragIndex, idx);
+             }
+             this.dragIndex = null;
+             this.dragOverIndex = null;
+         },
+         onDragEnd() {
+             this.dragIndex = null;
+             this.dragOverIndex = null;
+         },
+         openLightbox(idx = null) {
+             if (! this.selectedImages.length) return;
+             if (idx !== null) this.activeImageIndex = idx;
+             this.lightboxOpen = true;
+         },
+         prevImage() {
+             if (this.selectedImages.length <= 1) return;
+             this.activeImageIndex = (this.activeImageIndex - 1 + this.selectedImages.length) % this.selectedImages.length;
+         },
+         nextImage() {
+             if (this.selectedImages.length <= 1) return;
+             this.activeImageIndex = (this.activeImageIndex + 1) % this.selectedImages.length;
          },
          addTech(tech) {
              const t = (tech || this.techInput).trim();
@@ -357,6 +455,15 @@
                  fd.set('tech_stacks', this.techStacksJoined);
                  fd.set('save_as_draft', this.saveAsDraftFlag ? '1' : '0');
                  if (this.draftId) fd.set('draft_id', String(this.draftId));
+                 fd.delete('thumbnail');
+                 fd.delete('images[]');
+                 fd.delete('images');
+                 if (this.selectedImages.length > 0) {
+                     fd.set('thumbnail', this.selectedImages[0].file);
+                     for (let i = 1; i < this.selectedImages.length; i++) {
+                         fd.append('images[]', this.selectedImages[i].file);
+                     }
+                 }
 
                  const res = await fetch(formEl.action, {
                      method: 'POST',
@@ -563,18 +670,151 @@
                 @error('tagline') <p class="text-rose-500 text-[11px]">{{ $message }}</p> @enderror
             </div>
 
-            <!-- Thumbnail Preview if attached -->
-            <template x-if="previewImage">
-                <div class="relative w-full aspect-video max-h-[260px] rounded-xl overflow-hidden border border-[var(--border-color)] bg-[var(--surface-deep)]">
-                    <img :src="previewImage" alt="Preview Thumbnail" class="w-full h-full object-cover">
-                    <button type="button"
-                            @click="removeThumbnail()"
-                            class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/75 hover:bg-black text-white flex items-center justify-center transition cursor-pointer"
-                            title="Hapus media">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
+            <!-- Uncropped Media Stage + Draggable Bottom Filmstrip -->
+            <div x-show="selectedImages.length > 0" x-cloak class="space-y-3">
+                <!-- Header bar -->
+                <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div class="flex flex-wrap items-center gap-2 min-w-0">
+                        <span class="font-mono font-semibold text-[var(--primary)]" x-text="selectedImages.length + ' / ' + maxImages + ' gambar'"></span>
+                        <span class="text-[var(--text-faint)]">&middot;</span>
+                        <span class="text-[var(--text-muted)]" x-text="selectedImages.length > 1 ? 'Geser thumbnail di bawah untuk atur urutan' : 'Klik gambar untuk perbesar'"></span>
+                    </div>
+
+                    <label x-show="selectedImages.length < maxImages"
+                           for="media_images_input"
+                           class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--surface-muted)] border border-[var(--border-color)] hover:border-[var(--border-strong)] text-xs font-semibold text-[var(--primary)] cursor-pointer transition select-none">
+                        + Tambah Foto
+                    </label>
                 </div>
-            </template>
+
+                <!-- Main Uncropped Image Stage -->
+                <div class="relative w-full rounded-xl overflow-hidden border border-[var(--border-color)] bg-[var(--bg-app)] flex items-center justify-center min-h-[220px] max-h-[420px] group">
+                    <button type="button"
+                            @click="openLightbox(activeImageIndex)"
+                            class="w-full flex items-center justify-center cursor-zoom-in focus:outline-none">
+                        <img :src="selectedImages[activeImageIndex]?.url"
+                             :alt="selectedImages[activeImageIndex]?.name || 'Pratinjau gambar'"
+                             class="max-h-[420px] w-auto max-w-full object-contain block select-none">
+                    </button>
+
+                    <!-- Order / Cover pill -->
+                    <span class="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-md text-[10.5px] font-mono font-semibold bg-black/75 text-white border border-white/10 pointer-events-none"
+                          x-text="'#' + (activeImageIndex + 1) + (activeImageIndex === 0 ? ' · Cover' : '')"></span>
+
+                    <!-- Zoom & Remove controls -->
+                    <div class="absolute top-2.5 right-2.5 flex items-center gap-1.5">
+                        <button type="button"
+                                @click.stop="openLightbox(activeImageIndex)"
+                                class="w-7 h-7 rounded-full bg-black/75 hover:bg-black text-white flex items-center justify-center transition cursor-pointer"
+                                title="Perbesar gambar">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0zm-6-3v6m-3-3h6"/></svg>
+                        </button>
+                        <button type="button"
+                                @click.stop="removeSelectedImage(activeImageIndex)"
+                                class="w-7 h-7 rounded-full bg-black/75 hover:bg-black text-white flex items-center justify-center transition cursor-pointer"
+                                title="Hapus gambar ini">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Stage Prev/Next Arrows -->
+                    <button type="button"
+                            x-show="selectedImages.length > 1"
+                            @click.stop="prevImage()"
+                            aria-label="Gambar sebelumnya"
+                            class="absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/70 hover:bg-black text-white flex items-center justify-center transition cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+                    <button type="button"
+                            x-show="selectedImages.length > 1"
+                            @click.stop="nextImage()"
+                            aria-label="Gambar berikutnya"
+                            class="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/70 hover:bg-black text-white flex items-center justify-center transition cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </button>
+
+                    <!-- Hover hint -->
+                    <span class="absolute bottom-2.5 right-2.5 px-2.5 py-1 rounded-md text-[10.5px] font-medium bg-black/75 text-white border border-white/10 opacity-0 group-hover:opacity-100 transition pointer-events-none">
+                        Klik untuk lihat penuh
+                    </span>
+                </div>
+
+                <!-- Bottom Draggable Thumbnail Filmstrip Bar (multi-image) -->
+                <div x-show="selectedImages.length > 1" class="space-y-2">
+                    <div class="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 select-none">
+                        <template x-for="(img, idx) in selectedImages" :key="img.url">
+                            <div draggable="true"
+                                 @dragstart="onDragStart(idx, $event)"
+                                 @dragover.prevent="onDragOver(idx)"
+                                 @dragenter.prevent="onDragOver(idx)"
+                                 @drop.prevent="onDrop(idx)"
+                                 @dragend="onDragEnd()"
+                                 @click="activeImageIndex = idx"
+                                 :class="{
+                                     'ring-2 ring-[var(--primary)] border-transparent': activeImageIndex === idx && dragOverIndex !== idx,
+                                     'ring-2 ring-emerald-400 scale-105 border-transparent': dragOverIndex === idx,
+                                     'opacity-40': dragIndex === idx,
+                                     'border border-[var(--border-color)] opacity-80 hover:opacity-100': activeImageIndex !== idx && dragOverIndex !== idx && dragIndex !== idx
+                                 }"
+                                 class="w-16 h-16 sm:w-[72px] sm:h-[72px] shrink-0 rounded-xl relative overflow-hidden cursor-grab active:cursor-grabbing transition bg-[var(--surface-deep)]">
+                                <img :src="img.url" :alt="img.name" class="w-full h-full object-cover pointer-events-none">
+
+                                <!-- Order badge -->
+                                <span :class="idx === 0 ? 'bg-[var(--primary)] text-[var(--primary-text)]' : 'bg-black/75 text-white'"
+                                      class="absolute top-1 left-1 min-w-[18px] h-[18px] px-1 rounded text-[10px] font-mono font-bold flex items-center justify-center pointer-events-none"
+                                      x-text="idx + 1"></span>
+
+                                <!-- Remove button -->
+                                <button type="button"
+                                        @click.stop="removeSelectedImage(idx)"
+                                        aria-label="Hapus gambar"
+                                        class="absolute top-1 right-1 w-4 h-4 rounded-full bg-black/75 hover:bg-black text-white flex items-center justify-center transition cursor-pointer">
+                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                        </template>
+
+                        <!-- Append tile -->
+                        <label x-show="selectedImages.length < maxImages"
+                               for="media_images_input"
+                               title="Tambah foto lagi"
+                               class="w-16 h-16 sm:w-[72px] sm:h-[72px] shrink-0 rounded-xl border border-dashed border-[var(--border-color)] hover:border-[var(--primary)] bg-[var(--surface-muted)]/60 hover:bg-[var(--surface-hover)] text-[var(--text-muted)] hover:text-[var(--primary)] flex flex-col items-center justify-center gap-0.5 cursor-pointer transition select-none">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            <span class="text-[10px] font-medium">Tambah</span>
+                        </label>
+                    </div>
+
+                    <!-- Reorder helper + touch shift buttons -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[var(--text-muted)]">
+                        <span>Seret thumbnail untuk ubah urutan dari awal (1 = Cover) sampai akhir</span>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button"
+                                    @click="moveImage(activeImageIndex, activeImageIndex - 1)"
+                                    :disabled="activeImageIndex === 0"
+                                    class="px-2 py-1 rounded-md border border-[var(--border-color)] bg-[var(--surface-muted)] text-[var(--primary)] hover:bg-[var(--surface-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer font-medium">
+                                &larr; Geser Kiri
+                            </button>
+                            <button type="button"
+                                    @click="moveImage(activeImageIndex, activeImageIndex + 1)"
+                                    :disabled="activeImageIndex >= selectedImages.length - 1"
+                                    class="px-2 py-1 rounded-md border border-[var(--border-color)] bg-[var(--surface-muted)] text-[var(--primary)] hover:bg-[var(--surface-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer font-medium">
+                                Geser Kanan &rarr;
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div x-show="selectedImages.length === 0 && existingDraftImages.length > 0" x-cloak class="space-y-2 p-3 rounded-xl bg-[var(--surface-muted)]/60 border border-[var(--border-color)]">
+                <p class="text-[11px] text-[var(--text-muted)]">Gambar tersimpan di draft (unggah gambar baru untuk mengganti cover atau menambah galeri):</p>
+                <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    <template x-for="(draftImg, dIdx) in existingDraftImages" :key="dIdx">
+                        <div class="relative aspect-[4/3] rounded-lg overflow-hidden border border-[var(--border-color)] bg-[var(--surface-deep)]">
+                            <img :src="draftImg" alt="" class="w-full h-full object-cover">
+                        </div>
+                    </template>
+                </div>
+            </div>
 
             <!-- Metadata Row: Category & Type -->
             <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-[var(--border-color)]">
@@ -723,12 +963,16 @@
             <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-[var(--border-color)]">
                 <div class="flex items-center gap-1">
                     <!-- Upload Media Button -->
-                    <label class="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--surface-muted)] transition cursor-pointer flex items-center gap-1.5 text-xs select-none" title="Unggah tangkapan layar / thumbnail">
+                    <label for="media_images_input" class="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--surface-muted)] transition cursor-pointer flex items-center gap-1.5 text-xs select-none" title="Pilih 1 hingga 9 gambar sekaligus">
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                         </svg>
                         <span class="hidden sm:inline font-medium">Foto / Media</span>
-                        <input type="file" id="thumbnail_input" name="thumbnail" accept="image/*" @change="handleFileSelect($event)" class="hidden">
+                        <span x-show="selectedImages.length > 0"
+                              x-cloak
+                              class="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-[var(--surface-muted)] text-[var(--primary)]"
+                              x-text="selectedImages.length"></span>
+                        <input type="file" id="media_images_input" accept="image/*" multiple @change="handleFileSelect($event)" class="hidden">
                     </label>
 
                     <!-- Toggle Links Button -->
@@ -752,6 +996,69 @@
                 </div>
             </div>
         </form>
+    </div>
+
+    <!-- Fullscreen Image Preview Lightbox -->
+    <div x-show="lightboxOpen && selectedImages.length > 0"
+         x-cloak
+         @keydown.escape.window="lightboxOpen = false"
+         @keydown.arrow-left.window="if (lightboxOpen) prevImage()"
+         @keydown.arrow-right.window="if (lightboxOpen) nextImage()"
+         class="fixed inset-0 z-50 bg-black/95 flex flex-col justify-between p-4 select-none"
+         role="dialog"
+         aria-modal="true"
+         aria-label="Pratinjau penuh gambar">
+        <!-- Top Bar -->
+        <div class="flex items-center justify-between gap-3 text-white">
+            <div class="flex items-center gap-2 min-w-0">
+                <span class="px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-white/10"
+                      x-text="(activeImageIndex + 1) + ' / ' + selectedImages.length"></span>
+                <span x-show="activeImageIndex === 0"
+                      class="px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold bg-white text-zinc-950">Cover</span>
+                <span class="text-xs text-white/70 truncate" x-text="selectedImages[activeImageIndex]?.name"></span>
+            </div>
+            <button type="button"
+                    @click="lightboxOpen = false"
+                    aria-label="Tutup pratinjau"
+                    class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer shrink-0">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <!-- Center Stage -->
+        <div class="relative flex-1 min-h-0 flex items-center justify-center my-2" @click.self="lightboxOpen = false">
+            <button type="button"
+                    x-show="selectedImages.length > 1"
+                    @click.stop="prevImage()"
+                    aria-label="Gambar sebelumnya"
+                    class="absolute left-2 sm:left-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+
+            <img :src="selectedImages[activeImageIndex]?.url"
+                 :alt="selectedImages[activeImageIndex]?.name || 'Pratinjau penuh'"
+                 class="max-h-[80vh] max-w-[92vw] object-contain rounded-lg">
+
+            <button type="button"
+                    x-show="selectedImages.length > 1"
+                    @click.stop="nextImage()"
+                    aria-label="Gambar berikutnya"
+                    class="absolute right-2 sm:right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </button>
+        </div>
+
+        <!-- Bottom Mini Filmstrip -->
+        <div x-show="selectedImages.length > 1" class="flex items-center justify-center gap-2 overflow-x-auto pb-1">
+            <template x-for="(img, lIdx) in selectedImages" :key="'lb-' + img.url">
+                <button type="button"
+                        @click="activeImageIndex = lIdx"
+                        :class="activeImageIndex === lIdx ? 'ring-2 ring-white opacity-100' : 'opacity-50 hover:opacity-85'"
+                        class="w-12 h-12 rounded-lg overflow-hidden shrink-0 transition cursor-pointer bg-zinc-900">
+                    <img :src="img.url" :alt="img.name" class="w-full h-full object-cover">
+                </button>
+            </template>
+        </div>
     </div>
 </div>
 @endsection
