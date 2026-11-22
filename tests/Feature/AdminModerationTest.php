@@ -212,6 +212,8 @@ class AdminModerationTest extends TestCase
         $response = $this->actingAs($admin)->get(route('admin.reports.index', ['tab' => 'all_users']));
         $response->assertStatus(200);
         $response->assertSee('Charlie Delta');
+        $response->assertSee('@charlie_delta');
+        $response->assertDontSee('{{ $u->username }}', false);
         $response->assertSee('Echo Foxtrot');
 
         // Search filter
@@ -414,5 +416,35 @@ class AdminModerationTest extends TestCase
             ->assertOk()
             ->assertSee('Aktif User')
             ->assertDontSee('Karya Laporan Pending');
+    }
+
+    public function test_admin_deleting_user_from_moderation_panel_stays_on_panel_and_resolves_reports(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $targetUser = User::factory()->create(['username' => 'akun_terhapus']);
+        $reporter = User::factory()->create();
+
+        $report = Report::create([
+            'reporter_id' => $reporter->id,
+            'reportable_type' => User::class,
+            'reportable_id' => $targetUser->id,
+            'reason' => 'spam',
+            'notes' => 'Akun spam berulang.',
+            'status' => 'pending',
+        ]);
+
+        $redirectUrl = route('admin.reports.index', ['tab' => 'all_users', 'filter' => 'warned']);
+
+        $response = $this->actingAs($admin)
+            ->from($redirectUrl)
+            ->delete(route('admin.users.destroy', $targetUser));
+
+        $response->assertRedirect($redirectUrl);
+        $this->assertDatabaseMissing('users', ['id' => $targetUser->id]);
+        $this->assertDatabaseHas('reports', [
+            'id' => $report->id,
+            'status' => 'resolved',
+            'resolved_by' => $admin->id,
+        ]);
     }
 }

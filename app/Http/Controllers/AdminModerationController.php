@@ -433,6 +433,17 @@ class AdminModerationController extends Controller
 
         $username = $user->username;
 
+        // Auto resolve pending reports targeting this user
+        Report::where('reportable_type', User::class)
+            ->where('reportable_id', $user->id)
+            ->where('status', 'pending')
+            ->update([
+                'status' => 'resolved',
+                'admin_notes' => 'Akun pengguna telah dihapus total oleh Admin.',
+                'resolved_by' => $request->user()->id,
+                'resolved_at' => now(),
+            ]);
+
         // Clean up user's projects and relations
         foreach ($user->projects as $p) {
             if ($p->category_id) {
@@ -452,6 +463,13 @@ class AdminModerationController extends Controller
         $media->deleteStoredFile($user->getRawOriginal('banner'));
         $user->delete();
 
-        return redirect()->route('projects.index')->with('status', "Akun @{$username} dan seluruh datanya telah berhasil dihapus total oleh Admin.");
+        $message = "Akun @{$username} dan seluruh datanya telah berhasil dihapus total oleh Admin.";
+        $referer = (string) $request->headers->get('referer', '');
+
+        if ($referer !== '' && str_contains($referer, '/admin')) {
+            return back()->with('status', $message);
+        }
+
+        return redirect()->route('projects.index')->with('status', $message);
     }
 }
