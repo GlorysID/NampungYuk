@@ -75,11 +75,11 @@
     <!-- ===================== PROFILE HERO ===================== -->
     <div class="rounded-2xl bg-[var(--surface)] border border-[var(--border-color)] shadow-xs overflow-hidden">
 
-        <!-- Cover banner (uploaded image, or Developer Showcase gradient mesh fallback) -->
-        <div class="relative h-28 sm:h-36 bg-[#0B0B0D] overflow-hidden">
+        <!-- Cover banner (uploaded image, or Developer Showcase gradient mesh fallback, 3:1 X-style ratio) -->
+        <div class="relative w-full aspect-[3/1] bg-[var(--bg-app)] overflow-hidden">
             @if($user->banner)
                 <img src="{{ $user->banner }}" alt="Banner {{ $user->name }}" class="absolute inset-0 w-full h-full object-cover">
-                <div class="absolute inset-0 bg-gradient-to-t from-[#0B0B0D]/70 to-transparent"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"></div>
             @else
                 <div class="absolute inset-0 opacity-80"
                      style="background: radial-gradient(120% 140% at 0% 0%, rgba(16, 185, 129, 0.22) 0%, transparent 60%), radial-gradient(120% 140% at 100% 0%, rgba(39, 39, 42, 0.95) 0%, transparent 60%), linear-gradient(180deg, rgba(24, 24, 27, 0.4) 0%, rgba(9, 9, 11, 0.95) 100%);"></div>
@@ -93,7 +93,7 @@
             <div class="flex items-start justify-between gap-4 mb-3">
                 <!-- Avatar -->
                 <div class="relative shrink-0 -mt-12 sm:-mt-14">
-                    <x-user-avatar :user="$user" size="xl" class="ring-4 ring-[var(--surface)] shadow-md" />
+                    <x-user-avatar :user="$user" size="2xl" class="ring-4 ring-[var(--surface)] shadow-md" />
                     @if($isOwner)
                         <span class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[var(--primary)] text-[var(--primary-text)] flex items-center justify-center ring-2 ring-[var(--surface)] z-10">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
@@ -804,8 +804,8 @@
 
                     <!-- Scrollable X-style body -->
                     <div class="flex-1 overflow-y-auto">
-                        <!-- Full-bleed banner with centered camera trigger -->
-                        <div class="relative h-40 sm:h-48 w-full bg-[var(--surface-subtle)] overflow-hidden">
+                        <!-- Full-bleed banner with centered camera trigger (3:1 X-style ratio) -->
+                        <div class="relative w-full aspect-[3/1] bg-[var(--surface-subtle)] overflow-hidden">
                             <img x-show="bannerPreview || {{ $user->banner ? 'true' : 'false' }}"
                                  :src="bannerPreview || '{{ $user->banner }}'"
                                  class="w-full h-full object-cover" alt="Banner profil">

@@ -21,6 +21,7 @@
         'md' => 'w-10 h-10 rounded-full text-sm font-semibold',
         'lg' => 'w-12 h-12 rounded-full text-base',
         'xl' => 'w-16 h-16 sm:w-20 sm:h-20 rounded-full text-2xl',
+        '2xl' => 'w-24 h-24 sm:w-28 sm:h-28 rounded-full text-3xl',
     ][$size] ?? 'w-10 h-10 rounded-full text-sm font-semibold';
 @endphp
 

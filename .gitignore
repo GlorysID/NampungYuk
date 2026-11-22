@@ -19,6 +19,7 @@
 /public/hot
 /public/storage
 /screenshots
+/demo
 /storage/*.key
 /storage/pail
 /vendor
