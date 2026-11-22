@@ -887,10 +887,11 @@
         <x-auth-modal />
     @endguest
 
-    <!-- GLOBAL AUTH MODALS (report, block, admin warn) -->
+    <!-- GLOBAL AUTH MODALS (report, block, confirm, admin warn) -->
     @auth
         <x-report-modal />
         <x-block-user-modal />
+        <x-confirm-modal />
         @if(auth()->user()->isAdmin() || auth()->user()->is_admin)
             <x-admin-warn-project-modal />
         @endif
