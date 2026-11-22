@@ -633,7 +633,7 @@
                                 @csrf
                                 <select name="new_owner_id" required class="flex-1 px-3.5 py-2 rounded-xl bg-[var(--surface-input)] border border-[var(--border-color)] text-sm text-[var(--primary)] outline-none">
                                     @foreach($adminCandidates as $adm)
-                                        <option value="{{ $adm->id }}">{{ $adm->name }} (@{{ $adm->username }})</option>
+                                        <option value="{{ $adm->id }}">{{ $adm->name }} ({{ '@' . $adm->username }})</option>
                                     @endforeach
                                 </select>
                                 <button type="submit" class="px-4 py-2 rounded-xl border border-amber-500/40 text-amber-300 hover:bg-amber-950/30 text-xs font-bold cursor-pointer shrink-0">

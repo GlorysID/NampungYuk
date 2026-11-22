@@ -555,7 +555,7 @@
                 @if($compact)
                     <button type="button"
                             @click="userMenuOpen = !userMenuOpen"
-                            title="{{ Auth::user()->name }} (@{{ Auth::user()->username }})"
+                            title="{{ Auth::user()->name }} ({{ '@' . Auth::user()->username }})"
                             aria-label="Menu akun {{ Auth::user()->name }}"
                             class="w-full py-2.5 rounded-xl flex items-center justify-center border border-[var(--border-color)]/80 bg-[var(--surface)]/70 hover:bg-[var(--surface)] hover:border-[var(--border-strong)] transition cursor-pointer">
                         <x-user-avatar :user="Auth::user()" size="md" class="shrink-0" />
