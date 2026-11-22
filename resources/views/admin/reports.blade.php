@@ -23,6 +23,17 @@
         banUserName: '',
         banReason: '',
 
+        deleteUserModalOpen: false,
+        deleteUserId: null,
+        deleteUserName: '',
+        deleteUserUsername: '',
+        deleteUserConfirm: '',
+
+        deleteContentModalOpen: false,
+        deleteContentUrl: '',
+        deleteContentKind: '',
+        deleteContentTitle: '',
+
         openWarn(id, title, currentNotes = '') {
             this.warnProjectId = id;
             this.warnProjectTitle = title;
@@ -42,9 +53,24 @@
             this.banUserName = name;
             this.banReason = 'Pelanggaran pedoman komunitas NampungYuk.';
             this.banModalOpen = true;
+        },
+
+        openDeleteUser(id, name, username) {
+            this.deleteUserId = id;
+            this.deleteUserName = name;
+            this.deleteUserUsername = username;
+            this.deleteUserConfirm = '';
+            this.deleteUserModalOpen = true;
+        },
+
+        openDeleteContent(url, kind, title) {
+            this.deleteContentUrl = url;
+            this.deleteContentKind = kind;
+            this.deleteContentTitle = title;
+            this.deleteContentModalOpen = true;
         }
      }"
-     @keydown.escape.window="warnModalOpen = false; userWarnModalOpen = false; banModalOpen = false">
+     @keydown.escape.window="warnModalOpen = false; userWarnModalOpen = false; banModalOpen = false; deleteUserModalOpen = false; deleteContentModalOpen = false">
 
     <!-- Page Header -->
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
@@ -251,7 +277,7 @@
                                             Pembuat:
                                             @if($target->user)
                                                 <a href="{{ route('profile.show', $target->user->username) }}" class="text-[var(--primary)] hover:underline font-medium">
-                                                    {{ $target->user->name }} (@{{ $target->user->username }})
+                                                    {{ $target->user->name }} ({{ '@' . $target->user->username }})
                                                 </a>
                                             @else
                                                 <span>Pengguna terhapus</span>
@@ -280,7 +306,7 @@
                                             @endif
                                             @if($target->user)
                                                 <a href="{{ route('profile.show', $target->user->username) }}" class="hover:text-[var(--primary)] transition">
-                                                    @{{ $target->user->username }}
+                                                    {{ '@' . $target->user->username }}
                                                 </a>
                                             @else
                                                 <span>Pengguna terhapus</span>
@@ -299,7 +325,7 @@
                                                 <a href="{{ route('profile.show', $target->username) }}" class="text-sm font-bold text-[var(--primary)] hover:underline">
                                                     {{ $target->name }}
                                                 </a>
-                                                <span class="text-xs font-mono text-[var(--text-muted)]">@{{ $target->username }}</span>
+                                                <span class="text-xs font-mono text-[var(--text-muted)]">{{ '@' . $target->username }}</span>
                                                 @if($target->isBanned())
                                                     <span class="px-2 py-0.5 rounded-md text-[10.5px] font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/30">Diblokir</span>
                                                 @elseif($target->hasWarning())
@@ -336,7 +362,7 @@
                                     Dilaporkan oleh:
                                     @if($report->reporter)
                                         <a href="{{ route('profile.show', $report->reporter->username) }}" class="font-semibold text-[var(--primary)] hover:underline">
-                                            {{ $report->reporter->name }} (@{{ $report->reporter->username }})
+                                            {{ $report->reporter->name }} ({{ '@' . $report->reporter->username }})
                                         </a>
                                     @else
                                         <span>Pengguna terhapus</span>
@@ -392,13 +418,11 @@
                                         </form>
                                     @endif
 
-                                    <form method="POST" action="{{ route('admin.projects.destroy', $target->id) }}" onsubmit="return confirm('Hapus karya ini secara permanen?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-xs font-semibold text-rose-300 hover:bg-rose-500/20 transition cursor-pointer">
-                                            Hapus Proyek
-                                        </button>
-                                    </form>
+                                    <button type="button"
+                                            @click="openDeleteContent(@js(route('admin.projects.destroy', $target->id)), 'Karya', @js($target->title))"
+                                            class="px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-xs font-semibold text-rose-300 hover:bg-rose-500/20 transition cursor-pointer">
+                                        Hapus Proyek
+                                    </button>
                                 @elseif($isPost && $target)
                                     @if($target->community)
                                         <a href="{{ route('communities.show', $target->community->slug) }}" class="px-3 py-1.5 rounded-lg border border-[var(--border-color)] bg-[var(--surface)] text-xs font-semibold text-[var(--primary)] hover:bg-[var(--surface-hover)] transition">
@@ -406,13 +430,11 @@
                                         </a>
                                     @endif
 
-                                    <form method="POST" action="{{ route('admin.community-posts.destroy', $target->id) }}" onsubmit="return confirm('Hapus postingan komunitas ini secara permanen?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-xs font-semibold text-rose-300 hover:bg-rose-500/20 transition cursor-pointer">
-                                            Hapus Postingan
-                                        </button>
-                                    </form>
+                                    <button type="button"
+                                            @click="openDeleteContent(@js(route('admin.community-posts.destroy', $target->id)), 'Postingan Komunitas', @js(\Illuminate\Support\Str::limit($target->content, 100)))"
+                                            class="px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-xs font-semibold text-rose-300 hover:bg-rose-500/20 transition cursor-pointer">
+                                        Hapus Postingan
+                                    </button>
                                 @elseif($isUser && $target)
                                     <a href="{{ route('profile.show', $target->username) }}" class="px-3 py-1.5 rounded-lg border border-[var(--border-color)] bg-[var(--surface)] text-xs font-semibold text-[var(--primary)] hover:bg-[var(--surface-hover)] transition">
                                         Lihat Profil
@@ -450,13 +472,11 @@
                                             </button>
                                         @endif
 
-                                        <form method="POST" action="{{ route('admin.users.destroy', $target->id) }}" onsubmit="return confirm('PERINGATAN ADMIN: Hapus total akun ini beserta seluruh datanya secara permanen?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="px-3 py-1.5 rounded-lg border border-rose-500/30 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition cursor-pointer">
-                                                Hapus Akun
-                                            </button>
-                                        </form>
+                                        <button type="button"
+                                                @click="openDeleteUser({{ $target->id }}, @js($target->name), @js($target->username))"
+                                                class="px-3 py-1.5 rounded-lg border border-rose-500/30 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition cursor-pointer">
+                                            Hapus Akun
+                                        </button>
                                     @endif
                                 @endif
                             </div>
@@ -574,7 +594,7 @@
                                             {{ $u->name }}
                                         </a>
                                     </div>
-                                    <p class="text-xs font-mono text-[var(--text-muted)] truncate">@{{ $u->username }}</p>
+                                    <p class="text-xs font-mono text-[var(--text-muted)] truncate">{{ '@' . $u->username }}</p>
                                     <p class="text-[11.5px] text-[var(--text-faint)] truncate">{{ $u->email }}</p>
                                 </div>
                             </div>
@@ -643,13 +663,11 @@
                                         </button>
                                     @endif
 
-                                    <form method="POST" action="{{ route('admin.users.destroy', $u->id) }}" onsubmit="return confirm('PERINGATAN ADMIN: Anda yakin ingin MENGHAPUS TOTAL akun ini beserta seluruh karyanya secara permanen?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="px-2.5 py-1.5 rounded-lg border border-rose-500/30 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition cursor-pointer">
-                                            Hapus
-                                        </button>
-                                    </form>
+                                    <button type="button"
+                                            @click="openDeleteUser({{ $u->id }}, @js($u->name), @js($u->username))"
+                                            class="px-2.5 py-1.5 rounded-lg border border-rose-500/30 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition cursor-pointer">
+                                        Hapus
+                                    </button>
                                 @endif
                             </div>
                         </div>
@@ -712,7 +730,7 @@
                                     Pembuat:
                                     @if($project->user)
                                         <a href="{{ route('profile.show', $project->user->username) }}" class="text-[var(--primary)] hover:underline font-medium">
-                                            {{ $project->user->name }} (@{{ $project->user->username }})
+                                            {{ $project->user->name }} ({{ '@' . $project->user->username }})
                                         </a>
                                     @else
                                         <span>Pengguna terhapus</span>
@@ -752,13 +770,11 @@
                             </button>
                         </form>
 
-                        <form method="POST" action="{{ route('admin.projects.destroy', $project->id) }}" onsubmit="return confirm('Hapus proyek ini secara permanen?')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-xs font-semibold text-rose-300 hover:bg-rose-500/20 transition cursor-pointer">
-                                Hapus Proyek
-                            </button>
-                        </form>
+                        <button type="button"
+                                @click="openDeleteContent(@js(route('admin.projects.destroy', $project->id)), 'Karya', @js($project->title))"
+                                class="px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-xs font-semibold text-rose-300 hover:bg-rose-500/20 transition cursor-pointer">
+                            Hapus Proyek
+                        </button>
                     </div>
                 </article>
             @empty
@@ -851,6 +867,87 @@
                     <div class="flex items-center justify-end gap-2">
                         <button type="button" @click="banModalOpen = false" class="btn-secondary text-xs py-2 px-4 cursor-pointer">Batal</button>
                         <button type="submit" class="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs cursor-pointer transition">Blokir Akun Sekarang</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL HAPUS AKUN PENGGUNA PERMANEN -->
+    <div x-show="deleteUserModalOpen" x-cloak class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-black/80 backdrop-blur-xs" @click="deleteUserModalOpen = false"></div>
+        <div class="min-h-full flex items-center justify-center p-4">
+            <div class="relative w-full max-w-md bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl p-6 shadow-2xl space-y-4 text-[var(--primary)]">
+                <div class="flex items-start gap-3">
+                    <span class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-400 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    </span>
+                    <div class="min-w-0 space-y-1">
+                        <h3 class="text-base font-bold text-rose-400">Hapus Akun Pengguna Permanen</h3>
+                        <p class="text-xs text-[var(--text-muted)]">
+                            <strong class="text-[var(--primary)]" x-text="deleteUserName"></strong>
+                            (<span class="font-mono text-[var(--primary)]" x-text="'@' + deleteUserUsername"></span>)
+                        </p>
+                    </div>
+                </div>
+
+                <div class="px-3.5 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-xs text-rose-300 space-y-1">
+                    <p class="font-semibold">Tindakan ini tidak dapat dibatalkan.</p>
+                    <p class="text-rose-200/80">Seluruh karya, komentar, postingan komunitas, laporan pending, dan media profil akun ini akan dihapus permanen dan tidak bisa dipulihkan.</p>
+                </div>
+
+                <form method="POST" :action="'/admin/user/' + deleteUserId" class="space-y-4">
+                    @csrf
+                    @method('DELETE')
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-semibold text-[var(--primary)]">
+                            Ketik username <code class="px-1.5 py-0.5 rounded bg-[var(--surface-muted)] border border-[var(--border-color)] font-mono text-rose-300" x-text="deleteUserUsername"></code> untuk konfirmasi:
+                        </label>
+                        <input type="text"
+                               x-model="deleteUserConfirm"
+                               :placeholder="deleteUserUsername"
+                               autocomplete="off"
+                               class="w-full h-10 px-3 rounded-xl bg-[var(--surface-input)] border border-[var(--border-color)] text-xs font-mono text-[var(--primary)] placeholder:text-[var(--text-placeholder)] outline-none focus:border-rose-500 transition">
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2">
+                        <button type="button" @click="deleteUserModalOpen = false" class="btn-secondary text-xs py-2 px-4 cursor-pointer">Batal</button>
+                        <button type="submit"
+                                :disabled="deleteUserConfirm.trim() !== deleteUserUsername"
+                                class="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs cursor-pointer transition">
+                            Hapus Akun Permanen
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL HAPUS KONTEN PERMANEN -->
+    <div x-show="deleteContentModalOpen" x-cloak class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-black/80 backdrop-blur-xs" @click="deleteContentModalOpen = false"></div>
+        <div class="min-h-full flex items-center justify-center p-4">
+            <div class="relative w-full max-w-md bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl p-6 shadow-2xl space-y-4 text-[var(--primary)]">
+                <div class="flex items-start gap-3">
+                    <span class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-400 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </span>
+                    <div class="min-w-0 space-y-1">
+                        <h3 class="text-base font-bold text-rose-400" x-text="'Hapus ' + deleteContentKind + ' Permanen'"></h3>
+                        <p class="text-xs text-[var(--text-muted)] break-words" x-text="deleteContentTitle"></p>
+                    </div>
+                </div>
+
+                <p class="text-xs text-[var(--text-muted)] px-3.5 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-200/80">
+                    Tindakan ini tidak dapat dibatalkan dan laporan terkait otomatis ditandai selesai.
+                </p>
+
+                <form method="POST" :action="deleteContentUrl" class="space-y-4">
+                    @csrf
+                    @method('DELETE')
+                    <div class="flex items-center justify-end gap-2">
+                        <button type="button" @click="deleteContentModalOpen = false" class="btn-secondary text-xs py-2 px-4 cursor-pointer">Batal</button>
+                        <button type="submit" class="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs cursor-pointer transition">Hapus Permanen</button>
                     </div>
                 </form>
             </div>

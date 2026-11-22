@@ -133,7 +133,7 @@
                              menuOpen: false,
                              async shareProfile() {
                                  const url = '{{ route('profile.show', $user->username) }}';
-                                 const shareData = { title: '{{ addslashes($user->name) }} (@{{ $user->username }}) di NampungYuk', url };
+                                 const shareData = { title: '{{ addslashes($user->name) }} ({{ '@' . $user->username }}) di NampungYuk', url };
                                  try {
                                      if (navigator.share) {
                                          await navigator.share(shareData);
@@ -178,7 +178,7 @@
                             @if(! $isOwner)
                                 <div class="border-t border-[var(--border-color)]"></div>
                                 @auth
-                                    <button @click.stop="window.openReportModal({ type: 'user', id: {{ $user->id }}, title: '{{ addslashes($user->name) }} (@{{ $user->username }})' }); menuOpen = false"
+                                    <button @click.stop="window.openReportModal({ type: 'user', id: {{ $user->id }}, title: '{{ addslashes($user->name) }} ({{ '@' . $user->username }})' }); menuOpen = false"
                                             type="button"
                                             class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer">
                                         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
@@ -198,7 +198,9 @@
 
                     <!-- Admin Moderator Controls on User -->
                     @if(auth()->check() && auth()->user()->is_admin && auth()->id() !== $user->id)
-                        <div x-data="{ adminMenuOpen: false, banModalOpen: false, warnModalOpen: false, warnNotes: '{{ addslashes($user->warning_notes ?? '') }}' }" class="relative">
+                        <div x-data="{ adminMenuOpen: false, banModalOpen: false, warnModalOpen: false, warnNotes: '{{ addslashes($user->warning_notes ?? '') }}', deleteModalOpen: false, deleteConfirm: '' }"
+                             @keydown.escape.window="warnModalOpen = false; banModalOpen = false; deleteModalOpen = false"
+                             class="relative">
                             <button @click="adminMenuOpen = !adminMenuOpen" type="button" class="px-2.5 py-2 rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-xs font-semibold hover:bg-purple-100 dark:hover:bg-purple-900/40 flex items-center gap-1.5 shadow-xs cursor-pointer">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
@@ -241,14 +243,10 @@
                                     </button>
                                 @endif
 
-                                <form action="{{ route('admin.users.destroy', $user) }}" method="POST" onsubmit="return confirm('PERINGATAN ADMIN: Hapus permanen akun ini beserta semua karyanya?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="w-full text-left px-3 py-2 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 cursor-pointer">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                        Hapus Total Akun
-                                    </button>
-                                </form>
+                                <button @click="deleteModalOpen = true; deleteConfirm = ''; adminMenuOpen = false" type="button" class="w-full text-left px-3 py-2 rounded-lg text-rose-400 hover:bg-rose-950/30 flex items-center gap-2 cursor-pointer">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    Hapus Total Akun
+                                </button>
                             </div>
 
                             <!-- User Warning Modal -->
@@ -285,6 +283,51 @@
                                         <div class="flex justify-end gap-2 pt-2">
                                             <button @click="banModalOpen = false" type="button" class="btn-secondary text-xs py-2 px-3">Batal</button>
                                             <button type="submit" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs shadow-xs">Blokir Akun</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- Delete User Permanently Danger Modal -->
+                            <div x-show="deleteModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs" role="dialog" aria-modal="true">
+                                <div @click.outside="deleteModalOpen = false" class="bg-[var(--surface)] border border-[var(--border-color)] rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 text-[var(--primary)]">
+                                    <div class="flex items-start gap-3">
+                                        <span class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-400 flex items-center justify-center shrink-0">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                        </span>
+                                        <div class="min-w-0 space-y-1">
+                                            <h3 class="text-base font-bold text-rose-400">Hapus Akun Pengguna Permanen</h3>
+                                            <p class="text-xs text-[var(--text-muted)]">
+                                                {{ $user->name }} (<span class="font-mono text-[var(--primary)]">{{ '@' . $user->username }}</span>)
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="px-3.5 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-xs text-rose-300 space-y-1">
+                                        <p class="font-semibold">Tindakan ini tidak dapat dibatalkan.</p>
+                                        <p class="text-rose-200/80">Akun beserta seluruh karya, komentar, postingan komunitas, dan media profilnya akan dihapus permanen.</p>
+                                    </div>
+
+                                    <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="space-y-4">
+                                        @csrf
+                                        @method('DELETE')
+                                        <div class="space-y-1.5">
+                                            <label class="block text-xs font-semibold text-[var(--primary)]">
+                                                Ketik username <code class="px-1.5 py-0.5 rounded bg-[var(--surface-muted)] border border-[var(--border-color)] font-mono text-rose-300">{{ $user->username }}</code> untuk konfirmasi:
+                                            </label>
+                                            <input type="text"
+                                                   x-model="deleteConfirm"
+                                                   placeholder="{{ $user->username }}"
+                                                   autocomplete="off"
+                                                   class="w-full h-10 px-3 rounded-xl bg-[var(--surface-input)] border border-[var(--border-color)] text-xs font-mono text-[var(--primary)] placeholder:text-[var(--text-placeholder)] outline-none focus:border-rose-500 transition">
+                                        </div>
+                                        <div class="flex items-center justify-end gap-2">
+                                            <button @click="deleteModalOpen = false" type="button" class="btn-secondary text-xs py-2 px-4 cursor-pointer">Batal</button>
+                                            <button type="submit"
+                                                    :disabled="deleteConfirm.trim() !== @js($user->username)"
+                                                    class="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs cursor-pointer transition">
+                                                Hapus Akun Permanen
+                                            </button>
                                         </div>
                                     </form>
                                 </div>
