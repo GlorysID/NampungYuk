@@ -7,7 +7,9 @@ use App\Models\CommunityPost;
 use App\Models\Project;
 use App\Models\Report;
 use App\Models\User;
+use App\Notifications\ModerationWarningNotification;
 use App\Services\MediaOptimizer;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -15,65 +17,153 @@ use Illuminate\View\View;
 class AdminModerationController extends Controller
 {
     /**
-     * Display moderation dashboard with reports.
+     * Display moderation dashboard with structured sections and lazy-loaded active dataset.
      */
     public function index(Request $request): View
     {
-        $tab = $request->query('tab');
-        if (! $tab) {
-            $tab = $request->routeIs('admin.users.*') ? 'all_users' : 'projects';
+        $rawTab = (string) $request->query('tab', '');
+
+        if ($rawTab === '' && $request->routeIs('admin.users.*')) {
+            $section = 'users';
+            $tab = 'all_users';
+        } else {
+            [$section, $tab] = match ($rawTab) {
+                'all_users', 'banned' => ['users', 'all_users'],
+                'flagged' => ['flagged', 'flagged'],
+                default => ['reports', 'reports'],
+            };
         }
+
+        $defaultType = match ($rawTab) {
+            'projects' => 'content',
+            'users' => 'user',
+            default => 'all',
+        };
+        $reportType = (string) $request->query('type', $defaultType);
+        if (! in_array($reportType, ['all', 'content', 'user'], true)) {
+            $reportType = 'all';
+        }
+
+        $reportStatus = (string) $request->query('status', 'pending');
+        if (! in_array($reportStatus, ['pending', 'history', 'all'], true)) {
+            $reportStatus = 'pending';
+        }
+
+        $defaultFilter = $rawTab === 'banned' ? 'banned' : 'all';
+        $userFilter = (string) $request->query('filter', $defaultFilter);
+        if (! in_array($userFilter, ['all', 'active', 'warned', 'banned', 'admin'], true)) {
+            $userFilter = 'all';
+        }
+
+        $searchQuery = trim((string) $request->query('q', ''));
 
         $pendingCount = Report::pending()->count();
-        $pendingProjectReportsCount = Report::pending()->where('reportable_type', Project::class)->count();
-        $pendingUserReportsCount = Report::pending()->where('reportable_type', User::class)->count();
-        $pendingCommunityPostReportsCount = Report::pending()->where('reportable_type', CommunityPost::class)->count();
-        $bannedUsersCount = User::where('is_banned', true)->count();
-        $warnedUsersCount = User::whereNotNull('warning_notes')->count();
-        $allUsersCount = User::count();
-
-        $projectReports = Report::with(['reporter', 'reportable.user'])
+        $pendingContentReportsCount = Report::pending()
             ->whereIn('reportable_type', [Project::class, CommunityPost::class])
-            ->latest()
-            ->paginate(15, ['*'], 'p_page')
-            ->withQueryString();
-
-        $userReports = Report::with(['reporter', 'reportable'])
+            ->count();
+        $pendingUserReportsCount = Report::pending()
             ->where('reportable_type', User::class)
-            ->latest()
-            ->paginate(15, ['*'], 'u_page')
-            ->withQueryString();
+            ->count();
+        $historyReportsCount = Report::whereIn('status', ['resolved', 'dismissed'])->count();
 
-        $bannedUsers = User::where('is_banned', true)
-            ->latest('banned_at')
-            ->paginate(15, ['*'], 'b_page')
-            ->withQueryString();
+        $flaggedProjectsCount = Project::where('visibility', '!=', 'draft')
+            ->where(function ($query): void {
+                $query->where('is_flagged', true)->orWhereNotNull('warning_notes');
+            })
+            ->count();
 
-        $searchQuery = trim((string) $request->query('q'));
-        $allUsersQuery = User::withCount('projects');
-        if ($searchQuery !== '') {
-            $allUsersQuery->where(function ($q) use ($searchQuery) {
-                $q->where('name', 'like', "%{$searchQuery}%")
-                    ->orWhere('username', 'like', "%{$searchQuery}%")
-                    ->orWhere('email', 'like', "%{$searchQuery}%");
-            });
+        $warnedUsersCount = User::whereNotNull('warning_notes')->count();
+        $bannedUsersCount = User::where('is_banned', true)->count();
+        $allUsersCount = User::count();
+        $activeUsersCount = User::where('is_banned', false)->whereNull('warning_notes')->count();
+        $adminUsersCount = User::where('is_admin', true)->count();
+
+        $reports = null;
+        $allUsers = null;
+        $flaggedProjects = null;
+
+        if ($section === 'reports') {
+            $reportsQuery = Report::with([
+                'reporter',
+                'resolver',
+                'reportable' => function (MorphTo $morphTo): void {
+                    $morphTo->morphWith([
+                        Project::class => ['user', 'category'],
+                        CommunityPost::class => ['user', 'community'],
+                    ]);
+                },
+            ]);
+
+            if ($reportType === 'content') {
+                $reportsQuery->whereIn('reportable_type', [Project::class, CommunityPost::class]);
+            } elseif ($reportType === 'user') {
+                $reportsQuery->where('reportable_type', User::class);
+            }
+
+            if ($reportStatus === 'pending') {
+                $reportsQuery->where('status', 'pending')->latest();
+            } elseif ($reportStatus === 'history') {
+                $reportsQuery->whereIn('status', ['resolved', 'dismissed'])->latest('resolved_at')->latest();
+            } else {
+                $reportsQuery->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")->latest();
+            }
+
+            $reports = $reportsQuery->paginate(15, ['*'], 'r_page')->withQueryString();
+        } elseif ($section === 'users') {
+            $allUsersQuery = User::withCount('projects');
+
+            if ($searchQuery !== '') {
+                $allUsersQuery->where(function ($query) use ($searchQuery): void {
+                    $query->where('name', 'like', "%{$searchQuery}%")
+                        ->orWhere('username', 'like', "%{$searchQuery}%")
+                        ->orWhere('email', 'like', "%{$searchQuery}%");
+                });
+            }
+
+            if ($userFilter === 'active') {
+                $allUsersQuery->where('is_banned', false)->whereNull('warning_notes')->latest();
+            } elseif ($userFilter === 'warned') {
+                $allUsersQuery->whereNotNull('warning_notes')->latest('warned_at')->latest();
+            } elseif ($userFilter === 'banned') {
+                $allUsersQuery->where('is_banned', true)->latest('banned_at')->latest();
+            } elseif ($userFilter === 'admin') {
+                $allUsersQuery->where('is_admin', true)->latest();
+            } else {
+                $allUsersQuery->latest();
+            }
+
+            $allUsers = $allUsersQuery->paginate(15, ['*'], 'users_page')->withQueryString();
+        } elseif ($section === 'flagged') {
+            $flaggedProjects = Project::with(['user', 'category'])
+                ->where('visibility', '!=', 'draft')
+                ->where(function ($query): void {
+                    $query->where('is_flagged', true)->orWhereNotNull('warning_notes');
+                })
+                ->latest('updated_at')
+                ->paginate(15, ['*'], 'f_page')
+                ->withQueryString();
         }
-        $allUsers = $allUsersQuery->latest()->paginate(15, ['*'], 'users_page')->withQueryString();
 
         return view('admin.reports', compact(
             'tab',
+            'section',
+            'reportType',
+            'reportStatus',
+            'userFilter',
+            'searchQuery',
             'pendingCount',
-            'pendingProjectReportsCount',
+            'pendingContentReportsCount',
             'pendingUserReportsCount',
-            'pendingCommunityPostReportsCount',
-            'bannedUsersCount',
+            'historyReportsCount',
+            'flaggedProjectsCount',
             'warnedUsersCount',
+            'bannedUsersCount',
             'allUsersCount',
-            'projectReports',
-            'userReports',
-            'bannedUsers',
+            'activeUsersCount',
+            'adminUsersCount',
+            'reports',
             'allUsers',
-            'searchQuery'
+            'flaggedProjects'
         ));
     }
 
@@ -143,6 +233,17 @@ class AdminModerationController extends Controller
                 'resolved_by' => $request->user()->id,
                 'resolved_at' => now(),
             ]);
+
+        $project->loadMissing('user');
+        if ($project->user) {
+            $project->user->notify(new ModerationWarningNotification(
+                message: "Karya \"{$project->title}\" mendapatkan peringatan moderasi dari Tim NampungYuk.",
+                notes: $warning,
+                url: route('projects.show', $project->slug),
+                actor: $request->user(),
+                scope: 'project',
+            ));
+        }
 
         return back()->with('status', "Peringatan resmi berhasil dipasang pada proyek '{$project->title}'.");
     }
@@ -256,6 +357,14 @@ class AdminModerationController extends Controller
                 'resolved_by' => $request->user()->id,
                 'resolved_at' => now(),
             ]);
+
+        $user->notify(new ModerationWarningNotification(
+            message: 'Akun Anda mendapatkan peringatan resmi dari Tim Moderasi NampungYuk.',
+            notes: $warning,
+            url: route('profile.show', $user->username),
+            actor: $request->user(),
+            scope: 'account',
+        ));
 
         return back()->with('status', "Peringatan resmi berhasil dikirimkan ke akun @{$user->username}.");
     }

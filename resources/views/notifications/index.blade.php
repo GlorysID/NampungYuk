@@ -17,6 +17,7 @@
         'project_trending' => ['label' => 'Trending', 'group' => 'karya', 'badgeBg' => 'bg-emerald-500 text-zinc-950'],
         'new_follower' => ['label' => 'Pengikut', 'group' => 'interaksi', 'badgeBg' => 'bg-violet-500 text-white'],
         'new_message' => ['label' => 'Pesan', 'group' => 'interaksi', 'badgeBg' => 'bg-amber-500 text-zinc-950'],
+        'moderation_warning' => ['label' => 'Moderasi', 'group' => 'interaksi', 'badgeBg' => 'bg-amber-500 text-zinc-950'],
     ];
 
     $filterTabs = [
@@ -76,7 +77,7 @@
                     $data = $notification->data;
                     $type = $data['type'] ?? 'info';
                     $meta = $typeMeta[$type] ?? ['label' => 'Aktivitas', 'group' => 'interaksi', 'badgeBg' => 'bg-[var(--surface-muted)] text-[var(--primary)]'];
-                    $excerpt = $data['comment_excerpt'] ?? $data['post_excerpt'] ?? null;
+                    $excerpt = $data['comment_excerpt'] ?? $data['post_excerpt'] ?? $data['warning_excerpt'] ?? null;
                     $isFreshUnread = is_null($notification->read_at);
                     $hasActor = !empty($data['actor_name']) || !empty($data['actor_avatar']);
                 @endphp
@@ -87,7 +88,13 @@
 
                     <!-- Avatar + Type Badge -->
                     <div class="relative shrink-0 mt-0.5">
-                        @if($hasActor)
+                        @if($type === 'moderation_warning')
+                            <div class="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                </svg>
+                            </div>
+                        @elseif($hasActor)
                             <x-user-avatar :name="$data['actor_name'] ?? 'Seseorang'" :avatar="$data['actor_avatar'] ?? null" size="md" />
                             <span class="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full ring-2 ring-[var(--surface)] flex items-center justify-center {{ $meta['badgeBg'] }}">
                                 @if(in_array($type, ['project_comment', 'project_comment_reply', 'community_comment'], true))

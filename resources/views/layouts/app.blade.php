@@ -414,6 +414,25 @@
                 </div>
             @endif
 
+            @auth
+                @if(auth()->user()->hasWarning() && ! (request()->routeIs('profile.show') && strtolower((string) request()->route('username')) === strtolower((string) auth()->user()->username)))
+                    <div class="w-full shrink-0 border-b border-amber-500/30 bg-amber-500/10">
+                        <div class="px-4 sm:px-6 py-2.5 flex flex-wrap items-center gap-3">
+                            <span class="w-8 h-8 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            </span>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-[12.5px] font-semibold text-amber-300">Akun dalam peringatan moderasi</p>
+                                <p class="text-[12px] text-[var(--text-muted)] truncate">{{ auth()->user()->warning_notes }}</p>
+                            </div>
+                            <a href="{{ route('profile.show', auth()->user()->username) }}" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 transition shrink-0">
+                                Lihat Detail
+                            </a>
+                        </div>
+                    </div>
+                @endif
+            @endauth
+
             <!-- MAIN WORKSPACE CONTENT CONTAINER -->
             @hasSection('full_bleed')
                 <div class="w-full flex-1 flex flex-col min-h-0 overflow-hidden">

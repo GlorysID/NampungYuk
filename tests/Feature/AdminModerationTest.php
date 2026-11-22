@@ -256,4 +256,163 @@ class AdminModerationTest extends TestCase
         $response->assertOk();
         $response->assertSee('Postingan komunitas yang dilaporkan untuk audit');
     }
+
+    public function test_warning_user_sends_notification_and_shows_global_banner_only_to_warned_user(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $targetUser = User::factory()->create(['warning_notes' => null]);
+        $otherUser = User::factory()->create(['warning_notes' => null]);
+        $notes = 'Harap perbaiki deskripsi proyek yang menyesatkan.';
+
+        $this->actingAs($admin)->post(route('admin.users.warn', $targetUser), [
+            'warning_notes' => $notes,
+        ])->assertRedirect();
+
+        $targetUser->refresh();
+
+        $this->assertSame(1, $targetUser->notifications()->count());
+        $notification = $targetUser->notifications()->first();
+        $this->assertSame('moderation_warning', $notification->data['type'] ?? null);
+        $this->assertSame('account', $notification->data['scope'] ?? null);
+        $this->assertSame($notes, $notification->data['warning_excerpt'] ?? null);
+
+        $this->actingAs($targetUser)->get(route('notifications.index'))
+            ->assertOk()
+            ->assertSee('Akun Anda mendapatkan peringatan resmi dari Tim Moderasi NampungYuk.')
+            ->assertSee($notes);
+
+        $this->actingAs($targetUser)->get(route('projects.index'))
+            ->assertOk()
+            ->assertSee('Akun dalam peringatan moderasi')
+            ->assertSee($notes);
+
+        $this->actingAs($otherUser)->get(route('projects.index'))
+            ->assertOk()
+            ->assertDontSee('Akun dalam peringatan moderasi')
+            ->assertDontSee($notes);
+    }
+
+    public function test_warning_project_sends_notification_and_displays_in_flagged_section(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $author = User::factory()->create();
+        $project = Project::factory()->create([
+            'user_id' => $author->id,
+            'title' => 'Proyek Melanggar Aturan',
+            'visibility' => 'public',
+        ]);
+        $warningNote = 'Tautan demo mengarah ke situs mencurigakan.';
+
+        $this->actingAs($admin)->post(route('admin.projects.warn', $project), [
+            'warning_notes' => $warningNote,
+        ])->assertRedirect();
+
+        $this->assertSame(1, $author->notifications()->count());
+        $notification = $author->notifications()->first();
+        $this->assertSame('moderation_warning', $notification->data['type'] ?? null);
+        $this->assertSame('project', $notification->data['scope'] ?? null);
+
+        $this->actingAs($admin)->get(route('admin.reports.index', ['tab' => 'flagged']))
+            ->assertOk()
+            ->assertSee('Proyek Melanggar Aturan')
+            ->assertSee($warningNote);
+
+        $this->actingAs($admin)->post(route('admin.projects.warn', $project), [
+            'action' => 'remove',
+        ])->assertRedirect();
+
+        $this->actingAs($admin)->get(route('admin.reports.index', ['tab' => 'flagged']))
+            ->assertOk()
+            ->assertSee('Tidak ada konten berperingatan saat ini.')
+            ->assertDontSee($warningNote)
+            ->assertViewHas('flaggedProjects', fn ($projects): bool => $projects->isEmpty());
+    }
+
+    public function test_admin_moderation_filters_users_and_reports_accurately(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $activeUser = User::factory()->create(['name' => 'Aktif User', 'username' => 'aktif_user']);
+        $warnedUser = User::factory()->create([
+            'name' => 'Warned User',
+            'username' => 'warned_user',
+            'warning_notes' => 'Dalam pantauan admin.',
+            'warned_at' => now(),
+        ]);
+        $bannedUser = User::factory()->create([
+            'name' => 'Banned User',
+            'username' => 'banned_user',
+            'is_banned' => true,
+            'ban_reason' => 'Spam berulang.',
+            'banned_at' => now(),
+        ]);
+
+        $this->actingAs($admin)->get(route('admin.reports.index', ['tab' => 'all_users', 'filter' => 'warned']))
+            ->assertOk()
+            ->assertSee('Warned User')
+            ->assertDontSee('Aktif User');
+
+        $this->actingAs($admin)->get(route('admin.reports.index', ['tab' => 'all_users', 'filter' => 'banned']))
+            ->assertOk()
+            ->assertSee('Banned User')
+            ->assertDontSee('Warned User');
+
+        $this->actingAs($admin)->get(route('admin.reports.index', ['tab' => 'banned']))
+            ->assertOk()
+            ->assertSee('Banned User')
+            ->assertDontSee('Aktif User');
+
+        $reporter = User::factory()->create();
+        $pendingProject = Project::factory()->create(['title' => 'Karya Laporan Pending']);
+        $resolvedProject = Project::factory()->create(['title' => 'Karya Laporan Selesai']);
+
+        Report::create([
+            'reporter_id' => $reporter->id,
+            'reportable_type' => Project::class,
+            'reportable_id' => $pendingProject->id,
+            'reason' => 'spam',
+            'notes' => 'Laporan pending konten',
+            'status' => 'pending',
+        ]);
+
+        Report::create([
+            'reporter_id' => $reporter->id,
+            'reportable_type' => User::class,
+            'reportable_id' => $activeUser->id,
+            'reason' => 'harassment',
+            'notes' => 'Laporan akun user',
+            'status' => 'pending',
+        ]);
+
+        Report::create([
+            'reporter_id' => $reporter->id,
+            'reportable_type' => Project::class,
+            'reportable_id' => $resolvedProject->id,
+            'reason' => 'broken_demo',
+            'notes' => 'Sudah ditangani admin',
+            'status' => 'resolved',
+            'resolved_by' => $admin->id,
+            'resolved_at' => now(),
+        ]);
+
+        $this->actingAs($admin)->get(route('admin.reports.index', ['tab' => 'reports', 'status' => 'pending']))
+            ->assertOk()
+            ->assertSee('Karya Laporan Pending')
+            ->assertSee('Aktif User')
+            ->assertDontSee('Karya Laporan Selesai');
+
+        $this->actingAs($admin)->get(route('admin.reports.index', ['tab' => 'reports', 'status' => 'history']))
+            ->assertOk()
+            ->assertSee('Karya Laporan Selesai')
+            ->assertDontSee('Karya Laporan Pending');
+
+        $this->actingAs($admin)->get(route('admin.reports.index', ['tab' => 'reports', 'type' => 'user', 'status' => 'pending']))
+            ->assertOk()
+            ->assertSee('Aktif User')
+            ->assertDontSee('Karya Laporan Pending');
+
+        $this->actingAs($admin)->get(route('admin.reports.index', ['tab' => 'users']))
+            ->assertOk()
+            ->assertSee('Aktif User')
+            ->assertDontSee('Karya Laporan Pending');
+    }
 }

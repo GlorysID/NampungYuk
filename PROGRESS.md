@@ -382,6 +382,14 @@ Alur lama (form email + password inline di `/pengaturan`, reset password lewat l
 - **Perbaikan UI kartu Pendengar Spaces** (`resources/views/spaces/show.blade.php`): kartu pendengar sebelumnya menampilkan nama terpotong (`Q...`) karena tombol moderasi berbagi satu baris; grid diubah ke `grid-cols-1 sm:grid-cols-2 md:grid-cols-3` dengan tata letak `flex-col` (baris identitas + baris aksi ber-divider) sehingga nama tampil penuh di semua lebar layar.
 - **Verifikasi**: `npm run build` exit 0, `artisan view:cache` ok, `BackendSecurityAndSpacesTest` **13/13 passed** (`109` assertions), screenshot `spaces.png` diambil ulang. Commit `2175d0a` (`Update README with current features and screenshots, refine Space listener card`, 14 berkas) sudah di-push ke `origin/main` (`454e3b1..2175d0a`) dan working tree bersih.
 
+## 3k. Konsol Moderasi Admin Terstruktur & Visibilitas Peringatan User (22 Nov 2026)
+
+- **Sinkronisasi Kolom `warned_at` (`database/migrations/2026_11_22_040216_sync_warned_at_column_on_users_table.php`)**: migrasi idempotent untuk menyamakan skema `users.warning_at` lawas di SQLite lokal ke `users.warned_at` sehingga `POST /admin/user/{id}/warning` tidak lagi melempar `SQLSTATE[HY000]: no such column: warned_at`.
+- **Konsol Moderasi Admin Terstruktur (`AdminModerationController.php`, `resources/views/admin/reports.blade.php`)**:
+  - Merapikan halaman `/admin/laporan` menjadi 4 kartu KPI yang dapat diklik (`Laporan Menunggu`, `Konten Berperingatan`, `Akun Peringatan`, `Akun Diblokir`) dan 3 bagian utama (`Antrean Laporan` dengan sub-filter target & status, `Manajemen Pengguna` dengan pencarian + filter status, serta `Konten Berperingatan`).
+  - Menambahkan tombol eskalasi `Beri Peringatan` / `Edit Peringatan` langsung di kartu laporan akun, menjaga kompatibilitas penuh query param legacy (`tab=projects`, `tab=users`, `tab=all_users`, `tab=banned`), dan mengoptimalkan `index()` agar hanya memuat query pagination bagian yang sedang aktif.
+- **Notifikasi & Banner Peringatan Pemilik Akun (`ModerationWarningNotification.php`, `notifications/index.blade.php`, `layouts/app.blade.php`)**: mengirim notifikasi database `moderation_warning` saat admin memperingatkan akun atau proyek, menampilkannya di halaman `/notifikasi`, serta menampilkan banner peringatan non-intrusif khusus pemilik akun yang sedang dalam peringatan di bar atas shell (disembunyikan di halaman profil sendiri agar tidak ganda).
+
 ---
 
 ## 4. Backlog Masa Depan (Rekomendasi Lanjutan)
